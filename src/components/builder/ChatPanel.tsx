@@ -4,10 +4,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useChatStore, useProjectStore, useEditorStore } from '@/store';
+import { useChatStore, useEditorStore } from '@/store';
 import { useCodeGeneration } from '@/hooks/use-code-generation';
 import type { ChatMessage, FileArtifact } from '@/types';
-import ReactMarkdown from 'react-markdown';
 import {
   Send,
   Square,
@@ -16,8 +15,14 @@ import {
   Trash2,
   Bot,
   User,
-  ChevronDown,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for ReactMarkdown to avoid SSR hydration issues
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  ssr: false,
+  loading: () => <span className="text-zinc-400 text-xs">Loading...</span>,
+});
 
 function ArtifactBadge({ artifact }: { artifact: FileArtifact }) {
   const openFile = useEditorStore((s) => s.openFile);
@@ -81,7 +86,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
-            <div className="prose prose-invert prose-sm max-w-none [&_pre]:bg-zinc-900 [&_pre]:rounded-lg [&_pre]:p-3 [&_code]:text-xs [&_code_block]:text-xs [&_p]:m-0">
+            <div className="[&_p]:m-0 [&_p:last-child]:mb-0 [&_ul]:m-1 [&_ol]:m-1 [&_li]:m-0.5 [&_pre]:bg-zinc-900 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_code]:text-xs [&_code]:bg-zinc-900/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_strong]:text-white [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-zinc-100 [&_a]:text-violet-400 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-zinc-600 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-400">
               <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
             </div>
           )}

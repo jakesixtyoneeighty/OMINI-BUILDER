@@ -10,6 +10,7 @@ import type {
   DeployStatus,
   EditorTab,
   FileArtifact,
+  ChatMessage,
 } from '@/types';
 
 function generateId(): string {
@@ -306,5 +307,4 @@ export const useDeployStore = create<DeployStore>((set) => ({
   reset: () => set({ status: 'idle', url: null, error: null, logs: [] }),
 }));
 
-// Re-import ChatMessage type used in ChatStore
-import type { ChatMessage } from '@/types';
+

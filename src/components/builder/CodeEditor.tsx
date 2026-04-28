@@ -3,40 +3,31 @@
 // ============================================================
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { css } from '@codemirror/lang-css';
-import { html } from '@codemirror/lang-html';
-import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useEditorStore, useProjectStore, getLanguage } from '@/store';
 
-const languageExtensions: Record<string, any> = {
-  javascript: javascript({ jsx: true }),
-  javascriptreact: javascript({ jsx: true }),
-  typescript: javascript({ jsx: false, typescript: true }),
-  typescriptreact: javascript({ jsx: true, typescript: true }),
-  css,
-  html,
-  json,
-  markdown: [],
-  text: [],
-};
+// Dynamic import CodeMirror to avoid SSR issues
+const CodeMirror = dynamic(
+  () => import('@uiw/react-codemirror').then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full flex items-center justify-center bg-zinc-950 text-zinc-500 text-sm">
+        Loading editor...
+      </div>
+    ),
+  }
+);
 
 export default function CodeEditor() {
   const activeTab = useEditorStore((s) => s.activeTab);
   const getFile = useProjectStore((s) => s.getFile);
   const setFile = useProjectStore((s) => s.setFile);
   const markDirty = useEditorStore((s) => s.markDirty);
-  const markClean = useEditorStore((s) => s.markClean);
 
   const file = activeTab ? getFile(activeTab) : undefined;
   const lang = file?.language ?? 'text';
-
-  const extensions = useMemo(() => {
-    return languageExtensions[lang] ?? [];
-  }, [lang]);
 
   const handleChange = useCallback(
     (value: string) => {
@@ -80,8 +71,8 @@ export default function CodeEditor() {
         <CodeMirror
           value={file.content}
           height="100%"
-          theme={oneDark}
-          extensions={extensions}
+          theme="dark"
+          extensions={[]}
           onChange={handleChange}
           basicSetup={{
             lineNumbers: true,
