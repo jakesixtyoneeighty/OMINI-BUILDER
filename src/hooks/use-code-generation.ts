@@ -4,9 +4,8 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { useChatStore, useProjectStore } from '@/store';
+import { useChatStore, useProjectStore, useAIProviderStore } from '@/store';
 import { parseCodeFromResponse } from '@/services/code-parser';
-import type { FileArtifact } from '@/types';
 
 export function useCodeGeneration() {
   const abortRef = useRef<AbortController | null>(null);
@@ -18,6 +17,7 @@ export function useCodeGeneration() {
   const applyArtifacts = useProjectStore((s) => s.applyArtifacts);
   const projectFiles = useProjectStore((s) => s.project.files);
   const setProjectName = useProjectStore((s) => s.setProjectName);
+  const providerConfig = useAIProviderStore((s) => s.config);
 
   const generate = useCallback(
     async (prompt: string) => {
@@ -54,13 +54,21 @@ export function useCodeGeneration() {
             prompt,
             files: projectFiles,
             history,
+            providerConfig: {
+              provider: providerConfig.provider,
+              apiKey: providerConfig.apiKey,
+              model: providerConfig.model,
+            },
           }),
           signal: abortRef.current.signal,
         });
 
-        if (!response.ok || !response.body) {
-          throw new Error(`Generation failed: ${response.status}`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Generation failed: ${response.status}`);
         }
+
+        if (!response.body) throw new Error('No response body');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -75,7 +83,6 @@ export function useCodeGeneration() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6).trim();
-
               if (data === '[DONE]') continue;
 
               try {
@@ -85,7 +92,6 @@ export function useCodeGeneration() {
                   fullContent += `\n\n**Error:** ${parsed.error}`;
                 } else if (parsed.content) {
                   fullContent += parsed.content;
-                  // Update the assistant message in real-time
                   updateMessage(assistantId, { content: fullContent });
                 }
               } catch {
@@ -107,7 +113,7 @@ export function useCodeGeneration() {
             isStreaming: false,
           });
 
-          // Auto-detect project name from first major file
+          // Auto-detect project name
           const appFile = artifacts.find(
             (a) => a.path === 'src/App.tsx' || a.path === 'index.html'
           );
@@ -135,7 +141,7 @@ export function useCodeGeneration() {
         abortRef.current = null;
       }
     },
-    [addMessage, updateMessage, setIsGenerating, messages, projectFiles, applyArtifacts, setProjectName]
+    [addMessage, updateMessage, setIsGenerating, messages, projectFiles, applyArtifacts, setProjectName, providerConfig]
   );
 
   const stopGeneration = useCallback(() => {

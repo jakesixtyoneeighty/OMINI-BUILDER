@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useEditorStore, useProjectStore } from '@/store';
+import { useEditorStore } from '@/store';
 import CodeEditor from './CodeEditor';
 import LivePreview from './LivePreview';
 import FileExplorer from './FileExplorer';
@@ -17,6 +17,7 @@ import { X } from 'lucide-react';
 export default function BuilderLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeView, setActiveView] = useState<'chat' | 'preview'>('chat');
 
   const openTabs = useEditorStore((s) => s.openTabs);
@@ -35,6 +36,7 @@ export default function BuilderLayout() {
         terminalOpen={terminalOpen}
         activeView={activeView}
         onViewChange={setActiveView}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       {/* Main content */}
@@ -97,7 +99,7 @@ export default function BuilderLayout() {
 
                   {/* Right panel: Preview or Chat (desktop only) */}
                   <div className="w-[45%] min-w-[300px] max-w-[600px] border-l border-zinc-800 shrink-0 hidden lg:block">
-                    {activeView === 'preview' ? <LivePreview /> : <ChatPanel />}
+                    {activeView === 'preview' ? <LivePreview /> : <ChatPanel onOpenSettings={() => setSettingsOpen(true)} />}
                   </div>
                 </div>
               </div>
@@ -118,7 +120,7 @@ export default function BuilderLayout() {
 
       {/* Mobile: bottom sheet for Chat/Preview on small screens */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 top-12 z-50 bg-zinc-950 border-t border-zinc-800">
-        {activeView === 'preview' ? <LivePreview /> : <ChatPanel />}
+        {activeView === 'preview' ? <LivePreview /> : <ChatPanel onOpenSettings={() => setSettingsOpen(true)} />}
       </div>
     </div>
   );

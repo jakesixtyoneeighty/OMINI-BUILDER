@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useChatStore, useEditorStore } from '@/store';
+import { useChatStore, useEditorStore, useAIProviderStore } from '@/store';
 import { useCodeGeneration } from '@/hooks/use-code-generation';
 import type { ChatMessage, FileArtifact } from '@/types';
 import {
@@ -15,6 +15,11 @@ import {
   Trash2,
   Bot,
   User,
+  Settings,
+  AlertTriangle,
+  Plus,
+  Pencil,
+  Trash2 as TrashIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -24,32 +29,44 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
   loading: () => <span className="text-zinc-400 text-xs">Loading...</span>,
 });
 
+const ACTION_ICONS: Record<string, any> = {
+  create: Plus,
+  update: Pencil,
+  modify: Pencil,
+  delete: TrashIcon,
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  create: 'Created',
+  update: 'Modified',
+  modify: 'Modified',
+  delete: 'Deleted',
+};
+
+const ACTION_COLORS: Record<string, string> = {
+  create: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  update: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  modify: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  delete: 'text-red-400 bg-red-400/10 border-red-400/20',
+};
+
 function ArtifactBadge({ artifact }: { artifact: FileArtifact }) {
   const openFile = useEditorStore((s) => s.openFile);
-  const actionLabel =
-    artifact.action === 'create'
-      ? 'Created'
-      : artifact.action === 'update'
-        ? 'Updated'
-        : 'Deleted';
-
-  const actionColor =
-    artifact.action === 'create'
-      ? 'text-green-400 bg-green-400/10'
-      : artifact.action === 'update'
-        ? 'text-blue-400 bg-blue-400/10'
-        : 'text-red-400 bg-red-400/10';
+  const action = artifact.action === 'modify' ? 'update' : artifact.action;
+  const Icon = ACTION_ICONS[action] ?? Plus;
+  const label = ACTION_LABELS[action] ?? action;
+  const color = ACTION_COLORS[action] ?? 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20';
 
   return (
     <button
-      onClick={() => artifact.action !== 'delete' && openFile(artifact.path)}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${actionColor} hover:opacity-80 ${
-        artifact.action !== 'delete' ? 'cursor-pointer' : 'cursor-default'
-      }`}
+      onClick={() => action !== 'delete' && openFile(artifact.path)}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition hover:opacity-80 ${
+        action !== 'delete' ? 'cursor-pointer' : 'cursor-default'
+      } ${color}`}
     >
-      <FileCode size={12} />
-      <span>{actionLabel}</span>
-      <span className="font-mono">{artifact.path}</span>
+      <Icon size={11} />
+      <span>{label}</span>
+      <span className="font-mono text-[10px] opacity-70">{artifact.path}</span>
     </button>
   );
 }
@@ -71,13 +88,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </div>
 
       {/* Content */}
-      <div
-        className={`flex-1 min-w-0 ${
-          isUser ? 'text-right' : ''
-        }`}
-      >
+      <div className={`flex-1 min-w-0 ${isUser ? 'text-right' : ''}`}>
         <div
-          className={`inline-block text-left rounded-xl px-4 py-3 text-sm leading-relaxed ${
+          className={`inline-block text-left rounded-xl px-4 py-3 text-sm leading-relaxed max-w-full ${
             isUser
               ? 'bg-violet-600 text-white rounded-tr-sm'
               : 'bg-zinc-800 text-zinc-200 rounded-tl-sm'
@@ -86,7 +99,25 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
-            <div className="[&_p]:m-0 [&_p:last-child]:mb-0 [&_ul]:m-1 [&_ol]:m-1 [&_li]:m-0.5 [&_pre]:bg-zinc-900 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_code]:text-xs [&_code]:bg-zinc-900/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_strong]:text-white [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-zinc-100 [&_a]:text-violet-400 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-zinc-600 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-400">
+            <div
+              className="
+                [&_p]:m-0 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_p+p]:mt-2
+                [&_ul]:m-1 [&_ol]:m-1 [&_li]:m-0.5 [&_li]:text-zinc-300
+                [&_table]:w-full [&_table]:text-xs [&_table]:my-2 [&_table]:border-collapse
+                [&_th]:bg-zinc-700 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:text-zinc-200 [&_th]:font-semibold [&_th]:border [&_th]:border-zinc-600
+                [&_td]:px-2 [&_td]:py-1 [&_td]:border [&_td]:border-zinc-700 [&_td]:text-zinc-300
+                [&_tr:hover]:bg-zinc-700/30
+                [&_pre]:bg-zinc-900 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:text-xs
+                [&_code]:text-xs [&_code]:bg-zinc-900/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
+                [&_strong]:text-white [&_em]:text-violet-300
+                [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-white [&_h1]:mt-3 [&_h1]:mb-1
+                [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mt-2 [&_h2]:mb-1
+                [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-zinc-100 [&_h3]:mt-2 [&_h3]:mb-1
+                [&_a]:text-violet-400 [&_a]:underline [&_a:hover]:text-violet-300
+                [&_blockquote]:border-l-2 [&_blockquote]:border-violet-500/50 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-400 [&_blockquote]:italic [&_blockquote]:my-2
+                [&_hr]:border-zinc-700 [&_hr]:my-3
+              "
+            >
               <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
             </div>
           )}
@@ -99,7 +130,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
         {/* File artifacts */}
         {message.artifacts && message.artifacts.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {message.artifacts.map((a) => (
               <ArtifactBadge key={a.path} artifact={a} />
             ))}
@@ -110,11 +141,12 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-export default function ChatPanel() {
+export default function ChatPanel({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const [input, setInput] = useState('');
   const messages = useChatStore((s) => s.messages);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const clearChat = useChatStore((s) => s.clearChat);
+  const aiConfig = useAIProviderStore((s) => s.config);
   const { generate, stopGeneration } = useCodeGeneration();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -148,7 +180,6 @@ export default function ChatPanel() {
     [handleSend]
   );
 
-  // Quick action prompts
   const quickPrompts = [
     'Build a landing page',
     'Create a dashboard',
@@ -163,6 +194,11 @@ export default function ChatPanel() {
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-violet-400" />
           <span className="text-sm font-medium text-zinc-200">AI Chat</span>
+          {aiConfig.apiKey && (
+            <span className="text-[10px] text-zinc-500 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">
+              {aiConfig.model.split('/').pop()}
+            </span>
+          )}
         </div>
         {messages.length > 0 && (
           <button
@@ -176,7 +212,7 @@ export default function ChatPanel() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar relative">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <div className="w-12 h-12 rounded-xl bg-violet-600/20 flex items-center justify-center mb-4">
@@ -210,6 +246,25 @@ export default function ChatPanel() {
           <MessageBubble key={msg.id} message={msg} />
         ))}
       </div>
+
+      {/* Provider not configured warning */}
+      {!aiConfig.apiKey && (
+        <div className="px-3 pb-1">
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-2.5 flex items-center gap-2">
+            <AlertTriangle size={14} className="text-yellow-400 shrink-0" />
+            <p className="text-[11px] text-yellow-300 flex-1">
+              Configure your AI API key to start generating code.
+            </p>
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-1 px-2.5 py-1 bg-yellow-500 hover:bg-yellow-400 text-zinc-900 rounded-lg text-[10px] font-semibold transition"
+            >
+              <Settings size={9} />
+              Setup
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="border-t border-zinc-800 p-3">
@@ -245,7 +300,7 @@ export default function ChatPanel() {
           ) : (
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || !aiConfig.apiKey}
               className="p-2 m-1.5 text-zinc-400 hover:text-white transition rounded-lg hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               title="Send message"
             >

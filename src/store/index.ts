@@ -307,4 +307,6 @@ export const useDeployStore = create<DeployStore>((set) => ({
   reset: () => set({ status: 'idle', url: null, error: null, logs: [] }),
 }));
 
+// Re-export AI provider store
+export { useAIProviderStore } from './ai-provider';
 

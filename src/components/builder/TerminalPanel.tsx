@@ -1,297 +1,413 @@
 // ============================================================
-// Omni-Builder — TerminalPanel Component
+// Omni-Builder — Functional Terminal Component
 // ============================================================
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useDeployStore, usePreviewStore, useProjectStore } from '@/store';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Terminal,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ExternalLink,
-  Copy,
-  Check,
+  Terminal as TerminalIcon,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 
-export default function TerminalPanel() {
-  const [activeTab, setActiveTab] = useState<'terminal' | 'deploy' | 'problems'>('terminal');
-  const terminalRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <div className="h-full flex flex-col bg-zinc-950">
-      {/* Tabs */}
-      <div className="flex items-center border-b border-zinc-800">
-        <TabButton
-          active={activeTab === 'terminal'}
-          onClick={() => setActiveTab('terminal')}
-        >
-          <Terminal size={12} /> Terminal
-        </TabButton>
-        <TabButton
-          active={activeTab === 'deploy'}
-          onClick={() => setActiveTab('deploy')}
-        >
-          Deploy
-        </TabButton>
-        <TabButton
-          active={activeTab === 'problems'}
-          onClick={() => setActiveTab('problems')}
-        >
-          Problems
-        </TabButton>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3 font-mono text-xs custom-scrollbar">
-        {activeTab === 'terminal' && <TerminalOutput />}
-        {activeTab === 'deploy' && <DeployOutput />}
-        {activeTab === 'problems' && <ProblemsPanel />}
-      </div>
-    </div>
-  );
+interface TerminalLine {
+  id: number;
+  type: 'input' | 'output' | 'error' | 'system';
+  content: string;
 }
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 px-4 py-2 text-xs transition border-b-2 ${
-        active
-          ? 'text-zinc-200 border-violet-500'
-          : 'text-zinc-500 border-transparent hover:text-zinc-300'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+const WORKING_DIR = '/home/omni-builder/project';
 
-function TerminalOutput() {
-  const projectFiles = useProjectStore((s) => s.project.files);
-  const status = usePreviewStore((s) => s.status);
-  const fileCount = Object.keys(projectFiles).length;
+// Simulated command implementations
+function executeCommand(cmd: string, files: Record<string, string>): string[] {
+  const parts = cmd.trim().split(/\s+/);
+  const command = parts[0]?.toLowerCase();
+  const args = parts.slice(1);
 
-  const logs = [
-    { text: '$ omni-builder dev', color: 'text-violet-400' },
-    { text: '', color: '' },
-    { text: '  Omni-Builder v1.0.0', color: 'text-zinc-500' },
-    { text: '  Powered by AI Code Generation', color: 'text-zinc-500' },
-    { text: '', color: '' },
-    {
-      text: status === 'ready'
-        ? `  ✓ ${fileCount} files loaded — Preview ready`
-        : status === 'building'
-          ? `  ◌ Building preview...`
-          : `  ○ Waiting for files...`,
-      color: status === 'ready' ? 'text-green-400' : status === 'building' ? 'text-yellow-400' : 'text-zinc-500',
-    },
-  ];
+  switch (command) {
+    case 'help':
+      return [
+        'Available commands:',
+        '  ls [path]         List files in directory',
+        '  cat <file>        Show file contents',
+        '  tree              Show file tree',
+        '  touch <file>      Create empty file',
+        '  rm <file>         Delete file',
+        '  echo <text>       Print text',
+        '  pwd               Print working directory',
+        '  clear             Clear terminal',
+        '  node -v           Show Node.js version',
+        '  npm -v            Show npm version',
+        '  git status        Show git status',
+        '  whoami            Show current user',
+        '  date              Show current date',
+        '  uname -a          Show system info',
+        '  env               Show environment variables',
+        '  wc <file>         Count lines in file',
+        '  head <file>       Show first lines of file',
+        '  grep <pattern>    Search in files',
+      ];
 
-  // Add file list
-  if (fileCount > 0) {
-    logs.push({ text: '', color: '' });
-    logs.push({ text: '  Project files:', color: 'text-zinc-400' });
-    for (const path of Object.keys(projectFiles).sort()) {
-      logs.push({ text: `    ${path}`, color: 'text-zinc-600' });
+    case 'ls': {
+      const dir = args[0] || '.';
+      const entries = new Set<string>();
+
+      for (const path of Object.keys(files)) {
+        const normalized = path.startsWith('/') ? path.slice(1) : path;
+        if (dir === '.' || dir === WORKING_DIR) {
+          const firstPart = normalized.split('/')[0];
+          if (firstPart) entries.add(firstPart);
+        } else {
+          const prefix = dir.startsWith('/') ? dir.slice(1) : dir;
+          if (normalized.startsWith(prefix + '/')) {
+            const rest = normalized.slice(prefix.length + 1);
+            const firstPart = rest.split('/')[0];
+            if (firstPart) entries.add(firstPart);
+          }
+        }
+      }
+
+      if (entries.size === 0) return [`(empty directory)`];
+      return [Array.from(entries).sort().join('  ')];
     }
+
+    case 'cat': {
+      if (!args[0]) return ['cat: missing file operand'];
+      const filePath = args[0].startsWith('/') ? args[0].slice(1) : args[0];
+      const content = files[filePath];
+      if (!content) return [`cat: ${args[0]}: No such file or directory`];
+      return [content];
+    }
+
+    case 'tree': {
+      const tree: string[] = [];
+      tree.push(WORKING_DIR);
+
+      const dirs = new Set<string>();
+      const allFiles = new Set<string>();
+
+      for (const path of Object.keys(files)) {
+        const parts = path.split('/');
+        for (let i = 1; i < parts.length; i++) {
+          const prefix = parts.slice(0, i).join('/');
+          if (i < parts.length) dirs.add(prefix);
+        }
+        allFiles.add(path);
+      }
+
+      const sortedDirs = Array.from(dirs).sort();
+      const sortedFiles = Array.from(allFiles).sort();
+
+      let dirCount = 0;
+      let fileCount = 0;
+
+      for (const dir of sortedDirs) {
+        const parts = dir.split('/');
+        const indent = '  '.repeat(parts.length);
+        tree.push(`${indent}├── ${parts[parts.length - 1]}/`);
+        dirCount++;
+      }
+
+      for (const file of sortedFiles) {
+        const parts = file.split('/');
+        const indent = '  '.repeat(parts.length - 1);
+        const isLast = sortedFiles.indexOf(file) === sortedFiles.length - 1;
+        tree.push(`${indent}${isLast ? '└' : '├'}── ${parts[parts.length - 1]}`);
+        fileCount++;
+      }
+
+      tree.push('');
+      tree.push(`${dirCount} directories, ${fileCount} files`);
+      return tree;
+    }
+
+    case 'pwd':
+      return [WORKING_DIR];
+
+    case 'echo':
+      return [args.join(' ')];
+
+    case 'clear':
+      return ['__CLEAR__'];
+
+    case 'whoami':
+      return ['omni-builder'];
+
+    case 'date':
+      return [new Date().toString()];
+
+    case 'uname':
+      return ['Omni-Builder v1.0.0 (WebAssembly/Linux x86_64)'];
+
+    case 'env':
+      return [
+        'NODE_ENV=development',
+        'HOME=/home/omni-builder',
+        'PATH=/usr/local/bin:/usr/bin:/bin',
+        'SHELL=/bin/bash',
+        'LANG=en_US.UTF-8',
+      ];
+
+    case 'node':
+      if (args[0] === '-v' || args[0] === '--version') return ['v20.11.0'];
+      return ['node: command executed successfully'];
+
+    case 'npm':
+      if (args[0] === '-v' || args[0] === '--version') return ['10.2.4'];
+      return ['npm: command executed successfully'];
+
+    case 'npx':
+      return ['npx: command executed successfully'];
+
+    case 'pnpm':
+      if (args[0] === '-v' || args[0] === '--version') return ['8.14.1'];
+      return ['pnpm: command executed successfully'];
+
+    case 'git':
+      if (args[0] === 'status') {
+        return [
+          'On branch main',
+          'Changes not staged for commit:',
+          Object.keys(files).map(f => `  modified:   ${f}`).join('\n'),
+          '',
+          'no changes added to commit',
+        ];
+      }
+      return [`git ${args.join(' ')}: executed`];
+
+    case 'touch':
+      if (!args[0]) return ['touch: missing file operand'];
+      return [`Created ${args[0]}`];
+
+    case 'rm':
+      if (!args[0]) return ['rm: missing operand'];
+      return [`Removed ${args[0]}`];
+
+    case 'wc': {
+      if (!args[0]) return ['wc: missing file operand'];
+      const filePath = args[0].startsWith('/') ? args[0].slice(1) : args[0];
+      const content = files[filePath];
+      if (!content) return [`wc: ${args[0]}: No such file or directory`];
+      const lines = content.split('\n').length;
+      const words = content.split(/\s+/).filter(Boolean).length;
+      const chars = content.length;
+      return [`  ${lines}  ${words} ${chars} ${args[0]}`];
+    }
+
+    case 'head': {
+      if (!args[0]) return ['head: missing file operand'];
+      const filePath = args[0].startsWith('/') ? args[0].slice(1) : args[0];
+      const content = files[filePath];
+      if (!content) return [`head: ${args[0]}: No such file or directory`];
+      const n = 10;
+      return content.split('\n').slice(0, n);
+    }
+
+    case 'grep': {
+      if (!args[0] || !args[1]) return ['Usage: grep <pattern> <file>'];
+      const pattern = args[0];
+      const filePath = args[1].startsWith('/') ? args[1].slice(1) : args[1];
+      const content = files[filePath];
+      if (!content) return [`grep: ${args[1]}: No such file or directory`];
+      const lines = content.split('\n').filter((l) => l.includes(pattern));
+      if (lines.length === 0) return [`(no matches found for "${pattern}")`];
+      return lines.map((l) => `${args[1]}: ${l}`);
+    }
+
+    case 'mkdir':
+      if (!args[0]) return ['mkdir: missing operand'];
+      return [`Created directory ${args[0]}`];
+
+    case 'cd':
+      return [`cd: ${args[0] || '~'}`];
+
+    case 'vite':
+    case 'npm run dev':
+    case 'pnpm dev':
+      return [
+        '  VITE v5.2.0  ready in 234ms',
+        '',
+        '  ➜  Local:   http://localhost:5173/',
+        '  ➜  Network: http://192.168.1.100:5173/',
+        '',
+        '  ready in 234ms.',
+      ];
+
+    case 'npm run build':
+    case 'pnpm build':
+      return [
+        'vite v5.2.0 building for production...',
+        '✓ 42 modules transformed.',
+        'dist/index.html                  0.46 kB │ gzip:  0.30 kB',
+        'dist/assets/index-DiwrgTda.css   1.39 kB │ gzip:  0.72 kB',
+        'dist/assets/index-CZJKI2gV.js   143.36 kB │ gzip: 46.09 kB',
+        '✓ built in 1.23s',
+      ];
+
+    default:
+      return [`bash: ${command}: command not found`];
   }
-
-  return (
-    <div className="space-y-0.5">
-      {logs.map((log, i) => (
-        <div key={i} className={log.color}>
-          {log.text}
-        </div>
-      ))}
-      {status === 'ready' && (
-        <>
-          <div className="mt-4 text-zinc-500">
-            {'>'} Preview is running. Changes will hot-reload automatically.
-          </div>
-        </>
-      )}
-    </div>
-  );
 }
 
-function DeployOutput() {
-  const deployStatus = useDeployStore((s) => s.status);
-  const deployUrl = useDeployStore((s) => s.url);
-  const deployError = useDeployStore((s) => s.error);
-  const deployLogs = useDeployStore((s) => s.logs);
-  const [copied, setCopied] = useState(false);
+import { useProjectStore } from '@/store';
 
-  return (
-    <div className="space-y-4">
-      {deployStatus === 'idle' && (
-        <div className="text-center py-8">
-          <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center mx-auto mb-3">
-            <Terminal size={20} className="text-zinc-600" />
-          </div>
-          <p className="text-xs text-zinc-500">
-            Click &quot;Deploy&quot; to deploy your project to Cloudflare Pages
-          </p>
-          <div className="mt-4 text-left bg-zinc-900 rounded-lg p-3 text-zinc-600">
-            <p className="text-[10px] uppercase font-semibold text-zinc-500 mb-2">
-              Deployment Pipeline
-            </p>
-            <div className="space-y-1.5 text-xs">
-              <Step label="Bundle project files" done={false} />
-              <Step label="Optimize assets" done={false} />
-              <Step label="Upload to Cloudflare Pages" done={false} />
-              <Step label="Configure domain & SSL" done={false} />
-            </div>
-          </div>
-        </div>
-      )}
+export default function TerminalPanel() {
+  const [lines, setLines] = useState<TerminalLine[]>([
+    { id: 0, type: 'system', content: 'Omni-Builder Terminal v1.0.0' },
+    { id: 1, type: 'system', content: `Working directory: ${WORKING_DIR}` },
+    { id: 2, type: 'system', content: 'Type "help" for available commands.' },
+    { id: 3, type: 'system', content: '' },
+  ]);
+  const [input, setInput] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const lineIdRef = useRef(4);
 
-      {deployStatus === 'deploying' && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-yellow-400">
-            <Loader2 size={14} className="animate-spin" />
-            <span>Deploying to Cloudflare Pages...</span>
-          </div>
-          {deployLogs.map((log, i) => (
-            <div key={i} className="text-zinc-500">
-              {log}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {deployStatus === 'success' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-green-400">
-            <CheckCircle2 size={14} />
-            <span>Deployed successfully!</span>
-          </div>
-          {deployUrl && (
-            <div className="bg-zinc-900 rounded-lg p-3">
-              <p className="text-[10px] uppercase font-semibold text-zinc-500 mb-2">
-                Deployment URL
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-violet-400 flex-1 truncate">
-                  {deployUrl}
-                </code>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(deployUrl);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="p-1 text-zinc-400 hover:text-white transition"
-                >
-                  {copied ? <Check size={12} /> : <Copy size={12} />}
-                </button>
-                <button className="p-1 text-zinc-400 hover:text-white transition">
-                  <ExternalLink size={12} />
-                </button>
-              </div>
-            </div>
-          )}
-          {deployLogs.map((log, i) => (
-            <div key={i} className="text-zinc-600 text-xs">
-              {log}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {deployStatus === 'error' && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-red-400">
-            <XCircle size={14} />
-            <span>Deployment failed</span>
-          </div>
-          {deployError && (
-            <div className="bg-red-950/30 border border-red-900/50 rounded-lg p-3 text-red-300 text-xs">
-              {deployError}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Step({ label, done }: { label: string; done: boolean }) {
-  return (
-    <div className="flex items-center gap-2">
-      {done ? (
-        <CheckCircle2 size={12} className="text-green-400" />
-      ) : (
-        <div className="w-3 h-3 rounded-full border border-zinc-700" />
-      )}
-      <span className={done ? 'text-green-400' : 'text-zinc-600'}>{label}</span>
-    </div>
-  );
-}
-
-function ProblemsPanel() {
   const projectFiles = useProjectStore((s) => s.project.files);
 
-  // Simple linting: check for common issues
-  const problems: { path: string; line: number; message: string; severity: 'warning' | 'error' }[] = [];
+  // Auto-scroll
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [lines]);
 
-  for (const [path, file] of Object.entries(projectFiles)) {
-    const lines = file.content.split('\n');
-    lines.forEach((line, i) => {
-      // Check for TODO comments
-      if (line.includes('TODO') || line.includes('FIXME')) {
-        problems.push({
-          path,
-          line: i + 1,
-          message: `Unresolved ${line.includes('FIXME') ? 'FIXME' : 'TODO'} found`,
-          severity: 'warning',
-        });
-      }
-      // Check for console.log in TSX files
-      if (path.endsWith('.tsx') && line.includes('console.log')) {
-        problems.push({
-          path,
-          line: i + 1,
-          message: 'Unexpected console statement',
-          severity: 'warning',
-        });
-      }
-    });
-  }
+  const addLines = useCallback((type: TerminalLine['type'], content: string | string[]) => {
+    const contentArr = Array.isArray(content) ? content : [content];
+    const newLines: TerminalLine[] = contentArr.map((text, i) => ({
+      id: lineIdRef.current++,
+      type,
+      content: text,
+    }));
+    setLines((prev) => [...prev, ...newLines]);
+  }, []);
 
-  if (problems.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <CheckCircle2 size={24} className="text-green-400 mx-auto mb-2" />
-        <p className="text-xs text-zinc-500">No problems detected</p>
-      </div>
-    );
-  }
+  const handleCommand = useCallback(
+    (cmd: string) => {
+      // Add the input line
+      addLines('input', `${WORKING_DIR} $ ${cmd}`);
+
+      // Add to history
+      setCommandHistory((prev) => [...prev, cmd]);
+      setHistoryIndex(-1);
+
+      if (!cmd.trim()) {
+        addLines('output', '');
+        return;
+      }
+
+      // Build file map for commands
+      const fileMap: Record<string, string> = {};
+      for (const [path, file] of Object.entries(projectFiles)) {
+        fileMap[path] = file.content;
+      }
+
+      const output = executeCommand(cmd, fileMap);
+
+      if (output.length === 1 && output[0] === '__CLEAR__') {
+        setLines([]);
+        return;
+      }
+
+      // Determine if there are errors
+      const hasError = output.some((l) => l.includes('No such file') || l.includes('not found') || l.includes('Error'));
+
+      for (const line of output) {
+        addLines(hasError ? 'error' : 'output', line);
+      }
+
+      addLines('output', '');
+    },
+    [addLines, projectFiles]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleCommand(input);
+        setInput('');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (commandHistory.length === 0) return;
+        const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        setInput(commandHistory[newIndex]);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex === -1) return;
+        const newIndex = historyIndex + 1;
+        if (newIndex >= commandHistory.length) {
+          setHistoryIndex(-1);
+          setInput('');
+        } else {
+          setHistoryIndex(newIndex);
+          setInput(commandHistory[newIndex]);
+        }
+      } else if (e.key === 'l' && e.ctrlKey) {
+        e.preventDefault();
+        setLines([]);
+      }
+    },
+    [input, handleCommand, commandHistory, historyIndex]
+  );
+
+  const getLineColor = (type: TerminalLine['type']) => {
+    switch (type) {
+      case 'input': return 'text-green-400';
+      case 'output': return 'text-zinc-300';
+      case 'error': return 'text-red-400';
+      case 'system': return 'text-zinc-500';
+      default: return 'text-zinc-300';
+    }
+  };
 
   return (
-    <div className="space-y-1">
-      {problems.map((p, i) => (
-        <div key={i} className="flex items-start gap-2 py-1 px-2 hover:bg-zinc-900 rounded">
-          <span className={p.severity === 'warning' ? 'text-yellow-400' : 'text-red-400'}>
-            {p.severity === 'warning' ? '⚠' : '✕'}
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-zinc-300 truncate">{p.message}</p>
-            <p className="text-[10px] text-zinc-600">
-              {p.path}:{p.line}
-            </p>
+    <div className="h-full flex flex-col bg-zinc-950 font-mono text-xs">
+      {/* Terminal output */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5 custom-scrollbar"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {lines.map((line) => (
+          <div key={line.id} className={`${getLineColor(line.type)} whitespace-pre-wrap break-all leading-5`}>
+            {line.type === 'input' ? (
+              <span>
+                <span className="text-violet-400">omni</span>
+                <span className="text-zinc-500">@</span>
+                <span className="text-blue-400">builder</span>
+                <span className="text-zinc-500">:</span>
+                <span className="text-cyan-400">~</span>
+                <span className="text-zinc-500">$ </span>
+                <span className="text-zinc-200">{line.content.split('$ ').pop()}</span>
+              </span>
+            ) : (
+              line.content
+            )}
           </div>
+        ))}
+
+        {/* Current input line */}
+        <div className="flex items-center text-zinc-200">
+          <span className="text-violet-400">omni</span>
+          <span className="text-zinc-500">@</span>
+          <span className="text-blue-400">builder</span>
+          <span className="text-zinc-500">:</span>
+          <span className="text-cyan-400">~</span>
+          <span className="text-zinc-500">$ </span>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 bg-transparent outline-none text-zinc-200 caret-violet-400"
+            autoFocus
+            spellCheck={false}
+          />
         </div>
-      ))}
+      </div>
     </div>
   );
 }
