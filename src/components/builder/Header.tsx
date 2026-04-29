@@ -20,6 +20,7 @@ import {
   Settings,
   FileCode,
   KeyRound,
+  Database,
 } from 'lucide-react';
 import SettingsDialog from './SettingsDialog';
 
@@ -28,8 +29,8 @@ interface HeaderProps {
   sidebarOpen: boolean;
   onToggleTerminal: () => void;
   terminalOpen: boolean;
-  activeView: 'chat' | 'preview';
-  onViewChange: (view: 'chat' | 'preview') => void;
+  activeView: 'chat' | 'preview' | 'database';
+  onViewChange: (view: 'chat' | 'preview' | 'database') => void;
   onOpenSettings?: () => void;
 }
 
@@ -224,6 +225,15 @@ export default function Header({
             >
               <Eye size={12} />
               <span className="hidden sm:inline">Preview</span>
+            </button>
+            <button
+              onClick={() => onViewChange('database')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs transition ${
+                activeView === 'database' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Database size={12} />
+              <span className="hidden sm:inline">DB</span>
             </button>
           </div>
 

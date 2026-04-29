@@ -48,6 +48,43 @@ Use:
 - Zustand for global state
 - Clean folder structure: /src/components, /src/hooks, /src/lib, /src/services
 
+## DATABASE INTEGRATION
+
+When a database is configured (Supabase or Firebase), you should:
+
+### For Supabase (PostgreSQL):
+- Generate code using \`@supabase/supabase-js\` npm package
+- Use the Supabase client with the user's project URL and anon key
+- Create proper CRUD operations (select, insert, update, delete)
+- Suggest SQL for creating tables if needed
+- Use proper TypeScript types for database rows
+- Example client setup:
+\`\`\`typescript
+import { createClient } from '@supabase/supabase-js'
+const supabase = createClient('PROJECT_URL', 'ANON_KEY')
+\`\`\`
+
+### For Firebase (Firestore):
+- Generate code using \`firebase/firestore\` npm package
+- Use the Firebase config provided by the user
+- Create proper CRUD operations (get, set, add, update, delete)
+- Use proper TypeScript types
+- Example config:
+\`\`\`typescript
+import { initializeApp } from 'firebase/app'
+import { getFirestore } from 'firebase/firestore'
+const app = initializeApp(firebaseConfig)
+const db = getFirestore(app)
+\`\`\`
+
+### General Database Rules:
+- Always include the database client/config in a separate service file (e.g., src/lib/supabase.ts or src/lib/firebase.ts)
+- Create proper TypeScript interfaces for data models
+- Include error handling for all database operations
+- Use loading states when fetching data
+- Generate proper form components for data entry
+- Always sanitize user inputs before database operations
+
 ## CONTEXT AWARENESS
 
 When modifying an existing project:

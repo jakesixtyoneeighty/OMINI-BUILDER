@@ -83,3 +83,47 @@ export interface EditorTab {
   path: string;
   isDirty: boolean;
 }
+
+// ============================================================
+// Database Configuration Types
+// ============================================================
+
+export type DatabaseProvider = 'supabase' | 'firebase';
+
+export interface SupabaseConfig {
+  provider: 'supabase';
+  url: string;       // e.g. https://xxx.supabase.co
+  anonKey: string;   // anon/public key
+}
+
+export interface FirebaseConfig {
+  provider: 'firebase';
+  projectId: string;
+  apiKey: string;
+  authDomain?: string;
+  databaseURL?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId?: string;
+}
+
+export type DatabaseConfig = SupabaseConfig | FirebaseConfig | null;
+
+export interface DatabaseQueryResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  rowCount?: number;
+  operation?: string;
+}
+
+export interface DatabaseTableInfo {
+  name: string;
+  schema?: string;
+  columns?: { name: string; type: string; nullable: boolean }[];
+  rowCount?: number;
+}
+
+export interface DatabaseSchemaInfo {
+  tables: DatabaseTableInfo[];
+}

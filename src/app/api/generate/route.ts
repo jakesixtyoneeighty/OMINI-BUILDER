@@ -5,7 +5,8 @@ import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SYSTEM_PROMPT } from '@/services/system-prompt';
-import type { ProjectFile } from '@/types';
+import { getDatabaseContextString } from '@/services/database-service';
+import type { ProjectFile, DatabaseConfig } from '@/types';
 
 export const maxDuration = 120;
 
@@ -20,6 +21,7 @@ interface GenerateRequest {
     apiKey: string;
     model: string;
   };
+  databaseConfig?: DatabaseConfig | null;
 }
 
 function buildProjectContext(files: Record<string, ProjectFile>): string {
@@ -58,7 +60,8 @@ export async function POST(request: NextRequest) {
 
     const { provider, apiKey, model } = providerConfig;
     const projectContext = buildProjectContext(files);
-    const systemMessage = SYSTEM_PROMPT + (projectContext ? projectContext : '');
+    const databaseContext = body.databaseConfig ? getDatabaseContextString(body.databaseConfig) : '';
+    const systemMessage = SYSTEM_PROMPT + projectContext + databaseContext;
 
     const messages = [
       { role: 'system', content: systemMessage },
