@@ -5,7 +5,9 @@
 
 import { useCallback, useRef } from 'react';
 import { useChatStore, useProjectStore, useAIProviderStore } from '@/store';
+import { useDatabaseStore } from '@/store/database';
 import { parseCodeFromResponse } from '@/services/code-parser';
+import { getDatabaseContextString } from '@/services/database-service';
 
 export function useCodeGeneration() {
   const abortRef = useRef<AbortController | null>(null);
@@ -18,6 +20,7 @@ export function useCodeGeneration() {
   const projectFiles = useProjectStore((s) => s.project.files);
   const setProjectName = useProjectStore((s) => s.setProjectName);
   const providerConfig = useAIProviderStore((s) => s.config);
+  const dbConfig = useDatabaseStore((s) => s.getActiveConfig());
 
   const generate = useCallback(
     async (prompt: string) => {
@@ -59,6 +62,7 @@ export function useCodeGeneration() {
               apiKey: providerConfig.apiKey,
               model: providerConfig.model,
             },
+            databaseConfig: dbConfig,
           }),
           signal: abortRef.current.signal,
         });
@@ -141,7 +145,7 @@ export function useCodeGeneration() {
         abortRef.current = null;
       }
     },
-    [addMessage, updateMessage, setIsGenerating, messages, projectFiles, applyArtifacts, setProjectName, providerConfig]
+    [addMessage, updateMessage, setIsGenerating, messages, projectFiles, applyArtifacts, setProjectName, providerConfig, dbConfig]
   );
 
   const stopGeneration = useCallback(() => {
