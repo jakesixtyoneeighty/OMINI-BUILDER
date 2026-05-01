@@ -1,21 +1,29 @@
 import { useStore } from '@nanostores/react';
 import { memo, useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
+import {
+  SandpackProvider,
+  SandpackPreview as SPPreview,
+  getSandpackCssText,
+} from '@codesandbox/sandpack-react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
-import { SandpackPreview } from './SandpackPreview';
+import { SandpackPreview, detectProjectType, type ProjectType } from './SandpackPreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
 const PREVIEW_OPTIONS: { mode: PreviewMode; label: string; icon: string; desc: string }[] = [
   { mode: 'webcontainer', label: 'WebContainer', icon: 'i-ph:cube-duotone', desc: 'Full preview with server, terminal, and hot reload' },
-  { mode: 'sandpack', label: 'Sandpack', icon: 'i-ph:browser-duotone', desc: 'Fast in-browser HTML/CSS/JS preview' },
-  { mode: 'iframe', label: 'Iframe SrcDoc', icon: 'i-ph:code-duotone', desc: 'Lightweight srcdoc iframe, no external services' },
+  { mode: 'sandpack', label: 'Sandpack', icon: 'i-ph:browser-duotone', desc: 'Fast in-browser preview with React, Vue, HTML support' },
+  { mode: 'iframe', label: 'Iframe SrcDoc', icon: 'i-ph:code-duotone', desc: 'Lightweight iframe preview with React/JSX support' },
   { mode: 'newtab', label: 'New Tab', icon: 'i-ph:arrow-square-out-duotone', desc: 'Open preview in a new browser tab' },
 ];
 
-function buildPreviewHtml(files: FileMap): string {
+/**
+ * Build static HTML for plain (non-React) iframe rendering
+ */
+function buildStaticHtml(files: FileMap): string {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
   if (entries.length === 0) return '';
 
@@ -45,17 +53,83 @@ function buildPreviewHtml(files: FileMap): string {
   return html;
 }
 
+/**
+ * Map workspace files to Sandpack format
+ */
+function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
+  const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
+  const sandpackFiles: Record<string, { code: string }> = {};
+
+  for (const [path, file] of entries) {
+    if (path.includes('node_modules') || path.endsWith('.lock')) continue;
+    if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.ico')) continue;
+    const spath = path.startsWith('/') ? path : `/${path}`;
+    sandpackFiles[spath] = { code: file.content };
+  }
+
+  if (projectType === 'vanilla') {
+    const hasIndexHtml = entries.some(([p]) => p.endsWith('/index.html') || p.endsWith('.html'));
+    if (!hasIndexHtml) {
+      const cssFiles = entries.filter(([p]) => p.endsWith('.css'));
+      const jsFiles = entries.filter(([p]) => p.endsWith('.js') || p.endsWith('.mjs'));
+      const inlineCSS = cssFiles.map(([, f]) => f.content).join('\n');
+      const inlineJS = jsFiles.map(([, f]) => f.content).join('\n');
+      sandpackFiles['/index.html'] = {
+        code: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title><style>${inlineCSS}</style></head><body><div id="app"></div><script>${inlineJS}</script></body></html>`,
+      };
+    }
+  }
+
+  return sandpackFiles;
+}
+
+function getTemplateConfig(projectType: ProjectType, files: FileMap) {
+  const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
+
+  switch (projectType) {
+    case 'react-ts':
+    case 'react': {
+      const indexJs = entries.find(([p]) =>
+        p.endsWith('/index.js') || p.endsWith('/index.tsx') || p.endsWith('/index.jsx')
+      );
+      const mainJs = entries.find(([p]) =>
+        p.endsWith('/main.js') || p.endsWith('/main.tsx') || p.endsWith('/main.jsx')
+      );
+      const entry = indexJs ? `/${indexJs[0].split('/').pop()}` : mainJs ? `/${mainJs[0].split('/').pop()}` : '/index.js';
+      return { template: 'react' as const, customSetup: { entry, environment: 'create-react-app' as const } };
+    }
+    case 'vue':
+      return { template: 'vue' as const, customSetup: { entry: '/src/main.js' } };
+    case 'vanilla':
+    default:
+      return { template: 'vanilla' as const, customSetup: { entry: '/index.js', environment: 'parcel' as const } };
+  }
+}
+
+const SANDBOX_STYLES = `
+.sp-wrapper { width: 100% !important; height: 100% !important; border: none !important; background: white !important; }
+.sp-preview { height: 100% !important; }
+.sp-preview-iframe { height: 100% !important; }
+.sp-layout { border: none !important; height: 100% !important; background: transparent !important; }
+.sp-preview-container { height: 100% !important; }
+`;
+
+/**
+ * IframePreview — supports both React (via Sandpack) and static HTML (via srcdoc)
+ */
 function IframePreview() {
   const files = useStore(workbenchStore.files);
+  const projectType = useMemo(() => detectProjectType(files), [files]);
+  const isReactProject = projectType === 'react' || projectType === 'react-ts' || projectType === 'vue';
+
+  const staticHtml = useMemo(() => buildStaticHtml(files), [files]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [srcdoc, setSrcdoc] = useState('');
 
-  const html = useMemo(() => buildPreviewHtml(files), [files]);
-
   useEffect(() => {
-    const t = setTimeout(() => setSrcdoc(html), 60);
+    const t = setTimeout(() => setSrcdoc(staticHtml), 60);
     return () => clearTimeout(t);
-  }, [html]);
+  }, [staticHtml]);
 
   const fileCount = Object.values(files).filter((f): f is WFile => f?.type === 'file' && !f.isBinary).length;
 
@@ -71,23 +145,73 @@ function IframePreview() {
     );
   }
 
+  // For React/Vue projects, use Sandpack inside the iframe area
+  if (isReactProject) {
+    const sandpackFiles = useMemo(() => mapToSandpackFiles(files, projectType), [files, projectType]);
+    const { template, customSetup } = useMemo(() => getTemplateConfig(projectType, files), [files, projectType]);
+
+    return (
+      <div style={{ width: '100%', height: '100%' }}>
+        <style dangerouslySetInnerHTML={{ __html: SANDBOX_STYLES }} />
+        <style dangerouslySetInnerHTML={{ __html: getSandpackCssText() }} />
+        <SandpackProvider
+          key={template + '-' + fileCount}
+          template={template}
+          files={sandpackFiles}
+          customSetup={customSetup}
+          theme="dark"
+          options={{
+            showNavigator: false,
+            showTabs: false,
+            showLineNumbers: false,
+            showInlineErrors: true,
+            editorHeight: '100%',
+            recompileMode: 'delayed',
+            recompileDelay: 500,
+            autoReload: true,
+          }}
+        >
+          <SPPreview
+            showNavigator={false}
+            showRefreshButton={false}
+            showOpenInCodeSandbox={false}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+          />
+        </SandpackProvider>
+      </div>
+    );
+  }
+
+  // For plain HTML/CSS/JS, use srcdoc
   return <iframe ref={iframeRef} className="w-full h-full border-0 bg-white" srcDoc={srcdoc} title="Iframe Preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups" />;
 }
 
+/**
+ * NewTabPreview — opens preview in a new tab
+ */
 function NewTabPreview() {
   const files = useStore(workbenchStore.files);
-  const [opened, setOpened] = useState(false);
+  const projectType = useMemo(() => detectProjectType(files), [files]);
+  const isReactProject = projectType === 'react' || projectType === 'react-ts' || projectType === 'vue';
 
-  const html = useMemo(() => buildPreviewHtml(files), [files]);
+  const staticHtml = useMemo(() => buildStaticHtml(files), [files]);
+  const [opened, setOpened] = useState(false);
 
   const fileCount = Object.values(files).filter((f): f is WFile => f?.type === 'file' && !f.isBinary).length;
 
   const openInNewTab = () => {
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    if (isReactProject) {
+      // For React projects, open a blob URL with Sandpack's standalone runtime
+      // We'll use the static HTML as a fallback with a note
+      const blob = new Blob([staticHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } else {
+      const blob = new Blob([staticHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
     setOpened(true);
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
   };
 
   if (fileCount === 0) {
@@ -111,7 +235,8 @@ function NewTabPreview() {
         <div>
           <p className="text-sm font-semibold text-bolt-elements-textPrimary">New Tab Preview</p>
           <p className="text-xs text-bolt-elements-textTertiary mt-1">
-            {fileCount} files ready to preview
+            {fileCount} files
+            {isReactProject ? ' (React — best viewed with WebContainer or Sandpack)' : ''}
           </p>
         </div>
         <button
@@ -199,7 +324,7 @@ export const Preview = memo(function Preview() {
     );
   }
 
-  // Sandpack mode
+  // Sandpack mode — full Sandpack with React/Vue/HTML support
   if (previewMode === 'sandpack') {
     return (
       <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
@@ -211,7 +336,7 @@ export const Preview = memo(function Preview() {
             Sandpack
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Inline HTML/CSS/JS Preview
+            React, Vue, HTML Preview
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content>
@@ -221,7 +346,7 @@ export const Preview = memo(function Preview() {
     );
   }
 
-  // Iframe srcdoc mode
+  // Iframe srcdoc mode — uses Sandpack for React, srcdoc for static
   if (previewMode === 'iframe') {
     return (
       <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
@@ -233,7 +358,7 @@ export const Preview = memo(function Preview() {
             Iframe SrcDoc
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Lightweight iframe preview
+            Iframe preview (React supported)
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content>
