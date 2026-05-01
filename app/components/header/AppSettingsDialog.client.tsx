@@ -8,10 +8,11 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
+  const settings = project?.settings;
   const [tab, setTab] = useState<'general' | 'preview' | 'env' | 'versions'>('general');
   const [snapshots, setSnapshots] = useState<{ id: number; name: string; timestamp: string }[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [envVars, setEnvVars] = useState<EnvVar[]>(project.settings.envVars || []);
+  const [envVars, setEnvVars] = useState<EnvVar[]>(settings?.envVars || []);
   const [newEnvKey, setNewEnvKey] = useState('');
   const [newEnvValue, setNewEnvValue] = useState('');
 
@@ -114,7 +115,7 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                 className="w-full p-3 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg" 
               />
               <textarea 
-                value={project?.settings.description || ''} 
+                value={settings?.description || ''} 
                 onChange={(e) => updateActiveProjectSettings({ description: e.target.value })}
                 placeholder="Description" 
                 className="w-full p-3 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg h-32" 
@@ -123,8 +124,8 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                 <label className="block text-sm font-medium text-bolt-elements-textSecondary mb-2">App Logo</label>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-bolt-elements-background-depth-1 rounded-lg flex items-center justify-center">
-                    {project.settings.logo ? (
-                      <img src={project.settings.logo} alt="Logo" className="w-full h-full object-cover rounded-lg" />
+                    {settings?.logo ? (
+                      <img src={settings.logo} alt="Logo" className="w-full h-full object-cover rounded-lg" />
                     ) : (
                       <div className="i-ph:image text-2xl text-bolt-elements-textTertiary" />
                     )}
