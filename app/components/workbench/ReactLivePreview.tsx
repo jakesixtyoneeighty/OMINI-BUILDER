@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { LiveProvider, LivePreview as RLivePreview, LiveError } from 'react-live';
 import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
