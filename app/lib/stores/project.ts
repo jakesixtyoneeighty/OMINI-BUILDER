@@ -7,7 +7,7 @@ export interface EnvVar {
   value: string;
 }
 
-export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab';
+export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab' | 'reactlive' | 'playcode';
 
 export interface ProjectSettings {
   name: string;

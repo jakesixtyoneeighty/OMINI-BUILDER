@@ -10,6 +10,8 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 import { SandpackPreview, detectProjectType, type ProjectType } from './SandpackPreview';
+import { ReactLivePreview } from './ReactLivePreview';
+import { PlayCodePreview } from './PlayCodePreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
@@ -17,6 +19,8 @@ const PREVIEW_OPTIONS: { mode: PreviewMode; label: string; icon: string; desc: s
   { mode: 'webcontainer', label: 'WebContainer', icon: 'i-ph:cube-duotone', desc: 'Full preview with server, terminal, and hot reload' },
   { mode: 'sandpack', label: 'Sandpack', icon: 'i-ph:browser-duotone', desc: 'Fast in-browser preview with React, Vue, HTML support' },
   { mode: 'iframe', label: 'Iframe SrcDoc', icon: 'i-ph:code-duotone', desc: 'Lightweight iframe preview with React/JSX support' },
+  { mode: 'reactlive', label: 'React Live', icon: 'i-ph:atom-duotone', desc: 'Live React editing with instant preview powered by react-live' },
+  { mode: 'playcode', label: 'PlayCode', icon: 'i-ph:code-block-duotone', desc: 'CodeSandbox API embed for full build and preview' },
   { mode: 'newtab', label: 'New Tab', icon: 'i-ph:arrow-square-out-duotone', desc: 'Open preview in a new browser tab' },
 ];
 
@@ -363,6 +367,49 @@ export const Preview = memo(function Preview() {
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content>
           <IframePreview />
+        </div>
+      </div>
+    );
+  }
+
+  // React Live mode
+  if (previewMode === 'reactlive') {
+    return (
+      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 text-xs font-medium">
+            <div className="i-ph:atom-duotone text-sm" />
+            React Live
+          </div>
+          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+            Live React component preview
+          </div>
+        </div>
+        <div className="flex-1 relative overflow-hidden" data-preview-content>
+          <ReactLivePreview />
+        </div>
+      </div>
+    );
+  }
+
+  // PlayCode mode
+  if (previewMode === 'playcode') {
+    return (
+      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium">
+            <div className="i-ph:code-block-duotone text-sm" />
+            PlayCode
+          </div>
+          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+            CodeSandbox API embed
+          </div>
+        </div>
+        <div className="flex-1 relative overflow-hidden" data-preview-content>
+          <PlayCodePreview />
         </div>
       </div>
     );

@@ -277,8 +277,10 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 <div className="grid grid-cols-1 gap-3">
                   {([
                     { mode: 'webcontainer' as const, icon: 'i-ph:cube-duotone', title: 'WebContainer', color: 'blue', desc: 'Full preview with terminal and real server. Requires COOP/COEP headers on your hosting.' },
-                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', color: 'amber', desc: 'Fast in-browser HTML/CSS/JS preview. No special headers needed. Works anywhere.' },
+                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', color: 'amber', desc: 'Fast in-browser preview with React, Vue, HTML support. Works anywhere.' },
                     { mode: 'iframe' as const, icon: 'i-ph:code-duotone', title: 'Iframe SrcDoc', color: 'green', desc: 'Lightweight srcdoc iframe that renders your HTML directly. Minimal overhead.' },
+                    { mode: 'reactlive' as const, icon: 'i-ph:atom-duotone', title: 'React Live', color: 'cyan', desc: 'Live React component preview with instant rendering powered by react-live.' },
+                    { mode: 'playcode' as const, icon: 'i-ph:code-block-duotone', title: 'PlayCode', color: 'orange', desc: 'CodeSandbox API embed for full build support. Best for complex React apps.' },
                     { mode: 'newtab' as const, icon: 'i-ph:arrow-square-out-duotone', title: 'New Tab', color: 'pink', desc: 'Opens your project in a new browser tab as a standalone page.' },
                   ]).map(option => {
                     const isActive = currentPreviewMode === option.mode;
@@ -286,20 +288,26 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       blue: 'border-blue-500 bg-blue-500/8 ring-1 ring-blue-500/40',
                       amber: 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/40',
                       green: 'border-green-500 bg-green-500/8 ring-1 ring-green-500/40',
+                      cyan: 'border-cyan-500 bg-cyan-500/8 ring-1 ring-cyan-500/40',
+                      orange: 'border-orange-500 bg-orange-500/8 ring-1 ring-orange-500/40',
                       pink: 'border-pink-500 bg-pink-500/8 ring-1 ring-pink-500/40',
                     };
                     const iconBgActive: Record<string, string> = {
-                      blue: 'bg-blue-500/20', amber: 'bg-amber-500/20', green: 'bg-green-500/20', pink: 'bg-pink-500/20',
+                      blue: 'bg-blue-500/20', amber: 'bg-amber-500/20', green: 'bg-green-500/20',
+                      cyan: 'bg-cyan-500/20', orange: 'bg-orange-500/20', pink: 'bg-pink-500/20',
                     };
                     const iconColorActive: Record<string, string> = {
-                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', pink: 'text-pink-400',
+                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400',
+                      cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400',
                     };
                     const badgeColor: Record<string, string> = {
                       blue: 'bg-blue-500/20 text-blue-400', amber: 'bg-amber-500/20 text-amber-400',
-                      green: 'bg-green-500/20 text-green-400', pink: 'bg-pink-500/20 text-pink-400',
+                      green: 'bg-green-500/20 text-green-400', cyan: 'bg-cyan-500/20 text-cyan-400',
+                      orange: 'bg-orange-500/20 text-orange-400', pink: 'bg-pink-500/20 text-pink-400',
                     };
                     const checkColor: Record<string, string> = {
-                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', pink: 'text-pink-400',
+                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400',
+                      cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400',
                     };
 
                     return (
