@@ -144,10 +144,21 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
     await workbenchStore.clearWorkspace();
 
+    // Build directory tree first to create all folders
+    const dirs = new Set<string>();
+    for (const f of result.files) {
+      const parts = f.path.split('/');
+      for (let i = 1; i < parts.length; i++) {
+        dirs.add(parts.slice(0, i).join('/'));
+      }
+    }
+    for (const dir of dirs) {
+      try { await wc.fs.mkdir(dir, { recursive: true }); } catch {}
+    }
+
+    // Write all files to WebContainer and update file store
     for (const f of result.files) {
       try {
-        const dir = f.path.split('/').slice(0, -1).join('/');
-        if (dir) await wc.fs.mkdir(dir, { recursive: true });
         await wc.fs.writeFile(f.path, f.content);
         workbenchStore.files.setKey(f.path, { type: 'file', content: f.content, isBinary: false });
       } catch (err) {
@@ -155,15 +166,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       }
     }
 
+    // Set documents so the editor shows the files
+    const currentFiles = workbenchStore.files.get();
+    workbenchStore.setDocuments(currentFiles);
     workbenchStore.showWorkbench.set(true);
     runAnimation();
 
-    append({ 
-      role: 'user', 
-      content: `I have imported a project. Please analyze the files and provide the necessary shell commands to install dependencies and start the development server.` 
-    });
-    
-    toast.success(`Imported ${result.files.length} files. AI is preparing the environment...`);
+    toast.success(`${result.files.length} files imported and ready in the editor!`);
   };
 
   return (

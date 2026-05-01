@@ -1,25 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="95" height="83" fill="none">
   <defs>
     <linearGradient id="g" x1="47.5" y1="0" x2="47.5" y2="82" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6C5CE7"/>
-      <stop offset="1" stop-color="#A855F7"/>
+      <stop stop-color="#7C3AED"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#A78BFA"/>
     </linearGradient>
-    <filter id="a" width="92.549" height="82.409" x="1.226" y="0" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
-      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-      <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-      <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
-      <feOffset/>
-      <feGaussianBlur stdDeviation="1.717"/>
-      <feComposite in2="hardAlpha" k2="-1" k3="1" operator="arithmetic"/>
-      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.65 0"/>
-      <feBlend in2="shape" result="effect1_innerShadow"/>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#7C3AED" flood-opacity="0.3"/>
     </filter>
   </defs>
-  <g filter="url(#a)">
-    <path fill="url(#g)" d="M66.657 0H28.343a7.948 7.948 0 0 0-6.887 3.979L2.288 37.235a7.948 7.948 0 0 0 0 7.938L21.456 78.43a7.948 7.948 0 0 0 6.887 3.979h38.314a7.948 7.948 0 0 0 6.886-3.98l19.17-33.256a7.948 7.948 0 0 0 0-7.938L73.542 3.98A7.948 7.948 0 0 0 66.657 0Z"/>
-  </g>
-  <g filter="url(#a)">
-    <path fill="#fff" d="M47.5 18L32 25v16.5L47.5 49 63 41.5V25L47.5 18Zm0 5.5L57.5 28v9.5L47.5 44 37.5 37.5V28l10-4.5Z"/>
-    <circle cx="47.5" cy="33" r="5" fill="#fff"/>
+  <!-- Hexagon background -->
+  <path fill="url(#g)" d="M66.657 0H28.343a7.948 7.948 0 0 0-6.887 3.979L2.288 37.235a7.948 7.948 0 0 0 0 7.938L21.456 78.43a7.948 7.948 0 0 0 6.887 3.979h38.314a7.948 7.948 0 0 0 6.886-3.98l19.17-33.256a7.948 7.948 0 0 0 0-7.938L73.542 3.98A7.948 7.948 0 0 0 66.657 0Z" filter="url(#shadow)"/>
+  <!-- Omni-Builder mark -->
+  <g>
+    <path d="M47.5 16L36 25v16.5L47.5 50 59 41.5V25L47.5 16Z" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+    <path d="M41 28.5L36 25l11.5-9L59 25l-5 3.5" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linejoin="round"/>
+    <circle cx="47.5" cy="33" r="4" fill="rgba(255,255,255,0.95)"/>
+    <path d="M47.5 37v5M47.5 42l-4 4M47.5 42l4 4" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round"/>
   </g>
 </svg>
