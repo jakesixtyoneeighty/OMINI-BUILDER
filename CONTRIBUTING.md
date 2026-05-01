@@ -1,110 +1,181 @@
-[![Bolt Open Source Codebase](./public/social_preview_index.jpg)](https://bolt.new)
+<div align="center">
 
-> Welcome to the **Bolt** open-source codebase! This repo contains a simple example app using the core components from bolt.new to help you get started building **AI-powered software development tools** powered by StackBlitz’s **WebContainer API**.
+<img src="public/logo.svg" alt="Omni-Builder Logo" width="60" height="60" />
 
-### Why Build with Bolt + WebContainer API
+# Guia de Contribuição — Omni-Builder
 
-By building with the Bolt + WebContainer API you can create browser-based applications that let users **prompt, run, edit, and deploy** full-stack web apps directly in the browser, without the need for virtual machines. With WebContainer API, you can build apps that give AI direct access and full control over a **Node.js server**, **filesystem**, **package manager** and **dev terminal** inside your users browser tab. This powerful combination allows you to create a new class of development tools that support all major JavaScript libraries and Node packages right out of the box, all without remote environments or local installs.
+**Desenvolvido por [Pedro Berbis Freire](https://github.com/Pedro21062014)** com assistência de IA da [Z.ai](https://z.ai)
 
-### What’s the Difference Between Bolt (This Repo) and [Bolt.new](https://bolt.new)?
+</div>
 
-- **Bolt.new**: This is the **commercial product** from StackBlitz—a hosted, browser-based AI development tool that enables users to prompt, run, edit, and deploy full-stack web applications directly in the browser. Built on top of the [Bolt open-source repo](https://github.com/stackblitz/bolt.new) and powered by the StackBlitz **WebContainer API**.
+---
 
-- **Bolt (This Repo)**: This open-source repository provides the core components used to make **Bolt.new**. This repo contains the UI interface for Bolt as well as the server components, built using [Remix Run](https://remix.run/). By leveraging this repo and StackBlitz’s **WebContainer API**, you can create your own AI-powered development tools and full-stack applications that run entirely in the browser.
+## Bem-vindo ao Omni-Builder! 🎉
 
-# Get Started Building with Bolt
+Obrigado pelo seu interesse em contribuir com o **Omni-Builder**! Este guia contém tudo o que você precisa saber para começar a contribuir com o projeto.
 
-Bolt combines the capabilities of AI with sandboxed development environments to create a collaborative experience where code can be developed by the assistant and the programmer together. Bolt combines [WebContainer API](https://webcontainers.io/api) with [Claude Sonnet 3.5](https://www.anthropic.com/news/claude-3-5-sonnet) using [Remix](https://remix.run/) and the [AI SDK](https://sdk.vercel.ai/).
+## Visão Geral
 
-### WebContainer API
+O Omni-Builder é um construtor de aplicações web com IA, baseado no código open-source do Bolt.new e significativamente expandido com novas funcionalidades. Utilizamos [WebContainers](https://webcontainers.io/) da StackBlitz, [Sandpack](https://sandpack.codesandbox.io/) da CodeSandbox, e [Remix](https://remix.run/) para criar uma experiência de desenvolvimento completa no navegador.
 
-Bolt uses [WebContainers](https://webcontainers.io/) to run generated code in the browser. WebContainers provide Bolt with a full-stack sandbox environment using [WebContainer API](https://webcontainers.io/api). WebContainers run full-stack applications directly in the browser without the cost and security concerns of cloud hosted AI agents. WebContainers are interactive and editable, and enables Bolt's AI to run code and understand any changes from the user.
+### Por que contribuir?
 
-The [WebContainer API](https://webcontainers.io) is free for personal and open source usage. If you're building an application for commercial usage, you can learn more about our [WebContainer API commercial usage pricing here](https://stackblitz.com/pricing#webcontainer-api).
+- Construa ferramentas de **desenvolvimento com IA** de ponta
+- Trabalhe com tecnologias como WebContainers, Remix, e AI SDK
+- Faça parte de uma comunidade open-source em crescimento
+- Aprenda e contribua com o ecossistema JavaScript moderno
 
-### Remix App
+## Como Contribuir
 
-Bolt is built with [Remix](https://remix.run/) and
-deployed using [CloudFlare Pages](https://pages.cloudflare.com/) and
-[CloudFlare Workers](https://workers.cloudflare.com/).
-
-### AI SDK Integration
-
-Bolt uses the [AI SDK](https://github.com/vercel/ai) to integrate with AI
-models. At this time, Bolt supports using Anthropic's Claude Sonnet 3.5.
-You can get an API key from the [Anthropic API Console](https://console.anthropic.com/) to use with Bolt.
-Take a look at how [Bolt uses the AI SDK](https://github.com/stackblitz/bolt.new/tree/main/app/lib/.server/llm)
-
-## Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- Node.js (v20.15.1)
-- pnpm (v9.4.0)
-
-## Setup
-
-1. Clone the repository (if you haven't already):
+### 1. Faça um Fork do Repositório
 
 ```bash
-git clone https://github.com/stackblitz/bolt.new.git
+git clone https://github.com/Pedro21062014/Opensouce-App-builder.-Omini-builder..git
+cd Opensouce-App-builder.-Omini-builder.
+git checkout -b minha-feature
 ```
 
-2. Install dependencies:
+### 2. Instale as Dependências
 
 ```bash
 pnpm install
 ```
 
-3. Create a `.env.local` file in the root directory and add your Anthropic API key:
+### 3. Configure o Ambiente
+
+Crie um arquivo `.env.local` na raiz:
 
 ```
-ANTHROPIC_API_KEY=XXX
+ANTHROPIC_API_KEY=sua_chave_aqui
 ```
 
-Optionally, you can set the debug level:
-
-```
-VITE_LOG_LEVEL=debug
-```
-
-**Important**: Never commit your `.env.local` file to version control. It's already included in .gitignore.
-
-## Available Scripts
-
-- `pnpm run dev`: Starts the development server.
-- `pnpm run build`: Builds the project.
-- `pnpm run start`: Runs the built application locally using Wrangler Pages. This script uses `bindings.sh` to set up necessary bindings so you don't have to duplicate environment variables.
-- `pnpm run preview`: Builds the project and then starts it locally, useful for testing the production build. Note, HTTP streaming currently doesn't work as expected with `wrangler pages dev`.
-- `pnpm test`: Runs the test suite using Vitest.
-- `pnpm run typecheck`: Runs TypeScript type checking.
-- `pnpm run typegen`: Generates TypeScript types using Wrangler.
-- `pnpm run deploy`: Builds the project and deploys it to Cloudflare Pages.
-
-## Development
-
-To start the development server:
+### 4. Desenvolva
 
 ```bash
 pnpm run dev
 ```
 
-This will start the Remix Vite development server.
-
-## Testing
-
-Run the test suite with:
+### 5. Teste suas Alterações
 
 ```bash
+# Rodar testes
 pnpm test
+
+# Verificação de tipos
+pnpm run typecheck
+
+# Build de produção
+pnpm run build
 ```
 
-## Deployment
+### 6. Envie um Pull Request
 
-To deploy the application to Cloudflare Pages:
+Faça push do seu branch e abra um Pull Request no repositório original descrevendo suas alterações.
 
-```bash
-pnpm run deploy
+## Padrões de Código
+
+### Estrutura do Projeto
+
+```
+app/
+├── components/
+│   ├── chat/          # Componentes do chat e mensagens
+│   ├── editor/        # Editor de código (CodeMirror)
+│   ├── header/        # Header, configurações, auth
+│   ├── sidebar/       # Menu lateral, histórico
+│   ├── ui/            # Componentes de UI reutilizáveis
+│   └── workbench/     # Preview, FileTree, Terminal
+├── lib/
+│   ├── runtime/       # Parser de mensagens, Action Runner
+│   ├── stores/        # Nanostores (estado global)
+│   ├── persistence/   # Supabase, histórico de chat
+│   └── webcontainer/  # Integração com WebContainer API
+├── routes/            # Rotas da API e páginas
+├── styles/            # SCSS global
+└── utils/             # Utilitários gerais
 ```
 
-Make sure you have the necessary permissions and Wrangler is correctly configured for your Cloudflare account.
+### Convenções
+
+- **Componentes React**: Use arrow functions com `memo` para performance
+- **Stores**: Use Nanostores para estado global
+- **Estilos**: Use UnoCSS classes + Tailwind CSS
+- **Imports**: Imports absolutos com `~/` path alias
+- **Tipagem**: TypeScript strict mode
+- **Nomenclatura**: PascalCase para componentes, camelCase para funções/variáveis
+
+### Exemplo de Componente
+
+```tsx
+import { memo } from 'react';
+import { useStore } from '@nanostores/react';
+
+interface MyComponentProps {
+  title: string;
+  onAction: () => void;
+}
+
+export const MyComponent = memo(function MyComponent({ title, onAction }: MyComponentProps) {
+  // Hook de store
+  // Lógica do componente
+  // JSX retornado
+});
+```
+
+## Áreas para Contribuição
+
+### Alta Prioridade
+- 🐛 Correção de bugs
+- 🌐 Internacionalização (i18n)
+- 📱 Melhorias de responsividade mobile
+
+### Média Prioridade
+- ✨ Novos templates de projeto (Svelte, Angular, etc.)
+- 🎨 Temas personalizáveis
+- 📊 Dashboard de uso e estatísticas
+
+### Ideias para o Futuro
+- 🔌 Plugin system para extensões
+- 🤝 Colaboração em tempo real (multiplayer)
+- 🔄 Integração com Git (branch, merge, diff)
+- 📦 Marketplace de templates e componentes
+
+## Reportando Bugs
+
+Ao reportar um bug, por favor inclua:
+
+1. **Descrição clara** do problema
+2. **Passos para reproduzir** o bug
+3. **Comportamento esperado** vs comportamento atual
+4. **Capturas de tela** ou vídeos quando possível
+5. **Ambiente**: navegador, sistema operacional, versão do Node.js
+6. **Logs do console** relevantes
+
+## Solicitando Funcionalidades
+
+Use o template de [Feature Request](../../issues/new?template=feature_request.md) ao abrir uma issue. Inclua:
+
+1. **Problema**: que problema essa funcionalidade resolve?
+2. **Solução proposta**: como você imagina que funcionaria?
+3. **Alternativas**: outras abordagens que você considerou
+
+## Processo de Release
+
+1. Branch `main` sempre estável
+2. Novas funcionalidades vão para branches `feature/`
+3. Bug fixes vão para branches `fix/`
+4. Antes do merge, passe por `pnpm run typecheck` e `pnpm run test`
+
+## Licença
+
+Ao contribuir, você concorda que seu código será licenciado sob a **licença MIT** do projeto.
+
+---
+
+<div align="center">
+
+**Omni-Builder** — Feito com 💜 por [Pedro Berbis Freire](https://github.com/Pedro21062014) + [Z.ai](https://z.ai)
+
+Se você gostou do projeto, considere dar uma ⭐ no repositório!
+
+</div>

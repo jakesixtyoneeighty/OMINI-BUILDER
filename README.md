@@ -1,54 +1,175 @@
-[![Bolt.new: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index.jpg)](https://bolt.new)
+<div align="center">
 
-# Bolt.new: AI-Powered Full-Stack Web Development in the Browser
+<img src="public/logo.svg" alt="Omni-Builder Logo" width="80" height="80" />
 
-Bolt.new is an AI-powered web development agent that allows you to prompt, run, edit, and deploy full-stack applications directly from your browser—no local setup required. If you're here to build your own AI-powered web dev agent using the Bolt open source codebase, [click here to get started!](./CONTRIBUTING.md)
+# Omni-Builder
 
-## What Makes Bolt.new Different
+### AI-Powered Full-Stack Web App Builder
 
-Claude, v0, etc are incredible- but you can't install packages, run backends or edit code. That’s where Bolt.new stands out:
+**Desenvolvido por [Pedro Berbis Freire](https://github.com/Pedro21062014)** com assistência de IA da [Z.ai](https://z.ai)
 
-- **Full-Stack in the Browser**: Bolt.new integrates cutting-edge AI models with an in-browser development environment powered by **StackBlitz’s WebContainers**. This allows you to:
-  - Install and run npm tools and libraries (like Vite, Next.js, and more)
-  - Run Node.js servers
-  - Interact with third-party APIs
-  - Deploy to production from chat
-  - Share your work via a URL
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![Remix](https://img.shields.io/badge/Remix-2.x-blue.svg)](https://remix.run/)
+[![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-orange.svg)](https://pages.cloudflare.com/)
+[![WebContainers](https://img.shields.io/badge/WebContainers-StackBlitz-green.svg)](https://webcontainers.io/)
 
-- **AI with Environment Control**: Unlike traditional dev environments where the AI can only assist in code generation, Bolt.new gives AI models **complete control** over the entire  environment including the filesystem, node server, package manager, terminal, and browser console. This empowers AI agents to handle the entire app lifecycle—from creation to deployment.
+</div>
 
-Whether you’re an experienced developer, a PM or designer, Bolt.new allows you to build production-grade full-stack applications with ease.
+---
 
-For developers interested in building their own AI-powered development tools with WebContainers, check out the open-source Bolt codebase in this repo!
+## Sobre o Omni-Builder
 
-## Tips and Tricks
+O **Omni-Builder** é uma ferramenta open-source de desenvolvimento web com IA que permite criar, editar, executar e fazer deploy de aplicações full-stack diretamente no navegador — sem necessidade de configuração local. Baseado no projeto open-source do Bolt.new, o Omni-Builder foi significativamente expandido e melhorado com novas funcionalidades, múltiplos modos de preview, integração com GitHub e Netlify, e muito mais.
 
-Here are some tips to get the most out of Bolt.new:
+## Funcionalidades
 
-- **Be specific about your stack**: If you want to use specific frameworks or libraries (like Astro, Tailwind, ShadCN, or any other popular JavaScript framework), mention them in your initial prompt to ensure Bolt scaffolds the project accordingly.
+### Desenvolvimento com IA
+- Chat inteligente com múltiplos modelos de IA (Claude, Gemini, OpenAI, etc.)
+- Geração de código completa com criação automática de arquivos
+- Edição e refatoração assistida por IA
+- Enhance prompt — otimize suas instruções antes de enviar
 
-- **Use the enhance prompt icon**: Before sending your prompt, try clicking the 'enhance' icon to have the AI model help you refine your prompt, then edit the results before submitting.
+### 6 Modos de Preview
+| Modo | Descrição |
+|------|-----------|
+| **WebContainer** | Preview completo com servidor, terminal e hot reload |
+| **Sandpack** | Preview rápido no navegador com React, Vue e HTML (Vite) |
+| **Iframe SrcDoc** | Preview leve via iframe com suporte a React/JSX |
+| **React Live** | Preview interativo com renderização ao vivo via react-live |
+| **PlayCode** | Preview em iframe auto-contido, funciona offline |
+| **New Tab** | Abre o preview em uma nova aba do navegador |
 
-- **Scaffold the basics first, then add features**: Make sure the basic structure of your application is in place before diving into more advanced functionality. This helps Bolt understand the foundation of your project and ensure everything is wired up right before building out more advanced functionality.
+### Importação de Projetos
+- Importar repositórios do **GitHub** diretamente
+- Importar arquivos **ZIP**
+- Importar **pastas locais** do computador
+- Persistência de arquivos no **localStorage** (sobrevive a reloads de página)
 
-- **Batch simple instructions**: Save time by combining simple instructions into one message. For example, you can ask Bolt to change the color scheme, add mobile responsiveness, and restart the dev server, all in one go saving you time and reducing API credit consumption significantly.
+### Deploy
+- **GitHub**: Push direto com opção de repositório público ou privado
+- **Netlify**: Deploy com um clique usando token de API
+- Atualização de repositórios existentes no GitHub
 
-## FAQs
+### Interface
+- Editor de código com **CodeMirror** (syntax highlighting, autocomplete)
+- Terminal integrado com suporte a Node.js
+- Gerenciador de arquivos visual (File Tree)
+- Sistema de temas (claro/escuro)
+- Configurações de projeto (variáveis de ambiente, preview, snapshots)
 
-**Where do I sign up for a paid plan?**  
-Bolt.new is free to get started. If you need more AI tokens or want private projects, you can purchase a paid subscription in your [Bolt.new](https://bolt.new) settings, in the lower-left hand corner of the application. 
+## Arquitetura
 
-**What happens if I hit the free usage limit?**  
-Once your free daily token limit is reached, AI interactions are paused until the next day or until you upgrade your plan.
+O Omni-Builder é construído com tecnologias modernas:
 
-**Is Bolt in beta?**  
-Yes, Bolt.new is in beta, and we are actively improving it based on feedback.
+- **Frontend**: [Remix](https://remix.run/) + [React](https://react.dev/) + [Tailwind CSS](https://tailwindcss.com/)
+- **Sandbox**: [WebContainers](https://webcontainers.io/) (StackBlitz) + [Sandpack](https://sandpack.codesandbox.io/) (CodeSandbox)
+- **AI**: [Vercel AI SDK](https://sdk.vercel.ai/) com suporte a múltiplos provedores
+- **Deploy**: [Cloudflare Pages](https://pages.cloudflare.com/) + [Workers](https://workers.cloudflare.com/)
+- **Estado**: [Nanostores](https://nanostores.githhub.io/) para gerenciamento de estado reativo
+- **Editor**: [CodeMirror 6](https://codemirror.net/)
+- **Styling**: [UnoCSS](https://unocss.dev/) + [Framer Motion](https://www.framer.com/motion/)
 
-**How can I report Bolt.new issues?**  
-Check out the [Issues section](https://github.com/stackblitz/bolt.new/issues) to report an issue or request a new feature. Please use the search feature to check if someone else has already submitted the same issue/request.
+## Diferença entre Omni-Builder e Bolt.new
 
-**What frameworks/libraries currently work on Bolt?**  
-Bolt.new supports most popular JavaScript frameworks and libraries. If it runs on StackBlitz, it will run on Bolt.new as well.
+| | **Omni-Builder** | **Bolt.new** |
+|---|---|---|
+| Preview modes | 6 modos (WebContainer, Sandpack, Iframe, React Live, PlayCode, New Tab) | 1 modo (WebContainer) |
+| Importação | GitHub, ZIP, Pasta local | Apenas prompt |
+| GitHub | Push/pull com público/privado | Não integrado |
+| Netlify | Deploy com 1 clique | Não integrado |
+| Persistência | localStorage (arquivos sobrevivem reload) | Não |
+| Multi-modelo IA | Claude, Gemini, OpenAI, etc. | Claude apenas |
+| Error Boundary | Tela de erro com botão voltar | Padrão Remix |
+| Open Source | MIT (com modificações) | MIT |
 
-**How can I add make sure my framework/project works well in bolt?**  
-We are excited to work with the JavaScript ecosystem to improve functionality in Bolt. Reach out to us via [hello@stackblitz.com](mailto:hello@stackblitz.com) to discuss how we can partner!
+## Primeiros Passos
+
+### Pré-requisitos
+
+- Node.js (v20.15.1+)
+- pnpm (v9.4.0+)
+
+### Instalação
+
+```bash
+# Clone o repositório
+git clone https://github.com/Pedro21062014/Opensouce-App-builder.-Omini-builder..git
+
+# Entre no diretório
+cd Opensouce-App-builder.-Omini-builder.
+
+# Instale as dependências
+pnpm install
+```
+
+### Configuração
+
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```
+# Chave de API da Anthropic (Claude)
+ANTHROPIC_API_KEY=your_key_here
+
+# Opcional: nível de debug
+VITE_LOG_LEVEL=debug
+```
+
+> ⚠️ Nunca commite seu `.env.local` no versionamento.
+
+### Desenvolvimento
+
+```bash
+# Inicie o servidor de desenvolvimento
+pnpm run dev
+```
+
+### Build
+
+```bash
+# Build de produção
+pnpm run build
+
+# Preview local do build
+pnpm run preview
+```
+
+### Deploy
+
+```bash
+# Deploy para Cloudflare Pages
+pnpm run deploy
+```
+
+## Scripts Disponíveis
+
+| Comando | Descrição |
+|---------|-----------|
+| `pnpm run dev` | Inicia o servidor de desenvolvimento |
+| `pnpm run build` | Build de produção |
+| `pnpm run start` | Roda o build localmente via Wrangler Pages |
+| `pnpm run preview` | Build + preview local |
+| `pnpm test` | Roda os testes com Vitest |
+| `pnpm run typecheck` | Verificação de tipos TypeScript |
+| `pnpm run typegen` | Gera tipos TypeScript via Wrangler |
+| `pnpm run deploy` | Build + deploy para Cloudflare Pages |
+
+## Créditos
+
+- **Criador e Mantenedor**: [Pedro Berbis Freire](https://github.com/Pedro21062014)
+- **Assistência de IA**: [Z.ai](https://z.ai)
+- **Projeto Base**: [Bolt.new](https://github.com/stackblitz/bolt.new) por [StackBlitz](https://stackblitz.com/)
+- **WebContainers**: [StackBlitz](https://stackblitz.com/)
+- **Sandpack**: [CodeSandbox](https://codesandbox.io/)
+- **AI SDK**: [Vercel](https://vercel.com/)
+
+## Licença
+
+Este projeto está licenciado sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+<div align="center">
+
+**Omni-Builder** — Construído com 💜 por Pedro Berbis Freire + Z.ai
+
+</div>
