@@ -1,7 +1,7 @@
 import { streamText as _streamText, convertToCoreMessages } from 'ai';
 import { getModel, type ProviderId } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
-import { getSystemPrompt } from './prompts';
+import { getSystemPrompt, type DatabaseContext } from './prompts';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -26,7 +26,7 @@ export interface ModelSelection {
   apiKey: string;
 }
 
-export function streamText(messages: Messages, selection: ModelSelection, options?: StreamingOptions) {
+export function streamText(messages: Messages, selection: ModelSelection, options?: StreamingOptions, dbContext?: DatabaseContext) {
   const extra: { headers?: Record<string, string> } = {};
 
   if (selection.provider === 'anthropic') {
@@ -35,7 +35,7 @@ export function streamText(messages: Messages, selection: ModelSelection, option
 
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
-    system: getSystemPrompt(),
+    system: getSystemPrompt(undefined, dbContext),
     maxTokens: MAX_TOKENS,
     ...extra,
     messages: convertToCoreMessages(messages),

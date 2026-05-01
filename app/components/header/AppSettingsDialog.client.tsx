@@ -1,16 +1,41 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useStore } from '@nanostores/react';
-import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, type EnvVar, type PreviewMode } from '~/lib/stores/project';
+import {
+  activeProjectIdStore,
+  projectsStore,
+  updateActiveProjectSettings,
+  type EnvVar,
+  type PreviewMode,
+  type FirebaseConfig,
+  type SupabaseConfig,
+} from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 
 const TABS = [
   { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
   { id: 'preview' as const, label: 'Preview', icon: 'i-ph:eye' },
   { id: 'deploy' as const, label: 'Deploy', icon: 'i-ph:rocket-launch-duotone' },
+  { id: 'database' as const, label: 'Database', icon: 'i-ph:database-duotone' },
   { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
   { id: 'versions' as const, label: 'Snapshots', icon: 'i-ph:clock-counter-clockwise' },
 ];
+
+const VERCEL_FRAMEWORKS = [
+  { value: 'vite', label: 'Vite' },
+  { value: 'nextjs', label: 'Next.js' },
+  { value: 'create-react-app', label: 'React (CRA)' },
+  { value: 'nuxtjs', label: 'Nuxt.js' },
+  { value: 'vue', label: 'Vue.js' },
+  { value: 'sveltekit', label: 'SvelteKit' },
+  { value: 'astro', label: 'Astro' },
+  { value: 'remix', label: 'Remix' },
+  { value: 'gatsby', label: 'Gatsby' },
+  { value: 'other', label: 'Other' },
+];
+
+const emptyFirebase: FirebaseConfig = { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' };
+const emptySupabase: SupabaseConfig = { url: '', anonKey: '', serviceRoleKey: '' };
 
 export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean; onClose: () => void; defaultTab?: string }) {
   const activeId = useStore(activeProjectIdStore);
@@ -25,10 +50,24 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const [projectName, setProjectName] = useState(project?.name || '');
   const [projectDesc, setProjectDesc] = useState(settings?.description || '');
   const currentPreviewMode: PreviewMode = settings?.previewMode || 'webcontainer';
+
+  // Netlify
   const [netlifyToken, setNetlifyToken] = useState(settings?.netlify?.token || '');
   const [netlifySiteId, setNetlifySiteId] = useState(settings?.netlify?.siteId || '');
-  const [deploying, setDeploying] = useState(false);
-  const [deployResult, setDeployResult] = useState<{ url: string; siteId: string } | null>(null);
+
+  // Vercel
+  const [vercelToken, setVercelToken] = useState(settings?.vercel?.token || '');
+  const [vercelProjectName, setVercelProjectName] = useState(settings?.vercel?.projectName || '');
+  const [vercelFramework, setVercelFramework] = useState(settings?.vercel?.framework || 'vite');
+
+  // Database
+  const [dbType, setDbType] = useState<'none' | 'firebase' | 'supabase'>(settings?.database?.type || 'none');
+  const [firebase, setFirebase] = useState<FirebaseConfig>(settings?.database?.firebase || { ...emptyFirebase });
+  const [supabase, setSupabase] = useState<SupabaseConfig>(settings?.database?.supabase || { ...emptySupabase });
+
+  // Deploy state
+  const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel'>('none');
+  const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -40,6 +79,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       setEnvVars(settings?.envVars || []);
       setNetlifyToken(settings?.netlify?.token || '');
       setNetlifySiteId(settings?.netlify?.siteId || '');
+      setVercelToken(settings?.vercel?.token || '');
+      setVercelProjectName(settings?.vercel?.projectName || '');
+      setVercelFramework(settings?.vercel?.framework || 'vite');
+      setDbType(settings?.database?.type || 'none');
+      setFirebase(settings?.database?.firebase || { ...emptyFirebase });
+      setSupabase(settings?.database?.supabase || { ...emptySupabase });
       setDeployResult(null);
     }
   }, [open, activeId, project, settings]);
@@ -115,41 +160,75 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     toast.success('Netlify settings saved!');
   };
 
-  const deployToNetlify = async () => {
-    if (!netlifyToken.trim()) {
-      toast.error('Netlify token is required');
-      return;
-    }
-    setDeploying(true);
-    try {
-      await workbenchStore.saveAllFiles();
-      const files = workbenchStore.files.get();
-      const fileList = Object.entries(files)
-        .filter(([_, f]) => f?.type === 'file' && !f.isBinary)
-        .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
+  const saveVercelSettings = () => {
+    updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } });
+    toast.success('Vercel settings saved!');
+  };
 
+  const saveDatabaseSettings = () => {
+    updateActiveProjectSettings({
+      database: {
+        type: dbType,
+        firebase,
+        supabase,
+      },
+    });
+    toast.success('Database settings saved!');
+  };
+
+  const getProjectFiles = async () => {
+    await workbenchStore.saveAllFiles();
+    const files = workbenchStore.files.get();
+    return Object.entries(files)
+      .filter(([_, f]) => f?.type === 'file' && !f.isBinary)
+      .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
+  };
+
+  const deployToNetlify = async () => {
+    if (!netlifyToken.trim()) { toast.error('Netlify token is required'); return; }
+    setDeploying('netlify');
+    setDeployResult(null);
+    try {
+      const fileList = await getProjectFiles();
       const res = await fetch('/api/netlify-deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: netlifyToken.trim(), siteId: netlifySiteId.trim() || undefined, files: fileList }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).error || 'Deploy failed');
-      }
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
       const data = await res.json();
-      setDeployResult({ url: data.url, siteId: data.siteId });
-      if (data.siteId) {
-        updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: data.siteId } });
-        setNetlifySiteId(data.siteId);
-      }
+      setDeployResult({ url: data.url, siteId: data.siteId, provider: 'netlify' });
+      if (data.siteId) { updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: data.siteId } }); setNetlifySiteId(data.siteId); }
       toast.success('Deployed to Netlify!');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Deploy failed');
-    } finally {
-      setDeploying(false);
-    }
+    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
   };
+
+  const deployToVercel = async () => {
+    if (!vercelToken.trim()) { toast.error('Vercel token is required'); return; }
+    setDeploying('vercel');
+    setDeployResult(null);
+    try {
+      const fileList = await getProjectFiles();
+      const res = await fetch('/api/vercel-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: vercelToken.trim(),
+          projectName: vercelProjectName.trim() || undefined,
+          framework: vercelFramework,
+          files: fileList,
+        }),
+      });
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
+      const data = await res.json();
+      setDeployResult({ url: data.url, projectId: data.projectId, provider: 'vercel' });
+      if (data.projectId) { updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } }); }
+      toast.success('Deployed to Vercel!');
+    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
+  };
+
+  const inputClass = "w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 transition-all placeholder:text-bolt-elements-textTertiary";
+  const monoInputClass = inputClass + " font-mono";
 
   if (!open) return null;
 
@@ -158,7 +237,6 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       <div onClick={e => e.stopPropagation()} className="w-[750px] max-w-[95vw] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl flex overflow-hidden">
         {/* Sidebar */}
         <aside className="w-[200px] bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor flex flex-col">
-          {/* Project badge */}
           <div className="p-4 border-b border-bolt-elements-borderColor">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0">
@@ -170,8 +248,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               </div>
             </div>
           </div>
-          {/* Tabs */}
-          <nav className="flex-1 p-2 space-y-0.5">
+          <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
             {TABS.map(t => (
               <button
                 key={t.id}
@@ -187,17 +264,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               </button>
             ))}
           </nav>
-          {/* Footer */}
           <div className="p-3 border-t border-bolt-elements-borderColor">
-            <div className="text-[10px] text-bolt-elements-textTertiary text-center">
-              Omni-Builder v1.0
-            </div>
+            <div className="text-[10px] text-bolt-elements-textTertiary text-center">Omni-Builder v1.0</div>
           </div>
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-h-0">
-          {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-bolt-elements-borderColor shrink-0">
             <div>
               <h2 className="text-base font-bold text-bolt-elements-textPrimary">
@@ -207,6 +280,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {tab === 'general' && 'Project name, description and branding'}
                 {tab === 'preview' && 'Choose how your project preview works'}
                 {tab === 'deploy' && 'Configure deployment providers and tokens'}
+                {tab === 'database' && 'Connect Firebase or Supabase for database access'}
                 {tab === 'env' && 'Manage environment variables for your project'}
                 {tab === 'versions' && 'Save and restore project snapshots'}
               </p>
@@ -216,36 +290,18 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
             </button>
           </div>
 
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto p-6">
+            {/* ====== GENERAL TAB ====== */}
             {tab === 'general' && (
               <div className="space-y-5">
-                {/* Project Name */}
                 <div>
                   <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Project Name</label>
-                  <input
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    onBlur={saveProjectInfo}
-                    placeholder="My Awesome Project"
-                    className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 transition-all placeholder:text-bolt-elements-textTertiary"
-                  />
+                  <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onBlur={saveProjectInfo} placeholder="My Awesome Project" className={inputClass} />
                 </div>
-
-                {/* Description */}
                 <div>
                   <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Description</label>
-                  <textarea
-                    value={projectDesc}
-                    onChange={(e) => setProjectDesc(e.target.value)}
-                    onBlur={saveProjectInfo}
-                    placeholder="A brief description of your project..."
-                    rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 transition-all resize-none placeholder:text-bolt-elements-textTertiary"
-                  />
+                  <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} onBlur={saveProjectInfo} placeholder="A brief description of your project..." rows={3} className={inputClass + ' resize-none'} />
                 </div>
-
-                {/* Logo Upload */}
                 <div>
                   <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">App Logo</label>
                   <div className="flex items-center gap-4">
@@ -272,6 +328,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               </div>
             )}
 
+            {/* ====== PREVIEW TAB ====== */}
             {tab === 'preview' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3">
@@ -284,67 +341,26 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     { mode: 'newtab' as const, icon: 'i-ph:arrow-square-out-duotone', title: 'New Tab', color: 'pink', desc: 'Opens your project in a new browser tab as a standalone page.' },
                   ]).map(option => {
                     const isActive = currentPreviewMode === option.mode;
-                    const activeColorMap: Record<string, string> = {
-                      blue: 'border-blue-500 bg-blue-500/8 ring-1 ring-blue-500/40',
-                      amber: 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/40',
-                      green: 'border-green-500 bg-green-500/8 ring-1 ring-green-500/40',
-                      cyan: 'border-cyan-500 bg-cyan-500/8 ring-1 ring-cyan-500/40',
-                      orange: 'border-orange-500 bg-orange-500/8 ring-1 ring-orange-500/40',
-                      pink: 'border-pink-500 bg-pink-500/8 ring-1 ring-pink-500/40',
-                    };
-                    const iconBgActive: Record<string, string> = {
-                      blue: 'bg-blue-500/20', amber: 'bg-amber-500/20', green: 'bg-green-500/20',
-                      cyan: 'bg-cyan-500/20', orange: 'bg-orange-500/20', pink: 'bg-pink-500/20',
-                    };
-                    const iconColorActive: Record<string, string> = {
-                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400',
-                      cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400',
-                    };
-                    const badgeColor: Record<string, string> = {
-                      blue: 'bg-blue-500/20 text-blue-400', amber: 'bg-amber-500/20 text-amber-400',
-                      green: 'bg-green-500/20 text-green-400', cyan: 'bg-cyan-500/20 text-cyan-400',
-                      orange: 'bg-orange-500/20 text-orange-400', pink: 'bg-pink-500/20 text-pink-400',
-                    };
-                    const checkColor: Record<string, string> = {
-                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400',
-                      cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400',
-                    };
-
+                    const activeColorMap: Record<string, string> = { blue: 'border-blue-500 bg-blue-500/8 ring-1 ring-blue-500/40', amber: 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/40', green: 'border-green-500 bg-green-500/8 ring-1 ring-green-500/40', cyan: 'border-cyan-500 bg-cyan-500/8 ring-1 ring-cyan-500/40', orange: 'border-orange-500 bg-orange-500/8 ring-1 ring-orange-500/40', pink: 'border-pink-500 bg-pink-500/8 ring-1 ring-pink-500/40' };
+                    const iconBgActive: Record<string, string> = { blue: 'bg-blue-500/20', amber: 'bg-amber-500/20', green: 'bg-green-500/20', cyan: 'bg-cyan-500/20', orange: 'bg-orange-500/20', pink: 'bg-pink-500/20' };
+                    const iconColorActive: Record<string, string> = { blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400' };
+                    const badgeColor: Record<string, string> = { blue: 'bg-blue-500/20 text-blue-400', amber: 'bg-amber-500/20 text-amber-400', green: 'bg-green-500/20 text-green-400', cyan: 'bg-cyan-500/20 text-cyan-400', orange: 'bg-orange-500/20 text-orange-400', pink: 'bg-pink-500/20 text-pink-400' };
+                    const checkColor: Record<string, string> = { blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400' };
                     return (
-                      <button
-                        key={option.mode}
-                        onClick={() => {
-                          updateActiveProjectSettings({ previewMode: option.mode });
-                          toast.success(`${option.title} mode activated!`);
-                        }}
-                        className={`relative w-full p-4 rounded-xl border text-left transition-all group ${
-                          isActive
-                            ? activeColorMap[option.color]
-                            : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive'
-                        }`}
-                      >
+                      <button key={option.mode} onClick={() => { updateActiveProjectSettings({ previewMode: option.mode }); toast.success(`${option.title} mode activated!`); }}
+                        className={`relative w-full p-4 rounded-xl border text-left transition-all group ${isActive ? activeColorMap[option.color] : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive'}`}>
                         <div className="flex items-center gap-3.5">
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                            isActive ? iconBgActive[option.color] : 'bg-bolt-elements-background-depth-2'
-                          }`}>
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isActive ? iconBgActive[option.color] : 'bg-bolt-elements-background-depth-2'}`}>
                             <div className={`${option.icon} text-xl ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textTertiary'}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`font-semibold text-sm ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textPrimary'}`}>
-                                {option.title}
-                              </span>
-                              {isActive && (
-                                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeColor[option.color]} uppercase tracking-wider`}>
-                                  Active
-                                </span>
-                              )}
+                              <span className={`font-semibold text-sm ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textPrimary'}`}>{option.title}</span>
+                              {isActive && <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeColor[option.color]} uppercase tracking-wider`}>Active</span>}
                             </div>
                             <p className="text-xs text-bolt-elements-textTertiary mt-0.5 leading-relaxed">{option.desc}</p>
                           </div>
-                          {isActive && (
-                            <div className={`i-ph:check-circle-fill ${checkColor[option.color]} text-xl shrink-0`} />
-                          )}
+                          {isActive && <div className={`i-ph:check-circle-fill ${checkColor[option.color]} text-xl shrink-0`} />}
                         </div>
                       </button>
                     );
@@ -353,8 +369,9 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               </div>
             )}
 
+            {/* ====== DEPLOY TAB ====== */}
             {tab === 'deploy' && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {/* Netlify Section */}
                 <div>
                   <div className="flex items-center gap-2.5 mb-3">
@@ -369,74 +386,185 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Personal Access Token</label>
-                      <input
-                        value={netlifyToken}
-                        onChange={(e) => setNetlifyToken(e.target.value)}
-                        onBlur={saveNetlifySettings}
-                        placeholder="ntfy_..."
-                        type="password"
-                        className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder:text-bolt-elements-textTertiary font-mono"
-                      />
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                        Create a token at <span className="text-teal-400">app.netlify.com/user/applications#personal-access-tokens</span>
-                      </p>
+                      <input value={netlifyToken} onChange={(e) => setNetlifyToken(e.target.value)} onBlur={saveNetlifySettings} placeholder="ntfy_..." type="password" className={monoInputClass + " focus:ring-teal-500/30 focus:border-teal-500/50"} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a token at <span className="text-teal-400">app.netlify.com/user/applications#personal-access-tokens</span></p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Site ID (optional)</label>
-                      <input
-                        value={netlifySiteId}
-                        onChange={(e) => setNetlifySiteId(e.target.value)}
-                        onBlur={saveNetlifySettings}
-                        placeholder="Leave empty to create a new site"
-                        className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder:text-bolt-elements-textTertiary font-mono"
-                      />
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                        If empty, a new site will be created. If set, the existing site will be updated.
-                      </p>
+                      <input value={netlifySiteId} onChange={(e) => setNetlifySiteId(e.target.value)} onBlur={saveNetlifySettings} placeholder="Leave empty to create a new site" className={monoInputClass + " focus:ring-teal-500/30 focus:border-teal-500/50"} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">If empty, a new site will be created. If set, the existing site will be updated.</p>
                     </div>
-                    <button
-                      onClick={deployToNetlify}
-                      disabled={deploying || !netlifyToken.trim()}
-                      className="w-full py-3 px-4 bg-teal-500/12 text-teal-400 rounded-xl text-sm font-semibold border border-teal-500/20 hover:bg-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-                    >
-                      {deploying ? (
-                        <><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>
-                      ) : (
-                        <><div className="i-ph:rocket-launch text-base" /> Deploy to Netlify</>
-                      )}
+                    <button onClick={deployToNetlify} disabled={deploying !== 'none' || !netlifyToken.trim()}
+                      className="w-full py-3 px-4 bg-teal-500/12 text-teal-400 rounded-xl text-sm font-semibold border border-teal-500/20 hover:bg-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                      {deploying === 'netlify' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Netlify</>)}
                     </button>
-                    {deployResult && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
-                        <div className="i-ph:check-circle-fill text-green-400 text-lg shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-green-400">Deployed successfully!</p>
-                          <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">
-                            {deployResult.url}
-                          </a>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {/* Vercel Section */}
-                <div className="border-t border-bolt-elements-borderColor pt-4">
+                <div className="border-t border-bolt-elements-borderColor pt-5">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                      <div className="i-ph:triangle text-bolt-elements-textPrimary text-base" />
+                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                      <div className="i-ph:triangle text-white text-base" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Vercel</h3>
-                      <p className="text-[11px] text-bolt-elements-textTertiary">Coming soon</p>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy your site to Vercel</p>
                     </div>
                   </div>
-                  <div className="p-4 rounded-xl border border-dashed border-bolt-elements-borderColor text-center">
-                    <p className="text-xs text-bolt-elements-textTertiary">Vercel integration is under development. Use the GitHub push button to deploy via Vercel for now.</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Access Token</label>
+                      <input value={vercelToken} onChange={(e) => setVercelToken(e.target.value)} onBlur={saveVercelSettings} placeholder="vercel_token_..." type="password" className={monoInputClass} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a token at <span className="text-purple-400">vercel.com/account/tokens</span></p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Project Name (optional)</label>
+                      <input value={vercelProjectName} onChange={(e) => setVercelProjectName(e.target.value)} onBlur={saveVercelSettings} placeholder="my-project" className={monoInputClass} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Leave empty for an auto-generated name. Must be unique on Vercel.</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Framework Preset</label>
+                      <select value={vercelFramework} onChange={(e) => setVercelFramework(e.target.value)} onBlur={saveVercelSettings}
+                        className={monoInputClass + " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center]"}>
+                        {VERCEL_FRAMEWORKS.map(fw => <option key={fw.value} value={fw.value}>{fw.label}</option>)}
+                      </select>
+                    </div>
+                    <button onClick={deployToVercel} disabled={deploying !== 'none' || !vercelToken.trim()}
+                      className="w-full py-3 px-4 bg-purple-500/12 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                      {deploying === 'vercel' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Vercel</>)}
+                    </button>
                   </div>
                 </div>
+
+                {/* Deploy Result */}
+                {deployResult && (
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
+                    <div className="i-ph:check-circle-fill text-green-400 text-lg shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-green-400">
+                        Deployed to {deployResult.provider === 'vercel' ? 'Vercel' : 'Netlify'} successfully!
+                      </p>
+                      <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">{deployResult.url}</a>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* ====== DATABASE TAB ====== */}
+            {tab === 'database' && (
+              <div className="space-y-5">
+                {/* Database Provider Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-3">Database Provider</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => { setDbType('none'); saveDatabaseSettings(); }}
+                      className={`p-3 rounded-xl border text-center transition-all ${dbType === 'none' ? 'border-bolt-elements-borderColor bg-bolt-elements-item-backgroundActive ring-1 ring-purple-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
+                      <div className="i-ph:prohibit text-xl mx-auto mb-1 text-bolt-elements-textTertiary" />
+                      <span className="text-xs font-medium text-bolt-elements-textPrimary block">None</span>
+                    </button>
+                    <button onClick={() => { setDbType('firebase'); saveDatabaseSettings(); }}
+                      className={`p-3 rounded-xl border text-center transition-all ${dbType === 'firebase' ? 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
+                      <div className={`i-ph:fire text-xl mx-auto mb-1 ${dbType === 'firebase' ? 'text-amber-400' : 'text-bolt-elements-textTertiary'}`} />
+                      <span className="text-xs font-medium text-bolt-elements-textPrimary block">Firebase</span>
+                    </button>
+                    <button onClick={() => { setDbType('supabase'); saveDatabaseSettings(); }}
+                      className={`p-3 rounded-xl border text-center transition-all ${dbType === 'supabase' ? 'border-emerald-500 bg-emerald-500/8 ring-1 ring-emerald-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
+                      <div className={`i-ph:lightning text-xl mx-auto mb-1 ${dbType === 'supabase' ? 'text-emerald-400' : 'text-bolt-elements-textTertiary'}`} />
+                      <span className="text-xs font-medium text-bolt-elements-textPrimary block">Supabase</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-bolt-elements-textTertiary mt-2">
+                    Once configured, the AI can read/write data to your database and generate code that uses your database.
+                  </p>
+                </div>
+
+                {dbType === 'none' && (
+                  <div className="text-center py-8">
+                    <div className="i-ph:database text-4xl text-bolt-elements-textTertiary mx-auto mb-3" />
+                    <p className="text-sm text-bolt-elements-textSecondary">No database configured</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1 max-w-xs mx-auto">Select Firebase or Supabase above to connect a database. The AI will be able to generate code and interact with your database.</p>
+                  </div>
+                )}
+
+                {dbType === 'firebase' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                      <div className="i-ph:info text-amber-400 text-base shrink-0" />
+                      <p className="text-xs text-amber-300/80">Add your Firebase web app configuration. You can find these values in the Firebase Console under Project Settings &gt; Your apps &gt; Web app.</p>
+                    </div>
+                    {[
+                      { key: 'apiKey' as const, label: 'API Key', placeholder: 'AIzaSy...' },
+                      { key: 'authDomain' as const, label: 'Auth Domain', placeholder: 'my-project.firebaseapp.com' },
+                      { key: 'projectId' as const, label: 'Project ID', placeholder: 'my-project-id' },
+                      { key: 'storageBucket' as const, label: 'Storage Bucket', placeholder: 'my-project.appspot.com' },
+                      { key: 'messagingSenderId' as const, label: 'Messaging Sender ID', placeholder: '123456789' },
+                      { key: 'appId' as const, label: 'App ID', placeholder: '1:123:web:abc123' },
+                      { key: 'measurementId' as const, label: 'Measurement ID', placeholder: 'G-XXXXXXXXXX (optional)' },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{field.label}</label>
+                        <input value={firebase[field.key]} onChange={(e) => setFirebase({ ...firebase, [field.key]: e.target.value })} onBlur={saveDatabaseSettings}
+                          placeholder={field.placeholder} className={monoInputClass + " focus:ring-amber-500/30 focus:border-amber-500/50"} />
+                      </div>
+                    ))}
+                    <button onClick={saveDatabaseSettings} className="w-full py-3 px-4 bg-amber-500/12 text-amber-400 rounded-xl text-sm font-semibold border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2">
+                      <div className="i-ph:floppy-disk text-base" /> Save Firebase Config
+                    </button>
+                  </div>
+                )}
+
+                {dbType === 'supabase' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
+                      <div className="i-ph:info text-emerald-400 text-base shrink-0" />
+                      <p className="text-xs text-emerald-300/80">Add your Supabase project credentials. You can find these in the Supabase Dashboard under Project Settings &gt; API. The service role key allows the AI to bypass RLS for database operations.</p>
+                    </div>
+                    {[
+                      { key: 'url' as const, label: 'Project URL', placeholder: 'https://xxxxx.supabase.co' },
+                      { key: 'anonKey' as const, label: 'Anon (Public) Key', placeholder: 'eyJhbGciOi...' },
+                      { key: 'serviceRoleKey' as const, label: 'Service Role Key', placeholder: 'eyJhbGciOi... (secret)' },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                          {field.label}
+                          {field.key === 'serviceRoleKey' && <span className="text-red-400 ml-1.5 normal-case">Secret</span>}
+                        </label>
+                        <input value={supabase[field.key]} onChange={(e) => setSupabase({ ...supabase, [field.key]: e.target.value })} onBlur={saveDatabaseSettings}
+                          placeholder={field.placeholder} type={field.key === 'serviceRoleKey' ? 'password' : 'text'}
+                          className={monoInputClass + " focus:ring-emerald-500/30 focus:border-emerald-500/50"} />
+                      </div>
+                    ))}
+                    <button onClick={saveDatabaseSettings} className="w-full py-3 px-4 bg-emerald-500/12 text-emerald-400 rounded-xl text-sm font-semibold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                      <div className="i-ph:floppy-disk text-base" /> Save Supabase Config
+                    </button>
+                  </div>
+                )}
+
+                {/* AI Database Capabilities Info */}
+                {dbType !== 'none' && (
+                  <div className="border-t border-bolt-elements-borderColor pt-4">
+                    <h4 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">AI Database Capabilities</h4>
+                    <div className="space-y-1.5">
+                      {[
+                        { icon: 'i-ph:table', text: 'Create, read, update, and delete data in your tables' },
+                        { icon: 'i-ph:code', text: 'Generate client code with your database SDK pre-configured' },
+                        { icon: 'i-ph:download-simple', text: 'Install and configure the Firebase/Supabase npm packages' },
+                        { icon: 'i-ph:shield-check', text: 'Create secure queries and proper error handling' },
+                      ].map(item => (
+                        <div key={item.text} className="flex items-center gap-2 text-xs text-bolt-elements-textSecondary">
+                          <div className={`${item.icon} text-sm text-purple-400`} />
+                          {item.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ====== ENV VARS TAB ====== */}
             {tab === 'env' && (
               <div className="space-y-4">
                 {envVars.length > 0 && (
@@ -461,39 +589,24 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   </div>
                 )}
                 <div className="flex gap-2 p-3 bg-bolt-elements-background-depth-1 rounded-lg border border-dashed border-bolt-elements-borderColor">
-                  <input
-                    value={newEnvKey}
-                    onChange={(e) => setNewEnvKey(e.target.value)}
-                    placeholder="KEY"
-                    onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
-                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50"
-                  />
-                  <input
-                    value={newEnvValue}
-                    onChange={(e) => setNewEnvValue(e.target.value)}
-                    placeholder="value"
-                    onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
-                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50"
-                  />
-                  <button
-                    onClick={addEnvVar}
-                    disabled={!newEnvKey.trim() || !newEnvValue.trim()}
-                    className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
+                  <input value={newEnvKey} onChange={(e) => setNewEnvKey(e.target.value)} placeholder="KEY" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
+                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder="value" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
+                  <button onClick={addEnvVar} disabled={!newEnvKey.trim() || !newEnvValue.trim()}
+                    className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                     <div className="i-ph:plus text-lg" />
                   </button>
                 </div>
               </div>
             )}
 
+            {/* ====== SNAPSHOTS TAB ====== */}
             {tab === 'versions' && (
               <div className="space-y-4">
-                <button
-                  onClick={saveSnapshot}
-                  className="w-full py-3 px-4 bg-purple-500/12 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <div className="i-ph:camera text-base" />
-                  Create Snapshot
+                <button onClick={saveSnapshot}
+                  className="w-full py-3 px-4 bg-purple-500/12 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2">
+                  <div className="i-ph:camera text-base" /> Create Snapshot
                 </button>
                 {snapshots.length === 0 ? (
                   <div className="text-center py-8">
@@ -511,18 +624,8 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                           <div className="text-[11px] text-bolt-elements-textTertiary">{new Date(s.timestamp).toLocaleString()}</div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => restoreSnapshot(s.id)}
-                            className="px-2.5 py-1.5 text-[11px] font-medium text-purple-400 bg-purple-500/10 rounded-md hover:bg-purple-500/20 transition-all"
-                          >
-                            Restore
-                          </button>
-                          <button
-                            onClick={() => deleteSnapshot(s.id)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all"
-                          >
-                            <div className="i-ph:trash text-sm" />
-                          </button>
+                          <button onClick={() => restoreSnapshot(s.id)} className="px-2.5 py-1.5 text-[11px] font-medium text-purple-400 bg-purple-500/10 rounded-md hover:bg-purple-500/20 transition-all">Restore</button>
+                          <button onClick={() => deleteSnapshot(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all"><div className="i-ph:trash text-sm" /></button>
                         </div>
                       </div>
                     ))}

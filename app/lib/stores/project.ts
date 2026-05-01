@@ -9,6 +9,22 @@ export interface EnvVar {
 
 export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab' | 'reactlive' | 'playcode';
 
+export interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+  measurementId: string;
+}
+
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+  serviceRoleKey: string;
+}
+
 export interface ProjectSettings {
   name: string;
   description: string;
@@ -19,10 +35,20 @@ export interface ProjectSettings {
     token: string;
     siteId: string;
   };
+  vercel: {
+    token: string;
+    projectName: string;
+    framework: string;
+  };
   github: {
     token: string;
     repo: string;
     branch: string;
+  };
+  database: {
+    type: 'none' | 'firebase' | 'supabase';
+    firebase: FirebaseConfig;
+    supabase: SupabaseConfig;
   };
 }
 
@@ -42,7 +68,13 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   envVars: [],
   previewMode: 'webcontainer',
   netlify: { token: '', siteId: '' },
+  vercel: { token: '', projectName: '', framework: 'vite' },
   github: { token: '', repo: '', branch: 'main' },
+  database: {
+    type: 'none',
+    firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
+    supabase: { url: '', anonKey: '', serviceRoleKey: '' },
+  },
 };
 
 function loadProjects(): Record<string, ProjectRecord> {
@@ -105,6 +137,8 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     ...patch,
     github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
     netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
+    vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
+    database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) } },
   };
 
   const updatedProject = {

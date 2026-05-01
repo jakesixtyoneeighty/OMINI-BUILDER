@@ -2,7 +2,23 @@ import { MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 
-export const getSystemPrompt = (cwd: string = WORK_DIR) => `
+export interface DatabaseContext {
+  type: 'none' | 'firebase' | 'supabase';
+  firebase?: {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    storageBucket: string;
+    messagingSenderId: string;
+    appId: string;
+  };
+  supabase?: {
+    url: string;
+    anonKey: string;
+  };
+}
+
+export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext) => `
 You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
 
 <system_constraints>
@@ -159,6 +175,45 @@ IMPORTANT: Use valid markdown only for all your responses and DO NOT use HTML ta
 ULTRA IMPORTANT: Do NOT be verbose and DO NOT explain anything unless the user is asking for more information. That is VERY important.
 
 ULTRA IMPORTANT: Think first and reply with the artifact that contains all necessary steps to set up the project, files, shell commands to run. It is SUPER IMPORTANT to respond with this first.
+
+${dbContext && dbContext.type !== 'none' ? `
+<database_context>
+The user has configured a ${dbContext.type === 'firebase' ? 'Firebase' : 'Supabase'} database for this project. You can and SHOULD use this database in the code you generate.
+
+${dbContext.type === 'firebase' ? `**Firebase Configuration:**
+- apiKey: "${dbContext.firebase?.apiKey || ''}"
+- authDomain: "${dbContext.firebase?.authDomain || ''}"
+- projectId: "${dbContext.firebase?.projectId || ''}"
+- storageBucket: "${dbContext.firebase?.storageBucket || ''}"
+- messagingSenderId: "${dbContext.firebase?.messagingSenderId || ''}"
+- appId: "${dbContext.firebase?.appId || ''}"
+
+**Important Firebase Instructions:**
+1. Install Firebase SDK: \`npm install firebase\`
+2. Create a \`lib/firebase.ts\` (or \`.js\`) configuration file with the above credentials using \`initializeApp()\`.
+3. Import and use Firebase services (Firestore, Auth, Storage, Realtime Database) from this config.
+4. For Firestore, use collection/document references. For Realtime Database, use ref().set()/get()/push().
+5. Always handle errors with try/catch.
+6. Generate BOTH the Firebase configuration file AND the application code that uses it.
+7. When the user asks to read/write/edit database data, generate the appropriate Firebase code.
+${dbContext.firebase?.projectId ? `8. The project ID is "${dbContext.firebase.projectId}" — use it for Firebase Storage URLs if needed.` : ''}
+` : `**Supabase Configuration:**
+- Project URL: "${dbContext.supabase?.url || ''}"
+- Anon Key: "${dbContext.supabase?.anonKey || ''}"
+
+**Important Supabase Instructions:**
+1. Install Supabase client: \`npm install @supabase/supabase-js\`
+2. Create a \`lib/supabase.ts\` (or \`.js\`) configuration file with \`createClient(url, anonKey)\`.
+3. Import and use the Supabase client for database operations.
+4. Use \`.from('table_name').select()\`, \`.insert()\`, \`.update()\`, \`.delete()\`, \`.upsert()\` for CRUD.
+5. Use \`.rpc('function_name', { params })\` for calling database functions.
+6. Always handle errors with try/catch and check for \`.error\` in responses.
+7. Generate BOTH the Supabase configuration file AND the application code that uses it.
+8. When the user asks to read/write/edit database data, generate the appropriate Supabase queries.
+${dbContext.supabase?.url ? `9. The Supabase URL is "${dbContext.supabase.url}" — all API calls go through this endpoint.` : ''}
+`}
+</database_context>
+` : ''}
 
 Here are some examples of correct usage of artifacts:
 
