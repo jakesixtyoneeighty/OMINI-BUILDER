@@ -7,7 +7,7 @@ export interface EnvVar {
   value: string;
 }
 
-export type PreviewMode = 'webcontainer' | 'sandpack';
+export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab';
 
 export interface ProjectSettings {
   name: string;
@@ -15,6 +15,10 @@ export interface ProjectSettings {
   logo: string;
   envVars: EnvVar[];
   previewMode: PreviewMode;
+  netlify: {
+    token: string;
+    siteId: string;
+  };
   github: {
     token: string;
     repo: string;
@@ -37,6 +41,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   logo: '',
   envVars: [],
   previewMode: 'webcontainer',
+  netlify: { token: '', siteId: '' },
   github: { token: '', repo: '', branch: 'main' },
 };
 
@@ -99,6 +104,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     ...current.settings,
     ...patch,
     github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
+    netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
   };
 
   const updatedProject = {

@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { AuthButton } from './AuthButton.client';
@@ -9,22 +9,17 @@ import { AppSettingsDialog } from './AppSettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
-import { toast } from 'react-toastify';
 
 export function Header() {
   const chat = useStore(chatStore);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
-  const [deployModal, setDeployModal] = useState(false);
-  const [deploying, setDeploying] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
+  const appSettingsRef = useRef<{ setTab: (t: string) => void } | null>(null);
 
-  const handleNetlifyConnect = () => {
-    setDeploying(true);
-    setTimeout(() => {
-      setDeploying(false);
-      toast.success('Conectado ao Netlify com sucesso!');
-      setDeployModal(false);
-    }, 2000);
-  };
+  const openDeploy = useCallback(() => {
+    setSettingsTab('deploy');
+    setAppSettingsOpen(true);
+  }, []);
 
   return (
     <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
@@ -43,15 +38,15 @@ export function Header() {
             <>
               {chat.started && (
                 <>
-                  <button onClick={() => setDeployModal(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700 text-xs font-medium shadow-sm">
+                  <button onClick={openDeploy} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 text-xs font-medium shadow-sm">
                     <div className="i-ph:rocket-launch-duotone" /> Deploy
                   </button>
                   <SaveProjectButton />
                   <GitHubPush />
-                  <button onClick={() => setAppSettingsOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
+                  <button onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); }} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
                     <div className="i-ph:sliders-horizontal text-base" />
                   </button>
-                  <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} />
+                  <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} defaultTab={settingsTab} />
                 </>
               )}
               <SettingsDialog />
@@ -61,18 +56,6 @@ export function Header() {
           )}
         </ClientOnly>
       </div>
-
-      {deployModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDeployModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="bg-bolt-elements-background-depth-2 p-8 rounded-xl border border-bolt-elements-borderColor w-[450px] shadow-2xl">
-            <h2 className="text-xl font-bold mb-2 text-bolt-elements-textPrimary">Deploy Netlify</h2>
-            <p className="text-sm text-bolt-elements-textSecondary mb-6">Conecte sua conta para publicar seu projeto instantaneamente.</p>
-            <button onClick={handleNetlifyConnect} disabled={deploying} className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-all">
-              {deploying ? 'Conectando...' : 'Conectar Netlify'}
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

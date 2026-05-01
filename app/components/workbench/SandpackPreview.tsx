@@ -1,38 +1,51 @@
 import { useStore } from '@nanostores/react';
 import { memo, useMemo, useRef, useEffect, useState } from 'react';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
+import type { FileMap, File as WFile } from '~/lib/stores/files';
 
-function detectType(files: Record<string, any>): 'react' | 'html' | 'vanilla' {
-  const keys = Object.keys(files);
-  if (keys.some(k => k.endsWith('.jsx') || k.endsWith('.tsx'))) return 'react';
-  if (keys.some(k => k.endsWith('.html'))) return 'html';
-  return 'vanilla';
-}
+/**
+ * Builds a combined HTML document from the workspace files for srcdoc rendering.
+ */
+function buildSrcdoc(files: FileMap): string {
+  const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
+  if (entries.length === 0) return '';
 
-function buildSrcdoc(files: Record<string, any>): string {
-  const keys = Object.keys(files);
-  const type = detectType(files);
+  // Find an HTML file (prefer index.html)
+  const htmlEntry = entries.find(([p]) => p.endsWith('/index.html')) || entries.find(([p]) => p.endsWith('.html'));
+  let htmlContent = htmlEntry?.[1].content || '';
 
-  // Find the main HTML file
-  const htmlFile = keys.find(k => k.endsWith('/index.html'));
-  let htmlContent = htmlFile ? files[htmlFile].content : '';
+  // Collect CSS and JS files (excluding node_modules)
+  const cssFiles = entries.filter(([p]) => p.endsWith('.css') && !p.includes('node_modules'));
+  const jsFiles = entries.filter(([p]) => (p.endsWith('.js') || p.endsWith('.mjs')) && !p.includes('node_modules'));
 
-  // If no HTML file, build one
-  if (!htmlContent) {
-    if (type === 'html') {
-      const first = keys.find(k => k.endsWith('.html'));
-      htmlContent = first ? files[first].content : '';
+  if (htmlContent) {
+    // Inject Tailwind if not present
+    if (!htmlContent.includes('tailwindcss') && !htmlContent.includes('tailwind')) {
+      htmlContent = htmlContent.replace(
+        '<head>',
+        '<head>\n  <script src="https://cdn.tailwindcss.com"><\/script>'
+      );
     }
-  }
 
-  if (!htmlContent) {
-    // Build a simple HTML wrapper
-    const cssFiles = keys.filter(k => k.endsWith('.css'));
-    const jsFiles = keys.filter(k => k.endsWith('.js') && !k.includes('node_modules'));
+    // Inject inline CSS before </head> if we have separate CSS files
+    if (cssFiles.length > 0) {
+      const cssBlock = cssFiles.map(([, f]) => `<style>\n${f.content}\n</style>`).join('\n');
+      if (htmlContent.includes('</head>')) {
+        htmlContent = htmlContent.replace('</head>', `${cssBlock}\n</head>`);
+      }
+    }
 
-    const inlineCSS = cssFiles.map(k => `/* ${k} */\n${files[k].content}`).join('\n\n');
-    const inlineJS = jsFiles.map(k => `/* ${k} */\n${files[k].content}`).join('\n\n');
+    // Inject inline JS before </body> if we have separate JS files
+    if (jsFiles.length > 0) {
+      const jsBlock = jsFiles.map(([, f]) => `<script>\n${f.content}\n<\/script>`).join('\n');
+      if (htmlContent.includes('</body>')) {
+        htmlContent = htmlContent.replace('</body>', `${jsBlock}\n</body>`);
+      }
+    }
+  } else {
+    // No HTML file found — build one from scratch
+    const inlineCSS = cssFiles.map(([, f]) => f.content).join('\n\n');
+    const inlineJS = jsFiles.map(([, f]) => f.content).join('\n\n');
 
     htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -47,20 +60,12 @@ function buildSrcdoc(files: Record<string, any>): string {
   <script>${inlineJS}<\/script>
 </body>
 </html>`;
-  } else {
-    // Inject Tailwind if not present
-    if (!htmlContent.includes('tailwindcss') && !htmlContent.includes('tailwind')) {
-      htmlContent = htmlContent.replace(
-        '<head>',
-        '<head>\n  <script src="https://cdn.tailwindcss.com"><\/script>'
-      );
-    }
   }
 
   return htmlContent;
 }
 
-export const SandpackPreview = memo(() => {
+export const SandpackPreview = memo(function SandpackPreview() {
   const files = useStore(workbenchStore.files);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [srcdoc, setSrcdoc] = useState('');
@@ -68,39 +73,34 @@ export const SandpackPreview = memo(() => {
   const htmlContent = useMemo(() => buildSrcdoc(files), [files]);
 
   useEffect(() => {
-    setSrcdoc(htmlContent);
+    // Small delay to ensure smooth transition
+    const timer = setTimeout(() => setSrcdoc(htmlContent), 80);
+    return () => clearTimeout(timer);
   }, [htmlContent]);
 
-  const refresh = () => {
-    if (iframeRef.current) {
-      setSrcdoc('');
-      setTimeout(() => setSrcdoc(htmlContent), 50);
-    }
-  };
+  const fileCount = useMemo(() => {
+    return Object.values(files).filter((f): f is WFile => f?.type === 'file' && !f.isBinary).length;
+  }, [files]);
 
-  if (Object.keys(files).length === 0) {
+  if (fileCount === 0) {
     return (
       <div className="flex items-center justify-center h-full w-full text-bolt-elements-textTertiary">
         <div className="text-center">
           <div className="i-ph:cube-duotone text-4xl mb-3 mx-auto" />
           <p className="text-sm">No files to preview</p>
-          <p className="text-xs text-bolt-elements-textTertiary mt-1">Import or create files to see a preview</p>
+          <p className="text-xs text-bolt-elements-textTertiary mt-1">Create or import files to see a preview</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col absolute inset-0">
-      {srcdoc && (
-        <iframe
-          ref={iframeRef}
-          className="w-full h-full border-0 bg-white"
-          srcDoc={srcdoc}
-          title="Preview"
-          sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
-        />
-      )}
-    </div>
+    <iframe
+      ref={iframeRef}
+      className="w-full h-full border-0 bg-white"
+      srcDoc={srcdoc}
+      title="Sandpack Preview"
+      sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups"
+    />
   );
 });

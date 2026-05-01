@@ -7,16 +7,17 @@ import { workbenchStore } from '~/lib/stores/workbench';
 const TABS = [
   { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
   { id: 'preview' as const, label: 'Preview', icon: 'i-ph:eye' },
+  { id: 'deploy' as const, label: 'Deploy', icon: 'i-ph:rocket-launch-duotone' },
   { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
   { id: 'versions' as const, label: 'Snapshots', icon: 'i-ph:clock-counter-clockwise' },
 ];
 
-export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean; onClose: () => void; defaultTab?: string }) {
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
   const settings = project?.settings;
-  const [tab, setTab] = useState<typeof TABS[number]['id']>('general');
+  const [tab, setTab] = useState<typeof TABS[number]['id']>((defaultTab as any) || 'general');
   const [snapshots, setSnapshots] = useState<{ id: number; name: string; timestamp: string }[]>([]);
   const [envVars, setEnvVars] = useState<EnvVar[]>(settings?.envVars || []);
   const [newEnvKey, setNewEnvKey] = useState('');
@@ -24,14 +25,22 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
   const [projectName, setProjectName] = useState(project?.name || '');
   const [projectDesc, setProjectDesc] = useState(settings?.description || '');
   const currentPreviewMode: PreviewMode = settings?.previewMode || 'webcontainer';
+  const [netlifyToken, setNetlifyToken] = useState(settings?.netlify?.token || '');
+  const [netlifySiteId, setNetlifySiteId] = useState(settings?.netlify?.siteId || '');
+  const [deploying, setDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState<{ url: string; siteId: string } | null>(null);
 
   useEffect(() => {
     if (open) {
+      if (defaultTab) setTab(defaultTab as any);
       const saved = localStorage.getItem(`bolt.snapshots.${activeId}`);
       if (saved) setSnapshots(JSON.parse(saved));
       setProjectName(project?.name || '');
       setProjectDesc(settings?.description || '');
       setEnvVars(settings?.envVars || []);
+      setNetlifyToken(settings?.netlify?.token || '');
+      setNetlifySiteId(settings?.netlify?.siteId || '');
+      setDeployResult(null);
     }
   }, [open, activeId, project, settings]);
 
@@ -101,6 +110,47 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
     toast.success('Project info saved!');
   };
 
+  const saveNetlifySettings = () => {
+    updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: netlifySiteId.trim() } });
+    toast.success('Netlify settings saved!');
+  };
+
+  const deployToNetlify = async () => {
+    if (!netlifyToken.trim()) {
+      toast.error('Netlify token is required');
+      return;
+    }
+    setDeploying(true);
+    try {
+      await workbenchStore.saveAllFiles();
+      const files = workbenchStore.files.get();
+      const fileList = Object.entries(files)
+        .filter(([_, f]) => f?.type === 'file' && !f.isBinary)
+        .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
+
+      const res = await fetch('/api/netlify-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: netlifyToken.trim(), siteId: netlifySiteId.trim() || undefined, files: fileList }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || 'Deploy failed');
+      }
+      const data = await res.json();
+      setDeployResult({ url: data.url, siteId: data.siteId });
+      if (data.siteId) {
+        updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: data.siteId } });
+        setNetlifySiteId(data.siteId);
+      }
+      toast.success('Deployed to Netlify!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Deploy failed');
+    } finally {
+      setDeploying(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -156,6 +206,7 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
               <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
                 {tab === 'general' && 'Project name, description and branding'}
                 {tab === 'preview' && 'Choose how your project preview works'}
+                {tab === 'deploy' && 'Configure deployment providers and tokens'}
                 {tab === 'env' && 'Manage environment variables for your project'}
                 {tab === 'versions' && 'Save and restore project snapshots'}
               </p>
@@ -225,46 +276,155 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3">
                   {([
-                    { mode: 'webcontainer' as const, icon: 'i-ph:cube-duotone', title: 'WebContainer', desc: 'Full preview with terminal and real server. Requires COOP/COEP headers on your hosting.' },
-                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', desc: 'Fast in-browser preview powered by CodeSandbox. No special headers needed. Works anywhere.' },
-                  ]).map(option => (
-                    <button
-                      key={option.mode}
-                      onClick={() => {
-                        updateActiveProjectSettings({ previewMode: option.mode });
-                        toast.success(`${option.title} mode activated!`);
-                      }}
-                      className={`relative w-full p-4 rounded-xl border text-left transition-all group ${
-                        currentPreviewMode === option.mode
-                          ? 'border-purple-500 bg-purple-500/8 ring-1 ring-purple-500/40'
-                          : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-purple-500/30 hover:bg-purple-500/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                          currentPreviewMode === option.mode ? 'bg-purple-500/20' : 'bg-bolt-elements-background-depth-2'
-                        }`}>
-                          <div className={`${option.icon} text-xl ${currentPreviewMode === option.mode ? 'text-purple-400' : 'text-bolt-elements-textTertiary'}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-semibold text-sm ${currentPreviewMode === option.mode ? 'text-purple-300' : 'text-bolt-elements-textPrimary'}`}>
-                              {option.title}
-                            </span>
-                            {currentPreviewMode === option.mode && (
-                              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/20 text-purple-400 uppercase tracking-wider">
-                                Active
-                              </span>
-                            )}
+                    { mode: 'webcontainer' as const, icon: 'i-ph:cube-duotone', title: 'WebContainer', color: 'blue', desc: 'Full preview with terminal and real server. Requires COOP/COEP headers on your hosting.' },
+                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', color: 'amber', desc: 'Fast in-browser HTML/CSS/JS preview. No special headers needed. Works anywhere.' },
+                    { mode: 'iframe' as const, icon: 'i-ph:code-duotone', title: 'Iframe SrcDoc', color: 'green', desc: 'Lightweight srcdoc iframe that renders your HTML directly. Minimal overhead.' },
+                    { mode: 'newtab' as const, icon: 'i-ph:arrow-square-out-duotone', title: 'New Tab', color: 'pink', desc: 'Opens your project in a new browser tab as a standalone page.' },
+                  ]).map(option => {
+                    const isActive = currentPreviewMode === option.mode;
+                    const activeColorMap: Record<string, string> = {
+                      blue: 'border-blue-500 bg-blue-500/8 ring-1 ring-blue-500/40',
+                      amber: 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/40',
+                      green: 'border-green-500 bg-green-500/8 ring-1 ring-green-500/40',
+                      pink: 'border-pink-500 bg-pink-500/8 ring-1 ring-pink-500/40',
+                    };
+                    const iconBgActive: Record<string, string> = {
+                      blue: 'bg-blue-500/20', amber: 'bg-amber-500/20', green: 'bg-green-500/20', pink: 'bg-pink-500/20',
+                    };
+                    const iconColorActive: Record<string, string> = {
+                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', pink: 'text-pink-400',
+                    };
+                    const badgeColor: Record<string, string> = {
+                      blue: 'bg-blue-500/20 text-blue-400', amber: 'bg-amber-500/20 text-amber-400',
+                      green: 'bg-green-500/20 text-green-400', pink: 'bg-pink-500/20 text-pink-400',
+                    };
+                    const checkColor: Record<string, string> = {
+                      blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', pink: 'text-pink-400',
+                    };
+
+                    return (
+                      <button
+                        key={option.mode}
+                        onClick={() => {
+                          updateActiveProjectSettings({ previewMode: option.mode });
+                          toast.success(`${option.title} mode activated!`);
+                        }}
+                        className={`relative w-full p-4 rounded-xl border text-left transition-all group ${
+                          isActive
+                            ? activeColorMap[option.color]
+                            : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                            isActive ? iconBgActive[option.color] : 'bg-bolt-elements-background-depth-2'
+                          }`}>
+                            <div className={`${option.icon} text-xl ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textTertiary'}`} />
                           </div>
-                          <p className="text-xs text-bolt-elements-textTertiary mt-0.5 leading-relaxed">{option.desc}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-sm ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textPrimary'}`}>
+                                {option.title}
+                              </span>
+                              {isActive && (
+                                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeColor[option.color]} uppercase tracking-wider`}>
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-bolt-elements-textTertiary mt-0.5 leading-relaxed">{option.desc}</p>
+                          </div>
+                          {isActive && (
+                            <div className={`i-ph:check-circle-fill ${checkColor[option.color]} text-xl shrink-0`} />
+                          )}
                         </div>
-                        {currentPreviewMode === option.mode && (
-                          <div className="i-ph:check-circle-fill text-purple-400 text-xl shrink-0" />
-                        )}
-                      </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {tab === 'deploy' && (
+              <div className="space-y-5">
+                {/* Netlify Section */}
+                <div>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center shrink-0">
+                      <div className="i-ph:cloud-arrow-up text-teal-400 text-base" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Netlify</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy your site to Netlify</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Personal Access Token</label>
+                      <input
+                        value={netlifyToken}
+                        onChange={(e) => setNetlifyToken(e.target.value)}
+                        onBlur={saveNetlifySettings}
+                        placeholder="ntfy_..."
+                        type="password"
+                        className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder:text-bolt-elements-textTertiary font-mono"
+                      />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
+                        Create a token at <span className="text-teal-400">app.netlify.com/user/applications#personal-access-tokens</span>
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Site ID (optional)</label>
+                      <input
+                        value={netlifySiteId}
+                        onChange={(e) => setNetlifySiteId(e.target.value)}
+                        onBlur={saveNetlifySettings}
+                        placeholder="Leave empty to create a new site"
+                        className="w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder:text-bolt-elements-textTertiary font-mono"
+                      />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
+                        If empty, a new site will be created. If set, the existing site will be updated.
+                      </p>
+                    </div>
+                    <button
+                      onClick={deployToNetlify}
+                      disabled={deploying || !netlifyToken.trim()}
+                      className="w-full py-3 px-4 bg-teal-500/12 text-teal-400 rounded-xl text-sm font-semibold border border-teal-500/20 hover:bg-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    >
+                      {deploying ? (
+                        <><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>
+                      ) : (
+                        <><div className="i-ph:rocket-launch text-base" /> Deploy to Netlify</>
+                      )}
                     </button>
-                  ))}
+                    {deployResult && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
+                        <div className="i-ph:check-circle-fill text-green-400 text-lg shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-green-400">Deployed successfully!</p>
+                          <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">
+                            {deployResult.url}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vercel Section */}
+                <div className="border-t border-bolt-elements-borderColor pt-4">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                      <div className="i-ph:triangle text-bolt-elements-textPrimary text-base" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Vercel</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">Coming soon</p>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border border-dashed border-bolt-elements-borderColor text-center">
+                    <p className="text-xs text-bolt-elements-textTertiary">Vercel integration is under development. Use the GitHub push button to deploy via Vercel for now.</p>
+                  </div>
                 </div>
               </div>
             )}
