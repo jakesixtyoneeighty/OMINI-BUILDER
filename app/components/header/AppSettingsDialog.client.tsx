@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useStore } from '@nanostores/react';
-import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, type EnvVar } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, type EnvVar, type PreviewMode } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 
 export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
-  const [tab, setTab] = useState<'general' | 'env' | 'versions'>('general');
+  const [tab, setTab] = useState<'general' | 'preview' | 'env' | 'versions'>('general');
   const [snapshots, setSnapshots] = useState<{ id: number; name: string; timestamp: string }[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>(project.settings.envVars || []);
@@ -74,13 +74,22 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
     toast.success('Variáveis de ambiente salvas!');
   };
 
+  const currentPreviewMode: PreviewMode = project?.settings.previewMode || 'webcontainer';
+
   if (!open) return null;
+
+  const tabLabels: Record<string, string> = {
+    general: 'General',
+    preview: 'Preview',
+    env: 'Env Vars',
+    versions: 'Versions',
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div onClick={e => e.stopPropagation()} className="w-[700px] h-[500px] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl flex overflow-hidden">
         <aside className="w-48 bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor p-4 space-y-2">
-          {['general', 'env', 'versions'].map(t => (
+          {['general', 'preview', 'env', 'versions'].map(t => (
             <button 
               key={t} 
               onClick={() => setTab(t as any)} 
@@ -90,28 +99,28 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                   : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive'
               }`}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {tabLabels[t]}
             </button>
           ))}
         </aside>
         <main className="flex-1 p-6 overflow-y-auto">
           {tab === 'general' && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Geral</h2>
+              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">General</h2>
               <input 
                 value={project?.name || ''} 
                 onChange={(e) => updateActiveProjectSettings({ name: e.target.value })}
-                placeholder="Nome do Projeto" 
+                placeholder="Project Name" 
                 className="w-full p-3 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg" 
               />
               <textarea 
                 value={project?.settings.description || ''} 
                 onChange={(e) => updateActiveProjectSettings({ description: e.target.value })}
-                placeholder="Descrição" 
+                placeholder="Description" 
                 className="w-full p-3 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg h-32" 
               />
               <div>
-                <label className="block text-sm font-medium text-bolt-elements-textSecondary mb-2">Logo do App</label>
+                <label className="block text-sm font-medium text-bolt-elements-textSecondary mb-2">App Logo</label>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-bolt-elements-background-depth-1 rounded-lg flex items-center justify-center">
                     {project.settings.logo ? (
@@ -127,15 +136,71 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                       onChange={handleLogoUpload} 
                       className="w-full text-sm p-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg"
                     />
-                    <p className="text-xs text-bolt-elements-textTertiary mt-1">PNG, JPG, SVG até 2MB</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1">PNG, JPG, SVG up to 2MB</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
+          {tab === 'preview' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Preview Mode</h2>
+              <p className="text-sm text-bolt-elements-textSecondary">Choose how you want to preview your project. Both modes will show your app running in real-time.</p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    updateActiveProjectSettings({ previewMode: 'webcontainer' });
+                    toast.success('WebContainer mode activated!');
+                  }}
+                  className={`w-full p-4 rounded-lg border text-left transition-all ${
+                    currentPreviewMode === 'webcontainer'
+                      ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500'
+                      : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColorActive'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                      <div className="i-ph:cube-duotone text-purple-400 text-xl" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-bolt-elements-textPrimary">WebContainer</div>
+                      <div className="text-xs text-bolt-elements-textTertiary">Full preview with terminal and real server. Requires COOP/COEP headers.</div>
+                    </div>
+                    {currentPreviewMode === 'webcontainer' && (
+                      <div className="i-ph:check-circle-fill text-purple-400 text-xl shrink-0" />
+                    )}
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    updateActiveProjectSettings({ previewMode: 'sandpack' });
+                    toast.success('Sandpack mode activated!');
+                  }}
+                  className={`w-full p-4 rounded-lg border text-left transition-all ${
+                    currentPreviewMode === 'sandpack'
+                      ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500'
+                      : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColorActive'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                      <div className="i-ph:browser-duotone text-purple-400 text-xl" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-bolt-elements-textPrimary">Sandpack</div>
+                      <div className="text-xs text-bolt-elements-textTertiary">Fast in-browser preview. No special headers needed. Works anywhere.</div>
+                    </div>
+                    {currentPreviewMode === 'sandpack' && (
+                      <div className="i-ph:check-circle-fill text-purple-400 text-xl shrink-0" />
+                    )}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
           {tab === 'env' && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Variáveis de Ambiente</h2>
+              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Environment Variables</h2>
               <div className="space-y-2">
                 {envVars.map((env, index) => (
                   <div key={index} className="flex items-center gap-2 p-2 bg-bolt-elements-background-depth-1 rounded">
@@ -151,13 +216,13 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                   <input 
                     value={newEnvKey} 
                     onChange={(e) => setNewEnvKey(e.target.value)}
-                    placeholder="CHAVE" 
+                    placeholder="KEY" 
                     className="flex-1 p-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded text-sm font-mono" 
                   />
                   <input 
                     value={newEnvValue} 
                     onChange={(e) => setNewEnvValue(e.target.value)}
-                    placeholder="valor" 
+                    placeholder="value" 
                     className="flex-1 p-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded text-sm font-mono" 
                   />
                   <button onClick={addEnvVar} className="px-3 py-2 bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent rounded">
@@ -166,7 +231,7 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                 </div>
               </div>
               <button onClick={saveEnvVars} className="w-full py-2 bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent rounded-lg text-sm font-bold">
-                Salvar Variáveis
+                Save Variables
               </button>
             </div>
           )}
@@ -174,7 +239,7 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Snapshots</h2>
               <button onClick={saveSnapshot} className="w-full py-2 bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent rounded-lg text-sm font-bold">
-                Criar Snapshot Atual
+                Create Snapshot
               </button>
               <div className="space-y-2">
                 {snapshots.map(s => (
@@ -183,7 +248,7 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                       <span className="text-sm font-medium">{s.name}</span>
                       <div className="text-xs text-bolt-elements-textTertiary">{new Date(s.timestamp).toLocaleString()}</div>
                     </div>
-                    <button onClick={() => restoreSnapshot(s.id)} className="text-xs text-bolt-elements-item-contentAccent">Restaurar</button>
+                    <button onClick={() => restoreSnapshot(s.id)} className="text-xs text-bolt-elements-item-contentAccent">Restore</button>
                   </div>
                 ))}
               </div>

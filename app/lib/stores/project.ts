@@ -7,11 +7,14 @@ export interface EnvVar {
   value: string;
 }
 
+export type PreviewMode = 'webcontainer' | 'sandpack';
+
 export interface ProjectSettings {
   name: string;
   description: string;
   logo: string;
   envVars: EnvVar[];
+  previewMode: PreviewMode;
   github: {
     token: string;
     repo: string;
@@ -33,6 +36,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   description: '',
   logo: '',
   envVars: [],
+  previewMode: 'webcontainer',
   github: { token: '', repo: '', branch: 'main' },
 };
 

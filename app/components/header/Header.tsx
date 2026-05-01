@@ -31,7 +31,7 @@ export function Header() {
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
         <a href="/" className="text-2xl font-semibold text-accent flex items-center">
-          <span className="i-bolt:logo-text?mask w-[46px] inline-block" />
+          <span className="i-bolt:logo-text?mask w-[180px] inline-block" />
         </a>
       </div>
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
@@ -43,7 +43,7 @@ export function Header() {
             <>
               {chat.started && (
                 <>
-                  <button onClick={() => setDeployModal(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium shadow-sm">
+                  <button onClick={() => setDeployModal(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700 text-xs font-medium shadow-sm">
                     <div className="i-ph:rocket-launch-duotone" /> Deploy
                   </button>
                   <SaveProjectButton />
@@ -67,7 +67,7 @@ export function Header() {
           <div onClick={e => e.stopPropagation()} className="bg-bolt-elements-background-depth-2 p-8 rounded-xl border border-bolt-elements-borderColor w-[450px] shadow-2xl">
             <h2 className="text-xl font-bold mb-2 text-bolt-elements-textPrimary">Deploy Netlify</h2>
             <p className="text-sm text-bolt-elements-textSecondary mb-6">Conecte sua conta para publicar seu projeto instantaneamente.</p>
-            <button onClick={handleNetlifyConnect} disabled={deploying} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all">
+            <button onClick={handleNetlifyConnect} disabled={deploying} className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-all">
               {deploying ? 'Conectando...' : 'Conectar Netlify'}
             </button>
           </div>
