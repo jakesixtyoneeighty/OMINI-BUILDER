@@ -40,6 +40,13 @@ export interface ProjectSettings {
     projectName: string;
     framework: string;
   };
+  cloudRun: {
+    projectId: string;
+    region: string;
+    serviceAccountKey: string;
+    serviceName: string;
+    allowUnauthenticated: boolean;
+  };
   github: {
     token: string;
     repo: string;
@@ -69,6 +76,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   previewMode: 'webcontainer',
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
+  cloudRun: { projectId: '', region: 'us-central1', serviceAccountKey: '', serviceName: '', allowUnauthenticated: true },
   github: { token: '', repo: '', branch: 'main' },
   database: {
     type: 'none',
@@ -138,6 +146,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
     netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
     vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
+    cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
     database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) } },
   };
 

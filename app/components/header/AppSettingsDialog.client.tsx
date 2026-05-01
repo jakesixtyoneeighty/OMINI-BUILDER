@@ -60,14 +60,21 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const [vercelProjectName, setVercelProjectName] = useState(settings?.vercel?.projectName || '');
   const [vercelFramework, setVercelFramework] = useState(settings?.vercel?.framework || 'vite');
 
+  // Cloud Run
+  const [crProjectId, setCrProjectId] = useState(settings?.cloudRun?.projectId || '');
+  const [crRegion, setCrRegion] = useState(settings?.cloudRun?.region || 'us-central1');
+  const [crServiceAccountKey, setCrServiceAccountKey] = useState(settings?.cloudRun?.serviceAccountKey || '');
+  const [crServiceName, setCrServiceName] = useState(settings?.cloudRun?.serviceName || '');
+  const [crAllowUnauth, setCrAllowUnauth] = useState(settings?.cloudRun?.allowUnauthenticated ?? true);
+
   // Database
   const [dbType, setDbType] = useState<'none' | 'firebase' | 'supabase'>(settings?.database?.type || 'none');
   const [firebase, setFirebase] = useState<FirebaseConfig>(settings?.database?.firebase || { ...emptyFirebase });
   const [supabase, setSupabase] = useState<SupabaseConfig>(settings?.database?.supabase || { ...emptySupabase });
 
   // Deploy state
-  const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel'>('none');
-  const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string } | null>(null);
+  const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel' | 'cloudrun'>('none');
+  const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string; message?: string; buildLogsUrl?: string } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -82,6 +89,11 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       setVercelToken(settings?.vercel?.token || '');
       setVercelProjectName(settings?.vercel?.projectName || '');
       setVercelFramework(settings?.vercel?.framework || 'vite');
+      setCrProjectId(settings?.cloudRun?.projectId || '');
+      setCrRegion(settings?.cloudRun?.region || 'us-central1');
+      setCrServiceAccountKey(settings?.cloudRun?.serviceAccountKey || '');
+      setCrServiceName(settings?.cloudRun?.serviceName || '');
+      setCrAllowUnauth(settings?.cloudRun?.allowUnauthenticated ?? true);
       setDbType(settings?.database?.type || 'none');
       setFirebase(settings?.database?.firebase || { ...emptyFirebase });
       setSupabase(settings?.database?.supabase || { ...emptySupabase });
@@ -165,6 +177,19 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     toast.success('Vercel settings saved!');
   };
 
+  const saveCloudRunSettings = () => {
+    updateActiveProjectSettings({
+      cloudRun: {
+        projectId: crProjectId.trim(),
+        region: crRegion,
+        serviceAccountKey: crServiceAccountKey.trim(),
+        serviceName: crServiceName.trim(),
+        allowUnauthenticated: crAllowUnauth,
+      },
+    });
+    toast.success('Cloud Run settings saved!');
+  };
+
   const saveDatabaseSettings = () => {
     updateActiveProjectSettings({
       database: {
@@ -224,6 +249,33 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       setDeployResult({ url: data.url, projectId: data.projectId, provider: 'vercel' });
       if (data.projectId) { updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } }); }
       toast.success('Deployed to Vercel!');
+    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
+  };
+
+  const deployToCloudRun = async () => {
+    if (!crProjectId.trim()) { toast.error('Google Cloud Project ID is required'); return; }
+    if (!crServiceAccountKey.trim()) { toast.error('Service Account Key is required'); return; }
+    setDeploying('cloudrun');
+    setDeployResult(null);
+    try {
+      const fileList = await getProjectFiles();
+      const res = await fetch('/api/cloudrun-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: crProjectId.trim(),
+          region: crRegion,
+          serviceAccountKey: crServiceAccountKey.trim(),
+          serviceName: crServiceName.trim() || undefined,
+          allowUnauthenticated: crAllowUnauth,
+          files: fileList,
+        }),
+      });
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
+      const data = await res.json();
+      setDeployResult({ url: data.url, projectId: crProjectId, provider: 'cloudrun', message: data.message, buildLogsUrl: data.buildLogsUrl });
+      if (data.serviceName) { updateActiveProjectSettings({ cloudRun: { projectId: crProjectId.trim(), region: crRegion, serviceAccountKey: crServiceAccountKey.trim(), serviceName: data.serviceName, allowUnauthenticated: crAllowUnauth } }); setCrServiceName(data.serviceName); }
+      toast.success('Cloud Run deployment started!');
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
   };
 
@@ -437,16 +489,91 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   </div>
                 </div>
 
+                {/* Cloud Run Section */}
+                <div className="border-t border-bolt-elements-borderColor pt-5">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+                      <div className="i-ph:cloud-arrow-up text-blue-400 text-base" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Google Cloud Run</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy to Google Cloud Run</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Google Cloud Project ID</label>
+                      <input value={crProjectId} onChange={(e) => setCrProjectId(e.target.value)} onBlur={saveCloudRunSettings} placeholder="my-gcp-project-123" className={monoInputClass + " focus:ring-blue-500/30 focus:border-blue-500/50"} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Your project ID from <span className="text-blue-400">console.cloud.google.com</span></p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Region</label>
+                      <select value={crRegion} onChange={(e) => setCrRegion(e.target.value)} onBlur={saveCloudRunSettings}
+                        className={monoInputClass + " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center] focus:ring-blue-500/30 focus:border-blue-500/50"}>
+                        <option value="us-central1">us-central1 (Iowa)</option>
+                        <option value="us-east1">us-east1 (South Carolina)</option>
+                        <option value="us-east4">us-east4 (Northern Virginia)</option>
+                        <option value="us-west1">us-west1 (Oregon)</option>
+                        <option value="us-west2">us-west2 (Los Angeles)</option>
+                        <option value="europe-west1">europe-west1 (Belgium)</option>
+                        <option value="europe-west2">europe-west2 (London)</option>
+                        <option value="europe-west3">europe-west3 (Frankfurt)</option>
+                        <option value="asia-east1">asia-east1 (Taiwan)</option>
+                        <option value="asia-northeast1">asia-northeast1 (Tokyo)</option>
+                        <option value="asia-southeast1">asia-southeast1 (Singapore)</option>
+                        <option value="southamerica-east1">southamerica-east1 (Sao Paulo)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Service Account Key (JSON)</label>
+                      <textarea value={crServiceAccountKey} onChange={(e) => setCrServiceAccountKey(e.target.value)} onBlur={saveCloudRunSettings}
+                        placeholder='{"type": "service_account", "project_id": "...", ...}'
+                        rows={3}
+                        className={monoInputClass + " resize-none text-[11px] focus:ring-blue-500/30 focus:border-blue-500/50"} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a service account with <span className="text-blue-400">Cloud Run Admin</span> and <span className="text-blue-400">Storage Admin</span> roles. Download the JSON key.</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Service Name (optional)</label>
+                      <input value={crServiceName} onChange={(e) => setCrServiceName(e.target.value)} onBlur={saveCloudRunSettings} placeholder="my-service" className={monoInputClass + " focus:ring-blue-500/30 focus:border-blue-500/50"} />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Leave empty for an auto-generated name.</p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={crAllowUnauth} onChange={(e) => { setCrAllowUnauth(e.target.checked); saveCloudRunSettings(); }}
+                        className="w-4 h-4 rounded border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 accent-blue-500" />
+                      <span className="text-sm text-bolt-elements-textSecondary">Allow unauthenticated access (public)</span>
+                    </label>
+                    <button onClick={deployToCloudRun} disabled={deploying !== 'none' || !crProjectId.trim() || !crServiceAccountKey.trim()}
+                      className="w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                      {deploying === 'cloudrun' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Cloud Run</>)}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Deploy Result */}
                 {deployResult && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
-                    <div className="i-ph:check-circle-fill text-green-400 text-lg shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-green-400">
-                        Deployed to {deployResult.provider === 'vercel' ? 'Vercel' : 'Netlify'} successfully!
-                      </p>
-                      <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">{deployResult.url}</a>
+                  <div className="flex flex-col gap-2 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className={`i-ph:${deployResult.provider === 'cloudrun' ? 'clock' : 'check-circle-fill'} ${deployResult.provider === 'cloudrun' ? 'text-amber-400' : 'text-green-400'} text-lg shrink-0`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-green-400">
+                          {deployResult.provider === 'cloudrun'
+                            ? `Cloud Run deployment started!`
+                            : `Deployed to ${deployResult.provider === 'vercel' ? 'Vercel' : 'Netlify'} successfully!`
+                          }
+                        </p>
+                        {deployResult.url && (
+                          <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">{deployResult.url}</a>
+                        )}
+                      </div>
                     </div>
+                    {deployResult.message && (
+                      <p className="text-[11px] text-bolt-elements-textTertiary pl-8">{deployResult.message}</p>
+                    )}
+                    {deployResult.buildLogsUrl && (
+                      <a href={deployResult.buildLogsUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline pl-8 flex items-center gap-1">
+                        <div className="i-ph:arrow-square-out text-xs" /> View build logs in Google Cloud Console
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
