@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { getActiveProject, projectsStore, activeProjectIdStore, updateActiveProjectSettings } from '~/lib/stores/project';
+import { GOOGLE_CLIENT_ID } from '~/lib/google-oauth';
 
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
@@ -19,13 +20,19 @@ interface TokenResponse {
   error?: string;
 }
 
+// Prioridade: env var VITE_GOOGLE_CLIENT_ID > settings do projeto > manual
+function getEffectiveClientId(settingsClientId: string): string {
+  return GOOGLE_CLIENT_ID || settingsClientId || '';
+}
+
 export function SaveToDrive() {
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
   const settings = project?.settings;
-
-  const clientId = settings?.googleDrive?.clientId || '';
+  const settingsClientId = settings?.googleDrive?.clientId || '';
+  const clientId = getEffectiveClientId(settingsClientId);
+  const isFromEnv = !!GOOGLE_CLIENT_ID;
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'idle' | 'auth' | 'creating' | 'uploading' | 'done' | 'error'>('idle');
@@ -39,7 +46,7 @@ export function SaveToDrive() {
   const [localClientId, setLocalClientId] = useState('');
   const [showClientIdInput, setShowClientIdInput] = useState(false);
 
-  // Sync localClientId with the stored clientId
+  // Sync localClientId — se tem env var, usa ela; senão usa settings
   useEffect(() => {
     if (open) {
       setLocalClientId(clientId);
@@ -74,7 +81,8 @@ export function SaveToDrive() {
   useEffect(() => {
     if (!gisLoaded || !window.google?.accounts?.oauth2) return;
 
-    const effectiveClientId = localClientId.trim();
+    // Prioridade: env var > localClientId (do input ou settings)
+    const effectiveClientId = (GOOGLE_CLIENT_ID || localClientId.trim());
 
     if (!effectiveClientId) {
       setTokenClient(null);
@@ -99,23 +107,24 @@ export function SaveToDrive() {
   }, [gisLoaded, localClientId]);
 
   const requestAuth = useCallback(() => {
-    if (!localClientId.trim()) {
-      toast.error('Please enter your Google OAuth Client ID first.');
+    const effectiveId = GOOGLE_CLIENT_ID || localClientId.trim();
+    if (!effectiveId) {
+      toast.error('Configure o Google OAuth Client ID nas variáveis de ambiente (VITE_GOOGLE_CLIENT_ID) ou nas configurações do projeto.');
       return;
     }
     if (!tokenClient) {
-      toast.error('Google Identity Services is still loading. Try again in a moment.');
+      toast.error('Google Identity Services ainda está carregando. Tente novamente em instantes.');
       return;
     }
 
-    // Save the Client ID to settings before authenticating
-    if (localClientId.trim() !== clientId) {
+    // Salva o Client ID nas settings se veio do input manual
+    if (!GOOGLE_CLIENT_ID && localClientId.trim() && localClientId.trim() !== settingsClientId) {
       updateActiveProjectSettings({ googleDrive: { clientId: localClientId.trim() } });
     }
 
     setStep('auth');
     tokenClient.requestAccessToken();
-  }, [tokenClient, localClientId, clientId]);
+  }, [tokenClient, localClientId, settingsClientId]);
 
   // Watch for access token changes to trigger upload
   useEffect(() => {
@@ -406,23 +415,35 @@ export function SaveToDrive() {
               {/* === IDLE: Show info + Client ID config + Sign In === */}
               {step === 'idle' && (
                 <div className="space-y-4">
-                  {/* Google Client ID input */}
+                  {/* Status do Client ID */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
                         Google OAuth Client ID
                       </label>
-                      {clientId && (
+                      {clientId && !isFromEnv && (
                         <button
                           onClick={() => setShowClientIdInput(!showClientIdInput)}
                           className="text-[11px] text-blue-400 hover:underline"
                         >
-                          {showClientIdInput ? 'Hide' : 'Change'}
+                          {showClientIdInput ? 'Ocultar' : 'Alterar'}
                         </button>
                       )}
                     </div>
 
-                    {!showClientIdInput && clientId ? (
+                    {isFromEnv ? (
+                      /* Client ID veio da env var — mostra badge de configurado */
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
+                        <div className="i-ph:cloud-check text-green-400 text-sm shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-green-400 font-medium">Configurado via Cloudflare Pages</span>
+                          <span className="text-[10px] text-green-400/60 block font-mono truncate">
+                            {GOOGLE_CLIENT_ID.slice(0, 30)}...
+                          </span>
+                        </div>
+                        <span className="text-[9px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">ENV</span>
+                      </div>
+                    ) : !showClientIdInput && clientId ? (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
                         <div className="i-ph:check-circle-fill text-green-400 text-sm shrink-0" />
                         <span className="text-xs text-green-400 font-mono truncate flex-1">
@@ -440,11 +461,10 @@ export function SaveToDrive() {
                         />
                         <div className="p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/15">
                           <p className="text-[11px] text-bolt-elements-textTertiary leading-relaxed">
-                            <span className="text-blue-400 font-semibold">How to get your Client ID:</span> Go to{' '}
-                            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                              Google Cloud Console
-                            </a>
-                            {' '}→ Create a new project (or select existing) → Enable Google Drive API → Create OAuth 2.0 Client ID (Web application) → Add your domain to Authorized JavaScript Origins → Copy the Client ID.
+                            <span className="text-blue-400 font-semibold">Dica:</span> Configure a variável{' '}
+                            <code className="text-[10px] bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">VITE_GOOGLE_CLIENT_ID</code>{' '}
+                            nas variáveis de ambiente do Cloudflare Pages para não precisar digitar toda vez.{' '}
+                            <a href="https://console.cloud.google.com/apis/credentials" target="blank" className="text-blue-400 hover:underline">Obter Client ID</a>
                           </p>
                         </div>
                       </div>
