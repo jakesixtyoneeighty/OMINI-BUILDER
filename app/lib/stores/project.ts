@@ -57,6 +57,9 @@ export interface ProjectSettings {
     firebase: FirebaseConfig;
     supabase: SupabaseConfig;
   };
+  googleDrive: {
+    clientId: string;
+  };
 }
 
 export interface ProjectRecord {
@@ -83,6 +86,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
     firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
     supabase: { url: '', anonKey: '', serviceRoleKey: '' },
   },
+  googleDrive: { clientId: '' },
 };
 
 function loadProjects(): Record<string, ProjectRecord> {
@@ -148,6 +152,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
     cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
     database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) } },
+    googleDrive: { ...DEFAULT_SETTINGS.googleDrive, ...current.settings.googleDrive, ...(patch.googleDrive ?? {}) },
   };
 
   const updatedProject = {

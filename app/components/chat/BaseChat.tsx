@@ -10,6 +10,7 @@ import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
+import { SaveToDrive } from './SaveToDrive.client';
 import { ModelPicker } from '../header/ModelPicker.client';
 
 import styles from './BaseChat.module.scss';
@@ -205,6 +206,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
                         </div>
                       ) : null}
+                      <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                       <SettingsDialog />
                       <ThemeSwitch />
                     </div>
