@@ -16,6 +16,8 @@
 
 Obrigado pelo seu interesse em contribuir com o **Omni-Builder**! Este guia contém tudo o que você precisa saber para começar a contribuir com o projeto.
 
+**Acesse online:** [https://opensouce-app-builder--omini-builder.pages.dev](https://opensouce-app-builder--omini-builder.pages.dev/)
+
 ## Visão Geral
 
 O Omni-Builder é um construtor de aplicações web com IA, baseado no código open-source do **[Bolt.new](https://github.com/stackblitz/bolt.new)** criado pela **StackBlitz**. O projeto foi significativamente expandido com novas funcionalidades como múltiplos modos de preview, deploy para GitHub/Netlify, persistência de arquivos, e importação de projetos. Utilizamos [WebContainers](https://webcontainers.io/) da StackBlitz, [Sandpack](https://sandpack.codesandbox.io/) da CodeSandbox, e [Remix](https://remix.run/) para criar uma experiência de desenvolvimento completa no navegador.

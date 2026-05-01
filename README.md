@@ -15,6 +15,8 @@
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-orange.svg)](https://pages.cloudflare.com/)
 [![WebContainers](https://img.shields.io/badge/WebContainers-StackBlitz-green.svg)](https://webcontainers.io/)
 
+**Acesse agora:** [https://opensouce-app-builder--omini-builder.pages.dev](https://opensouce-app-builder--omini-builder.pages.dev/)
+
 </div>
 
 ---
@@ -91,7 +93,13 @@ O Omni-Builder é construído com tecnologias modernas:
 - Node.js (v20.15.1+)
 - pnpm (v9.4.0+)
 
-### Instalação
+### Ou acesse direto no navegador
+
+Sem precisar instalar nada, acesse o Omni-Builder online:
+
+👉 **[https://opensouce-app-builder--omini-builder.pages.dev](https://opensouce-app-builder--omini-builder.pages.dev/)**
+
+### Instalação Local
 
 ```bash
 # Clone o repositório
