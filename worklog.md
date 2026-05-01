@@ -19,3 +19,32 @@ Stage Summary:
 - All 4 preview modes functional with proper file rendering
 - GitHub push supports both creating new repos (private/public) and updating existing ones
 - Netlify deploy fully integrated with token-based authentication
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Add Save to Google Drive feature
+
+Work Log:
+- Explored project structure (Remix + Cloudflare Pages + nanostores)
+- Added `googleDrive: { clientId: string }` to ProjectSettings type and defaults
+- Added `googleDrive` merge in `updateActiveProjectSettings()`
+- Created `app/components/chat/SaveToDrive.client.tsx` — full component with:
+  - Dynamic Google Identity Services script loading
+  - OAuth2 token client initialization with Drive scope
+  - Google sign-in popup flow
+  - Folder creation in Google Drive (searches for existing first)
+  - Individual file upload preserving directory structure
+  - Progress bar and status steps (idle → auth → creating → uploading → done/error)
+  - Inline Client ID configuration in the modal
+  - Google official sign-in button SVG
+- Added SaveToDrive button to BaseChat.tsx chat bar (next to Settings + ThemeSwitch)
+- Added Google Drive section in AppSettingsDialog General tab with OAuth Client ID field
+- Build verified successful
+- Pushed to GitHub
+
+Stage Summary:
+- Feature: Save project files to Google Drive via OAuth2
+- Files modified: project.ts, BaseChat.tsx, AppSettingsDialog.client.tsx
+- Files created: SaveToDrive.client.tsx
+- Build: OK | Push: OK
