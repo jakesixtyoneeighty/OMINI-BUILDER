@@ -6,6 +6,8 @@
 
 **Desenvolvido por [Pedro Berbis Freire](https://github.com/Pedro21062014)** com assistência de IA da [Z.ai](https://z.ai)
 
+**Baseado no projeto open-source [Bolt.new](https://github.com/stackblitz/bolt.new) por [StackBlitz](https://stackblitz.com/)**
+
 </div>
 
 ---
@@ -16,7 +18,7 @@ Obrigado pelo seu interesse em contribuir com o **Omni-Builder**! Este guia cont
 
 ## Visão Geral
 
-O Omni-Builder é um construtor de aplicações web com IA, baseado no código open-source do Bolt.new e significativamente expandido com novas funcionalidades. Utilizamos [WebContainers](https://webcontainers.io/) da StackBlitz, [Sandpack](https://sandpack.codesandbox.io/) da CodeSandbox, e [Remix](https://remix.run/) para criar uma experiência de desenvolvimento completa no navegador.
+O Omni-Builder é um construtor de aplicações web com IA, baseado no código open-source do **[Bolt.new](https://github.com/stackblitz/bolt.new)** criado pela **StackBlitz**. O projeto foi significativamente expandido com novas funcionalidades como múltiplos modos de preview, deploy para GitHub/Netlify, persistência de arquivos, e importação de projetos. Utilizamos [WebContainers](https://webcontainers.io/) da StackBlitz, [Sandpack](https://sandpack.codesandbox.io/) da CodeSandbox, e [Remix](https://remix.run/) para criar uma experiência de desenvolvimento completa no navegador.
 
 ### Por que contribuir?
 
@@ -174,7 +176,7 @@ Ao contribuir, você concorda que seu código será licenciado sob a **licença 
 
 <div align="center">
 
-**Omni-Builder** — Feito com 💜 por [Pedro Berbis Freire](https://github.com/Pedro21062014) + [Z.ai](https://z.ai)
+**Omni-Builder** — Feito com 💜 por [Pedro Berbis Freire](https://github.com/Pedro21062014) + [Z.ai](https://z.ai) | Baseado no [Bolt.new](https://github.com/stackblitz/bolt.new) da StackBlitz
 
 Se você gostou do projeto, considere dar uma ⭐ no repositório!
 

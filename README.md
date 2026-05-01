@@ -8,6 +8,8 @@
 
 **Desenvolvido por [Pedro Berbis Freire](https://github.com/Pedro21062014)** com assistência de IA da [Z.ai](https://z.ai)
 
+**Baseado no projeto open-source [Bolt.new](https://github.com/stackblitz/bolt.new) por [StackBlitz](https://stackblitz.com/)**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![Remix](https://img.shields.io/badge/Remix-2.x-blue.svg)](https://remix.run/)
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-orange.svg)](https://pages.cloudflare.com/)
@@ -19,7 +21,7 @@
 
 ## Sobre o Omni-Builder
 
-O **Omni-Builder** é uma ferramenta open-source de desenvolvimento web com IA que permite criar, editar, executar e fazer deploy de aplicações full-stack diretamente no navegador — sem necessidade de configuração local. Baseado no projeto open-source do Bolt.new, o Omni-Builder foi significativamente expandido e melhorado com novas funcionalidades, múltiplos modos de preview, integração com GitHub e Netlify, e muito mais.
+O **Omni-Builder** é uma ferramenta open-source de desenvolvimento web com IA que permite criar, editar, executar e fazer deploy de aplicações full-stack diretamente no navegador — sem necessidade de configuração local. O projeto nasceu como um **fork expandido do [Bolt.new](https://github.com/stackblitz/bolt.new)**, o famoso AI web app builder open-source criado pela **StackBlitz**. O Omni-Builder mantém toda a base do Bolt.new e adiciona novas funcionalidades como múltiplos modos de preview, integração com GitHub/Netlify, persistência de arquivos, importação de projetos e muito mais.
 
 ## Funcionalidades
 
@@ -157,10 +159,11 @@ pnpm run deploy
 
 - **Criador e Mantenedor**: [Pedro Berbis Freire](https://github.com/Pedro21062014)
 - **Assistência de IA**: [Z.ai](https://z.ai)
-- **Projeto Base**: [Bolt.new](https://github.com/stackblitz/bolt.new) por [StackBlitz](https://stackblitz.com/)
-- **WebContainers**: [StackBlitz](https://stackblitz.com/)
-- **Sandpack**: [CodeSandbox](https://codesandbox.io/)
-- **AI SDK**: [Vercel](https://vercel.com/)
+- **Projeto Base**: [Bolt.new](https://github.com/stackblitz/bolt.new) — Criado e mantido pela [StackBlitz](https://stackblitz.com/). O Omni-Builder utiliza o código open-source do Bolt.new (licença MIT) como base e expande suas funcionalidades significativamente.
+- **WebContainers**: [StackBlitz](https://stackblitz.com/) — Tecnologia core que permite rodar Node.js completo no navegador
+- **Sandpack**: [CodeSandbox](https://codesandbox.io/) — Sandbox de código para preview rápido no navegador
+- **Remix**: [Remix Run](https://remix.run/) — Framework full-stack utilizado na construção do app
+- **AI SDK**: [Vercel](https://vercel.com/) — SDK de integração com modelos de IA
 
 ## Licença
 
@@ -170,6 +173,6 @@ Este projeto está licenciado sob a licença **MIT**. Veja o arquivo [LICENSE](L
 
 <div align="center">
 
-**Omni-Builder** — Construído com 💜 por Pedro Berbis Freire + Z.ai
+**Omni-Builder** — Construído com 💜 por Pedro Berbis Freire + Z.ai | Baseado no [Bolt.new](https://github.com/stackblitz/bolt.new) da StackBlitz
 
 </div>
