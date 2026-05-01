@@ -9,7 +9,7 @@ import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from
 import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -72,8 +72,23 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const { showChat } = useStore(chatStore);
   const llm = useStore(llmStore);
   const projectId = useStore(activeProjectIdStore);
+  const projects = useStore(projectsStore);
 
   const [animationScope, animate] = useAnimate();
+
+  // Build database config from project settings
+  const getDatabaseConfig = () => {
+    const current = projects[projectId] ?? getActiveProject();
+    const db = current.settings?.database;
+    if (!db || db.type === 'none') return undefined;
+    if (db.type === 'firebase' && db.firebase?.apiKey) {
+      return { type: 'firebase' as const, firebase: { apiKey: db.firebase.apiKey, authDomain: db.firebase.authDomain, projectId: db.firebase.projectId, storageBucket: db.firebase.storageBucket, messagingSenderId: db.firebase.messagingSenderId, appId: db.firebase.appId } };
+    }
+    if (db.type === 'supabase' && db.supabase?.url) {
+      return { type: 'supabase' as const, supabase: { url: db.supabase.url, anonKey: db.supabase.anonKey } };
+    }
+    return undefined;
+  };
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
@@ -81,6 +96,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       provider: llm.provider,
       model: llm.model,
       apiKey: llm.keys[llm.provider] || '',
+      databaseConfig: getDatabaseConfig(),
     },
     onError: async (error) => {
       logger.error('Request failed\n\n', error);

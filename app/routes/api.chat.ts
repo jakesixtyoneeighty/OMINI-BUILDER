@@ -4,9 +4,26 @@ import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type ModelSelection, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { ProviderId } from '~/lib/.server/llm/model';
+import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
+}
+
+interface ClientDatabaseConfig {
+  type: 'none' | 'firebase' | 'supabase';
+  firebase?: {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    storageBucket: string;
+    messagingSenderId: string;
+    appId: string;
+  };
+  supabase?: {
+    url: string;
+    anonKey: string;
+  };
 }
 
 interface ChatRequest {
@@ -14,6 +31,7 @@ interface ChatRequest {
   provider?: ProviderId;
   model?: string;
   apiKey?: string;
+  databaseConfig?: ClientDatabaseConfig;
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
@@ -43,10 +61,43 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
   return { provider, model, apiKey };
 }
 
+function resolveDbContext(config?: ClientDatabaseConfig): DatabaseContext | undefined {
+  if (!config || config.type === 'none') {
+    return undefined;
+  }
+
+  if (config.type === 'firebase' && config.firebase?.apiKey) {
+    return {
+      type: 'firebase',
+      firebase: {
+        apiKey: config.firebase.apiKey,
+        authDomain: config.firebase.authDomain || '',
+        projectId: config.firebase.projectId || '',
+        storageBucket: config.firebase.storageBucket || '',
+        messagingSenderId: config.firebase.messagingSenderId || '',
+        appId: config.firebase.appId || '',
+      },
+    };
+  }
+
+  if (config.type === 'supabase' && config.supabase?.url) {
+    return {
+      type: 'supabase',
+      supabase: {
+        url: config.supabase.url,
+        anonKey: config.supabase.anonKey || '',
+      },
+    };
+  }
+
+  return undefined;
+}
+
 async function chatAction({ context, request }: ActionFunctionArgs) {
   const body = await request.json<ChatRequest>();
   const { messages } = body;
   const selection = resolveSelection(body, context.cloudflare.env);
+  const dbContext = resolveDbContext(body.databaseConfig);
 
   const stream = new SwitchableStream();
 
@@ -69,13 +120,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options);
+        const result = await streamText(messages, selection, options, dbContext);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options);
+    const result = await streamText(messages, selection, options, dbContext);
 
     stream.switchSource(result.toAIStream());
 
