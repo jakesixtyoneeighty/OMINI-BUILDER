@@ -45,20 +45,83 @@ function detectProjectType(files: FileMap): ProjectType {
 
 /**
  * Map workspace files to Sandpack format: { '/path': { code: '...' } }
- * Also determines the entry point and custom setup.
+ * For React/Vite template, files need to be under /src/
  */
 function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
   const sandpackFiles: Record<string, { code: string; hidden?: boolean }> = {};
+
+  const isReactLike = projectType === 'react' || projectType === 'react-ts';
+  const isVue = projectType === 'vue';
 
   for (const [path, file] of entries) {
     // Skip common non-essential files
     if (path.includes('node_modules') || path.endsWith('.lock')) continue;
     if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.ico')) continue;
 
-    // Sandpack expects absolute paths starting with /
-    const spath = path.startsWith('/') ? path : `/${path}`;
+    // For React/Vite template, map paths to /src/ structure
+    let spath = path.startsWith('/') ? path : `/${path}`;
+
+    if (isReactLike || isVue) {
+      // If path doesn't start with /src/, put it under /src/
+      if (!spath.startsWith('/src/') && !spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
+        // Convert paths like /App.tsx -> /src/App.tsx
+        const parts = spath.split('/');
+        const filename = parts[parts.length - 1];
+        spath = `/src/${filename}`;
+      }
+    }
+
     sandpackFiles[spath] = { code: file.content, hidden: false };
+  }
+
+  // For React/Vite: ensure essential entry files exist
+  if (isReactLike) {
+    if (!sandpackFiles['/src/main.tsx'] && !sandpackFiles['/src/main.jsx'] && !sandpackFiles['/src/index.tsx'] && !sandpackFiles['/src/index.jsx']) {
+      // Find the main entry file
+      const mainFile = entries.find(([p]) =>
+        p.endsWith('/main.tsx') || p.endsWith('/main.jsx') || p.endsWith('/index.tsx') || p.endsWith('/index.jsx') || p.endsWith('/App.tsx') || p.endsWith('/App.jsx')
+      );
+      if (mainFile) {
+        const content = mainFile[1].content
+          .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '')
+          .replace(/^export\s+default\s+/gm, '');
+        sandpackFiles['/src/main.tsx'] = {
+          code: `import React from 'react';\nimport { createRoot } from 'react-dom/client';\n\n${content}\n\nconst root = createRoot(document.getElementById('root')!);\nroot.render(<App />);`,
+          hidden: true,
+        };
+      }
+    }
+
+    // Ensure /src/App.tsx exists
+    const appEntry = entries.find(([p]) =>
+      p.endsWith('/App.tsx') || p.endsWith('/App.jsx') || p.endsWith('/app.tsx') || p.endsWith('/app.jsx')
+    );
+    if (appEntry && !sandpackFiles['/src/App.tsx']) {
+      sandpackFiles['/src/App.tsx'] = {
+        code: appEntry[1].content.replace(/^export\s+default\s+/gm, ''),
+        hidden: false,
+      };
+    }
+
+    // Add index.html for Vite
+    if (!sandpackFiles['/index.html']) {
+      sandpackFiles['/index.html'] = {
+        code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>`,
+        hidden: true,
+      };
+    }
   }
 
   // For vanilla/HTML projects: ensure there's an index.html
@@ -100,20 +163,11 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
   switch (projectType) {
     case 'react-ts':
     case 'react': {
-      // Try to find the entry point
-      const indexJs = entries.find(([p]) =>
-        p.endsWith('/index.js') || p.endsWith('/index.tsx') || p.endsWith('/index.jsx')
-      );
-      const mainJs = entries.find(([p]) =>
-        p.endsWith('/main.js') || p.endsWith('/main.tsx') || p.endsWith('/main.jsx')
-      );
-      const entry = indexJs ? `/${indexJs[0].split('/').pop()}` : mainJs ? `/${mainJs[0].split('/').pop()}` : '/index.js';
-
+      // Use Vite-based react template (much faster than create-react-app)
       return {
         template: 'react' as const,
         customSetup: {
-          entry,
-          environment: 'create-react-app' as const,
+          entry: '/src/main.tsx',
         },
       };
     }

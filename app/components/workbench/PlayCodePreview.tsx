@@ -4,160 +4,136 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
 /**
- * PlayCodePreview — Uses CodeSandbox's embed API (StackBlitz WebContainers)
- * to render the project in an iframe with full build support.
+ * PlayCodePreview — Uses a self-contained iframe with inline HTML/CSS/JS.
+ * For React projects, falls back to rendering a static preview with a note.
  *
- * This creates a CodeSandbox API definition blob URL and embeds it.
+ * This avoids external API dependencies (CodeSandbox/StackBlitz) that
+ * cause connection timeouts.
  */
-function buildPlaycodeBlobUrl(files: FileMap): string {
+function buildPreviewHtml(files: FileMap): { html: string; isReact: boolean } {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
 
-  // Build CodeSandbox API files object
-  const sandboxFiles: Record<string, { content: string; isBinary: boolean }> = {};
-
-  for (const [path, file] of entries) {
-    if (path.includes('node_modules') || path.endsWith('.lock')) continue;
-    // Skip binary files
-    if (file.isBinary) continue;
-
-    // CodeSandbox expects paths like "/src/App.tsx"
-    const spath = path.startsWith('/') ? path : `/${path}`;
-    sandboxFiles[spath] = {
-      content: file.content,
-      isBinary: false,
-    };
-  }
-
-  // Detect if React project
   const hasReact = entries.some(([p]) => p.endsWith('.tsx') || p.endsWith('.jsx'));
-  const hasPackageJson = entries.some(([p]) => p.endsWith('/package.json'));
+  const hasVue = entries.some(([p]) => p.endsWith('.vue'));
+  const htmlFile = entries.find(([p]) => p.endsWith('/index.html') || (p.endsWith('.html') && !p.endsWith('/public/index.html')));
 
-  let template = 'node';
-  if (hasReact) {
-    template = 'create-react-app';
+  const cssFiles = entries.filter(([p]) => p.endsWith('.css') && !p.includes('node_modules'));
+  const jsFiles = entries.filter(([p]) =>
+    (p.endsWith('.js') || p.endsWith('.mjs')) && !p.includes('node_modules')
+  );
+
+  // For plain HTML projects, build a complete standalone page
+  if (!hasReact && !hasVue) {
+    let html = htmlFile?.[1].content || '';
+
+    const css = cssFiles.map(([, f]) => f.content).join('\n\n');
+    const js = jsFiles.map(([, f]) => f.content).join('\n\n');
+
+    if (html) {
+      // Inject Tailwind CDN if not present
+      if (!html.includes('tailwindcss') && !html.includes('tailwind')) {
+        html = html.replace('<head>', '<head>\n  <script src="https://cdn.tailwindcss.com"><\/script>');
+      }
+      // Inject CSS
+      if (css) {
+        const styleBlock = `<style>\n${css}\n</style>`;
+        html = html.includes('</head>') ? html.replace('</head>', `${styleBlock}\n</head>`) : html + styleBlock;
+      }
+      // Inject JS
+      if (js) {
+        const scriptBlock = `<script>\n${js}\n<\/script>`;
+        html = html.includes('</body>') ? html.replace('</body>', `${scriptBlock}\n</body>`) : html + scriptBlock;
+      }
+    } else {
+      html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>${css}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>${js}<\/script>
+</body>
+</html>`;
+    }
+
+    return { html, isReact: false };
   }
 
-  // If no package.json but React files exist, add a minimal one
-  if (hasReact && !hasPackageJson) {
-    sandboxFiles['/package.json'] = {
-      content: JSON.stringify({
-        name: 'omni-builder-preview',
-        version: '1.0.0',
-        dependencies: {
-          react: '^18.0.0',
-          'react-dom': '^18.0.0',
-          'react-scripts': '^5.0.0',
-        },
-        main: '/index.js',
-      }, null, 2),
-      isBinary: false,
-    };
-  }
-
-  // Build the CodeSandbox sandbox definition
-  const sandboxDefinition = {
-    files: sandboxFiles,
-    template,
-    dependencies: hasPackageJson ? undefined : undefined,
-  };
-
-  // Create a blob URL for the sandbox definition
-  const blob = new Blob([JSON.stringify(sandboxDefinition)], {
-    type: 'application/json',
+  // For React/Vue projects, build a simple HTML preview that renders the component source
+  // This is a lightweight fallback — for full React support, use Sandpack or WebContainer
+  const componentFiles = entries.filter(([p]) => {
+    if (p.includes('node_modules')) return false;
+    if (p.endsWith('.css')) return false;
+    if (p.endsWith('.html')) return false;
+    if (p.endsWith('.json')) return false;
+    return p.endsWith('.tsx') || p.endsWith('.jsx') || p.endsWith('.js') || p.endsWith('.mjs');
   });
 
-  const blobUrl = URL.createObjectURL(blob);
+  let codeDisplay = '';
+  for (const [path, file] of componentFiles.slice(0, 5)) {
+    const filename = path.split('/').pop() || path;
+    codeDisplay += `<div class="file-block"><div class="file-name">${escapeHtml(filename)}</div><pre><code>${escapeHtml(file.content.substring(0, 3000))}${file.content.length > 3000 ? '\n// ... (truncated)' : ''}</code></pre></div>\n`;
+  }
 
-  // Build the CodeSandbox embed URL
-  // The embed parameter is the encoded sandbox definition
-  const params = new URLSearchParams({
-    fontsize: '14',
-    theme: 'dark',
-    module: '/index.js',
-    runonclick: 'true',
-    hidenavigation: 'true',
-    hidewelcome: 'true',
-    expandscren: 'true',
-    view: 'preview',
-  });
+  const css = cssFiles.map(([, f]) => f.content).join('\n');
 
-  // Use the blob URL as the file parameter for CodeSandbox
-  return `https://codesandbox.io/api/v1/sandboxes/define?embed=1&${params.toString()}&parameters=${encodeURIComponent(JSON.stringify(sandboxDefinition))}`;
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #0a0a0f; color: #e2e8f0; }
+    .file-block { margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #2a2a3e; }
+    .file-name { background: #1a1a2e; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #a78bfa; border-bottom: 1px solid #2a2a3e; }
+    pre { margin: 0; padding: 12px; overflow-x: auto; background: #11111b; }
+    code { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 12px; line-height: 1.6; color: #c4b5fd; }
+    .notice { text-align: center; padding: 24px; color: #94a3b8; font-size: 13px; }
+    .notice strong { color: #a78bfa; }
+    ${css}
+  </style>
+</head>
+<body>
+  <div class="notice">
+    <p style="font-size:18px;margin-bottom:8px;">React/Vue Project Detected</p>
+    <p>For full interactive preview, switch to <strong>Sandpack</strong> or <strong>WebContainer</strong> mode.</p>
+    <p style="margin-top:4px;">Below are the source files:</p>
+  </div>
+  ${codeDisplay}
+</body>
+</html>`;
+
+  return { html, isReact: true };
 }
 
-/**
- * Alternative: StackBlitz embed approach — more reliable for React
- */
-function buildStackBlitzUrl(files: FileMap): string {
-  const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
-  const hasReact = entries.some(([p]) => p.endsWith('.tsx') || p.endsWith('.jsx'));
-
-  // Build the project files as a JS object string
-  const fileEntries = entries
-    .filter(([p]) => !p.includes('node_modules') && !p.endsWith('.lock') && !f_isBinary(p))
-    .map(([path, file]) => {
-      const spath = path.startsWith('/') ? path.slice(1) : path;
-      return `"${spath}": ${JSON.stringify(file.content)}`;
-    })
-    .join(',\n');
-
-  // Build the project configuration
-  const projectConfig = {
-    title: 'Omni-Builder Preview',
-    description: 'Preview from Omni-Builder',
-    template: hasReact ? 'react-ts' : 'node',
-    files: entries.reduce((acc, [path, file]) => {
-      if (path.includes('node_modules') || path.endsWith('.lock')) return acc;
-      const spath = path.startsWith('/') ? path.slice(1) : path;
-      acc[spath] = file.content;
-      return acc;
-    }, {} as Record<string, string>),
-  };
-
-  return `https://stackblitz.com/run?embed=1&theme=dark&view=preview&file=src/App.tsx`;
-}
-
-function f_isBinary(p: string) {
-  const ext = p.split('.').pop()?.toLowerCase() || '';
-  return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'svg', 'mp3', 'wav', 'mp4', 'woff', 'woff2', 'ttf'].includes(ext);
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export const PlayCodePreview = memo(function PlayCodePreview() {
   const files = useStore(workbenchStore.files);
-  const [embedUrl, setEmbedUrl] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [srcdoc, setSrcdoc] = useState('');
+
+  const { html, isReact } = useMemo(() => buildPreviewHtml(files), [files]);
 
   const fileCount = useMemo(() => {
     return Object.values(files).filter((f): f is WFile => f?.type === 'file' && !f.isBinary).length;
   }, [files]);
 
-  const hasReact = useMemo(() => {
-    return Object.entries(files).some(([p]) => p.endsWith('.tsx') || p.endsWith('.jsx'));
-  }, [files]);
-
   useEffect(() => {
-    try {
-      setLoading(true);
-      setError(false);
-      const url = buildPlaycodeBlobUrl(files);
-      setEmbedUrl(url);
-    } catch (err) {
-      setError(true);
-      setLoading(false);
-      console.error('Failed to build PlayCode URL', err);
-    }
-  }, [files]);
-
-  const handleLoad = () => {
-    setLoading(false);
-  };
-
-  const handleError = () => {
-    setError(true);
-    setLoading(false);
-  };
+    const t = setTimeout(() => setSrcdoc(html), 80);
+    return () => clearTimeout(t);
+  }, [html]);
 
   if (fileCount === 0) {
     return (
@@ -173,38 +149,13 @@ export const PlayCodePreview = memo(function PlayCodePreview() {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-bolt-elements-background-depth-1">
-          <div className="text-center">
-            <div className="i-svg-spinners:90-ring-with-bg text-3xl text-purple-400 mx-auto mb-3" />
-            <p className="text-sm text-bolt-elements-textSecondary">Loading PlayCode preview...</p>
-            <p className="text-xs text-bolt-elements-textTertiary mt-1">Connecting to CodeSandbox API</p>
-          </div>
-        </div>
-      )}
-      {error && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-bolt-elements-background-depth-1">
-          <div className="text-center max-w-md">
-            <div className="i-ph:warning-circle text-4xl text-yellow-400 mx-auto mb-3" />
-            <p className="text-sm text-bolt-elements-textPrimary font-semibold">Failed to load PlayCode</p>
-            <p className="text-xs text-bolt-elements-textTertiary mt-2">
-              The CodeSandbox API couldn't render this project. Try a different preview mode like Sandpack or WebContainer.
-            </p>
-          </div>
-        </div>
-      )}
-      {embedUrl && (
-        <iframe
-          ref={iframeRef}
-          className="w-full h-full border-0"
-          src={embedUrl}
-          title="PlayCode Preview"
-          sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-presentation"
-          onLoad={handleLoad}
-          onError={handleError}
-          allow="accelerometer; ambient-light-sensor; autoplay; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr; clipboard-write"
-        />
-      )}
+      <iframe
+        ref={iframeRef}
+        className="w-full h-full border-0 bg-white"
+        srcDoc={srcdoc}
+        title="PlayCode Preview"
+        sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups"
+      />
     </div>
   );
 });

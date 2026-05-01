@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { motion, type HTMLMotionProps, type Variants } from 'framer-motion';
 import { computed } from 'nanostores';
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import {
   type OnChangeCallback as OnEditorChange,
@@ -75,6 +75,19 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
 
   useEffect(() => {
     workbenchStore.setDocuments(files);
+  }, [files]);
+
+  // Auto-save files to localStorage cache when files change (debounced)
+  const prevFilesRef = useRef('');
+  useEffect(() => {
+    const currentFileKeys = JSON.stringify(Object.keys(files).sort());
+    if (currentFileKeys !== prevFilesRef.current && currentFileKeys.length > 2) {
+      prevFilesRef.current = currentFileKeys;
+      const timeout = setTimeout(() => {
+        workbenchStore.filesStore.saveFilesToCache();
+      }, 2000);
+      return () => clearTimeout(timeout);
+    }
   }, [files]);
 
   const onEditorChange = useCallback<OnEditorChange>((update) => {

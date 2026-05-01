@@ -13,6 +13,8 @@ const logger = createScopedLogger('FilesStore');
 
 const utf8TextDecoder = new TextDecoder('utf8', { fatal: true });
 
+const FILES_CACHE_KEY = 'omni-builder.files.cache';
+
 export interface File {
   type: 'file';
   content: string;
@@ -194,6 +196,80 @@ export class FilesStore {
       console.log(error);
       return '';
     }
+  }
+
+  /**
+   * Save all current files to localStorage for persistence across page reloads.
+   */
+  saveFilesToCache() {
+    try {
+      const currentFiles = this.files.get();
+      const serializable: Record<string, { type: string; content: string }> = {};
+      let totalSize = 0;
+      const MAX_SIZE = 4 * 1024 * 1024;
+
+      for (const [path, dirent] of Object.entries(currentFiles)) {
+        if (!dirent || dirent.type !== 'file' || dirent.isBinary) continue;
+        if (path.includes('node_modules')) continue;
+
+        const entrySize = path.length + (dirent.content?.length || 0);
+        if (totalSize + entrySize > MAX_SIZE) break;
+
+        serializable[path] = { type: dirent.type, content: dirent.content };
+        totalSize += entrySize;
+      }
+
+      localStorage.setItem(FILES_CACHE_KEY, JSON.stringify({
+        files: serializable,
+        timestamp: Date.now(),
+      }));
+      logger.info(`Saved ${Object.keys(serializable).length} files to cache`);
+    } catch (error) {
+      logger.warn('Failed to save files to cache', error);
+    }
+  }
+
+  /**
+   * Load files from localStorage cache and populate the store.
+   */
+  loadFilesFromCache(): boolean {
+    try {
+      const raw = localStorage.getItem(FILES_CACHE_KEY);
+      if (!raw) return false;
+
+      const data = JSON.parse(raw);
+      if (!data.files || typeof data.timestamp !== 'number') return false;
+
+      if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(FILES_CACHE_KEY);
+        return false;
+      }
+
+      const fileMap: FileMap = {};
+      let count = 0;
+
+      for (const [path, entry] of Object.entries(data.files)) {
+        if (entry.type === 'file' && typeof entry.content === 'string') {
+          fileMap[path] = { type: 'file', content: entry.content, isBinary: false };
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        this.files.set(fileMap);
+        logger.info(`Restored ${count} files from cache`);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      logger.warn('Failed to load files from cache', error);
+      return false;
+    }
+  }
+
+  clearFilesCache() {
+    try { localStorage.removeItem(FILES_CACHE_KEY); } catch {}
   }
 }
 

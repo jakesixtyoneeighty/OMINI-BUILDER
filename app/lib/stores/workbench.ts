@@ -58,6 +58,10 @@ export class WorkbenchStore {
     return this.#filesStore.files;
   }
 
+  get filesStore() {
+    return this.#filesStore;
+  }
+
   get currentDocument(): ReadableAtom<EditorDocument | undefined> {
     return this.#editorStore.currentDocument;
   }

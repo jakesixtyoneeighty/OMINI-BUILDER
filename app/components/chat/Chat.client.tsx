@@ -97,6 +97,19 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     if (projectId && projectId !== 'default') {
       workbenchStore.loadProjectFiles(projectId);
     }
+
+    // Restore files from localStorage cache on page load
+    const hasCachedFiles = workbenchStore.filesStore.loadFilesFromCache();
+    if (hasCachedFiles) {
+      const currentFiles = workbenchStore.files.get();
+      workbenchStore.setDocuments(currentFiles);
+      if (Object.keys(currentFiles).length > 0) {
+        workbenchStore.showWorkbench.set(true);
+        if (!chatStarted) {
+          runAnimation();
+        }
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -171,6 +184,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     workbenchStore.setDocuments(currentFiles);
     workbenchStore.showWorkbench.set(true);
     runAnimation();
+
+    // Save to localStorage for persistence across reloads
+    workbenchStore.filesStore.saveFilesToCache();
 
     toast.success(`${result.files.length} files imported and ready in the editor!`);
   };

@@ -62,13 +62,26 @@ function buildStaticHtml(files: FileMap): string {
  */
 function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
-  const sandpackFiles: Record<string, { code: string }> = {};
+  const sandpackFiles: Record<string, { code: string; hidden?: boolean }> = {};
+  const isReactLike = projectType === 'react' || projectType === 'react-ts';
 
   for (const [path, file] of entries) {
     if (path.includes('node_modules') || path.endsWith('.lock')) continue;
     if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.ico')) continue;
-    const spath = path.startsWith('/') ? path : `/${path}`;
+    let spath = path.startsWith('/') ? path : `/${path}`;
+    if (isReactLike) {
+      if (!spath.startsWith('/src/') && !spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
+        const parts = spath.split('/');
+        spath = `/src/${parts[parts.length - 1]}`;
+      }
+    }
     sandpackFiles[spath] = { code: file.content };
+  }
+
+  if (isReactLike && !sandpackFiles['/index.html']) {
+    sandpackFiles['/index.html'] = {
+      code: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>`,
+    };
   }
 
   if (projectType === 'vanilla') {
@@ -93,14 +106,8 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
   switch (projectType) {
     case 'react-ts':
     case 'react': {
-      const indexJs = entries.find(([p]) =>
-        p.endsWith('/index.js') || p.endsWith('/index.tsx') || p.endsWith('/index.jsx')
-      );
-      const mainJs = entries.find(([p]) =>
-        p.endsWith('/main.js') || p.endsWith('/main.tsx') || p.endsWith('/main.jsx')
-      );
-      const entry = indexJs ? `/${indexJs[0].split('/').pop()}` : mainJs ? `/${mainJs[0].split('/').pop()}` : '/index.js';
-      return { template: 'react' as const, customSetup: { entry, environment: 'create-react-app' as const } };
+      // Use Vite-based react template (faster, no timeout)
+      return { template: 'react' as const, customSetup: { entry: '/src/main.tsx' } };
     }
     case 'vue':
       return { template: 'vue' as const, customSetup: { entry: '/src/main.js' } };
