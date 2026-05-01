@@ -108,16 +108,22 @@ export class WorkbenchStore {
   }
 
   async clearWorkspace() {
-    const wc = await webcontainer;
     try {
-      // Remove todos os arquivos e pastas recursivamente
-      const process = await wc.spawn('rm', ['-rf', '.', '../*']);
-      await process.exit;
-      this.files.set({});
-      this.unsavedFiles.set(new Set());
+      const wc = await webcontainer;
+      // Only remove files inside the work directory, not the workdir itself
+      const entries = await wc.fs.readdir('/home/project', { withFileTypes: true });
+      for (const entry of entries) {
+        try {
+          await wc.fs.rm(`/home/project/${entry.name}`, { recursive: true });
+        } catch {}
+      }
     } catch (err) {
-      console.error('Failed to clear workspace', err);
+      console.warn('Failed to clear workspace files, clearing store anyway:', err);
     }
+    // Always clear the file store regardless of WebContainer state
+    this.files.set({});
+    this.unsavedFiles.set(new Set());
+    this.filesStore.clearFilesCache();
   }
 
   async loadProjectFiles(projectId: string) {

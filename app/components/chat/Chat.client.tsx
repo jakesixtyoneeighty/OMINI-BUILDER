@@ -152,43 +152,70 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const [messageRef, scrollRef] = useSnapScroll();
 
   const importFromGithub = async (result: any) => {
-    const { webcontainer } = await import('~/lib/webcontainer');
-    const wc = await webcontainer;
-
-    await workbenchStore.clearWorkspace();
-
-    // Build directory tree first to create all folders
-    const dirs = new Set<string>();
-    for (const f of result.files) {
-      const parts = f.path.split('/');
-      for (let i = 1; i < parts.length; i++) {
-        dirs.add(parts.slice(0, i).join('/'));
+    try {
+      if (!result.files || result.files.length === 0) {
+        toast.error('Nenhum arquivo encontrado para importar.');
+        return;
       }
-    }
-    for (const dir of dirs) {
-      try { await wc.fs.mkdir(dir, { recursive: true }); } catch {}
-    }
 
-    // Write all files to WebContainer and update file store
-    for (const f of result.files) {
+      const { webcontainer } = await import('~/lib/webcontainer');
+      const wc = await webcontainer;
+
+      // Clear workspace
       try {
-        await wc.fs.writeFile(f.path, f.content);
-        workbenchStore.files.setKey(f.path, { type: 'file', content: f.content, isBinary: false });
-      } catch (err) {
-        console.error('Failed to write', f.path, err);
+        await workbenchStore.clearWorkspace();
+      } catch (clearErr) {
+        console.warn('clearWorkspace failed, continuing anyway:', clearErr);
       }
+
+      // Build directory tree first to create all folders
+      const dirs = new Set<string>();
+      for (const f of result.files) {
+        const parts = f.path.split('/');
+        for (let i = 1; i < parts.length; i++) {
+          dirs.add(parts.slice(0, i).join('/'));
+        }
+      }
+
+      for (const dir of dirs) {
+        try {
+          await wc.fs.mkdir(dir, { recursive: true });
+        } catch {}
+      }
+
+      // Write all files to WebContainer and update file store
+      let written = 0;
+      let failed = 0;
+
+      for (const f of result.files) {
+        try {
+          await wc.fs.writeFile(f.path, f.content);
+          workbenchStore.files.setKey(f.path, { type: 'file', content: f.content, isBinary: false });
+          written++;
+        } catch (err) {
+          console.error('Failed to write', f.path, err);
+          failed++;
+        }
+      }
+
+      // Set documents so the editor shows the files
+      const currentFiles = workbenchStore.files.get();
+      workbenchStore.setDocuments(currentFiles);
+      workbenchStore.showWorkbench.set(true);
+      runAnimation();
+
+      // Save to localStorage for persistence across reloads
+      workbenchStore.filesStore.saveFilesToCache();
+
+      if (written > 0) {
+        toast.success(`${written} arquivo${written > 1 ? 's' : ''} importado${written > 1 ? 's' : ''} com sucesso!${failed > 0 ? ` (${failed} falharam)` : ''}`);
+      } else {
+        toast.error('Nenhum arquivo pôde ser escrito. Verifique o console para detalhes.');
+      }
+    } catch (err) {
+      console.error('Import error:', err);
+      toast.error(`Erro na importação: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     }
-
-    // Set documents so the editor shows the files
-    const currentFiles = workbenchStore.files.get();
-    workbenchStore.setDocuments(currentFiles);
-    workbenchStore.showWorkbench.set(true);
-    runAnimation();
-
-    // Save to localStorage for persistence across reloads
-    workbenchStore.filesStore.saveFilesToCache();
-
-    toast.success(`${result.files.length} files imported and ready in the editor!`);
   };
 
   return (
