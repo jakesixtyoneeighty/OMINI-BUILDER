@@ -3,6 +3,8 @@ import React, { type RefCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
+import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
+import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
@@ -197,11 +199,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       </IconButton>
                       <ClientOnly>{() => <ModelPicker />}</ClientOnly>
                     </div>
-                    {input.length > 3 ? (
-                      <div className="text-xs text-bolt-elements-textTertiary">
-                        Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
-                      </div>
-                    ) : null}
+                    <div className="flex gap-1 items-center">
+                      {input.length > 3 ? (
+                        <div className="text-xs text-bolt-elements-textTertiary mr-1">
+                          Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
+                        </div>
+                      ) : null}
+                      <SettingsDialog />
+                      <ThemeSwitch />
+                    </div>
                   </div>
                 </div>
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
