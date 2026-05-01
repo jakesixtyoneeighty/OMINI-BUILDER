@@ -14,6 +14,7 @@ import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
+import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -167,6 +168,77 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [messageRef, scrollRef] = useSnapScroll();
 
+  // Env request modal state
+  const [envRequests, setEnvRequests] = useState<EnvVarRequest[]>([]);
+  const [envModalOpen, setEnvModalOpen] = useState(false);
+  const processedEnvMessages = useRef<Set<number>>(new Set());
+
+  // Detect <env_request> tags in assistant messages
+  useEffect(() => {
+    if (isLoading) return;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'assistant' || processedEnvMessages.current.has(i)) continue;
+      const content = msg.content || '';
+      const envRequestMatch = content.match(/<env_request>([\s\S]*?)<\/env_request>/);
+      if (envRequestMatch) {
+        processedEnvMessages.current.add(i);
+        const vars = envRequestMatch[1]
+          .split(/<var\s/g)
+          .filter(Boolean)
+          .map((raw) => {
+            const nameMatch = raw.match(/name=["']([^"']+)["']/);
+            const descMatch = raw.match(/description=["']([^"']+)["']/);
+            return {
+              name: nameMatch?.[1] || '',
+              description: descMatch?.[1] || '',
+            };
+          })
+          .filter((v) => v.name);
+        if (vars.length > 0) {
+          setEnvRequests(vars);
+          setEnvModalOpen(true);
+        }
+      }
+    }
+  }, [messages, isLoading]);
+
+  const handleEnvSave = async (vars: { key: string; value: string }[]) => {
+    setEnvModalOpen(false);
+
+    // Get current project env vars and merge
+    const current = projects[projectId] ?? getActiveProject();
+    const existingVars = current.settings?.envVars || [];
+    const updatedVars = [...existingVars];
+    for (const v of vars) {
+      const existingIndex = updatedVars.findIndex((ev) => ev.key === v.key);
+      if (existingIndex >= 0) {
+        updatedVars[existingIndex] = { key: v.key, value: v.value };
+      } else {
+        updatedVars.push({ key: v.key, value: v.value });
+      }
+    }
+
+    const { updateActiveProjectSettings, writeEnvFile } = await import('~/lib/stores/project');
+    updateActiveProjectSettings({ envVars: updatedVars });
+    try {
+      await writeEnvFile(updatedVars);
+    } catch (err) {
+      console.warn('Failed to write .env file:', err);
+    }
+
+    // Send confirmation to AI (without the actual values for security)
+    const varNames = vars.map((v) => v.key).join(', ');
+    append({
+      role: 'user',
+      content: `The following environment variables have been configured and are now available via process.env: ${varNames}. Please continue and make sure to use process.env.VARIABLE_NAME in your code to access them. Do NOT ask for these variables again.`,
+    });
+  };
+
+  const handleEnvSkip = () => {
+    setEnvModalOpen(false);
+  };
+
   const importFromGithub = async (result: any) => {
     try {
       if (!result.files || result.files.length === 0) {
@@ -235,23 +307,32 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   };
 
   return (
-    <BaseChat
-      importFromGithub={importFromGithub}
-      ref={animationScope}
-      textareaRef={textareaRef}
-      input={input}
-      showChat={showChat}
-      chatStarted={chatStarted}
-      isStreaming={isLoading}
-      enhancingPrompt={enhancingPrompt}
-      promptEnhanced={promptEnhanced}
-      sendMessage={sendMessage}
-      messageRef={messageRef}
-      scrollRef={scrollRef}
-      handleInputChange={handleInputChange}
-      handleStop={stop}
-      messages={messages.map((m, i) => ({ ...m, content: parsedMessages[i] || m.content }))}
-      enhancePrompt={() => enhancePrompt(input, setInput)}
-    />
+    <>
+      <BaseChat
+        importFromGithub={importFromGithub}
+        ref={animationScope}
+        textareaRef={textareaRef}
+        input={input}
+        showChat={showChat}
+        chatStarted={chatStarted}
+        isStreaming={isLoading}
+        enhancingPrompt={enhancingPrompt}
+        promptEnhanced={promptEnhanced}
+        sendMessage={sendMessage}
+        messageRef={messageRef}
+        scrollRef={scrollRef}
+        handleInputChange={handleInputChange}
+        handleStop={stop}
+        messages={messages.map((m, i) => ({ ...m, content: parsedMessages[i] || m.content }))}
+        enhancePrompt={() => enhancePrompt(input, setInput)}
+      />
+      {envModalOpen && envRequests.length > 0 && (
+        <EnvRequestModal
+          variables={envRequests}
+          onClose={handleEnvSkip}
+          onSave={handleEnvSave}
+        />
+      )}
+    </>
   );
 });
