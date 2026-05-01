@@ -1,129 +1,106 @@
 import { useStore } from '@nanostores/react';
-import { memo, useMemo } from 'react';
-import {
-  SandpackProvider,
-  SandpackPreview as SandpackPreviewCore,
-  SandpackCodeEditor,
-  SandpackLayout,
-} from '@codesandbox/sandpack-react';
+import { memo, useMemo, useRef, useEffect, useState } from 'react';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { getActiveProject } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 
-function detectTemplate(files: Record<string, { content: string; type: string }>): 'react' | 'vue' | 'vanilla' | 'static' {
+function detectType(files: Record<string, any>): 'react' | 'html' | 'vanilla' {
   const keys = Object.keys(files);
-
-  if (keys.some(k => k.endsWith('package.json'))) {
-    const pkg = files[keys.find(k => k.endsWith('package.json'))!];
-    try {
-      const parsed = JSON.parse(pkg.content);
-      const deps = { ...parsed.dependencies, ...parsed.devDependencies };
-      if (deps['react'] || deps['next']) return 'react';
-      if (deps['vue'] || deps['nuxt']) return 'vue';
-    } catch {}
-  }
-
   if (keys.some(k => k.endsWith('.jsx') || k.endsWith('.tsx'))) return 'react';
-  if (keys.some(k => k.endsWith('.vue'))) return 'vue';
-  if (keys.some(k => k.endsWith('.html'))) return 'static';
-
-  return 'react';
+  if (keys.some(k => k.endsWith('.html'))) return 'html';
+  return 'vanilla';
 }
 
-function buildSandpackFiles(files: Record<string, { content: string; type: string }>): Record<string, string> {
-  const result: Record<string, string> = {};
-  const prefix = '/home/project/';
+function buildSrcdoc(files: Record<string, any>): string {
+  const keys = Object.keys(files);
+  const type = detectType(files);
 
-  for (const [path, file] of Object.entries(files)) {
-    if (file.type === 'file' && !file.isBinary) {
-      let cleanPath = path;
-      if (cleanPath.startsWith(prefix) || cleanPath.startsWith('./')) {
-        cleanPath = cleanPath.replace(/^\.\//, '').replace(prefix, '');
-      }
-      if (cleanPath && !cleanPath.startsWith('.') && !cleanPath.includes('node_modules')) {
-        result['/' + cleanPath] = file.content;
-      }
+  // Find the main HTML file
+  const htmlFile = keys.find(k => k.endsWith('/index.html'));
+  let htmlContent = htmlFile ? files[htmlFile].content : '';
+
+  // If no HTML file, build one
+  if (!htmlContent) {
+    if (type === 'html') {
+      const first = keys.find(k => k.endsWith('.html'));
+      htmlContent = first ? files[first].content : '';
     }
   }
 
-  if (Object.keys(result).length === 0) {
-    result['/index.html'] = `<!DOCTYPE html>
-<html>
-<head><title>Preview</title></head>
-<body><div id="root"><p>No files to preview</p></div></body>
+  if (!htmlContent) {
+    // Build a simple HTML wrapper
+    const cssFiles = keys.filter(k => k.endsWith('.css'));
+    const jsFiles = keys.filter(k => k.endsWith('.js') && !k.includes('node_modules'));
+
+    const inlineCSS = cssFiles.map(k => `/* ${k} */\n${files[k].content}`).join('\n\n');
+    const inlineJS = jsFiles.map(k => `/* ${k} */\n${files[k].content}`).join('\n\n');
+
+    htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>${inlineCSS}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>${inlineJS}<\/script>
+</body>
 </html>`;
+  } else {
+    // Inject Tailwind if not present
+    if (!htmlContent.includes('tailwindcss') && !htmlContent.includes('tailwind')) {
+      htmlContent = htmlContent.replace(
+        '<head>',
+        '<head>\n  <script src="https://cdn.tailwindcss.com"><\/script>'
+      );
+    }
   }
 
-  return result;
+  return htmlContent;
 }
 
 export const SandpackPreview = memo(() => {
   const files = useStore(workbenchStore.files);
-  const project = getActiveProject();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [srcdoc, setSrcdoc] = useState('');
 
-  const { template, sandpackFiles, entryFile } = useMemo(() => {
-    const t = detectTemplate(files);
-    const sf = buildSandpackFiles(files);
-    
-    let entry = '/App.jsx';
-    
-    if (t === 'static') {
-      entry = '/index.html';
-    } else if (t === 'react') {
-      if (sf['/index.jsx']) entry = '/index.jsx';
-      else if (sf['/index.tsx']) entry = '/index.tsx';
-      else if (sf['/src/App.jsx']) entry = '/src/App.jsx';
-      else if (sf['/src/App.tsx']) entry = '/src/App.tsx';
-      else if (sf['/src/main.jsx']) entry = '/src/main.jsx';
-      else if (sf['/src/main.tsx']) entry = '/src/main.tsx';
-      else {
-        const firstJsx = Object.keys(sf).find(k => k.endsWith('.jsx') || k.endsWith('.tsx'));
-        if (firstJsx) entry = firstJsx;
-      }
-    } else if (t === 'vue') {
-      entry = '/src/App.vue';
-      if (!sf[entry]) {
-        const firstVue = Object.keys(sf).find(k => k.endsWith('.vue'));
-        if (firstVue) entry = firstVue;
-      }
+  const htmlContent = useMemo(() => buildSrcdoc(files), [files]);
+
+  useEffect(() => {
+    setSrcdoc(htmlContent);
+  }, [htmlContent]);
+
+  const refresh = () => {
+    if (iframeRef.current) {
+      setSrcdoc('');
+      setTimeout(() => setSrcdoc(htmlContent), 50);
     }
+  };
 
-    return { template: t, sandpackFiles: sf, entryFile: entry };
-  }, [files]);
-
-  if (Object.keys(sandpackFiles).length === 0) {
+  if (Object.keys(files).length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-bolt-elements-textTertiary">
+      <div className="flex items-center justify-center h-full w-full text-bolt-elements-textTertiary">
         <div className="text-center">
-          <div className="i-ph:cube-duotone text-4xl mb-2" />
-          <p>No files to preview</p>
+          <div className="i-ph:cube-duotone text-4xl mb-3 mx-auto" />
+          <p className="text-sm">No files to preview</p>
+          <p className="text-xs text-bolt-elements-textTertiary mt-1">Import or create files to see a preview</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full bg-bolt-elements-background-depth-1">
-      <SandpackProvider
-        template={template as any}
-        files={sandpackFiles}
-        customSetup={{
-          entry: entryFile,
-        }}
-        theme="dark"
-        options={{
-          externalResources: [
-            'https://cdn.tailwindcss.com',
-          ],
-        }}
-      >
-        <SandpackLayout style={{ height: '100%', border: 'none' }}>
-          <SandpackPreviewCore
-            showNavigator
-            showRefreshButton
-            style={{ height: '100%' }}
-          />
-        </SandpackLayout>
-      </SandpackProvider>
+    <div className="w-full h-full flex flex-col absolute inset-0">
+      {srcdoc && (
+        <iframe
+          ref={iframeRef}
+          className="w-full h-full border-0 bg-white"
+          srcDoc={srcdoc}
+          title="Preview"
+          sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+        />
+      )}
     </div>
   );
 });
