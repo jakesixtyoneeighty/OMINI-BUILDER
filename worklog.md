@@ -80,3 +80,20 @@ Work Log:
 - Clean rebuild: all JS chunks pass node -c validation
 - Pushing to trigger fresh Cloudflare Pages deployment
 
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix TOKEN_USAGE stream parsing error
+
+Work Log:
+- Investigated the error "Failed to parse stream string. Invalid code TOKEN_USAGE"
+- Found root cause: server injects custom \\x00TOKEN_USAGE:...\\x00 into AI SDK data protocol stream, but useChat parser only recognizes codes 0-9 and a-e
+- Fixed api.chat.ts: changed from custom TOKEN_USAGE format to AI SDK data stream part (code "2")
+- Fixed Chat.client.tsx: reads token usage from useChat data array instead of regex-parsing message content
+- Cleaned up AssistantMessage.tsx: removed TOKEN_USAGE regex stripping since it no longer appears in content
+- Built and pushed (commit da86f38)
+
+Stage Summary:
+- Error fixed by using proper AI SDK streaming protocol
+- Token counter + price display feature still works, just uses correct protocol now
+- Deployed to https://opensouce-app-builder--omini-builder.pages.dev/
