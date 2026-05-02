@@ -3,7 +3,7 @@ import type { Message } from 'ai';
 import { useChat } from 'ai/react';
 import { llmStore } from '~/lib/stores/llm';
 import { useAnimate } from 'framer-motion';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { useChatHistory } from '~/lib/persistence';
@@ -77,8 +77,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [animationScope, animate] = useAnimate();
 
-  // Build database config from project settings - computed on every render
-  const databaseConfig = (() => {
+  // Build database config from project settings - memoized to stabilize useChat body
+  const databaseConfig = useMemo(() => {
     const current = projects[projectId] ?? getActiveProject();
     const db = current.settings?.database;
     if (!db || db.type === 'none') return undefined;
@@ -89,16 +89,19 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       return { type: 'supabase' as const, supabase: { url: db.supabase.url, anonKey: db.supabase.anonKey } };
     }
     return undefined;
-  })();
+  }, [projects, projectId]);
+
+  // Stabilize the useChat body to prevent unnecessary re-renders
+  const chatBody = useMemo(() => ({
+    provider: llm.provider,
+    model: llm.model,
+    apiKey: llm.keys[llm.provider] || '',
+    databaseConfig,
+  }), [llm.provider, llm.model, llm.keys, databaseConfig]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
-    body: {
-      provider: llm.provider,
-      model: llm.model,
-      apiKey: llm.keys[llm.provider] || '',
-      databaseConfig,
-    },
+    body: chatBody,
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
 
