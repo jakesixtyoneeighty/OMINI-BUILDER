@@ -70,7 +70,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
 
-  const { showChat } = useStore(chatStore);
+  const { showChat, planMode } = useStore(chatStore);
   const llm = useStore(llmStore);
   const projectId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
@@ -199,12 +199,20 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     chatStore.setKey('aborted', false);
     runAnimation();
 
+    // Build the message content, prepending plan instructions if plan mode is active
+    let messageContent = _input;
+
+    if (planMode) {
+      const planInstruction = `\n\n[PLAN MODE ACTIVE]\nBefore writing any code, you MUST first create a detailed step-by-step execution plan. Follow this exact format:\n\n## Execution Plan\n\n**Analysis:** Briefly analyze what needs to be built based on the user's request.\n\n**Step-by-step Plan:**\n1. [Step 1 description — e.g., "Set up project structure and install dependencies"]\n2. [Step 2 description — e.g., "Create main layout component"]\n3. [Step 3 description — e.g., "Implement core feature X"]\n4. [Continue with all necessary steps...]\n\n**Architecture decisions:** Briefly mention key architectural choices.\n\nAfter presenting the plan above, proceed to implement each step one by one using artifacts. Execute the plan in the exact order listed above.`;
+      messageContent = _input + planInstruction;
+    }
+
     if (fileModifications !== undefined) {
       const diff = fileModificationsToHTML(fileModifications);
-      append({ role: 'user', content: `${diff}\n\n${_input}` });
+      append({ role: 'user', content: `${diff}\n\n${messageContent}` });
       workbenchStore.resetAllFileModifications();
     } else {
-      append({ role: 'user', content: _input });
+      append({ role: 'user', content: messageContent });
     }
     setInput('');
     resetEnhancer();
@@ -377,6 +385,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
   };
 
+  const handleTogglePlanMode = useCallback(() => {
+    chatStore.setKey('planMode', !planMode);
+  }, [planMode]);
+
   return (
     <>
       <BaseChat
@@ -396,6 +408,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         handleStop={stop}
         messages={messages.map((m, i) => ({ ...m, content: parsedMessages[i] || m.content }))}
         enhancePrompt={() => enhancePrompt(input, setInput)}
+        planMode={planMode}
+        onTogglePlanMode={handleTogglePlanMode}
       />
       {envModalOpen && envRequests.length > 0 && (
         <EnvRequestModal

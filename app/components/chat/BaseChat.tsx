@@ -44,6 +44,8 @@ interface BaseChatProps {
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
   importFromGithub?: (result: ImportResult) => void | Promise<void>;
+  planMode?: boolean;
+  onTogglePlanMode?: () => void;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -74,6 +76,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       enhancePrompt,
       handleStop,
       importFromGithub,
+      planMode = false,
+      onTogglePlanMode,
     },
     ref,
   ) => {
@@ -130,7 +134,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               >
                 <div
                   className={classNames(
-                    'shadow-sm border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg',
+                    'shadow-sm border bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg transition-colors duration-200',
+                    planMode ? 'border-blue-400/60' : 'border-bolt-elements-borderColor',
                   )}
                 >
                   <textarea
@@ -155,7 +160,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       minHeight: TEXTAREA_MIN_HEIGHT,
                       maxHeight: TEXTAREA_MAX_HEIGHT,
                     }}
-                    placeholder="How can Omni-Builder help you today?"
+                    placeholder={planMode ? 'Modo Plano ativo — descreva seu projeto e a IA criará um plano detalhado antes de executar...' : 'How can Omni-Builder help you today?'}
                     translate="no"
                   />
                   <ClientOnly>
@@ -176,6 +181,16 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   </ClientOnly>
                   <div className="flex justify-between text-sm p-4 pt-2">
                     <div className="flex gap-2 items-center">
+                      <IconButton
+                        title={planMode ? 'Desativar Modo Plano' : 'Ativar Modo Plano'}
+                        className={classNames({
+                          'opacity-100! text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!': planMode,
+                        })}
+                        onClick={() => onTogglePlanMode?.()}
+                      >
+                        <div className="i-ph:list-checks text-xl"></div>
+                        {planMode && <div className="ml-1.5 text-xs font-medium">Plano</div>}
+                      </IconButton>
                       <IconButton
                         title="Enhance prompt"
                         disabled={input.length === 0 || enhancingPrompt}
