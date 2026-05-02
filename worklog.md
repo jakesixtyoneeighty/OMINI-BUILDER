@@ -97,3 +97,21 @@ Stage Summary:
 - Error fixed by using proper AI SDK streaming protocol
 - Token counter + price display feature still works, just uses correct protocol now
 - Deployed to https://opensouce-app-builder--omini-builder.pages.dev/
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix database settings, modal triggers, plan mode, add AI questions
+
+Work Log:
+- Fixed database type reverting: saveDatabaseSettings now accepts overrideType parameter to avoid stale React state
+- Fixed modal tags showing as text: updated system prompt to allow special HTML tags, added tags to markdown allowedHTMLElements, stripped tags from rendered content in AssistantMessage
+- Fixed Plan Mode: moved instructions from user message injection to server-side system prompt, AI now presents plan and waits for user approval before coding
+- Added AI Questions feature: new <user_question> tag in system prompt, UserQuestionCard component with clickable options + custom text input, detection in Chat.client.tsx, rendering in Messages.client.tsx
+- Built and pushed (commit b201be9)
+
+Stage Summary:
+- 4 issues fixed/implemented, all deployed
+- Files changed: 10 files, 276 insertions, 25 deletions
+- New component: UserQuestionCard.tsx
+- Key fixes in: api.chat.ts, Chat.client.tsx, prompts.ts, AppSettingsDialog.client.tsx, AssistantMessage.tsx, Messages.client.tsx, BaseChat.tsx, markdown.ts, stream-text.ts
+
