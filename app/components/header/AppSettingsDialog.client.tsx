@@ -37,6 +37,60 @@ const VERCEL_FRAMEWORKS = [
 const emptyFirebase: FirebaseConfig = { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' };
 const emptySupabase: SupabaseConfig = { url: '', anonKey: '', serviceRoleKey: '' };
 
+// Inline editable env var row
+function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: number; onUpdate: (i: number, key: string, value: string) => void; onRemove: (i: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [editKey, setEditKey] = useState(env.key);
+  const [editValue, setEditValue] = useState(env.value);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    setEditKey(env.key);
+    setEditValue(env.value);
+    setHasChanges(false);
+    setEditing(false);
+  }, [env.key, env.value]);
+
+  const save = () => { onUpdate(index, editKey, editValue); setEditing(false); setHasChanges(false); };
+  const cancel = () => { setEditKey(env.key); setEditValue(env.value); setEditing(false); setHasChanges(false); };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-bolt-elements-background-depth-1 rounded-lg border-2 border-purple-500/50 group">
+        <div className="i-ph:pencil-simple text-purple-400 text-sm shrink-0" />
+        <input value={editKey} onChange={(e) => { setEditKey(e.target.value); setHasChanges(true); }}
+          onKeyDown={(e) => e.key === 'Escape' && cancel()}
+          className="flex-1 px-2 py-1 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-purple-500/50" />
+        <span className="text-bolt-elements-textTertiary text-sm">=</span>
+        <input value={editValue} onChange={(e) => { setEditValue(e.target.value); setHasChanges(true); }}
+          onKeyDown={(e) => e.key === 'Escape' && cancel()}
+          className="flex-1 px-2 py-1 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary focus:outline-none focus:border-purple-500/50" />
+        <button onClick={save} disabled={!hasChanges} className="text-green-400 hover:text-green-300 disabled:opacity-30 transition-all p-1">
+          <div className="i-ph:check text-sm" />
+        </button>
+        <button onClick={cancel} className="text-bolt-elements-textTertiary hover:text-red-400 transition-all p-1">
+          <div className="i-ph:x text-sm" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 bg-bolt-elements-background-depth-1 rounded-lg border border-bolt-elements-borderColor group hover:border-purple-500/30 transition-colors">
+      <div className="i-ph:key text-bolt-elements-textTertiary text-sm shrink-0" />
+      <span className="font-mono text-sm text-bolt-elements-textPrimary font-medium">{env.key}</span>
+      <span className="text-bolt-elements-textTertiary text-sm">=</span>
+      <span className="font-mono text-sm text-bolt-elements-textSecondary truncate flex-1">{env.value}</span>
+      <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1" title="Editar">
+        <div className="i-ph:pencil-simple text-sm" />
+      </button>
+      <button onClick={() => onRemove(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1" title="Remover">
+        <div className="i-ph:trash text-sm" />
+      </button>
+    </div>
+  );
+}
+
 export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean; onClose: () => void; defaultTab?: string }) {
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
@@ -79,31 +133,41 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel' | 'cloudrun'>('none');
   const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string; message?: string; buildLogsUrl?: string } | null>(null);
 
+  // Flag to only apply defaultTab on first open, not on every settings change
+  const [hasAppliedDefault, setHasAppliedDefault] = useState(false);
+
   useEffect(() => {
-    if (open) {
-      if (defaultTab) setTab(defaultTab as any);
-      const saved = localStorage.getItem(`bolt.snapshots.${activeId}`);
-      if (saved) setSnapshots(JSON.parse(saved));
-      setProjectName(project?.name || '');
-      setProjectDesc(settings?.description || '');
-      setEnvVars(settings?.envVars || []);
-      setNetlifyToken(settings?.netlify?.token || '');
-      setNetlifySiteId(settings?.netlify?.siteId || '');
-      setVercelToken(settings?.vercel?.token || '');
-      setVercelProjectName(settings?.vercel?.projectName || '');
-      setVercelFramework(settings?.vercel?.framework || 'vite');
-      setCrProjectId(settings?.cloudRun?.projectId || '');
-      setCrRegion(settings?.cloudRun?.region || 'us-central1');
-      setCrServiceAccountKey(settings?.cloudRun?.serviceAccountKey || '');
-      setCrServiceName(settings?.cloudRun?.serviceName || '');
-      setCrAllowUnauth(settings?.cloudRun?.allowUnauthenticated ?? true);
-      setGdriveClientId(settings?.googleDrive?.clientId || '');
-      setDbType(settings?.database?.type || 'none');
-      setFirebase(settings?.database?.firebase || { ...emptyFirebase });
-      setSupabase(settings?.database?.supabase || { ...emptySupabase });
-      setDeployResult(null);
+    if (!open) {
+      setHasAppliedDefault(false);
+      return;
     }
-  }, [open, activeId, project, settings]);
+    // Reset state when dialog opens
+    const saved = localStorage.getItem(`bolt.snapshots.${activeId}`);
+    if (saved) setSnapshots(JSON.parse(saved));
+    setProjectName(project?.name || '');
+    setProjectDesc(settings?.description || '');
+    setEnvVars(settings?.envVars || []);
+    setNetlifyToken(settings?.netlify?.token || '');
+    setNetlifySiteId(settings?.netlify?.siteId || '');
+    setVercelToken(settings?.vercel?.token || '');
+    setVercelProjectName(settings?.vercel?.projectName || '');
+    setVercelFramework(settings?.vercel?.framework || 'vite');
+    setCrProjectId(settings?.cloudRun?.projectId || '');
+    setCrRegion(settings?.cloudRun?.region || 'us-central1');
+    setCrServiceAccountKey(settings?.cloudRun?.serviceAccountKey || '');
+    setCrServiceName(settings?.cloudRun?.serviceName || '');
+      setCrAllowUnauth(settings?.cloudRun?.allowUnauthenticated ?? true);
+    setGdriveClientId(settings?.googleDrive?.clientId || '');
+    setDbType(settings?.database?.type || 'none');
+    setFirebase(settings?.database?.firebase || { ...emptyFirebase });
+    setSupabase(settings?.database?.supabase || { ...emptySupabase });
+    setDeployResult(null);
+    // Only apply defaultTab once when dialog first opens
+    if (!hasAppliedDefault && defaultTab) {
+      setTab(defaultTab as any);
+      setHasAppliedDefault(true);
+    }
+  }, [open, activeId, project, settings, defaultTab, hasAppliedDefault]);
 
   const saveSnapshot = () => {
     const files = workbenchStore.files.get();
@@ -164,6 +228,14 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     const updated = envVars.filter((_, i) => i !== index);
     setEnvVars(updated);
     updateActiveProjectSettings({ envVars: updated });
+  };
+
+  const updateEnvVar = (index: number, newKey: string, newValue: string) => {
+    const updated = [...envVars];
+    updated[index] = { key: newKey, value: newValue };
+    setEnvVars(updated);
+    updateActiveProjectSettings({ envVars: updated });
+    toast.success('Variável de ambiente atualizada!');
   };
 
   const saveProjectInfo = () => {
@@ -295,7 +367,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-[750px] max-w-[95vw] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl flex overflow-hidden">
+      <div onClick={e => e.stopPropagation()} className="w-[750px] max-w-[95vw] max-h-[90vh] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl flex overflow-hidden">
         {/* Sidebar */}
         <aside className="w-[200px] bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor flex flex-col">
           <div className="p-4 border-b border-bolt-elements-borderColor">
@@ -731,35 +803,27 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {envVars.length > 0 && (
                   <div className="space-y-2">
                     {envVars.map((env, index) => (
-                      <div key={index} className="flex items-center gap-2 px-3 py-2.5 bg-bolt-elements-background-depth-1 rounded-lg border border-bolt-elements-borderColor group">
-                        <div className="i-ph:key text-bolt-elements-textTertiary text-sm shrink-0" />
-                        <span className="font-mono text-sm text-bolt-elements-textPrimary font-medium">{env.key}</span>
-                        <span className="text-bolt-elements-textTertiary text-sm">=</span>
-                        <span className="font-mono text-sm text-bolt-elements-textSecondary truncate flex-1">{env.value}</span>
-                        <button onClick={() => removeEnvVar(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1">
-                          <div className="i-ph:trash text-sm" />
-                        </button>
-                      </div>
+                      <EnvVarRow key={env.key + '-' + index} env={env} index={index} onUpdate={updateEnvVar} onRemove={removeEnvVar} />
                     ))}
                   </div>
                 )}
                 {envVars.length === 0 && (
                   <div className="text-center py-8">
                     <div className="i-ph:key text-3xl text-bolt-elements-textTertiary mx-auto mb-2" />
-                    <p className="text-sm text-bolt-elements-textTertiary">No environment variables yet</p>
+                    <p className="text-sm text-bolt-elements-textTertiary">Nenhuma variável de ambiente ainda</p>
                   </div>
                 )}
                 <div className="flex gap-2 p-3 bg-bolt-elements-background-depth-1 rounded-lg border border-dashed border-bolt-elements-borderColor">
                   <input value={newEnvKey} onChange={(e) => setNewEnvKey(e.target.value)} placeholder="KEY" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
                     className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
-                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder="value" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder="valor" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
                     className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
                   <button onClick={addEnvVar} disabled={!newEnvKey.trim() || !newEnvValue.trim()}
                     className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                     <div className="i-ph:plus text-lg" />
                   </button>
                 </div>
-              </div>
+ </div>
             )}
 
             {/* ====== SNAPSHOTS TAB ====== */}

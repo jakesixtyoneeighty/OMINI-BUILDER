@@ -110,13 +110,20 @@ export function Menu() {
       <div className="flex items-center h-[var(--header-height)]">{/* Placeholder */}</div>
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
         <div className="p-4">
-          <a
-            href="/"
-            className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme"
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              // Reset state and do a full navigation to start fresh
+              chatStore.set({ started: false, aborted: false, showChat: true });
+              workbenchStore.showWorkbench.set(false);
+              localStorage.removeItem('bolt.files.cache');
+              window.location.href = '/';
+            }}
+            className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme w-full text-left"
           >
             <span className="inline-block i-bolt:chat scale-110" />
             Start new chat
-          </a>
+          </button>
         </div>
         <div className="text-bolt-elements-textPrimary font-medium pl-6 pr-5 my-2">Your Chats</div>
         <div className="flex-1 overflow-scroll pl-4 pr-5 pb-5">
