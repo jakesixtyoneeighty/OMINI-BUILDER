@@ -112,7 +112,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             completionTokens: usage.completionTokens,
             totalTokens: usage.promptTokens + usage.completionTokens,
           });
-          stream.appendData(`\x00TOKEN_USAGE:${usagePayload}\x00\n`);
+          // Use AI SDK data stream part (code "2") so useChat can parse it
+          stream.appendData(`2:${JSON.stringify([usagePayload])}\n`);
         }
 
         if (finishReason !== 'length') {

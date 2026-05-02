@@ -107,7 +107,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     databaseConfig,
   }), [llm.provider, llm.model, llm.keys, databaseConfig]);
 
-  const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
+  const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',
     body: chatBody,
     onError: async (error) => {
@@ -181,21 +181,26 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
   }, []);
 
-  // Parse token usage from streamed messages
+  // Parse token usage from AI SDK data stream parts (code "2")
   useEffect(() => {
-    if (messages.length === 0) return;
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === 'assistant') {
-      const content = lastMsg.content || '';
-      const match = content.match(/\x00TOKEN_USAGE:({.*?})\x00/);
-      if (match) {
-        try {
-          const usage = JSON.parse(match[1]);
-          setTokenUsage(prev => ({ ...prev, [messages.length - 1]: usage }));
-        } catch {}
-      }
+    if (!data || data.length === 0) return;
+    for (const entry of data) {
+      try {
+        const parsed = JSON.parse(entry);
+        if (parsed.type === 'token_usage') {
+          // Find the last assistant message index
+          let lastAssistantIdx = messages.length - 1;
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'assistant') {
+              lastAssistantIdx = i;
+              break;
+            }
+          }
+          setTokenUsage(prev => ({ ...prev, [lastAssistantIdx]: parsed }));
+        }
+      } catch {}
     }
-  }, [messages]);
+  }, [data, messages.length]);
 
   useEffect(() => {
     parseMessages(messages, isLoading);

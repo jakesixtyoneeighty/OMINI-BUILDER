@@ -16,16 +16,13 @@ const INPUT_PRICE_PER_TOKEN = 0.00000275;
 const OUTPUT_PRICE_PER_TOKEN = 0.0000125;
 
 export const AssistantMessage = memo(({ content, tokenUsage }: AssistantMessageProps) => {
-  // strip the token usage marker from displayed content
-  const cleanContent = content.replace(/\x00TOKEN_USAGE:({.*?})\x00/g, '').trim();
-
   const estimatedCost = tokenUsage
     ? tokenUsage.promptTokens * INPUT_PRICE_PER_TOKEN + tokenUsage.completionTokens * OUTPUT_PRICE_PER_TOKEN
     : 0;
 
   return (
     <div className="overflow-hidden w-full">
-      <Markdown html>{cleanContent}</Markdown>
+      <Markdown html>{content}</Markdown>
       {tokenUsage && tokenUsage.totalTokens > 0 && (
         <div className="flex items-center gap-3 mt-2 text-[10px] text-bolt-elements-textTertiary">
           <span>{tokenUsage.totalTokens.toLocaleString()} tokens</span>
