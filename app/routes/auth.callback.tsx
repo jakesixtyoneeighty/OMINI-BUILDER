@@ -11,9 +11,12 @@ export default function AuthCallback() {
       navigate('/');
       return;
     }
+    // Verifica se tem save pendente para redirecionar com flag
+    const driveSavePending = localStorage.getItem('bolt.drive.save_pending');
+    const target = driveSavePending ? '/?drive_save=1' : '/';
     // Supabase JS auto-detects session in URL when detectSessionInUrl is true.
     // We just wait briefly for the session to settle, then go home.
-    const timeout = setTimeout(() => navigate('/'), 800);
+    const timeout = setTimeout(() => navigate(target), 800);
     return () => clearTimeout(timeout);
   }, [navigate]);
 

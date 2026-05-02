@@ -18,19 +18,30 @@ export const authStore = map<AuthState>({
 });
 
 export const githubProviderTokenStore = atom<string | null>(null);
+export const googleProviderTokenStore = atom<string | null>(null);
 
 const GH_TOKEN_KEY = 'bolt.gh.provider_token';
+const GOOGLE_TOKEN_KEY = 'bolt.google.provider_token';
 
 if (typeof window !== 'undefined') {
   try {
     const t = localStorage.getItem(GH_TOKEN_KEY);
     if (t) githubProviderTokenStore.set(t);
+    const gt = localStorage.getItem(GOOGLE_TOKEN_KEY);
+    if (gt) googleProviderTokenStore.set(gt);
   } catch {
   }
   githubProviderTokenStore.subscribe((t) => {
     try {
       if (t) localStorage.setItem(GH_TOKEN_KEY, t);
       else localStorage.removeItem(GH_TOKEN_KEY);
+    } catch {
+    }
+  });
+  googleProviderTokenStore.subscribe((t) => {
+    try {
+      if (t) localStorage.setItem(GOOGLE_TOKEN_KEY, t);
+      else localStorage.removeItem(GOOGLE_TOKEN_KEY);
     } catch {
     }
   });
@@ -49,8 +60,12 @@ export async function initAuth() {
       loading: false,
       initialized: true,
     });
-    if (data.session.provider_token && data.session.user.app_metadata.provider === 'github') {
-      githubProviderTokenStore.set(data.session.provider_token);
+    if (data.session.provider_token) {
+      if (data.session.user.app_metadata.provider === 'github') {
+        githubProviderTokenStore.set(data.session.provider_token);
+      } else if (data.session.user.app_metadata.provider === 'google') {
+        googleProviderTokenStore.set(data.session.provider_token);
+      }
     }
     
     await loadKeysFromSupabase();
@@ -63,11 +78,16 @@ export async function initAuth() {
       loading: false,
       initialized: true,
     });
-    if (session?.provider_token && session.user.app_metadata.provider === 'github') {
-      githubProviderTokenStore.set(session.provider_token);
+    if (session?.provider_token) {
+      if (session.user.app_metadata.provider === 'github') {
+        githubProviderTokenStore.set(session.provider_token);
+      } else if (session.user.app_metadata.provider === 'google') {
+        googleProviderTokenStore.set(session.provider_token);
+      }
     }
     if (event === 'SIGNED_OUT') {
       githubProviderTokenStore.set(null);
+      googleProviderTokenStore.set(null);
     }
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
       await loadKeysFromSupabase();
@@ -121,6 +141,25 @@ export async function signOut() {
   if (!sb) return;
   await sb.auth.signOut();
   githubProviderTokenStore.set(null);
+  googleProviderTokenStore.set(null);
+}
+
+export async function signInWithGoogleDrive() {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase is not configured.');
+  // Salva estado pendente para apos o redirect
+  localStorage.setItem('bolt.drive.save_pending', 'true');
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      scopes: 'https://www.googleapis.com/auth/drive.file',
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  if (error) {
+    localStorage.removeItem('bolt.drive.save_pending');
+    throw error;
+  }
 }
 
 export { supabaseEnabled };

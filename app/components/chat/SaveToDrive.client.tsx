@@ -1,38 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { getActiveProject, projectsStore, activeProjectIdStore, updateActiveProjectSettings } from '~/lib/stores/project';
-import { GOOGLE_CLIENT_ID } from '~/lib/google-oauth';
+import { getActiveProject } from '~/lib/stores/project';
+import { supabaseEnabled, googleProviderTokenStore, authStore, signInWithGoogleDrive } from '~/lib/stores/auth';
 
-const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
-declare global {
-  interface Window {
-    google: any;
-    googleAccountsId: any;
-  }
-}
-
-interface TokenResponse {
-  access_token: string;
-  error?: string;
-}
-
-// Prioridade: env var VITE_GOOGLE_CLIENT_ID > settings do projeto > manual
-function getEffectiveClientId(settingsClientId: string): string {
-  return GOOGLE_CLIENT_ID || settingsClientId || '';
-}
+const DRIVE_SAVE_PENDING_KEY = 'bolt.drive.save_pending';
 
 export function SaveToDrive() {
-  const activeId = useStore(activeProjectIdStore);
-  const projects = useStore(projectsStore);
-  const project = projects[activeId];
-  const settings = project?.settings;
-  const settingsClientId = settings?.googleDrive?.clientId || '';
-  const clientId = getEffectiveClientId(settingsClientId);
-  const isFromEnv = !!GOOGLE_CLIENT_ID;
+  const isSupabase = supabaseEnabled;
+  const { user, session } = useStore(authStore);
+  const googleToken = useStore(googleProviderTokenStore);
+  const isLoggedInGoogle = user?.app_metadata?.provider === 'google' && !!googleToken;
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'idle' | 'auth' | 'creating' | 'uploading' | 'done' | 'error'>('idle');
@@ -40,99 +19,70 @@ export function SaveToDrive() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [driveUrl, setDriveUrl] = useState('');
   const [error, setError] = useState('');
-  const [tokenClient, setTokenClient] = useState<any>(null);
-  const [gisLoaded, setGisLoaded] = useState(false);
   const [accessToken, setAccessToken] = useState('');
-  const [localClientId, setLocalClientId] = useState('');
-  const [showClientIdInput, setShowClientIdInput] = useState(false);
 
-  // Sync localClientId — se tem env var, usa ela; senão usa settings
+  // Auto-abre o dialog apos redirect OAuth (detecta ?drive_save=1 na URL)
   useEffect(() => {
-    if (open) {
-      setLocalClientId(clientId);
-      setShowClientIdInput(!clientId);
+    if (!isSupabase) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('drive_save') === '1') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('drive_save');
+      window.history.replaceState({}, '', url.pathname);
+      setOpen(true);
     }
-  }, [open, clientId]);
+  }, [isSupabase]);
 
-  // Load Google Identity Services script
+  // Quando o token do Google fica disponivel e ha save pendente, iniciar upload
   useEffect(() => {
-    if (document.getElementById('gis-script')) {
-      if (window.google?.accounts) {
-        setGisLoaded(true);
-      }
+    if (!open || !isSupabase || !googleToken) return;
+    const pending = localStorage.getItem(DRIVE_SAVE_PENDING_KEY);
+    if (pending) {
+      localStorage.removeItem(DRIVE_SAVE_PENDING_KEY);
+      setAccessToken(googleToken);
+      setStep('auth');
+    }
+  }, [open, isSupabase, googleToken]);
+
+  // Se o usuario ja esta logado com Google via Supabase e abre o dialog, usar o token direto
+  const handleSaveClick = useCallback(() => {
+    if (!isSupabase) {
+      toast.error('Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
       return;
     }
 
-    const script = document.createElement('script');
-    script.id = 'gis-script';
-    script.src = GIS_SCRIPT_URL;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      setGisLoaded(true);
-    };
-    script.onerror = () => {
-      console.error('Failed to load Google Identity Services');
-    };
-    document.head.appendChild(script);
-  }, []);
-
-  // Initialize token client once GIS is loaded and clientId is available
-  useEffect(() => {
-    if (!gisLoaded || !window.google?.accounts?.oauth2) return;
-
-    // Prioridade: env var > localClientId (do input ou settings)
-    const effectiveClientId = (GOOGLE_CLIENT_ID || localClientId.trim());
-
-    if (!effectiveClientId) {
-      setTokenClient(null);
+    if (!isLoggedInGoogle) {
+      // Nao esta logado com Google — precisa fazer login via Supabase OAuth
+      handleSupabaseAuth();
       return;
     }
 
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: effectiveClientId,
-      scope: SCOPES,
-      callback: (response: TokenResponse) => {
-        if (response.error) {
-          toast.error(`Authentication error: ${response.error}`);
-          setStep('error');
-          setError(response.error);
-          return;
-        }
-        setAccessToken(response.access_token);
-      },
-    });
-
-    setTokenClient(client);
-  }, [gisLoaded, localClientId]);
-
-  const requestAuth = useCallback(() => {
-    const effectiveId = GOOGLE_CLIENT_ID || localClientId.trim();
-    if (!effectiveId) {
-      toast.error('Configure o Google OAuth Client ID nas variáveis de ambiente (VITE_GOOGLE_CLIENT_ID) ou nas configurações do projeto.');
-      return;
-    }
-    if (!tokenClient) {
-      toast.error('Google Identity Services ainda está carregando. Tente novamente em instantes.');
-      return;
-    }
-
-    // Salva o Client ID nas settings se veio do input manual
-    if (!GOOGLE_CLIENT_ID && localClientId.trim() && localClientId.trim() !== settingsClientId) {
-      updateActiveProjectSettings({ googleDrive: { clientId: localClientId.trim() } });
-    }
-
+    // Ja esta logado com Google — usar o token existente
+    setAccessToken(googleToken);
     setStep('auth');
-    tokenClient.requestAccessToken();
-  }, [tokenClient, localClientId, settingsClientId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSupabase, isLoggedInGoogle, googleToken]);
 
-  // Watch for access token changes to trigger upload
+  const handleSupabaseAuth = async () => {
+    try {
+      setStep('auth');
+      await signInWithGoogleDrive();
+      // O usuario vai ser redirecionado para o Google OAuth via Supabase
+      // Apos o callback, o useEffect acima vai detectar o save_pending e retomar
+    } catch (err) {
+      setStep('error');
+      setError(err instanceof Error ? err.message : 'Falha na autenticação');
+      toast.error(err instanceof Error ? err.message : 'Falha na autenticação');
+    }
+  };
+
+  // Watch for access token to trigger upload
   useEffect(() => {
     if (accessToken && step === 'auth') {
       uploadToDrive(accessToken);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+  }, [accessToken, step]);
 
   const createFolder = async (token: string, folderName: string): Promise<string> => {
     const res = await fetch('https://www.googleapis.com/drive/v3/files', {
@@ -231,7 +181,7 @@ export function SaveToDrive() {
     const delimiter = `\r\n--${boundary}\r\n`;
     const closeDelimiter = `\r\n--${boundary}--`;
 
-    // If the file path has subdirectories, create them as folders in Drive
+    // Se o path tem subdiretorios, cria-as como pastas no Drive
     const pathParts = filePath.split('/').slice(0, -1);
     let parentId = folderId;
 
@@ -299,10 +249,10 @@ export function SaveToDrive() {
       const projectName = project.name || 'Omni-Builder Project';
       const safeName = projectName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Omni-Builder-Project';
 
-      // Save any unsaved files first
+      // Salva arquivos nao salvos primeiro
       await workbenchStore.saveAllFiles();
 
-      // Get all files from the workbench
+      // Pega todos os arquivos do workbench
       const files = workbenchStore.files.get();
       const fileEntries = Object.entries(files).filter(
         ([path, dirent]) =>
@@ -313,29 +263,28 @@ export function SaveToDrive() {
       );
 
       if (fileEntries.length === 0) {
-        toast.error('No files to save. Create some files first!');
+        toast.error('Nenhum arquivo para salvar. Crie alguns arquivos primeiro!');
         setStep('error');
-        setError('No files found in the project.');
+        setError('Nenhum arquivo encontrado no projeto.');
         return;
       }
 
       setTotalFiles(fileEntries.length);
 
-      // Check if folder already exists (to update instead of duplicate)
+      // Verifica se pasta ja existe
       let folderId = await searchExistingFolder(token, safeName);
 
       if (folderId) {
         await deleteFolderContents(token, folderId);
-        toast.info('Updating existing project folder...');
+        toast.info('Atualizando pasta do projeto...');
       } else {
         folderId = await createFolder(token, safeName);
-        toast.info('Created project folder in Google Drive');
+        toast.info('Pasta criada no Google Drive');
       }
 
       setStep('uploading');
       setProgress(0);
 
-      // Upload each file sequentially
       for (let i = 0; i < fileEntries.length; i++) {
         const [path, dirent] = fileEntries[i];
         const content = (dirent as any).content || '';
@@ -344,7 +293,7 @@ export function SaveToDrive() {
         try {
           await uploadFile(token, folderId, cleanPath, content);
         } catch (err) {
-          console.warn(`Skipped file ${cleanPath}:`, err);
+          console.warn(`Arquivo ignorado ${cleanPath}:`, err);
         }
 
         setProgress(Math.round(((i + 1) / fileEntries.length) * 100));
@@ -354,12 +303,12 @@ export function SaveToDrive() {
       setDriveUrl(folderUrl);
 
       setStep('done');
-      toast.success(`${fileEntries.length} files saved to Google Drive!`);
+      toast.success(`${fileEntries.length} arquivos salvos no Google Drive!`);
     } catch (err) {
       console.error('Google Drive save failed:', err);
       setStep('error');
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      toast.error(`Save failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(err instanceof Error ? err.message : 'Erro inesperado');
+      toast.error(`Falha ao salvar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -373,6 +322,9 @@ export function SaveToDrive() {
       setAccessToken('');
     }, 300);
   };
+
+  // Se Supabase nao esta configurado, nao mostra o botao
+  if (!isSupabase) return null;
 
   return (
     <>
@@ -399,9 +351,9 @@ export function SaveToDrive() {
                 <div>
                   <h2 className="text-base font-bold text-bolt-elements-textPrimary">Save to Google Drive</h2>
                   <p className="text-xs text-bolt-elements-textTertiary">
-                    {step === 'done' ? 'Project saved successfully!'
-                      : step === 'error' ? 'Something went wrong'
-                      : 'Save your project files to Google Drive'}
+                    {step === 'done' ? 'Projeto salvo com sucesso!'
+                      : step === 'error' ? 'Algo deu errado'
+                      : 'Salve seus arquivos no Google Drive'}
                   </p>
                 </div>
               </div>
@@ -412,61 +364,30 @@ export function SaveToDrive() {
 
             {/* Content */}
             <div className="p-6">
-              {/* === IDLE: Show info + Client ID config + Sign In === */}
+              {/* === IDLE: Info + Sign In === */}
               {step === 'idle' && (
                 <div className="space-y-4">
-                  {/* Status do Client ID */}
+                  {/* Status da autenticacao */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
-                        Google OAuth Client ID
-                      </label>
-                      {clientId && !isFromEnv && (
-                        <button
-                          onClick={() => setShowClientIdInput(!showClientIdInput)}
-                          className="text-[11px] text-blue-400 hover:underline"
-                        >
-                          {showClientIdInput ? 'Ocultar' : 'Alterar'}
-                        </button>
-                      )}
-                    </div>
+                    <label className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider block mb-2">
+                      Autenticacao
+                    </label>
 
-                    {isFromEnv ? (
-                      /* Client ID veio da env var — mostra badge de configurado */
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
-                        <div className="i-ph:cloud-check text-green-400 text-sm shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs text-green-400 font-medium">Configurado via Cloudflare Pages</span>
-                          <span className="text-[10px] text-green-400/60 block font-mono truncate">
-                            {GOOGLE_CLIENT_ID.slice(0, 30)}...
-                          </span>
-                        </div>
-                        <span className="text-[9px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">ENV</span>
-                      </div>
-                    ) : !showClientIdInput && clientId ? (
+                    {isLoggedInGoogle ? (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
                         <div className="i-ph:check-circle-fill text-green-400 text-sm shrink-0" />
-                        <span className="text-xs text-green-400 font-mono truncate flex-1">
-                          {clientId.slice(0, 20)}...{clientId.slice(-8)}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-green-400 font-medium">Logado via Supabase (Google)</span>
+                          <span className="text-[10px] text-green-400/60 block truncate">{user?.email}</span>
+                        </div>
+                        <span className="text-[9px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">OK</span>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={localClientId}
-                          onChange={(e) => setLocalClientId(e.target.value)}
-                          placeholder="xxxxxxxxxxxx.apps.googleusercontent.com"
-                          className="w-full px-3 py-2.5 rounded-lg text-xs font-mono bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"
-                        />
-                        <div className="p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/15">
-                          <p className="text-[11px] text-bolt-elements-textTertiary leading-relaxed">
-                            <span className="text-blue-400 font-semibold">Dica:</span> Configure a variável{' '}
-                            <code className="text-[10px] bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">VITE_GOOGLE_CLIENT_ID</code>{' '}
-                            nas variáveis de ambiente do Cloudflare Pages para não precisar digitar toda vez.{' '}
-                            <a href="https://console.cloud.google.com/apis/credentials" target="blank" className="text-blue-400 hover:underline">Obter Client ID</a>
-                          </p>
-                        </div>
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                        <div className="i-ph:warning-circle text-amber-400 text-sm shrink-0" />
+                        <span className="text-xs text-amber-400">
+                          {user ? 'Voce esta logado, mas nao via Google. Faca login com Google para salvar no Drive.' : 'Faca login com Google via Supabase para salvar no Drive.'}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -476,27 +397,26 @@ export function SaveToDrive() {
                     <div className="flex items-start gap-3">
                       <div className="i-ph:folder-open text-amber-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        A folder named after your project will be created (or updated if it already exists). Each file is uploaded individually with the directory structure preserved.
+                        Uma pasta com o nome do seu projeto sera criada (ou atualizada) no Google Drive. A estrutura de diretorios e preservada.
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="i-ph:shield-check text-green-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        Uses the Google Drive API with minimal scope (<code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">drive.file</code>). Only accesses files created by this app.
+                        Usa a autenticacao do Supabase com Google OAuth. O acesso ao Drive usa o escopo minimo (<code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">drive.file</code>).
                       </div>
                     </div>
                   </div>
 
-                  {/* Sign In button */}
+                  {/* Botao principal */}
                   <button
-                    onClick={requestAuth}
-                    disabled={!gisLoaded || !localClientId.trim()}
-                    className="w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    onClick={handleSaveClick}
+                    className="w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 transition-all flex items-center justify-center gap-2"
                   >
-                    {!gisLoaded ? (
+                    {isLoggedInGoogle ? (
                       <>
-                        <div className="i-svg-spinners:90-ring-with-bg text-base" />
-                        Loading Google Sign-In...
+                        <div className="i-ph:cloud-arrow-up text-base" />
+                        Salvar no Google Drive
                       </>
                     ) : (
                       <>
@@ -513,12 +433,12 @@ export function SaveToDrive() {
                 </div>
               )}
 
-              {/* === AUTH: Waiting for Google popup === */}
+              {/* === AUTH: Waiting === */}
               {step === 'auth' && (
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
-                  <p className="text-sm text-bolt-elements-textSecondary">Waiting for Google authentication...</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">Complete the sign-in in the pop-up window</p>
+                  <p className="text-sm text-bolt-elements-textSecondary">Autenticando com Google via Supabase...</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">Complete o login na janela que abriu</p>
                 </div>
               )}
 
@@ -526,16 +446,16 @@ export function SaveToDrive() {
               {step === 'creating' && (
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
-                  <p className="text-sm text-bolt-elements-textSecondary">Preparing your project...</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">Creating folder in Google Drive</p>
+                  <p className="text-sm text-bolt-elements-textSecondary">Preparando seu projeto...</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">Criando pasta no Google Drive</p>
                 </div>
               )}
 
-              {/* === UPLOADING: Progress bar === */}
+              {/* === UPLOADING: Progress === */}
               {step === 'uploading' && (
                 <div className="space-y-4 py-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-bolt-elements-textPrimary">Uploading files...</p>
+                    <p className="text-sm font-medium text-bolt-elements-textPrimary">Enviando arquivos...</p>
                     <p className="text-sm text-bolt-elements-textSecondary">{progress}%</p>
                   </div>
 
@@ -548,7 +468,7 @@ export function SaveToDrive() {
 
                   <div className="flex items-center gap-2 text-xs text-bolt-elements-textTertiary">
                     <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                    <span>Saving files to Google Drive...</span>
+                    <span>Salvando arquivos no Google Drive...</span>
                   </div>
                 </div>
               )}
@@ -561,9 +481,9 @@ export function SaveToDrive() {
                       <div className="i-ph:check-circle-fill text-green-400 text-3xl" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-green-400">Project saved!</p>
+                      <p className="text-sm font-semibold text-green-400">Projeto salvo!</p>
                       <p className="text-xs text-bolt-elements-textTertiary mt-1">
-                        {totalFiles} files uploaded successfully
+                        {totalFiles} arquivos enviados com sucesso
                       </p>
                     </div>
                   </div>
@@ -576,7 +496,7 @@ export function SaveToDrive() {
                       className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 transition-all"
                     >
                       <div className="i-ph:folder-open text-base" />
-                      Open in Google Drive
+                      Abrir no Google Drive
                     </a>
                   )}
 
@@ -589,7 +509,7 @@ export function SaveToDrive() {
                     }}
                     className="w-full py-2.5 px-4 rounded-xl text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
                   >
-                    Save again
+                    Salvar novamente
                   </button>
                 </div>
               )}
@@ -602,18 +522,18 @@ export function SaveToDrive() {
                       <div className="i-ph:warning-circle-fill text-red-400 text-3xl" />
                     </div>
                     <div className="text-center max-w-[80%]">
-                      <p className="text-sm font-semibold text-red-400">Save failed</p>
+                      <p className="text-sm font-semibold text-red-400">Falha ao salvar</p>
                       <p className="text-xs text-bolt-elements-textTertiary mt-1 break-words">{error}</p>
                     </div>
                   </div>
 
-                  {error.includes('Client ID') && (
+                  {error.includes('access') || error.includes('token') || error.includes('scope') ? (
                     <div className="p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                       <p className="text-xs text-amber-400">
-                        Make sure your OAuth Client ID is correct and your domain is added to Authorized JavaScript Origins in Google Cloud Console.
+                        O token do Google pode nao ter permissao de Drive. Tente fazer login novamente clicando em "Tentar novamente".
                       </p>
                     </div>
-                  )}
+                  ) : null}
 
                   <button
                     onClick={() => {
@@ -624,7 +544,7 @@ export function SaveToDrive() {
                     className="w-full py-3 px-4 bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary rounded-xl text-sm font-semibold border border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundAccent transition-all flex items-center justify-center gap-2"
                   >
                     <div className="i-ph:arrow-counter-clockwise text-base" />
-                    Try again
+                    Tentar novamente
                   </button>
                 </div>
               )}
