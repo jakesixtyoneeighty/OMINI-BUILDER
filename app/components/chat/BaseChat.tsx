@@ -83,6 +83,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       planMode = false,
       onTogglePlanMode,
       tokenUsage,
+      userQuestions,
+      answeredQuestions,
+      onQuestionAnswer,
     },
     ref,
   ) => {
