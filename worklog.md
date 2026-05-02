@@ -48,3 +48,25 @@ Stage Summary:
 - Files modified: project.ts, BaseChat.tsx, AppSettingsDialog.client.tsx
 - Files created: SaveToDrive.client.tsx
 - Build: OK | Push: OK
+---
+Task ID: 1
+Agent: Main Agent
+Task: Add Plan Mode toggle to chat input field
+
+Work Log:
+- Analyzed chat components: BaseChat.tsx, Chat.client.tsx, chatStore, api.chat.ts, prompts.ts
+- Added `planMode` boolean to `chatStore` (nanostore map)
+- Added Plan Mode toggle button (i-ph:list-checks icon) in BaseChat.tsx input bar
+- Implemented plan instruction injection in Chat.client.tsx sendMessage function
+- Added visual feedback: blue border on input area when plan mode is active
+- Added dynamic Portuguese placeholder text when plan mode is on
+- Passed planMode and onTogglePlanMode props from ChatImpl to BaseChat
+- Build passed, committed and pushed to GitHub
+
+Stage Summary:
+- Feature implemented: Plan Mode toggle in chat input area
+- When active, the AI receives structured instructions to create a step-by-step execution plan before coding
+- Visual indicators: blue border, "Plano" label, dynamic placeholder
+- Commit: d37f260 - "feat: add Plan Mode toggle to chat input"
+- Pushed to main branch successfully
+
