@@ -555,3 +555,101 @@ export function SaveToDrive() {
     </>
   );
 }
+
+// Exported autosave function - can be called from anywhere
+let autosaveInProgress = false;
+
+export async function autosaveToDrive(): Promise<boolean> {
+  if (autosaveInProgress) return false;
+
+  if (!supabaseEnabled) return false;
+
+  const token = googleProviderTokenStore.get();
+  if (!token) return false;
+
+  autosaveInProgress = true;
+
+  try {
+    const { workbenchStore: wb } = await import('~/lib/stores/workbench');
+    const { getActiveProject: getProject } = await import('~/lib/stores/project');
+
+    await wb.saveAllFiles();
+
+    const files = wb.files.get();
+    const fileEntries = Object.entries(files).filter(
+      ([path, dirent]) =>
+        dirent?.type === 'file' &&
+        !dirent.isBinary &&
+        !path.includes('node_modules') &&
+        !path.includes('.git'),
+    );
+
+    if (fileEntries.length === 0) {
+      autosaveInProgress = false;
+      return false;
+    }
+
+    const project = getProject();
+    const projectName = (project.name || 'Omni-Builder Project').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Omni-Builder-Project';
+
+    // Search/create folder
+    const query = encodeURIComponent(`name='${projectName}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`);
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id)&pageSize=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    let folderId: string;
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.files?.length > 0) {
+        folderId = searchData.files[0].id;
+      } else {
+        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: projectName, mimeType: 'application/vnd.google-apps.folder' }),
+        });
+        const createData = await createRes.json();
+        folderId = createData.id;
+      }
+    } else {
+      autosaveInProgress = false;
+      return false;
+    }
+
+    // Upload each file (simplified - no subdirectory creation for autosave speed)
+    const mimeMap: Record<string, string> = {
+      '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
+      '.ts': 'text/typescript', '.tsx': 'text/typescript', '.jsx': 'text/typescript',
+      '.json': 'application/json', '.md': 'text/markdown', '.svg': 'image/svg+xml',
+      '.py': 'text/x-python', '.env': 'text/plain', '.txt': 'text/plain',
+    };
+
+    for (const [path, dirent] of fileEntries) {
+      const content = (dirent as any).content || '';
+      const fileName = path.split('/').pop() || path;
+      const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '';
+      const mimeType = mimeMap[ext] || 'application/octet-stream';
+
+      const boundary = '-------auto' + Date.now();
+      const delimiter = `\r\n--${boundary}\r\n`;
+      const closeDelimiter = `\r\n--${boundary}--`;
+      const metadata = { name: fileName, mimeType, parents: [folderId] };
+      const base64Content = btoa(unescape(encodeURIComponent(content)));
+      const multipartBody =
+        `${delimiter}Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}${delimiter}Content-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64Content}${closeDelimiter}`;
+
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+        body: multipartBody,
+      }).catch(() => {});
+    }
+
+    autosaveInProgress = false;
+    return true;
+  } catch {
+    autosaveInProgress = false;
+    return false;
+  }
+}

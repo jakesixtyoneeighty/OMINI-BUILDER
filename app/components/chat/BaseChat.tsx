@@ -46,6 +46,7 @@ interface BaseChatProps {
   importFromGithub?: (result: ImportResult) => void | Promise<void>;
   planMode?: boolean;
   onTogglePlanMode?: () => void;
+  tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -78,6 +79,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       importFromGithub,
       planMode = false,
       onTogglePlanMode,
+      tokenUsage,
     },
     ref,
   ) => {
@@ -123,6 +125,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       className="flex flex-col w-full flex-1 max-w-chat px-4 pb-6 mx-auto z-1"
                       messages={messages}
                       isStreaming={isStreaming}
+                      tokenUsage={tokenUsage}
                     />
                   ) : null;
                 }}

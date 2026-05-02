@@ -10,11 +10,14 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
+import { createAutoSnapshot } from '~/lib/stores/snapshots';
+import { autosaveToDrive } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
+import { DbRequestModal, type DbFieldRequest } from './DbRequestModal';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -68,7 +71,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   useShortcuts();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const parsedMessagesRef = useRef(0);
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
+  const [tokenUsage, setTokenUsage] = useState<
+    Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>
+  >({});
 
   const { showChat, planMode } = useStore(chatStore);
   const llm = useStore(llmStore);
@@ -173,10 +181,53 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
   }, []);
 
+  // Parse token usage from streamed messages
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === 'assistant') {
+      const content = lastMsg.content || '';
+      const match = content.match(/\x00TOKEN_USAGE:({.*?})\x00/);
+      if (match) {
+        try {
+          const usage = JSON.parse(match[1]);
+          setTokenUsage(prev => ({ ...prev, [messages.length - 1]: usage }));
+        } catch {}
+      }
+    }
+  }, [messages]);
+
   useEffect(() => {
     parseMessages(messages, isLoading);
     if (messages.length > initialMessages.length) {
       storeMessageHistory(messages).catch((error) => toast.error(error.message));
+    }
+
+    // Auto-create snapshot when AI finishes a response
+    if (!isLoading && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg?.role === 'assistant' && lastMsg.content) {
+        const prevLength = parsedMessagesRef.current;
+        if (prevLength < messages.length) {
+          parsedMessagesRef.current = messages.length;
+          // Only snapshot if there's actual content (artifact or code)
+          if (lastMsg.content.includes('boltArtifact') || lastMsg.content.includes('boltAction')) {
+            createAutoSnapshot(messages.length - 1, `Msg #${messages.length}`);
+          }
+        }
+      }
+
+      // Auto-save to Google Drive after AI finishes (debounced)
+      if (lastMsg?.role === 'assistant') {
+        if (autosaveTimeoutRef.current) {
+          clearTimeout(autosaveTimeoutRef.current);
+        }
+        autosaveTimeoutRef.current = setTimeout(() => {
+          autosaveToDrive().then((ok) => {
+            if (ok) console.log('[autosave] Project saved to Google Drive');
+          });
+        }, 3000); // 3 second debounce
+      }
     }
   }, [messages, isLoading, parseMessages]);
 
@@ -225,6 +276,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const [envModalOpen, setEnvModalOpen] = useState(false);
   const processedEnvMessages = useRef<Set<number>>(new Set());
 
+  // DB request modal state
+  const [dbFields, setDbFields] = useState<DbFieldRequest[]>([]);
+  const [dbType, setDbType] = useState<'supabase' | 'firebase'>('supabase');
+  const [dbModalOpen, setDbModalOpen] = useState(false);
+  const processedDbMessages = useRef<Set<number>>(new Set());
+
   // Detect <env_request> tags in assistant messages
   useEffect(() => {
     if (isLoading) return;
@@ -250,6 +307,35 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         if (vars.length > 0) {
           setEnvRequests(vars);
           setEnvModalOpen(true);
+        }
+      }
+    }
+  }, [messages, isLoading]);
+
+  // Detect <db_request> tags in assistant messages
+  useEffect(() => {
+    if (isLoading) return;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'assistant' || processedDbMessages.current.has(i)) continue;
+      const content = msg.content || '';
+      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request>/);
+      if (dbRequestMatch) {
+        processedDbMessages.current.add(i);
+        const reqType = dbRequestMatch[1] as 'supabase' | 'firebase';
+        const fieldsRaw = dbRequestMatch[2]
+          .split(/<field\s/g)
+          .filter(Boolean)
+          .map((raw) => {
+            const nameMatch = raw.match(/name=["']([^"']+)["']/);
+            const descMatch = raw.match(/description=["']([^"']+)["']/);
+            return { name: nameMatch?.[1] || '', description: descMatch?.[1] || '' };
+          })
+          .filter((f) => f.name);
+        if (fieldsRaw.length > 0) {
+          setDbType(reqType);
+          setDbFields(fieldsRaw);
+          setDbModalOpen(true);
         }
       }
     }
@@ -316,6 +402,43 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const handleEnvSkip = () => {
     setEnvModalOpen(false);
+  };
+
+  const handleDbSave = async (type: string, values: Record<string, string>) => {
+    setDbModalOpen(false);
+
+    // Update project settings with database config
+    if (type === 'supabase') {
+      const { updateActiveProjectSettings } = await import('~/lib/stores/project');
+      updateActiveProjectSettings({
+        database: {
+          type: 'supabase',
+          firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
+          supabase: { url: values.url || '', anonKey: values.anonKey || '', serviceRoleKey: '' },
+        },
+      });
+      append({
+        role: 'user',
+        content: `I just configured a Supabase database for this project. Here are the connection details:\n- Project URL: ${values.url}\n- Anon Key: ${values.anonKey}\n\nPlease:\n1. Install @supabase/supabase-js if not already installed\n2. Create a lib/supabase.ts file with the Supabase client initialized\n3. Set up the database connection in the project\n4. Create any necessary types for the database tables\n\nThe database is ready to use. Please configure the project to connect to it.`,
+      });
+    } else if (type === 'firebase') {
+      const { updateActiveProjectSettings } = await import('~/lib/stores/project');
+      updateActiveProjectSettings({
+        database: {
+          type: 'firebase',
+          firebase: { apiKey: values.apiKey || '', authDomain: values.authDomain || '', projectId: values.projectId || '', storageBucket: values.storageBucket || '', messagingSenderId: values.messagingSenderId || '', appId: values.appId || '', measurementId: '' },
+          supabase: { url: '', anonKey: '', serviceRoleKey: '' },
+        },
+      });
+      append({
+        role: 'user',
+        content: `I just configured a Firebase database for this project. Here are the connection details:\n- API Key: ${values.apiKey}\n- Auth Domain: ${values.authDomain}\n- Project ID: ${values.projectId}\n- Storage Bucket: ${values.storageBucket}\n- App ID: ${values.appId}\n\nPlease:\n1. Install firebase if not already installed\n2. Create a lib/firebase.ts file with Firebase initialized\n3. Set up Firestore or Firebase Realtime Database as needed\n4. Create any necessary types for the database collections\n\nThe database is ready to use. Please configure the project to connect to it.`,
+      });
+    }
+  };
+
+  const handleDbSkip = () => {
+    setDbModalOpen(false);
   };
 
   const importFromGithub = async (result: any) => {
@@ -410,12 +533,21 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         enhancePrompt={() => enhancePrompt(input, setInput)}
         planMode={planMode}
         onTogglePlanMode={handleTogglePlanMode}
+        tokenUsage={tokenUsage}
       />
       {envModalOpen && envRequests.length > 0 && (
         <EnvRequestModal
           variables={envRequests}
           onClose={handleEnvSkip}
           onSave={handleEnvSave}
+        />
+      )}
+      {dbModalOpen && dbFields.length > 0 && (
+        <DbRequestModal
+          fields={dbFields}
+          dbType={dbType}
+          onClose={handleDbSkip}
+          onSave={handleDbSave}
         />
       )}
     </>

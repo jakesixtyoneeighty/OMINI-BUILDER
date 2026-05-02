@@ -52,6 +52,12 @@ export default class SwitchableStream extends TransformStream {
     }
   }
 
+  appendData(data: string) {
+    if (this._controller) {
+      this._controller.enqueue(new TextEncoder().encode(data));
+    }
+  }
+
   close() {
     if (this._currentReader) {
       this._currentReader.cancel();

@@ -9,10 +9,11 @@ interface MessagesProps {
   className?: string;
   isStreaming?: boolean;
   messages?: Message[];
+  tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
 }
 
 export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: MessagesProps, ref) => {
-  const { id, isStreaming = false, messages = [] } = props;
+  const { id, isStreaming = false, messages = [], tokenUsage } = props;
 
   return (
     <div id={id} ref={ref} className={props.className}>
@@ -39,7 +40,11 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                   </div>
                 )}
                 <div className="grid grid-col-1 w-full">
-                  {isUserMessage ? <UserMessage content={content} /> : <AssistantMessage content={content} />}
+                  {isUserMessage ? (
+                    <UserMessage content={content} />
+                  ) : (
+                    <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} />
+                  )}
                 </div>
               </div>
             );

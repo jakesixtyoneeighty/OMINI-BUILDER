@@ -104,7 +104,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   try {
     const options: StreamingOptions = {
       toolChoice: 'none',
-      onFinish: async ({ text: content, finishReason }) => {
+      onFinish: async ({ text: content, finishReason, usage }) => {
+        if (usage) {
+          const usagePayload = JSON.stringify({
+            type: 'token_usage',
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+            totalTokens: usage.promptTokens + usage.completionTokens,
+          });
+          stream.appendData(`\x00TOKEN_USAGE:${usagePayload}\x00\n`);
+        }
+
         if (finishReason !== 'length') {
           return stream.close();
         }
