@@ -47,6 +47,9 @@ interface BaseChatProps {
   planMode?: boolean;
   onTogglePlanMode?: () => void;
   tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
+  userQuestions?: Record<number, any>;
+  answeredQuestions?: Set<number>;
+  onQuestionAnswer?: (msgIndex: number, answer: string) => void;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -126,6 +129,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       messages={messages}
                       isStreaming={isStreaming}
                       tokenUsage={tokenUsage}
+                      userQuestions={userQuestions}
+                      answeredQuestions={answeredQuestions}
+                      onQuestionAnswer={onQuestionAnswer}
                     />
                   ) : null;
                 }}

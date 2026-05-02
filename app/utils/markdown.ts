@@ -18,6 +18,7 @@ export const allowedHTMLElements = [
   'dl',
   'dt',
   'em',
+  'env_request',
   'h1',
   'h2',
   'h3',
@@ -54,6 +55,10 @@ export const allowedHTMLElements = [
   'tr',
   'ul',
   'var',
+  'db_request',
+  'field',
+  'user_question',
+  'option',
 ];
 
 const rehypeSanitizeOptions: RehypeSanitizeOptions = {

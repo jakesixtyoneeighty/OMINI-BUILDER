@@ -271,10 +271,11 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     toast.success('Google Drive settings saved!');
   };
 
-  const saveDatabaseSettings = () => {
+  const saveDatabaseSettings = (overrideType?: 'none' | 'firebase' | 'supabase') => {
+    const type = overrideType ?? dbType;
     updateActiveProjectSettings({
       database: {
-        type: dbType,
+        type,
         firebase,
         supabase,
       },
@@ -282,10 +283,10 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     toast.success('Database settings saved!');
 
     // Dispatch event so Chat can auto-prompt the AI to configure the database
-    if (dbType !== 'none') {
-      const config = dbType === 'firebase' ? firebase : supabase;
+    if (type !== 'none') {
+      const config = type === 'firebase' ? firebase : supabase;
       window.dispatchEvent(new CustomEvent('database-config-changed', {
-        detail: { type: dbType, config },
+        detail: { type, config },
       }));
     }
   };
@@ -700,17 +701,17 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 <div>
                   <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-3">Database Provider</label>
                   <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => { setDbType('none'); saveDatabaseSettings(); }}
+                    <button onClick={() => { setDbType('none'); saveDatabaseSettings('none'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'none' ? 'border-bolt-elements-borderColor bg-bolt-elements-item-backgroundActive ring-1 ring-purple-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
                       <div className="i-ph:prohibit text-xl mx-auto mb-1 text-bolt-elements-textTertiary" />
                       <span className="text-xs font-medium text-bolt-elements-textPrimary block">None</span>
                     </button>
-                    <button onClick={() => { setDbType('firebase'); saveDatabaseSettings(); }}
+                    <button onClick={() => { setDbType('firebase'); saveDatabaseSettings('firebase'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'firebase' ? 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
                       <div className={`i-ph:fire text-xl mx-auto mb-1 ${dbType === 'firebase' ? 'text-amber-400' : 'text-bolt-elements-textTertiary'}`} />
                       <span className="text-xs font-medium text-bolt-elements-textPrimary block">Firebase</span>
                     </button>
-                    <button onClick={() => { setDbType('supabase'); saveDatabaseSettings(); }}
+                    <button onClick={() => { setDbType('supabase'); saveDatabaseSettings('supabase'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'supabase' ? 'border-emerald-500 bg-emerald-500/8 ring-1 ring-emerald-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
                       <div className={`i-ph:lightning text-xl mx-auto mb-1 ${dbType === 'supabase' ? 'text-emerald-400' : 'text-bolt-elements-textTertiary'}`} />
                       <span className="text-xs font-medium text-bolt-elements-textPrimary block">Supabase</span>

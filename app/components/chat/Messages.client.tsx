@@ -3,6 +3,7 @@ import React from 'react';
 import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
+import { UserQuestionCard, type UserQuestionData } from './UserQuestionCard';
 
 interface MessagesProps {
   id?: string;
@@ -10,10 +11,13 @@ interface MessagesProps {
   isStreaming?: boolean;
   messages?: Message[];
   tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
+  userQuestions?: Record<number, UserQuestionData>;
+  answeredQuestions?: Set<number>;
+  onQuestionAnswer?: (msgIndex: number, answer: string) => void;
 }
 
 export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: MessagesProps, ref) => {
-  const { id, isStreaming = false, messages = [], tokenUsage } = props;
+  const { id, isStreaming = false, messages = [], tokenUsage, userQuestions, answeredQuestions, onQuestionAnswer } = props;
 
   return (
     <div id={id} ref={ref} className={props.className}>
@@ -43,7 +47,16 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                   {isUserMessage ? (
                     <UserMessage content={content} />
                   ) : (
-                    <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} />
+                    <>
+                      <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} />
+                      {userQuestions?.[index] && (
+                        <UserQuestionCard
+                          data={userQuestions[index]}
+                          onAnswer={(answer) => onQuestionAnswer?.(index, answer)}
+                          answered={answeredQuestions?.has(index)}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>

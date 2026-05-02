@@ -15,14 +15,27 @@ interface AssistantMessageProps {
 const INPUT_PRICE_PER_TOKEN = 0.00000275;
 const OUTPUT_PRICE_PER_TOKEN = 0.0000125;
 
+// Strip special action tags from rendered content (they trigger modals/UI instead)
+function stripActionTags(text: string): string {
+  return text
+    .replace(/<env_request>[\s\S]*?<\/env_request>/g, '')
+    .replace(/<db_request[\s\S]*?<\/db_request>/g, '')
+    .replace(/<user_question[\s\S]*?<\/user_question>/g, '')
+    .trim();
+}
+
 export const AssistantMessage = memo(({ content, tokenUsage }: AssistantMessageProps) => {
   const estimatedCost = tokenUsage
     ? tokenUsage.promptTokens * INPUT_PRICE_PER_TOKEN + tokenUsage.completionTokens * OUTPUT_PRICE_PER_TOKEN
     : 0;
 
+  const displayContent = stripActionTags(content);
+
+  if (!displayContent) return null;
+
   return (
     <div className="overflow-hidden w-full">
-      <Markdown html>{content}</Markdown>
+      <Markdown html>{displayContent}</Markdown>
       {tokenUsage && tokenUsage.totalTokens > 0 && (
         <div className="flex items-center gap-3 mt-2 text-[10px] text-bolt-elements-textTertiary">
           <span>{tokenUsage.totalTokens.toLocaleString()} tokens</span>

@@ -32,6 +32,7 @@ interface ChatRequest {
   model?: string;
   apiKey?: string;
   databaseConfig?: ClientDatabaseConfig;
+  planMode?: boolean;
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
@@ -98,6 +99,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const { messages } = body;
   const selection = resolveSelection(body, context.cloudflare.env);
   const dbContext = resolveDbContext(body.databaseConfig);
+  const planMode = body.planMode ?? false;
 
   const stream = new SwitchableStream();
 
@@ -131,13 +133,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options, dbContext);
+        const result = await streamText(messages, selection, options, dbContext, planMode);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options, dbContext);
+    const result = await streamText(messages, selection, options, dbContext, planMode);
 
     stream.switchSource(result.toAIStream());
 

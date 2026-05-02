@@ -18,6 +18,7 @@ import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
 import { DbRequestModal, type DbFieldRequest } from './DbRequestModal';
+import { UserQuestionCard, type UserQuestionData } from './UserQuestionCard';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -105,7 +106,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     model: llm.model,
     apiKey: llm.keys[llm.provider] || '',
     databaseConfig,
-  }), [llm.provider, llm.model, llm.keys, databaseConfig]);
+    planMode,
+  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',
@@ -255,13 +257,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     chatStore.setKey('aborted', false);
     runAnimation();
 
-    // Build the message content, prepending plan instructions if plan mode is active
-    let messageContent = _input;
-
-    if (planMode) {
-      const planInstruction = `\n\n[PLAN MODE ACTIVE]\nBefore writing any code, you MUST first create a detailed step-by-step execution plan. Follow this exact format:\n\n## Execution Plan\n\n**Analysis:** Briefly analyze what needs to be built based on the user's request.\n\n**Step-by-step Plan:**\n1. [Step 1 description — e.g., "Set up project structure and install dependencies"]\n2. [Step 2 description — e.g., "Create main layout component"]\n3. [Step 3 description — e.g., "Implement core feature X"]\n4. [Continue with all necessary steps...]\n\n**Architecture decisions:** Briefly mention key architectural choices.\n\nAfter presenting the plan above, proceed to implement each step one by one using artifacts. Execute the plan in the exact order listed above.`;
-      messageContent = _input + planInstruction;
-    }
+    // Plan mode is now handled server-side via system prompt (planMode in chatBody)
+    const messageContent = _input;
 
     if (fileModifications !== undefined) {
       const diff = fileModificationsToHTML(fileModifications);
@@ -286,6 +283,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const [dbType, setDbType] = useState<'supabase' | 'firebase'>('supabase');
   const [dbModalOpen, setDbModalOpen] = useState(false);
   const processedDbMessages = useRef<Set<number>>(new Set());
+
+  // User question state
+  const [userQuestions, setUserQuestions] = useState<Record<number, UserQuestionData>>({});
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+  const processedQuestionMessages = useRef<Set<number>>(new Set());
 
   // Detect <env_request> tags in assistant messages
   useEffect(() => {
@@ -345,6 +347,31 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       }
     }
   }, [messages, isLoading]);
+
+  // Detect <user_question> tags in assistant messages
+  useEffect(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'assistant' || processedQuestionMessages.current.has(i)) continue;
+      const content = msg.content || '';
+      const questionMatch = content.match(/<user_question\s+question=["']([^"']+)["']\s*>([\s\S]*?)<\/user_question>/);
+      if (questionMatch) {
+        processedQuestionMessages.current.add(i);
+        const question = questionMatch[1];
+        const optionsRaw = questionMatch[2]
+          .split(/<option\s/g)
+          .filter(Boolean)
+          .map((raw) => {
+            const labelMatch = raw.match(/label=["']([^"']+)["']/);
+            return labelMatch?.[1] || '';
+          })
+          .filter(Boolean);
+        if (optionsRaw.length >= 2) {
+          setUserQuestions(prev => ({ ...prev, [i]: { question, options: optionsRaw.map(l => ({ label: l })) } }));
+        }
+      }
+    }
+  }, [messages]);
 
   // Auto-prompt AI when database is configured in settings
   useEffect(() => {
@@ -446,6 +473,15 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     setDbModalOpen(false);
   };
 
+  const handleQuestionAnswer = (msgIndex: number, answer: string) => {
+    setAnsweredQuestions(prev => new Set(prev).add(msgIndex));
+    // Send the answer back to the AI as a user message
+    append({
+      role: 'user',
+      content: `[Question Answer] "${answer}" — Please continue based on my choice.`,
+    });
+  };
+
   const importFromGithub = async (result: any) => {
     try {
       if (!result.files || result.files.length === 0) {
@@ -539,6 +575,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         planMode={planMode}
         onTogglePlanMode={handleTogglePlanMode}
         tokenUsage={tokenUsage}
+        userQuestions={userQuestions}
+        answeredQuestions={answeredQuestions}
+        onQuestionAnswer={handleQuestionAnswer}
       />
       {envModalOpen && envRequests.length > 0 && (
         <EnvRequestModal
