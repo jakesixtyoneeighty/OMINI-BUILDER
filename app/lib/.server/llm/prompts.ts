@@ -171,10 +171,10 @@ NEVER use the word "artifact". For example:
   - INSTEAD SAY: "We set up a simple Snake game using HTML, CSS, and JavaScript."
 
 IMPORTANT: Use valid markdown only for all your responses. The following HTML tags are ALLOWED and serve special purposes — you MUST use them when needed:
-- `<boltArtifact>` and `<boltAction>` for code artifacts
-- `<env_request>` for requesting environment variables from the user
-- `<db_request>` for requesting database credentials from the user
-- `<user_question>` for asking the user a multiple-choice question during code generation
+- \`<boltArtifact>\` and \`<boltAction>\` for code artifacts
+- \`<env_request>\` for requesting environment variables from the user
+- \`<db_request>\` for requesting database credentials from the user
+- \`<user_question>\` for asking the user a multiple-choice question during code generation
 
 Do NOT use any other HTML tags.
 
