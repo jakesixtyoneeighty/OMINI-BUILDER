@@ -77,8 +77,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [animationScope, animate] = useAnimate();
 
-  // Build database config from project settings
-  const getDatabaseConfig = () => {
+  // Build database config from project settings - computed on every render
+  const databaseConfig = (() => {
     const current = projects[projectId] ?? getActiveProject();
     const db = current.settings?.database;
     if (!db || db.type === 'none') return undefined;
@@ -89,7 +89,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       return { type: 'supabase' as const, supabase: { url: db.supabase.url, anonKey: db.supabase.anonKey } };
     }
     return undefined;
-  };
+  })();
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
@@ -97,7 +97,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       provider: llm.provider,
       model: llm.model,
       apiKey: llm.keys[llm.provider] || '',
-      databaseConfig: getDatabaseConfig(),
+      databaseConfig,
     },
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
@@ -243,6 +243,33 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       }
     }
   }, [messages, isLoading]);
+
+  // Auto-prompt AI when database is configured in settings
+  useEffect(() => {
+    const handleDbConfig = (event: CustomEvent) => {
+      const { type, config } = event.detail;
+      if (!config || type === 'none') return;
+
+      if (!chatStarted) {
+        runAnimation();
+      }
+
+      if (type === 'supabase') {
+        append({
+          role: 'user',
+          content: `I just configured a Supabase database for this project. Here are the connection details:\n- Project URL: ${config.url}\n- Anon Key: ${config.anonKey}\n\nPlease:\n1. Install @supabase/supabase-js if not already installed\n2. Create a lib/database.ts or lib/supabase.ts file with the Supabase client initialized\n3. Set up the database connection in the project\n4. Make sure all API routes and components that need data use this Supabase client\n5. Create any necessary types for the database tables\n\nThe database is ready to use. Please configure the project to connect to it.`,
+        });
+      } else if (type === 'firebase') {
+        append({
+          role: 'user',
+          content: `I just configured a Firebase database for this project. Here are the connection details:\n- API Key: ${config.apiKey}\n- Auth Domain: ${config.authDomain}\n- Project ID: ${config.projectId}\n- Storage Bucket: ${config.storageBucket}\n- App ID: ${config.appId}\n\nPlease:\n1. Install firebase if not already installed\n2. Create a lib/firebase.ts file with Firebase initialized using these credentials\n3. Set up Firestore or Firebase Realtime Database as needed\n4. Make sure all components that need data use this Firebase instance\n5. Create any necessary types for the database collections\n\nThe database is ready to use. Please configure the project to connect to it.`,
+        });
+      }
+    };
+
+    window.addEventListener('database-config-changed', handleDbConfig as EventListener);
+    return () => window.removeEventListener('database-config-changed', handleDbConfig as EventListener);
+  }, [append, chatStarted]);
 
   const handleEnvSave = async (vars: { key: string; value: string }[]) => {
     setEnvModalOpen(false);

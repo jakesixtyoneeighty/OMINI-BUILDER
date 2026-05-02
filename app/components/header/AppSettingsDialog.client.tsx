@@ -280,6 +280,14 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       },
     });
     toast.success('Database settings saved!');
+
+    // Dispatch event so Chat can auto-prompt the AI to configure the database
+    if (dbType !== 'none') {
+      const config = dbType === 'firebase' ? firebase : supabase;
+      window.dispatchEvent(new CustomEvent('database-config-changed', {
+        detail: { type: dbType, config },
+      }));
+    }
   };
 
   const getProjectFiles = async () => {

@@ -5,6 +5,9 @@ import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from
 import { IconButton } from '~/components/ui/IconButton';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { db, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
+import { chatStore } from '~/lib/stores/chat';
+import { workbenchStore } from '~/lib/stores/workbench';
+import { activeProjectIdStore } from '~/lib/stores/project';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -113,10 +116,21 @@ export function Menu() {
           <button
             onClick={(e) => {
               e.preventDefault();
-              // Reset state and do a full navigation to start fresh
+              // Reset all state and clear everything for a fresh start
               chatStore.set({ started: false, aborted: false, showChat: true });
               workbenchStore.showWorkbench.set(false);
+              workbenchStore.currentView.set('code');
+              // Clear files cache with the correct key
+              localStorage.removeItem('omni-builder.files.cache');
               localStorage.removeItem('bolt.files.cache');
+              // Clear snapshots for current project
+              const pid = activeProjectIdStore.get();
+              if (pid) {
+                localStorage.removeItem(`bolt.snapshots.${pid}`);
+              }
+              // Reset active project to default
+              activeProjectIdStore.set('default');
+              // Full page navigation to reset everything
               window.location.href = '/';
             }}
             className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme w-full text-left"
