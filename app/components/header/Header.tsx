@@ -29,6 +29,13 @@ export function Header() {
           <img src="/logo.svg" alt="Omni-Builder" className="h-7 w-7" />
           <span className="font-extrabold bg-gradient-to-r from-purple-400 via-violet-400 to-purple-600 bg-clip-text text-transparent">Omni-Builder</span>
         </a>
+        <a
+          href="/templates"
+          className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/35 transition-all"
+        >
+          <div className="i-ph:layout-grid-duotone text-sm" />
+          Templates
+        </a>
       </div>
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
         <ClientOnly>{() => <ChatDescription />}</ClientOnly>

@@ -3,6 +3,7 @@ import type { Message } from 'ai';
 import { useChat } from 'ai/react';
 import { llmStore } from '~/lib/stores/llm';
 import { useAnimate } from 'framer-motion';
+import { useSearchParams } from '@remix-run/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
@@ -70,6 +71,7 @@ interface ChatProps {
 
 export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProps) => {
   useShortcuts();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parsedMessagesRef = useRef(0);
@@ -162,6 +164,26 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
   const { parsedMessages, parseMessages } = useMessageParser();
+
+  // Handle ?prompt= parameter (from Templates page)
+  const promptParamHandled = useRef(false);
+  useEffect(() => {
+    const promptParam = searchParams.get('prompt');
+    if (promptParam && !promptParamHandled.current && !isLoading && messages.length <= initialMessages.length) {
+      promptParamHandled.current = true;
+      // Clean URL without triggering re-render
+      setSearchParams({}, { replace: true });
+      // Small delay to let the chat initialize
+      setTimeout(() => {
+        setInput(promptParam);
+        // Auto-send the prompt after a brief moment
+        setTimeout(() => {
+          append({ role: 'user', content: promptParam });
+          setInput('');
+        }, 100);
+      }, 200);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
