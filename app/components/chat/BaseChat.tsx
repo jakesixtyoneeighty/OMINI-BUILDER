@@ -207,7 +207,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       ) : null}
                       <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
-                      <SettingsDialog />
+                      <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
                       <ThemeSwitch />
                     </div>
                   </div>
