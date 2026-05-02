@@ -101,7 +101,48 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     },
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
-      toast.error('There was an error processing your request');
+
+      // Extrair detalhes completos do erro
+      let errorMsg = 'Erro desconhecido';
+      let errorDetails = '';
+
+      if (error instanceof Error) {
+        errorMsg = error.message;
+        errorDetails = error.stack || '';
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error && typeof error === 'object') {
+        errorMsg = (error as any)?.message || (error as any)?.error || JSON.stringify(error);
+        errorDetails = (error as any)?.stack || '';
+      }
+
+      // Tentar extrair causa raiz de erros de API (fetch errors, etc.)
+      const cause = (error as any)?.cause;
+      if (cause) {
+        if (cause instanceof Error) {
+          errorDetails += '\n\nCausa: ' + cause.message + (cause.stack ? '\n' + cause.stack : '');
+        } else if (typeof cause === 'object') {
+          errorDetails += '\n\nCausa: ' + JSON.stringify(cause, null, 2);
+        }
+      }
+
+      // Mostrar toast com detalhes — clicável para ver mais
+      if (errorDetails) {
+        toast.error(
+          <div className="max-w-[400px]">
+            <div className="font-semibold text-sm mb-1">{errorMsg}</div>
+            <details className="mt-1">
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes técnicos</summary>
+              <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[200px] whitespace-pre-wrap break-all opacity-80">
+                {errorDetails}
+              </pre>
+            </details>
+          </div>,
+          { autoClose: 10000, closeOnClick: false },
+        );
+      } else {
+        toast.error(errorMsg, { autoClose: 8000 });
+      }
     },
     initialMessages,
   });
