@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Markdown } from './Markdown';
+import { ThinkingBlock } from './ThinkingBlock';
 
 interface AssistantMessageProps {
   content: string;
   tokenUsage?: { promptTokens: number; completionTokens: number; totalTokens: number };
+  isStreaming?: boolean;
 }
 
 /**
@@ -24,18 +26,60 @@ function stripActionTags(text: string): string {
     .trim();
 }
 
-export const AssistantMessage = memo(({ content, tokenUsage }: AssistantMessageProps) => {
+/**
+ * Extracts <think...>...</think) blocks from AI reasoning.
+ * Handles complete blocks, unclosed (streaming), and partial opening tags.
+ * Supports both <think) and <thinking) tag formats.
+ */
+function extractThinking(text: string): { thinking: string; content: string; isThinking: boolean } {
+  let thinking = '';
+  let content = text;
+  let isThinking = false;
+
+  // Match complete thinking blocks (supports <think) and <thinking))
+  // Closing > is optional to handle streaming edge cases
+  const thinkCompleteRegex = /<think(?:ing)?[^>]*>([\s\S]*?)<\/think(?:ing)?\s*>?/gi;
+  content = content.replace(thinkCompleteRegex, (_: string, thinkContent: string) => {
+    thinking += (thinking ? '\n\n' : '') + thinkContent;
+    return '';
+  });
+
+  // Check for unclosed thinking block (still streaming)
+  const unclosedMatch = content.match(/<think(?:ing)?[^>]*>([\s\S]*)$/i);
+
+  if (unclosedMatch) {
+    thinking += (thinking ? '\n\n' : '') + unclosedMatch[1];
+    content = content.replace(unclosedMatch[0], '');
+    isThinking = true;
+  } else {
+    // Remove any partial thinking opening tag at the end (streaming in progress)
+    const partialMatch = content.match(/<think(?:ing)?[^>]*$/i);
+
+    if (partialMatch) {
+      content = content.replace(partialMatch[0], '');
+      isThinking = true;
+    }
+  }
+
+  return { thinking: thinking.trim(), content: content.trim(), isThinking };
+}
+
+export const AssistantMessage = memo(({ content, tokenUsage, isStreaming }: AssistantMessageProps) => {
   const estimatedCost = tokenUsage
     ? tokenUsage.promptTokens * INPUT_PRICE_PER_TOKEN + tokenUsage.completionTokens * OUTPUT_PRICE_PER_TOKEN
     : 0;
 
-  const displayContent = stripActionTags(content);
+  const { thinking, content: mainContent, isThinking } = extractThinking(content);
+  const displayContent = stripActionTags(mainContent);
 
-  if (!displayContent) return null;
+  if (!displayContent && !thinking) {
+    return null;
+  }
 
   return (
     <div className="overflow-hidden w-full">
-      <Markdown html>{displayContent}</Markdown>
+      {thinking && <ThinkingBlock content={thinking} isStreaming={isStreaming || isThinking} />}
+      {displayContent && <Markdown html>{displayContent}</Markdown>}
       {tokenUsage && tokenUsage.totalTokens > 0 && (
         <div className="flex items-center gap-3 mt-2 text-[10px] text-bolt-elements-textTertiary">
           <span>{tokenUsage.totalTokens.toLocaleString()} tokens</span>

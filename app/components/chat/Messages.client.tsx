@@ -48,7 +48,7 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                     <UserMessage content={content} />
                   ) : (
                     <>
-                      <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} />
+                      <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} isStreaming={isStreaming && isLast} />
                       {userQuestions?.[index] && (
                         <UserQuestionCard
                           data={userQuestions[index]}
