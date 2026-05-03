@@ -1,6 +1,13 @@
 import type { Message } from 'ai';
 import { createScopedLogger } from '~/utils/logger';
-import type { ChatHistoryItem } from './useChatHistory';
+
+export interface ChatHistoryItem {
+  id: string;
+  urlId?: string;
+  description?: string;
+  messages: Message[];
+  timestamp: string;
+}
 
 const logger = createScopedLogger('ChatHistory');
 

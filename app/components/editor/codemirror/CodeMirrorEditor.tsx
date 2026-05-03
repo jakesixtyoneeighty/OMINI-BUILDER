@@ -23,6 +23,7 @@ import { debounce } from '~/utils/debounce';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BinaryContent } from './BinaryContent';
 import { getTheme, reconfigureTheme } from './cm-theme';
+export type { EditorSettings } from './cm-theme';
 import { indentKeyBinding } from './indent';
 import { getLanguage } from './languages';
 
@@ -33,12 +34,6 @@ export interface EditorDocument {
   isBinary: boolean;
   filePath: string;
   scroll?: ScrollPosition;
-}
-
-export interface EditorSettings {
-  fontSize?: string;
-  gutterFontSize?: string;
-  tabSize?: number;
 }
 
 type TextEditorDocument = EditorDocument & {

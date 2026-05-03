@@ -5,14 +5,7 @@ import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
-
-export interface ChatHistoryItem {
-  id: string;
-  urlId?: string;
-  description?: string;
-  messages: Message[];
-  timestamp: string;
-}
+import type { ChatHistoryItem } from './db';
 
 const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
 

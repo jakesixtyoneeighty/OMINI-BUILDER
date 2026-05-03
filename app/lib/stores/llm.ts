@@ -1,6 +1,5 @@
 import { atom, map } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
-import { authStore } from './auth';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
@@ -73,6 +72,7 @@ if (typeof window !== 'undefined') {
 
 export async function syncKeysToSupabase() {
   const sb = getSupabase();
+  const { authStore } = await import('./auth');
   const { user } = authStore.get();
   const { keys } = llmStore.get();
 
@@ -89,6 +89,7 @@ export async function syncKeysToSupabase() {
 
 export async function loadKeysFromSupabase() {
   const sb = getSupabase();
+  const { authStore } = await import('./auth');
   const { user } = authStore.get();
 
   if (sb && user) {

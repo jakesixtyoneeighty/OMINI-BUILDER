@@ -1,7 +1,6 @@
 import { atom, map } from 'nanostores';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase, supabaseEnabled } from '~/lib/supabase';
-import { loadKeysFromSupabase } from './llm';
 
 export interface AuthState {
   user: User | null;
@@ -68,6 +67,7 @@ export async function initAuth() {
       }
     }
     
+    const { loadKeysFromSupabase } = await import('./llm');
     await loadKeysFromSupabase();
   }
   
@@ -90,6 +90,7 @@ export async function initAuth() {
       googleProviderTokenStore.set(null);
     }
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      const { loadKeysFromSupabase } = await import('./llm');
       await loadKeysFromSupabase();
     }
   });
