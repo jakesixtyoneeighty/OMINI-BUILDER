@@ -15,6 +15,7 @@ export type BaseActionState = BoltAction & {
   abort: () => void;
   executed: boolean;
   abortSignal: AbortSignal;
+  isNewFile?: boolean;
 };
 
 export type FailedActionState = BoltAction &
@@ -92,9 +93,26 @@ export class ActionRunner {
     if (action.type !== 'file') return;
 
     const webcontainer = await this.#webcontainer;
+    const wc = await webcontainer;
+
+    // Check if file already exists to determine if it's new or edited
+    let isNewFile = true;
+    try {
+      await wc.fs.readFile(action.filePath);
+      isNewFile = false;
+    } catch {
+      isNewFile = true;
+    }
+
     let folder = nodePath.dirname(action.filePath).replace(/\/+$/g, '');
-    if (folder !== '.') await webcontainer.fs.mkdir(folder, { recursive: true });
-    await webcontainer.fs.writeFile(action.filePath, action.content);
+    if (folder !== '.') await wc.fs.mkdir(folder, { recursive: true });
+    await wc.fs.writeFile(action.filePath, action.content);
+
+    // Update action state with isNewFile
+    const actionId = Object.entries(this.actions.get()).find(([, a]) => a === action)?.[0];
+    if (actionId) {
+      this.#updateAction(actionId, { isNewFile } as any);
+    }
   }
 
   #updateAction(id: string, newState: ActionStateUpdate) {

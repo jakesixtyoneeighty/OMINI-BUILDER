@@ -185,6 +185,24 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
   }, [searchParams]);
 
+  // Handle ?import= parameter (from Templates page - GitHub import)
+  const importParamHandled = useRef(false);
+  useEffect(() => {
+    const importUrl = searchParams.get('import');
+    if (importUrl && !importParamHandled.current && !isLoading && messages.length <= initialMessages.length) {
+      importParamHandled.current = true;
+      setSearchParams({}, { replace: true });
+      setTimeout(() => {
+        const prompt = `Clone and set up this GitHub repository as a working project: ${importUrl}. Install all dependencies and make sure it runs correctly.`;
+        setInput(prompt);
+        setTimeout(() => {
+          append({ role: 'user', content: prompt });
+          setInput('');
+        }, 100);
+      }, 200);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
     if (projectId && projectId !== 'default') {

@@ -132,7 +132,7 @@ const actionVariants = {
 const ActionList = memo(({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-      <ul className="list-none space-y-2.5">
+      <ul className="list-none space-y-1">
         {actions.map((action, index) => {
           const { status, type, content } = action;
           const isLast = index === actions.length - 1;
@@ -148,39 +148,11 @@ const ActionList = memo(({ actions }: ActionListProps) => {
                 ease: cubicEasingFn,
               }}
             >
-              <div className="flex items-center gap-1.5 text-sm">
-                <div className={classNames('text-lg', getIconColor(action.status))}>
-                  {status === 'running' ? (
-                    <div className="i-svg-spinners:90-ring-with-bg"></div>
-                  ) : status === 'pending' ? (
-                    <div className="i-ph:circle-duotone"></div>
-                  ) : status === 'complete' ? (
-                    <div className="i-ph:check"></div>
-                  ) : status === 'failed' || status === 'aborted' ? (
-                    <div className="i-ph:x"></div>
-                  ) : null}
-                </div>
-                {type === 'file' ? (
-                  <div>
-                    Create{' '}
-                    <code className="bg-bolt-elements-artifacts-inlineCode-background text-bolt-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md">
-                      {action.filePath}
-                    </code>
-                  </div>
-                ) : type === 'shell' ? (
-                  <div className="flex items-center w-full min-h-[28px]">
-                    <span className="flex-1">Run command</span>
-                  </div>
-                ) : null}
-              </div>
-              {type === 'shell' && (
-                <ShellCodeBlock
-                  classsName={classNames('mt-1', {
-                    'mb-3.5': !isLast,
-                  })}
-                  code={content}
-                />
-              )}
+              {type === 'file' ? (
+                <FileAction action={action} />
+              ) : type === 'shell' ? (
+                <ShellAction action={action} isLast={isLast} />
+              ) : null}
             </motion.li>
           );
         })}
@@ -189,7 +161,75 @@ const ActionList = memo(({ actions }: ActionListProps) => {
   );
 });
 
-function getIconColor(status: ActionState['status']) {
+function FileAction({ action }: { action: ActionState }) {
+  const fileName = action.filePath?.split('/').pop() || '';
+  const dirPath = action.filePath?.substring(0, action.filePath.lastIndexOf('/')) || '';
+
+  return (
+    <div className="flex items-center gap-2 py-1 px-2 -mx-2 rounded-md hover:bg-bolt-elements-background-depth-2/50 transition-colors group">
+      <div className={classNames('flex-shrink-0', getStatusIndicator(action.status))}>
+        {status === 'running' ? (
+          <div className="i-svg-spinners:90-ring-with-bg text-sm" />
+        ) : status === 'pending' ? (
+          <div className="i-ph:circle-dashed text-sm" />
+        ) : status === 'complete' ? (
+          <div className="i-ph:check-circle-fill text-sm" />
+        ) : status === 'failed' || status === 'aborted' ? (
+          <div className="i-ph:x-circle-fill text-sm" />
+        ) : null}
+      </div>
+
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <span className={classNames(
+          'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0',
+          action.isNewFile ? 'bg-emerald-500/12 text-emerald-400' : 'bg-amber-500/12 text-amber-400'
+        )}>
+          {action.isNewFile ? 'Criado' : 'Editado'}
+        </span>
+        <code className="bg-bolt-elements-artifacts-inlineCode-background text-bolt-elements-artifacts-inlineCode-text px-1.5 py-0.5 rounded-md text-xs truncate">
+          {fileName}
+        </code>
+        {dirPath && (
+          <span className="text-[10px] text-bolt-elements-textTertiary truncate hidden group-hover:inline">
+            {dirPath}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ShellAction({ action, isLast }: { action: ActionState; isLast: boolean }) {
+  return (
+    <div className="py-0.5">
+      <div className="flex items-center gap-2 py-1 px-2 -mx-2 rounded-md">
+        <div className={classNames('flex-shrink-0', getStatusIndicator(action.status))}>
+          {action.status === 'running' ? (
+            <div className="i-svg-spinners:90-ring-with-bg text-sm" />
+          ) : action.status === 'pending' ? (
+            <div className="i-ph:circle-dashed text-sm" />
+          ) : action.status === 'complete' ? (
+            <div className="i-ph:check-circle-fill text-sm" />
+          ) : action.status === 'failed' || action.status === 'aborted' ? (
+            <div className="i-ph:x-circle-fill text-sm" />
+          ) : null}
+        </div>
+
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0 bg-blue-500/12 text-blue-400">
+          Comando
+        </span>
+      </div>
+      <ShellCodeBlock
+        classsName={classNames('mt-0.5 mb-0.5', {
+          'mb-3': !isLast,
+        })}
+        code={action.content}
+      />
+    </div>
+  );
+}
+
+function getStatusIndicator(status: ActionState['status']): string {
   switch (status) {
     case 'pending': {
       return 'text-bolt-elements-textTertiary';
@@ -198,7 +238,7 @@ function getIconColor(status: ActionState['status']) {
       return 'text-bolt-elements-loader-progress';
     }
     case 'complete': {
-      return 'text-bolt-elements-icon-success';
+      return 'text-emerald-400';
     }
     case 'aborted': {
       return 'text-bolt-elements-textSecondary';
@@ -207,7 +247,7 @@ function getIconColor(status: ActionState['status']) {
       return 'text-bolt-elements-icon-error';
     }
     default: {
-      return undefined;
+      return '';
     }
   }
 }

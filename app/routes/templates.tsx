@@ -17,7 +17,6 @@ function TemplatesContent() {
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filteredTemplates = useMemo(() => {
     return templates.filter((template) => {
@@ -37,26 +36,11 @@ function TemplatesContent() {
   const navigate = useNavigate();
 
   const handleUseTemplate = (template: Template) => {
-    // Navigate to home with the template prompt
     navigate(`/?prompt=${encodeURIComponent(template.prompt)}`);
   };
 
-  const handleCopyPrompt = async (template: Template) => {
-    try {
-      await navigator.clipboard.writeText(template.prompt);
-      setCopiedId(template.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      // Fallback
-      const textarea = document.createElement('textarea');
-      textarea.value = template.prompt;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      setCopiedId(template.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }
+  const handleImportGitHub = (template: Template) => {
+    navigate(`/?import=${encodeURIComponent(template.githubUrl)}`);
   };
 
   const difficultyBadge = (difficulty: string) => {
@@ -150,8 +134,7 @@ function TemplatesContent() {
                   key={template.id}
                   template={template}
                   onUse={handleUseTemplate}
-                  onCopy={handleCopyPrompt}
-                  copiedId={copiedId}
+                  onImport={handleImportGitHub}
                   difficultyBadge={difficultyBadge}
                   featured
                 />
@@ -226,8 +209,7 @@ function TemplatesContent() {
                 key={template.id}
                 template={template}
                 onUse={handleUseTemplate}
-                onCopy={handleCopyPrompt}
-                copiedId={copiedId}
+                onImport={handleImportGitHub}
                 difficultyBadge={difficultyBadge}
               />
             ))}
@@ -257,19 +239,25 @@ function TemplatesContent() {
 function TemplateCard({
   template,
   onUse,
-  onCopy,
-  copiedId,
+  onImport,
   difficultyBadge,
   featured = false,
 }: {
   template: Template;
   onUse: (t: Template) => void;
-  onCopy: (t: Template) => void;
-  copiedId: string | null;
+  onImport: (t: Template) => void;
   difficultyBadge: (d: string) => React.ReactNode;
   featured?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async () => {
+    setImporting(true);
+    onImport(template);
+  };
+
+  const repoName = template.githubUrl.replace('https://github.com/', '');
 
   return (
     <div
@@ -310,6 +298,19 @@ function TemplateCard({
           {template.description}
         </p>
 
+        {/* GitHub info */}
+        <div className="flex items-center gap-1.5 mt-2.5 px-2 py-1.5 rounded-md bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor w-fit">
+          <div className="i-ph:github-logo text-xs text-bolt-elements-textTertiary" />
+          <span className="text-[10px] text-bolt-elements-textTertiary font-mono truncate max-w-[160px]">{repoName}</span>
+          {template.stars && template.stars > 0 && (
+            <>
+              <div className="w-px h-3 bg-bolt-elements-borderColor" />
+              <div className="i-ph:star-fill text-[9px] text-yellow-500" />
+              <span className="text-[10px] text-bolt-elements-textTertiary">{template.stars >= 1000 ? `${(template.stars / 1000).toFixed(1)}k` : template.stars}</span>
+            </>
+          )}
+        </div>
+
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mt-3">
           {template.tags.map((tag) => (
@@ -338,11 +339,23 @@ function TemplateCard({
       <div className="mt-auto px-4 pb-4 pt-2">
         <div className="flex gap-2">
           <button
-            onClick={() => onUse(template)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+            onClick={handleImport}
+            disabled={importing}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
           >
-            <div className="i-ph:play-fill text-sm" />
-            Usar Template
+            {importing ? (
+              <div className="i-svg-spinners:90-ring-with-bg text-sm" />
+            ) : (
+              <div className="i-ph:github-logo text-sm" />
+            )}
+            Importar Repo
+          </button>
+          <button
+            onClick={() => onUse(template)}
+            className="px-2.5 py-2 rounded-lg text-xs border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:border-bolt-elements-textTertiary transition-all"
+            title="Gerar com IA"
+          >
+            <div className="i-ph:sparkle text-sm" />
           </button>
           <button
             onClick={() => setExpanded(!expanded)}
@@ -354,17 +367,6 @@ function TemplateCard({
             title="Ver prompt"
           >
             <div className={`i-ph:${expanded ? 'eye-slash' : 'eye'} text-sm`} />
-          </button>
-          <button
-            onClick={() => onCopy(template)}
-            className={`px-2.5 py-2 rounded-lg text-xs border transition-all ${
-              copiedId === template.id
-                ? 'bg-green-500/15 text-green-400 border-green-500/25'
-                : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary'
-            }`}
-            title="Copiar prompt"
-          >
-            <div className={`i-ph:${copiedId === template.id ? 'check' : 'copy'} text-sm`} />
           </button>
         </div>
       </div>
