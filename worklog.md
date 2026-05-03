@@ -115,3 +115,34 @@ Stage Summary:
 - New component: UserQuestionCard.tsx
 - Key fixes in: api.chat.ts, Chat.client.tsx, prompts.ts, AppSettingsDialog.client.tsx, AssistantMessage.tsx, Messages.client.tsx, BaseChat.tsx, markdown.ts, stream-text.ts
 
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix circular dependencies + Update templates with GitHub + Improve action display
+
+Work Log:
+- Fixed 3 circular dependencies causing "Cannot access 'Oe' before initialization":
+  1. db.ts ↔ useChatHistory.ts: Moved ChatHistoryItem interface from useChatHistory.ts to db.ts
+  2. CodeMirrorEditor.tsx ↔ cm-theme.ts: Moved EditorSettings interface to cm-theme.ts
+  3. auth.ts ↔ llm.ts: Changed to dynamic import() in both directions
+- Updated all 22 templates with real GitHub repository URLs and star counts
+- Templates page now shows GitHub repo info (name, stars) on each card
+- Added "Importar Repo" primary button that navigates to /?import=<githubUrl>
+- Kept "Gerar com IA" secondary button that uses the prompt
+- Improved Artifact action display:
+  - Green "Criado" badge for new files
+  - Amber "Editado" badge for modified files
+  - Blue "Comando" badge for shell commands
+  - Cleaner, more minimal design
+  - File directory shown on hover
+- Added isNewFile tracking to ActionRunner (checks if file exists before write)
+- Added ?import= parameter detection in Chat.client.tsx
+- Build passed successfully
+- Pushed to GitHub
+
+Stage Summary:
+- All 3 circular dependencies fixed (madge shows 1 false positive from dynamic imports)
+- Templates now link to real GitHub repos with import functionality
+- Action display is cleaner with Criado/Editado/Comando badges
+- Files modified: auth.ts, llm.ts, db.ts, useChatHistory.ts, cm-theme.ts, CodeMirrorEditor.tsx, templates.ts, templates.tsx, Artifact.tsx, action-runner.ts, Chat.client.tsx
