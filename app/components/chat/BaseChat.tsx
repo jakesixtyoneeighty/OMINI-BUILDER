@@ -1,5 +1,5 @@
 import type { Message } from 'ai';
-import React, { type RefCallback } from 'react';
+import React, { type RefCallback, useState, useCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
@@ -7,7 +7,6 @@ import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
-import { SendButton } from './SendButton.client';
 import { ModelPicker } from '../header/ModelPicker.client';
 import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
@@ -28,12 +27,6 @@ interface ImportResult {
   owner?: string;
   repo?: string;
   ref?: string;
-}
-
-interface AttachedFile {
-  name: string;
-  content: string;
-  type: string;
 }
 
 interface BaseChatProps {
@@ -69,8 +62,6 @@ const EXAMPLE_PROMPTS = [
   { text: 'How do I center a div?' },
 ];
 
-const TEXTAREA_MIN_HEIGHT = 52;
-
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -99,7 +90,57 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
-    const TEXTAREA_MAX_HEIGHT = chatStarted ? 300 : 160;
+    const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([]);
+
+    const handleFileSelected = useCallback((files: File[]) => {
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const content = reader.result as string;
+          const isImage = file.type.startsWith('image/');
+          const prefix = isImage
+            ? `[Image: ${file.name}]\n`
+            : `[File: ${file.name}]\n\`\`\`\n${content}\n\`\`\`\n\n`;
+
+          if (textareaRef?.current) {
+            const textarea = textareaRef.current;
+            const currentVal = textarea.value;
+            const newVal = currentVal + prefix;
+            const syntheticEvent = {
+              target: { value: newVal },
+            } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+            handleInputChange?.(syntheticEvent);
+            // Focus and scroll to end
+            textarea.focus();
+            requestAnimationFrame(() => {
+              textarea.scrollTop = textarea.scrollHeight;
+            });
+          }
+        };
+        if (isImage) {
+          reader.readAsDataURL(file);
+        } else {
+          reader.readAsText(file);
+        }
+      });
+    }, [textareaRef, handleInputChange]);
+
+    const handleSend = useCallback((event: React.UIEvent) => {
+      if (isStreaming) {
+        handleStop?.();
+        return;
+      }
+      sendMessage?.(event);
+    }, [isStreaming, handleStop, sendMessage]);
+
+    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage?.(event);
+      }
+    }, [sendMessage]);
+
+    const showSendButton = input.length > 0 || isStreaming;
 
     return (
       <div
@@ -157,180 +198,114 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   'sticky bottom-0': chatStarted,
                 })}
               >
+                {/* Single-row input container - matches Lovable style */}
                 <div
                   className={classNames(
-                    'shadow-sm border bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-xl transition-colors duration-200 overflow-hidden',
-                    planMode ? 'border-blue-400/60' : 'border-bolt-elements-borderColor',
+                    'flex items-center gap-2 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-2 py-1.5',
+                    planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                   )}
                 >
-                  {/* Top toolbar: file upload + textarea + send button */}
-                  <div className="flex items-end gap-1 p-2">
-                    {/* Left side: file upload + voice */}
-                    <div className="flex items-center gap-0.5 shrink-0 pb-1">
-                      <ClientOnly>
-                        {() => (
-                          <FileUploadButton
-                            onFilesSelected={(files) => {
-                              files.forEach((file) => {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                  const content = reader.result as string;
-                                  const fileName = file.name;
-                                  const isImage = file.type.startsWith('image/');
-                                  const prefix = isImage
-                                    ? `[Arquivo de imagem: ${fileName}]\n`
-                                    : `[Arquivo: ${fileName}]\n\`\`\`\n${content}\n\`\`\`\n\n`;
+                  {/* Left: + button */}
+                  <ClientOnly>
+                    {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
+                  </ClientOnly>
 
-                                  if (textareaRef?.current) {
-                                    const textarea = textareaRef.current;
-                                    const start = textarea.selectionStart;
-                                    const end = textarea.selectionEnd;
-                                    const currentVal = textarea.value;
-                                    const newVal = currentVal.substring(0, start) + prefix + currentVal.substring(end);
-                                    // Simulate onChange to update input
-                                    const nativeEvent = new Event('input', { bubbles: true });
-                                    const reactEvent = {
-                                      target: { value: newVal },
-                                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                                    handleInputChange?.(reactEvent);
-                                  }
-                                };
-                                if (isImage) {
-                                  reader.readAsDataURL(file);
-                                } else {
-                                  reader.readAsText(file);
-                                }
-                              });
-                            }}
-                          />
-                        )}
-                      </ClientOnly>
-                      <ClientOnly>
-                        {() => (
-                          <VoiceRecordButton
-                            onTranscript={(text) => {
-                              if (textareaRef?.current) {
-                                const textarea = textareaRef.current;
-                                const start = textarea.selectionStart;
-                                const end = textarea.selectionEnd;
-                                const currentVal = textarea.value;
-                                const newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
-                                const reactEvent = {
-                                  target: { value: newVal },
-                                } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                                handleInputChange?.(reactEvent);
-                              }
-                            }}
-                          />
-                        )}
-                      </ClientOnly>
-                    </div>
+                  {/* Enhance button */}
+                  <button
+                    type="button"
+                    title="Enhance prompt"
+                    disabled={input.length === 0 || enhancingPrompt}
+                    onClick={() => enhancePrompt?.()}
+                    className={classNames(
+                      'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
+                      enhancingPrompt
+                        ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                        : promptEnhanced
+                          ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                          : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
+                    )}
+                  >
+                    {enhancingPrompt ? (
+                      <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
+                    ) : (
+                      <div className="i-bolt:stars text-[11px]" />
+                    )}
+                    {!enhancingPrompt && <span>Enhance</span>}
+                  </button>
 
-                    {/* Center: textarea */}
-                    <textarea
-                      ref={textareaRef}
-                      className="flex-1 py-2.5 px-3 focus:outline-none resize-none text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed"
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          if (event.shiftKey) {
-                            return;
-                          }
+                  {/* Center: textarea */}
+                  <textarea
+                    ref={textareaRef}
+                    className="flex-1 py-1.5 px-2 focus:outline-none resize-none text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[24px]"
+                    onKeyDown={handleKeyDown}
+                    value={input}
+                    onChange={(event) => {
+                      handleInputChange?.(event);
+                      // Auto-resize
+                      const el = event.target;
+                      el.style.height = 'auto';
+                      el.style.height = Math.min(el.scrollHeight, chatStarted ? 200 : 120) + 'px';
+                    }}
+                    placeholder="Ask Omni..."
+                    translate="no"
+                    rows={1}
+                    style={{ maxHeight: chatStarted ? 200 : 120 }}
+                  />
 
-                          event.preventDefault();
-                          sendMessage?.(event);
+                  {/* Right side buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Model picker - compact */}
+                    <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+
+                    {/* Build / Plan dropdown */}
+                    <ClientOnly>
+                      {() => (
+                        <BuildPlanDropdown
+                          planMode={planMode}
+                          isStreaming={isStreaming}
+                          onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
+                          onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                        />
+                      )}
+                    </ClientOnly>
+
+                    {/* Microphone */}
+                    <ClientOnly>
+                      {() => <VoiceRecordButton onTranscript={(text) => {
+                        if (textareaRef?.current) {
+                          const textarea = textareaRef.current;
+                          const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
+                          const syntheticEvent = {
+                            target: { value: newVal },
+                          } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                          handleInputChange?.(syntheticEvent);
+                          textarea.focus();
                         }
-                      }}
-                      value={input}
-                      onChange={(event) => {
-                        handleInputChange?.(event);
-                      }}
-                      style={{
-                        minHeight: TEXTAREA_MIN_HEIGHT,
-                        maxHeight: TEXTAREA_MAX_HEIGHT,
-                      }}
-                      placeholder={planMode ? 'Modo Plano — descreva seu projeto...' : 'Ask Omni...'}
-                      translate="no"
-                      rows={1}
-                    />
+                      }} />}
+                    </ClientOnly>
 
-                    {/* Right side: send / stop */}
-                    <div className="flex items-center gap-1 shrink-0 pb-1">
-                      <ClientOnly>
-                        {() => (
-                          <SendButton
-                            show={input.length > 0 || isStreaming}
-                            isStreaming={isStreaming}
-                            onClick={(event) => {
-                              if (isStreaming) {
-                                handleStop?.();
-                                return;
-                              }
-                              sendMessage?.(event);
-                            }}
-                          />
-                        )}
-                      </ClientOnly>
-                    </div>
-                  </div>
-
-                  {/* Bottom toolbar: model picker, enhance, build/plan, settings */}
-                  <div className="flex items-center justify-between px-2 pb-2 gap-2">
-                    <div className="flex items-center gap-1.5">
-                      {/* Model Picker */}
-                      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-
-                      {/* Enhance prompt */}
+                    {/* Send / Stop button */}
+                    {showSendButton && (
                       <button
                         type="button"
-                        title="Enhance prompt"
-                        disabled={input.length === 0 || enhancingPrompt}
+                        onClick={handleSend}
                         className={classNames(
-                          'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all disabled:opacity-40',
-                          enhancingPrompt
-                            ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                            : promptEnhanced
-                              ? 'text-bolt-elements-item-contentAccent hover:bg-bolt-elements-item-backgroundAccent'
-                              : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive',
+                          'flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95',
+                          isStreaming
+                            ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                            : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
                         )}
-                        onClick={() => enhancePrompt?.()}
                       >
-                        {enhancingPrompt ? (
-                          <div className="i-svg-spinners:90-ring-with-bg text-xs" />
+                        {isStreaming ? (
+                          <div className="i-ph:stop-bold text-[12px]" />
                         ) : (
-                          <div className="i-bolt:stars text-xs" />
+                          <div className="i-ph:arrow-up-bold text-[13px]" />
                         )}
-                        {!enhancingPrompt && <span>{promptEnhanced ? 'Enhanced' : 'Enhance'}</span>}
                       </button>
+                    )}
 
-                      {/* Shift+Return hint */}
-                      {input.length > 3 && (
-                        <div className="text-[10px] text-bolt-elements-textTertiary hidden sm:block">
-                          <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-[9px]">Shift+Enter</kbd>
-                          <span className="ml-1">nova linha</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Build / Plan dropdown */}
-                      <ClientOnly>
-                        {() => (
-                          <BuildPlanDropdown
-                            planMode={planMode}
-                            isStreaming={isStreaming}
-                            onBuild={() => {
-                              if (planMode) onTogglePlanMode?.();
-                            }}
-                            onPlan={() => {
-                              if (!planMode) onTogglePlanMode?.();
-                            }}
-                          />
-                        )}
-                      </ClientOnly>
-
-                      {/* Settings */}
-                      <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
-                    </div>
+                    {/* Settings */}
+                    <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
                   </div>
                 </div>
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>

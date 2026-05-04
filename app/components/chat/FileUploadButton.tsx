@@ -17,18 +17,10 @@ export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      const validTypes = [
-        'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml',
-        'text/plain', 'text/html', 'text/css', 'text/javascript',
-        'application/javascript', 'application/json', 'application/xml',
-        'application/pdf', 'application/zip',
-        'text/markdown', 'text/x-markdown',
-      ];
-
+      const maxSize = 10 * 1024 * 1024;
       const validFiles = files.filter((f) => {
         if (f.size > maxSize) {
-          toast.warning(`Arquivo "${f.name}" excede 10MB e sera ignorado.`);
+          toast.warning(`"${f.name}" excede 10MB.`);
           return false;
         }
         return true;
@@ -36,10 +28,8 @@ export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected
 
       if (validFiles.length > 0) {
         onFilesSelected(validFiles);
-        toast.info(`${validFiles.length} arquivo${validFiles.length > 1 ? 's' : ''} carregado${validFiles.length > 1 ? 's' : ''}: ${validFiles.map((f) => f.name).join(', ')}`, { autoClose: 3000 });
       }
 
-      // Reset input
       e.target.value = '';
     },
     [onFilesSelected],
@@ -59,9 +49,9 @@ export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected
         type="button"
         onClick={handleClick}
         title="Upload de arquivos"
-        className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all active:scale-95"
+        className="flex items-center justify-center w-7 h-7 rounded-full border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40 hover:bg-bolt-elements-item-backgroundActive transition-all active:scale-95"
       >
-        <div className="i-ph:plus text-lg" />
+        <div className="i-ph:plus text-[13px]" />
       </button>
     </>
   );
