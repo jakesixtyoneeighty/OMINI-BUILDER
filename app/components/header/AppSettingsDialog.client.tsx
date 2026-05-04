@@ -19,6 +19,7 @@ const TABS = [
   { id: 'database' as const, label: 'Database', icon: 'i-ph:database-duotone' },
   { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
   { id: 'versions' as const, label: 'Snapshots', icon: 'i-ph:clock-counter-clockwise' },
+  { id: 'rules' as const, label: 'AI Rules', icon: 'i-ph:brain-duotone' },
 ];
 
 const VERCEL_FRAMEWORKS = [
@@ -133,6 +134,9 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel' | 'cloudrun'>('none');
   const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string; message?: string; buildLogsUrl?: string } | null>(null);
 
+  // AI Rules
+  const [customRules, setCustomRules] = useState(settings?.customRules || '');
+
   // Flag to only apply defaultTab on first open, not on every settings change
   const [hasAppliedDefault, setHasAppliedDefault] = useState(false);
 
@@ -162,6 +166,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     setFirebase(settings?.database?.firebase || { ...emptyFirebase });
     setSupabase(settings?.database?.supabase || { ...emptySupabase });
     setDeployResult(null);
+    setCustomRules(settings?.customRules || '');
     // Only apply defaultTab once when dialog first opens
     if (!hasAppliedDefault && defaultTab) {
       setTab(defaultTab as any);
@@ -289,6 +294,11 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
         detail: { type, config },
       }));
     }
+  };
+
+  const saveCustomRules = () => {
+    updateActiveProjectSettings({ customRules: customRules.trim() });
+    toast.success('AI Rules saved!');
   };
 
   const getProjectFiles = async () => {
@@ -425,6 +435,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {tab === 'database' && 'Connect Firebase or Supabase for database access'}
                 {tab === 'env' && 'Manage environment variables for your project'}
                 {tab === 'versions' && 'Save and restore project snapshots'}
+                {tab === 'rules' && 'Configure custom instructions for the AI assistant'}
               </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all">
@@ -833,6 +844,60 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   </button>
                 </div>
  </div>
+            )}
+
+            {/* ====== AI RULES TAB ====== */}
+            {tab === 'rules' && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
+                    <div className="i-ph:brain-duotone text-amber-400 text-base" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Custom AI Instructions</h3>
+                    <p className="text-[11px] text-bolt-elements-textTertiary">Rules that will be applied to every AI response</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-bolt-elements-textSecondary leading-relaxed">
+                    Define custom instructions that the AI will follow in every response. These rules are injected into the system prompt and are not visible to the user in the chat. Use this to enforce coding styles, architecture patterns, naming conventions, or any project-specific constraints.
+                  </p>
+                  <div className="p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="i-ph:lightbulb text-amber-400 text-sm" />
+                      <span className="text-[11px] font-semibold text-amber-400">Examples</span>
+                    </div>
+                    <ul className="text-[11px] text-amber-400/80 space-y-0.5 ml-5 list-disc">
+                      <li>Always use TypeScript with strict mode enabled</li>
+                      <li>Use Tailwind CSS for styling, never inline styles</li>
+                      <li>Follow the repository pattern for data access</li>
+                      <li>Component names must be PascalCase</li>
+                      <li>All API calls must have error handling with try/catch</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={customRules}
+                    onChange={(e) => setCustomRules(e.target.value)}
+                    onBlur={saveCustomRules}
+                    placeholder="Enter your custom AI rules here...&#10;&#10;Example:&#10;- Always use functional components&#10;- Use Tailwind CSS for all styling&#10;- Follow REST API naming conventions&#10;- Add JSDoc comments to all functions&#10;- Use Portuguese (pt-BR) for all UI text"
+                    rows={12}
+                    className="w-full px-4 py-3 rounded-lg text-sm font-mono bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all placeholder:text-bolt-elements-textTertiary resize-y leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[11px] text-bolt-elements-textTertiary">{customRules.length} characters</span>
+                    {customRules.length > 0 && (
+                      <button
+                        onClick={() => { setCustomRules(''); updateActiveProjectSettings({ customRules: '' }); toast.info('AI Rules cleared'); }}
+                        className="text-[11px] text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                      >
+                        <div className="i-ph:trash text-xs" /> Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* ====== SNAPSHOTS TAB ====== */}

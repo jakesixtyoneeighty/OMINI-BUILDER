@@ -110,7 +110,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     apiKey: llm.keys[llm.provider] || '',
     databaseConfig,
     planMode,
-  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode]);
+    customRules: (projects[projectId]?.settings?.customRules || '').trim() || undefined,
+  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, projects, projectId]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',

@@ -167,3 +167,43 @@ Stage Summary:
 - Dark theme support: Added CSS filter inversion so logo is visible on both light and dark themes
 - Files modified: Header.tsx, index.scss, logo.svg, favicon.svg
 - Files created: omni-builder-logo.svg
+
+## AI Rules Feature Implementation
+
+**Date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+### Summary
+Implemented a full-stack "AI Rules" feature that allows users to write custom instructions for the AI assistant. These rules are injected into the system prompt on every request, hidden from the user in the chat interface.
+
+### Files Modified (5)
+
+#### 1. `app/components/header/AppSettingsDialog.client.tsx`
+- Added "AI Rules" tab (`rules`) to the TABS array with brain icon
+- Added `customRules` state variable initialized from project settings
+- Added `setCustomRules` reset in the dialog open useEffect
+- Added tab description for the rules tab
+- Added `saveCustomRules()` function that persists rules via `updateActiveProjectSettings`
+- Added full AI Rules tab UI with: header with icon, description text, examples panel, textarea with save-on-blur, character counter, and clear button
+
+#### 2. `app/components/chat/Chat.client.tsx`
+- Added `customRules` to the `chatBody` useMemo object, reading from `projects[projectId]?.settings?.customRules`
+- Added `projects` and `projectId` to the dependency array
+
+#### 3. `app/routes/api.chat.ts`
+- Added `customRules?: string` to the `ChatRequest` interface
+- Extracted `customRules` from the request body in `chatAction`
+- Passed `customRules` to both `streamText` calls (initial + continuation)
+
+#### 4. `app/lib/.server/llm/stream-text.ts`
+- Added `customRules?: string` parameter to the `streamText` function signature
+- Passed `customRules` to `getSystemPrompt` call
+
+#### 5. `app/lib/.server/llm/prompts.ts`
+- Added `customRules?: string` parameter to `getSystemPrompt` function signature
+- Added conditional `<project_custom_rules>` XML block injection before the examples section, which wraps user-defined rules with instructions that they take priority over default behavior
+
+### Data Flow
+```
+AppSettingsDialog (UI) → project store (customRules) → Chat.client.tsx (chatBody) 
+→ api.chat.ts (request body) → stream-text.ts (function param) → prompts.ts (system prompt injection)
+```

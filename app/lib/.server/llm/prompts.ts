@@ -18,7 +18,7 @@ export interface DatabaseContext {
   };
 }
 
-export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean) => `
+export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string) => `
 You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
 
 <system_constraints>
@@ -378,6 +378,14 @@ ${dbContext.firebase?.projectId ? `8. The project ID is "${dbContext.firebase.pr
 ${dbContext.supabase?.url ? `9. The Supabase URL is "${dbContext.supabase.url}" — all API calls go through this endpoint.` : ''}
 `}
 </database_context>
+` : ''}
+
+${customRules && customRules.trim() ? `
+<project_custom_rules>
+The user has defined the following custom rules for this project. You MUST follow these rules in ALL your responses. These rules take priority over default behavior:
+
+${customRules.trim()}
+</project_custom_rules>
 ` : ''}
 
 Here are some examples of correct usage of artifacts:
