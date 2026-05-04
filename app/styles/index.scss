@@ -12,3 +12,12 @@ body {
   height: 100%;
   width: 100%;
 }
+
+/* Logo theme support - invert black logo to white on dark themes */
+.omni-logo-themed {
+  transition: filter 0.2s ease;
+}
+
+[data-theme="dark"] .omni-logo-themed {
+  filter: brightness(0) invert(1);
+}

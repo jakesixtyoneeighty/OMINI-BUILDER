@@ -146,3 +146,24 @@ Stage Summary:
 - Templates now link to real GitHub repos with import functionality
 - Action display is cleaner with Criado/Editado/Comando badges
 - Files modified: auth.ts, llm.ts, db.ts, useChatHistory.ts, cm-theme.ts, CodeMirrorEditor.tsx, templates.ts, templates.tsx, Artifact.tsx, action-runner.ts, Chat.client.tsx
+---
+Task ID: 1
+Agent: Main Agent
+Task: Replace logos in Omni-Builder - header logo, README logo, and favicon
+
+Work Log:
+- Read Header.tsx, README.md, root.tsx, _index.tsx to understand current logo placement
+- Saved black full SVG (OB monogram + OMNI BUILDER text, viewBox 0 0 1024 544) as public/omni-builder-logo.svg
+- Saved white standalone SVG (OB monogram only, viewBox 0 0 490 532) as public/logo.svg (replaces existing)
+- Copied white SVG to public/favicon.svg (replaces existing) for site title/tab icon
+- Updated Header.tsx: Replaced old `<img src="/logo.svg">` + `<span>Omni-Builder</span>` with new `<img src="/omni-builder-logo.svg" className="h-8 omni-logo-themed">`
+- Added CSS rule in app/styles/index.scss: dark theme inverts the black logo to white via `filter: brightness(0) invert(1)` on `[data-theme="dark"] .omni-logo-themed`
+- README.md already references public/logo.svg (line 3) - no changes needed since file was replaced in-place
+
+Stage Summary:
+- Header logo: Replaced with user's black SVG (OB monogram + OMNI BUILDER text)
+- README logo: Replaced with user's white standalone OB SVG (was already referenced)
+- Favicon: Replaced with user's white standalone OB SVG
+- Dark theme support: Added CSS filter inversion so logo is visible on both light and dark themes
+- Files modified: Header.tsx, index.scss, logo.svg, favicon.svg
+- Files created: omni-builder-logo.svg

@@ -27,9 +27,8 @@ export function Header() {
     <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
-        <a href="/" className="text-2xl font-semibold text-accent flex items-center gap-2">
-          <img src="/logo.svg" alt="Omni-Builder" className="h-7 w-7" />
-          <span className="font-extrabold bg-gradient-to-r from-purple-400 via-violet-400 to-purple-600 bg-clip-text text-transparent">Omni-Builder</span>
+        <a href="/" className="flex items-center">
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-8 omni-logo-themed" />
         </a>
         <a
           href="/templates"
