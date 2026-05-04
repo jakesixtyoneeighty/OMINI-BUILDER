@@ -2,7 +2,6 @@ import type { Message } from 'ai';
 import React, { type RefCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
-import { IconButton } from '~/components/ui/IconButton';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
@@ -11,6 +10,9 @@ import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
 import { ModelPicker } from '../header/ModelPicker.client';
 import { ErrorBanner } from './ErrorBanner';
+import { FileUploadButton } from './FileUploadButton';
+import { VoiceRecordButton } from './VoiceRecordButton';
+import { BuildPlanDropdown } from './BuildPlanDropdown';
 import type { DetectedError } from '~/lib/stores/errors';
 
 import styles from './BaseChat.module.scss';
@@ -26,6 +28,12 @@ interface ImportResult {
   owner?: string;
   repo?: string;
   ref?: string;
+}
+
+interface AttachedFile {
+  name: string;
+  content: string;
+  type: string;
 }
 
 interface BaseChatProps {
@@ -61,7 +69,7 @@ const EXAMPLE_PROMPTS = [
   { text: 'How do I center a div?' },
 ];
 
-const TEXTAREA_MIN_HEIGHT = 76;
+const TEXTAREA_MIN_HEIGHT = 52;
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
@@ -91,7 +99,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
-    const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+    const TEXTAREA_MAX_HEIGHT = chatStarted ? 300 : 160;
 
     return (
       <div
@@ -131,15 +139,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <>
                       <ClientOnly>{() => <ErrorBanner onFixError={errorFixHandler} />}</ClientOnly>
                       <Messages
-                      ref={messageRef}
-                      className="flex flex-col w-full flex-1 max-w-chat px-4 pb-6 mx-auto z-1"
-                      messages={messages}
-                      isStreaming={isStreaming}
-                      tokenUsage={tokenUsage}
-                      userQuestions={userQuestions}
-                      answeredQuestions={answeredQuestions}
-                      onQuestionAnswer={onQuestionAnswer}
-                    />
+                        ref={messageRef}
+                        className="flex flex-col w-full flex-1 max-w-chat px-4 pb-6 mx-auto z-1"
+                        messages={messages}
+                        isStreaming={isStreaming}
+                        tokenUsage={tokenUsage}
+                        userQuestions={userQuestions}
+                        answeredQuestions={answeredQuestions}
+                        onQuestionAnswer={onQuestionAnswer}
+                      />
                     </>
                   ) : null;
                 }}
@@ -151,93 +159,176 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               >
                 <div
                   className={classNames(
-                    'shadow-sm border bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg transition-colors duration-200',
+                    'shadow-sm border bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-xl transition-colors duration-200 overflow-hidden',
                     planMode ? 'border-blue-400/60' : 'border-bolt-elements-borderColor',
                   )}
                 >
-                  <textarea
-                    ref={textareaRef}
-                    className={`w-full pl-4 pt-4 pr-16 focus:outline-none resize-none text-md text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent`}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        if (event.shiftKey) {
-                          return;
-                        }
+                  {/* Top toolbar: file upload + textarea + send button */}
+                  <div className="flex items-end gap-1 p-2">
+                    {/* Left side: file upload + voice */}
+                    <div className="flex items-center gap-0.5 shrink-0 pb-1">
+                      <ClientOnly>
+                        {() => (
+                          <FileUploadButton
+                            onFilesSelected={(files) => {
+                              files.forEach((file) => {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const content = reader.result as string;
+                                  const fileName = file.name;
+                                  const isImage = file.type.startsWith('image/');
+                                  const prefix = isImage
+                                    ? `[Arquivo de imagem: ${fileName}]\n`
+                                    : `[Arquivo: ${fileName}]\n\`\`\`\n${content}\n\`\`\`\n\n`;
 
-                        event.preventDefault();
+                                  if (textareaRef?.current) {
+                                    const textarea = textareaRef.current;
+                                    const start = textarea.selectionStart;
+                                    const end = textarea.selectionEnd;
+                                    const currentVal = textarea.value;
+                                    const newVal = currentVal.substring(0, start) + prefix + currentVal.substring(end);
+                                    // Simulate onChange to update input
+                                    const nativeEvent = new Event('input', { bubbles: true });
+                                    const reactEvent = {
+                                      target: { value: newVal },
+                                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                                    handleInputChange?.(reactEvent);
+                                  }
+                                };
+                                if (isImage) {
+                                  reader.readAsDataURL(file);
+                                } else {
+                                  reader.readAsText(file);
+                                }
+                              });
+                            }}
+                          />
+                        )}
+                      </ClientOnly>
+                      <ClientOnly>
+                        {() => (
+                          <VoiceRecordButton
+                            onTranscript={(text) => {
+                              if (textareaRef?.current) {
+                                const textarea = textareaRef.current;
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const currentVal = textarea.value;
+                                const newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
+                                const reactEvent = {
+                                  target: { value: newVal },
+                                } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                                handleInputChange?.(reactEvent);
+                              }
+                            }}
+                          />
+                        )}
+                      </ClientOnly>
+                    </div>
 
-                        sendMessage?.(event);
-                      }
-                    }}
-                    value={input}
-                    onChange={(event) => {
-                      handleInputChange?.(event);
-                    }}
-                    style={{
-                      minHeight: TEXTAREA_MIN_HEIGHT,
-                      maxHeight: TEXTAREA_MAX_HEIGHT,
-                    }}
-                    placeholder={planMode ? 'Modo Plano ativo — descreva seu projeto e a IA criará um plano detalhado antes de executar...' : 'How can Omni-Builder help you today?'}
-                    translate="no"
-                  />
-                  <ClientOnly>
-                    {() => (
-                      <SendButton
-                        show={input.length > 0 || isStreaming}
-                        isStreaming={isStreaming}
-                        onClick={(event) => {
-                          if (isStreaming) {
-                            handleStop?.();
+                    {/* Center: textarea */}
+                    <textarea
+                      ref={textareaRef}
+                      className="flex-1 py-2.5 px-3 focus:outline-none resize-none text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed"
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          if (event.shiftKey) {
                             return;
                           }
 
+                          event.preventDefault();
                           sendMessage?.(event);
-                        }}
-                      />
-                    )}
-                  </ClientOnly>
-                  <div className="flex justify-between text-sm p-4 pt-2">
-                    <div className="flex gap-2 items-center">
-                      <IconButton
-                        title={planMode ? 'Desativar Modo Plano' : 'Ativar Modo Plano'}
-                        className={classNames({
-                          'opacity-100! text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!': planMode,
-                        })}
-                        onClick={() => onTogglePlanMode?.()}
-                      >
-                        <div className="i-ph:list-checks text-xl"></div>
-                        {planMode && <div className="ml-1.5 text-xs font-medium">Plano</div>}
-                      </IconButton>
-                      <IconButton
+                        }
+                      }}
+                      value={input}
+                      onChange={(event) => {
+                        handleInputChange?.(event);
+                      }}
+                      style={{
+                        minHeight: TEXTAREA_MIN_HEIGHT,
+                        maxHeight: TEXTAREA_MAX_HEIGHT,
+                      }}
+                      placeholder={planMode ? 'Modo Plano — descreva seu projeto...' : 'Ask Omni...'}
+                      translate="no"
+                      rows={1}
+                    />
+
+                    {/* Right side: send / stop */}
+                    <div className="flex items-center gap-1 shrink-0 pb-1">
+                      <ClientOnly>
+                        {() => (
+                          <SendButton
+                            show={input.length > 0 || isStreaming}
+                            isStreaming={isStreaming}
+                            onClick={(event) => {
+                              if (isStreaming) {
+                                handleStop?.();
+                                return;
+                              }
+                              sendMessage?.(event);
+                            }}
+                          />
+                        )}
+                      </ClientOnly>
+                    </div>
+                  </div>
+
+                  {/* Bottom toolbar: model picker, enhance, build/plan, settings */}
+                  <div className="flex items-center justify-between px-2 pb-2 gap-2">
+                    <div className="flex items-center gap-1.5">
+                      {/* Model Picker */}
+                      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+
+                      {/* Enhance prompt */}
+                      <button
+                        type="button"
                         title="Enhance prompt"
                         disabled={input.length === 0 || enhancingPrompt}
-                        className={classNames({
-                          'opacity-100!': enhancingPrompt,
-                          'text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!':
-                            promptEnhanced,
-                        })}
+                        className={classNames(
+                          'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all disabled:opacity-40',
+                          enhancingPrompt
+                            ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                            : promptEnhanced
+                              ? 'text-bolt-elements-item-contentAccent hover:bg-bolt-elements-item-backgroundAccent'
+                              : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive',
+                        )}
                         onClick={() => enhancePrompt?.()}
                       >
                         {enhancingPrompt ? (
-                          <>
-                            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl"></div>
-                            <div className="ml-1.5">Enhancing prompt...</div>
-                          </>
+                          <div className="i-svg-spinners:90-ring-with-bg text-xs" />
                         ) : (
-                          <>
-                            <div className="i-bolt:stars text-xl"></div>
-                            {promptEnhanced && <div className="ml-1.5">Prompt enhanced</div>}
-                          </>
+                          <div className="i-bolt:stars text-xs" />
                         )}
-                      </IconButton>
-                      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-                    </div>
-                    <div className="flex gap-1 items-center">
-                      {input.length > 3 ? (
-                        <div className="text-xs text-bolt-elements-textTertiary mr-1">
-                          Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
+                        {!enhancingPrompt && <span>{promptEnhanced ? 'Enhanced' : 'Enhance'}</span>}
+                      </button>
+
+                      {/* Shift+Return hint */}
+                      {input.length > 3 && (
+                        <div className="text-[10px] text-bolt-elements-textTertiary hidden sm:block">
+                          <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-[9px]">Shift+Enter</kbd>
+                          <span className="ml-1">nova linha</span>
                         </div>
-                      ) : null}
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Build / Plan dropdown */}
+                      <ClientOnly>
+                        {() => (
+                          <BuildPlanDropdown
+                            planMode={planMode}
+                            isStreaming={isStreaming}
+                            onBuild={() => {
+                              if (planMode) onTogglePlanMode?.();
+                            }}
+                            onPlan={() => {
+                              if (!planMode) onTogglePlanMode?.();
+                            }}
+                          />
+                        )}
+                      </ClientOnly>
+
+                      {/* Settings */}
                       <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
                     </div>
                   </div>
