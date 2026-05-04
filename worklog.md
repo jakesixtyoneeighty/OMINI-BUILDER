@@ -207,3 +207,37 @@ Implemented a full-stack "AI Rules" feature that allows users to write custom in
 AppSettingsDialog (UI) → project store (customRules) → Chat.client.tsx (chatBody) 
 → api.chat.ts (request body) → stream-text.ts (function param) → prompts.ts (system prompt injection)
 ```
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix tag detection, database modal, file creation errors, and auto-prompt AI
+
+Work Log:
+- Analyzed Chat.client.tsx tag detection for env_request, db_request, user_question
+- Found user_question detection missing isLoading check (runs during streaming)
+- Found db_request required parsed fields to show modal (fails if AI omits fields)
+- Found env_request/db_request regex didn't handle self-closing tags
+- Fixed Chat.client.tsx: added isLoading check to user_question detection
+- Fixed Chat.client.tsx: db_request now uses default fields when AI doesn't include <field> tags
+- Fixed Chat.client.tsx: all regex patterns now handle self-closing tags (/>)
+- Fixed Chat.client.tsx: user_question shows with 1+ options, fallback Yes/No if no options
+- Fixed Chat.client.tsx: database-config-changed handler validates credentials before prompting
+- Fixed Chat.client.tsx: added 300ms delay before auto-prompting AI after db config save
+- Fixed AppSettingsDialog.client.tsx: saveDatabaseSettings validates credentials before dispatching event
+- Fixed AppSettingsDialog.client.tsx: shows info toast when db type selected but no credentials filled
+- Improved action-runner.ts: retry file writes after 500ms delay on failure
+- Improved action-runner.ts: fallback to full file write when search/replace fails
+- Improved action-runner.ts: wrapped mkdir in try/catch to prevent blocking
+- Improved prompts.ts: added CRITICAL instructions for raw HTML tag output
+- Improved prompts.ts: added file_creation_rules section to minimize file errors
+- Improved prompts.ts: explicit "NOT inside a code block" warnings for all special tags
+- Built successfully with no errors
+- Pushed to GitHub
+
+Stage Summary:
+- 4 files modified: Chat.client.tsx, AppSettingsDialog.client.tsx, action-runner.ts, prompts.ts
+- All special tags (env_request, db_request, user_question) now have robust detection
+- Database modal opens even when AI doesn't include field definitions
+- File creation errors reduced with retry logic and search/replace fallback
+- Auto-prompt AI when database configured in settings (with credential validation)
