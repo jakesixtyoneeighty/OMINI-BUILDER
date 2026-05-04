@@ -49,7 +49,8 @@ export function ModelPicker() {
     const out: FlatOption[] = [];
     (Object.keys(allModels) as ProviderId[]).forEach((p) => {
       if (!keys[p]) return;
-      for (const m of allModels[p]) out.push({ provider: p, id: m.id, label: m.label });
+      const models = Array.isArray(allModels[p]) ? allModels[p] : [];
+      for (const m of models) out.push({ provider: p, id: m.id, label: m.label });
     });
     return out;
   }, [allModels, keys]);

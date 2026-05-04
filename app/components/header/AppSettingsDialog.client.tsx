@@ -99,7 +99,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const settings = project?.settings;
   const [tab, setTab] = useState<typeof TABS[number]['id']>((defaultTab as any) || 'general');
   const [snapshots, setSnapshots] = useState<{ id: number; name: string; timestamp: string }[]>([]);
-  const [envVars, setEnvVars] = useState<EnvVar[]>(settings?.envVars || []);
+  const [envVars, setEnvVars] = useState<EnvVar[]>(Array.isArray(settings?.envVars) ? settings.envVars : []);
   const [newEnvKey, setNewEnvKey] = useState('');
   const [newEnvValue, setNewEnvValue] = useState('');
   const [projectName, setProjectName] = useState(project?.name || '');
@@ -147,10 +147,17 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     }
     // Reset state when dialog opens
     const saved = localStorage.getItem(`bolt.snapshots.${activeId}`);
-    if (saved) setSnapshots(JSON.parse(saved));
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSnapshots(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        setSnapshots([]);
+      }
+    }
     setProjectName(project?.name || '');
     setProjectDesc(settings?.description || '');
-    setEnvVars(settings?.envVars || []);
+    setEnvVars(Array.isArray(settings?.envVars) ? settings.envVars : []);
     setNetlifyToken(settings?.netlify?.token || '');
     setNetlifySiteId(settings?.netlify?.siteId || '');
     setVercelToken(settings?.vercel?.token || '');
