@@ -28,7 +28,7 @@ export function Header() {
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
         <a href="/" className="flex items-center">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-8 omni-logo-themed" />
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-12 omni-logo-themed" />
         </a>
         <a
           href="/templates"
