@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import {
   SandpackProvider,
   SandpackPreview as SPPreview,
@@ -224,20 +224,19 @@ const SANDBOX_STYLES = `
  */
 function SandpackErrorListener() {
   const { sandpack } = useSandpack();
-  const lastErrorRef = useState<string>('');
+  const lastErrorRef = useRef<string>('');
 
   useEffect(() => {
-    // Sandpack fires these when compilation fails
     const unsubscribe = sandpack.listen((message) => {
       if (message.type === 'compile') {
         if (message.compilatonError === true || message.compilationError === true) {
           const errMsg = (message as any).message || 'Compilation error in preview';
-          if (lastErrorRef[0] !== errMsg) {
-            lastErrorRef[1](errMsg);
+          if (lastErrorRef.current !== errMsg) {
+            lastErrorRef.current = errMsg;
             errorStore.addError({
               type: 'compile',
               source: 'Sandpack Preview',
-              message: 'Erro de compilação no preview',
+              message: 'Erro de compila\u00e7\u00e3o no preview',
               details: errMsg,
             });
           }

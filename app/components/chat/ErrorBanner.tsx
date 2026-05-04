@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { errorStore, type DetectedError } from '~/lib/stores/errors';
 import { classNames } from '~/utils/classNames';
@@ -97,10 +97,8 @@ function ErrorItem({
         className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.03] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className={classNames('shrink-0 w-5 h-5 flex items-center justify-center')}>
-          <div className={classNames('text-sm', getErrorIcon(error.type).split(' ').pop())}>
-            <div className={getErrorIcon(error.type)} />
-          </div>
+        <div className="shrink-0 w-5 h-5 flex items-center justify-center">
+          <div className={getErrorIcon(error.type)} />
         </div>
 
         <span className={classNames('text-[10px] font-semibold px-1.5 py-0.5 rounded', badge.color)}>
@@ -201,12 +199,16 @@ function ErrorItem({
 }
 
 export const ErrorBanner = memo(function ErrorBanner({ onFixError }: ErrorBannerProps) {
-  const activeErrors = useStore(errorStore.errors, (errors) =>
-    Object.values(errors)
-      .filter((e) => !e.dismissed)
-      .sort((a, b) => b.timestamp - a.timestamp),
-  );
+  const errorsMap = useStore(errorStore.errors);
   const showErrorPanel = useStore(errorStore.showErrors);
+
+  const activeErrors = useMemo(
+    () =>
+      Object.values(errorsMap)
+        .filter((e) => !e.dismissed)
+        .sort((a, b) => b.timestamp - a.timestamp),
+    [errorsMap],
+  );
 
   const handleFix = useCallback(
     (error: DetectedError) => {
