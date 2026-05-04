@@ -16,6 +16,8 @@ export type BaseActionState = BoltAction & {
   executed: boolean;
   abortSignal: AbortSignal;
   isNewFile?: boolean;
+ additions?: number;
+  deletions?: number;
 };
 
 export type FailedActionState = BoltAction &
@@ -97,21 +99,48 @@ export class ActionRunner {
 
     // Check if file already exists to determine if it's new or edited
     let isNewFile = true;
+    let prevContent = '';
     try {
-      await wc.fs.readFile(action.filePath);
+      const existing = await wc.fs.readFile(action.filePath);
+      prevContent = existing;
       isNewFile = false;
     } catch {
       isNewFile = true;
+    }
+
+    // Compute diff stats for edited files
+    let additions = 0;
+    let deletions = 0;
+    if (!isNewFile && prevContent) {
+      const oldLines = prevContent.split('\n');
+      const newLines = action.content.split('\n');
+      // Simple line-based diff using Set comparison for uniqueness
+      const oldSet = new Set(oldLines);
+      const newSet = new Set(newLines);
+      // Count lines added (in new but not in old)
+      for (const line of newLines) {
+        if (!oldSet.has(line)) {
+          additions++;
+        }
+      }
+      // Count lines removed (in old but not in new)
+      for (const line of oldLines) {
+        if (!newSet.has(line)) {
+          deletions++;
+        }
+      }
+    } else if (isNewFile) {
+      additions = action.content.split('\n').filter((l) => l.trim()).length;
     }
 
     let folder = nodePath.dirname(action.filePath).replace(/\/+$/g, '');
     if (folder !== '.') await wc.fs.mkdir(folder, { recursive: true });
     await wc.fs.writeFile(action.filePath, action.content);
 
-    // Update action state with isNewFile
+    // Update action state with isNewFile and diff stats
     const actionId = Object.entries(this.actions.get()).find(([, a]) => a === action)?.[0];
     if (actionId) {
-      this.#updateAction(actionId, { isNewFile } as any);
+      this.#updateAction(actionId, { isNewFile, additions, deletions } as any);
     }
   }
 
