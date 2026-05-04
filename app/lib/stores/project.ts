@@ -60,6 +60,7 @@ export interface ProjectSettings {
   googleDrive: {
     clientId: string;
   };
+  customRules: string;
 }
 
 export interface ProjectRecord {
@@ -87,6 +88,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
     supabase: { url: '', anonKey: '', serviceRoleKey: '' },
   },
   googleDrive: { clientId: '' },
+  customRules: '',
 };
 
 function loadProjects(): Record<string, ProjectRecord> {
