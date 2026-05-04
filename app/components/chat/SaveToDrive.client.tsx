@@ -5,14 +5,17 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { getActiveProject } from '~/lib/stores/project';
 import { supabaseEnabled, googleProviderTokenStore, authStore, signInWithGoogleDrive } from '~/lib/stores/auth';
 import { chatId } from '~/lib/persistence/useChatHistory';
+import { autosaveDriveEnabled, toggleAutosaveDrive } from '~/lib/stores/drive';
 
 const DRIVE_SAVE_PENDING_KEY = 'bolt.drive.save_pending';
+const OMINI_FOLDER_NAME = 'omini';
 
 export function SaveToDrive() {
   const isSupabase = supabaseEnabled;
   const { user, session } = useStore(authStore);
   const googleToken = useStore(googleProviderTokenStore);
   const isLoggedInGoogle = user?.app_metadata?.provider === 'google' && !!googleToken;
+  const autosaveOn = useStore(autosaveDriveEnabled);
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'idle' | 'auth' | 'creating' | 'uploading' | 'done' | 'error'>('idle');
@@ -48,17 +51,15 @@ export function SaveToDrive() {
   // Se o usuario ja esta logado com Google via Supabase e abre o dialog, usar o token direto
   const handleSaveClick = useCallback(() => {
     if (!isSupabase) {
-      toast.error('Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      toast.error('Supabase nao configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
       return;
     }
 
     if (!isLoggedInGoogle) {
-      // Nao esta logado com Google — precisa fazer login via Supabase OAuth
       handleSupabaseAuth();
       return;
     }
 
-    // Ja esta logado com Google — usar o token existente
     setAccessToken(googleToken);
     setStep('auth');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,12 +69,10 @@ export function SaveToDrive() {
     try {
       setStep('auth');
       await signInWithGoogleDrive();
-      // O usuario vai ser redirecionado para o Google OAuth via Supabase
-      // Apos o callback, o useEffect acima vai detectar o save_pending e retomar
     } catch (err) {
       setStep('error');
-      setError(err instanceof Error ? err.message : 'Falha na autenticação');
-      toast.error(err instanceof Error ? err.message : 'Falha na autenticação');
+      setError(err instanceof Error ? err.message : 'Falha na autenticacao');
+      toast.error(err instanceof Error ? err.message : 'Falha na autenticacao');
     }
   };
 
@@ -85,7 +84,45 @@ export function SaveToDrive() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, step]);
 
-  const createFolder = async (token: string, folderName: string): Promise<string> => {
+  /**
+   * Search for the "omini" parent folder in root. Create if not found.
+   */
+  const ensureOminiFolder = async (token: string): Promise<string> => {
+    const query = encodeURIComponent(
+      `name='${OMINI_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
+    );
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id,name)&pageSize=1`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.files && data.files.length > 0) {
+        return data.files[0].id;
+      }
+    }
+
+    // Create omini folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: OMINI_FOLDER_NAME,
+        mimeType: 'application/vnd.google-apps.folder',
+      }),
+    });
+
+    if (!createRes.ok) {
+      const err = await createRes.json().catch(() => ({}));
+      throw new Error((err as any).error?.message || 'Failed to create omini folder');
+    }
+
+    const createData = await createRes.json();
+    return createData.id;
+  };
+
+  const createFolder = async (token: string, folderName: string, parentId: string): Promise<string> => {
     const res = await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
       headers: {
@@ -95,6 +132,7 @@ export function SaveToDrive() {
       body: JSON.stringify({
         name: folderName,
         mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId],
       }),
     });
 
@@ -107,11 +145,14 @@ export function SaveToDrive() {
     return data.id;
   };
 
-  const searchExistingFolder = async (token: string, folderName: string): Promise<string | null> => {
-    const query = encodeURIComponent(`name='${folderName}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`);
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id,name)&pageSize=1`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const searchExistingFolder = async (token: string, folderName: string, parentId: string): Promise<string | null> => {
+    const query = encodeURIComponent(
+      `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`,
+    );
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id,name)&pageSize=1`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
 
     if (!res.ok) return null;
 
@@ -189,10 +230,13 @@ export function SaveToDrive() {
     for (const dirName of pathParts) {
       if (!dirName) continue;
 
-      const query = encodeURIComponent(`name='${dirName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-      const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id)&pageSize=1`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const query = encodeURIComponent(
+        `name='${dirName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      );
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id)&pageSize=1`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
       if (searchRes.ok) {
         const searchData = await searchRes.json();
@@ -272,14 +316,18 @@ export function SaveToDrive() {
 
       setTotalFiles(fileEntries.length);
 
-      // Verifica se pasta ja existe
-      let folderId = await searchExistingFolder(token, safeName);
+      // Ensure the "omini" parent folder exists
+      const ominiFolderId = await ensureOminiFolder(token);
+      toast.info('Verificando pasta omini...');
+
+      // Verifica se pasta do projeto ja existe dentro de omini
+      let folderId = await searchExistingFolder(token, safeName, ominiFolderId);
 
       if (folderId) {
         await deleteFolderContents(token, folderId);
         toast.info('Atualizando pasta do projeto...');
       } else {
-        folderId = await createFolder(token, safeName);
+        folderId = await createFolder(token, safeName, ominiFolderId);
         toast.info('Pasta criada no Google Drive');
       }
 
@@ -306,15 +354,19 @@ export function SaveToDrive() {
       // Upload chat history as JSON if available
       if (historyMessages.length > 0) {
         try {
-          const historyContent = JSON.stringify({
-            id: chatId.get() || null,
-            exportedAt: new Date().toISOString(),
-            messageCount: historyMessages.length,
-            messages: historyMessages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          }, null, 2);
+          const historyContent = JSON.stringify(
+            {
+              id: chatId.get() || null,
+              exportedAt: new Date().toISOString(),
+              messageCount: historyMessages.length,
+              messages: historyMessages.map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
+            },
+            null,
+            2,
+          );
           await uploadFile(token, folderId, 'chat-history.json', historyContent);
         } catch (err) {
           console.warn('Failed to upload chat history:', err);
@@ -349,15 +401,30 @@ export function SaveToDrive() {
   if (!isSupabase) return null;
 
   return (
-    <>
+    <div className="flex items-center gap-1.5">
+      {/* Autosave toggle */}
+      <button
+        onClick={() => toggleAutosaveDrive()}
+        className={`flex items-center justify-center w-8 h-8 rounded-md border transition-theme ${
+          autosaveOn
+            ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20'
+            : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundAccent'
+        }`}
+        title={autosaveOn ? 'Auto-save ligado (clique para desligar)' : 'Auto-save desligado (clique para ligar)'}
+      >
+        <div className={autosaveOn ? 'i-ph:cloud-arrow-up-fill text-base' : 'i-ph:cloud-arrow-up text-base'} />
+      </button>
+
+      {/* Save to Drive button */}
       <button
         onClick={() => setOpen(true)}
         className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
-        title="Save to Google Drive"
+        title="Salvar no Google Drive"
       >
         <div className="i-ph:google-drive-logo text-base" />
       </button>
 
+      {/* Save dialog */}
       {open && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={resetAndClose}>
           <div
@@ -373,9 +440,7 @@ export function SaveToDrive() {
                 <div>
                   <h2 className="text-base font-bold text-bolt-elements-textPrimary">Save to Google Drive</h2>
                   <p className="text-xs text-bolt-elements-textTertiary">
-                    {step === 'done' ? 'Projeto salvo com sucesso!'
-                      : step === 'error' ? 'Algo deu errado'
-                      : 'Salve seus arquivos no Google Drive'}
+                    {step === 'done' ? 'Projeto salvo com sucesso!' : step === 'error' ? 'Algo deu errado' : 'Salve seus arquivos no Google Drive'}
                   </p>
                 </div>
               </div>
@@ -408,7 +473,9 @@ export function SaveToDrive() {
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
                         <div className="i-ph:warning-circle text-amber-400 text-sm shrink-0" />
                         <span className="text-xs text-amber-400">
-                          {user ? 'Voce esta logado, mas nao via Google. Faca login com Google para salvar no Drive.' : 'Faca login com Google via Supabase para salvar no Drive.'}
+                          {user
+                            ? 'Voce esta logado, mas nao via Google. Faca login com Google para salvar no Drive.'
+                            : 'Faca login com Google via Supabase para salvar no Drive.'}
                         </span>
                       </div>
                     )}
@@ -419,13 +486,20 @@ export function SaveToDrive() {
                     <div className="flex items-start gap-3">
                       <div className="i-ph:folder-open text-amber-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        Uma pasta com o nome do seu projeto sera criada (ou atualizada) no Google Drive. A estrutura de diretorios e preservada.
+                        Uma pasta com o nome do seu projeto sera criada (ou atualizada) dentro da pasta <strong className="text-bolt-elements-textPrimary">omini</strong> no seu Google Drive. A estrutura de diretorios e preservada.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="i-ph:chat-circle-text text-purple-400 text-lg mt-0.5 shrink-0" />
+                      <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
+                        O historico do chat tambem sera salvo como <code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">chat-history.json</code> dentro da pasta do projeto.
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="i-ph:shield-check text-green-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        Usa a autenticacao do Supabase com Google OAuth. O acesso ao Drive usa o escopo minimo (<code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">drive.file</code>).
+                        Usa a autenticacao do Supabase com Google OAuth. O acesso ao Drive usa o escopo minimo (
+                        <code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">drive.file</code>).
                       </div>
                     </div>
                   </div>
@@ -443,10 +517,10 @@ export function SaveToDrive() {
                     ) : (
                       <>
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
                         Sign in with Google & Save
                       </>
@@ -469,7 +543,7 @@ export function SaveToDrive() {
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
                   <p className="text-sm text-bolt-elements-textSecondary">Preparando seu projeto...</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">Criando pasta no Google Drive</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">Criando pasta em omini/ no Google Drive</p>
                 </div>
               )}
 
@@ -504,9 +578,8 @@ export function SaveToDrive() {
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-semibold text-green-400">Projeto salvo!</p>
-                      <p className="text-xs text-bolt-elements-textTertiary mt-1">
-                        {totalFiles} arquivos enviados com sucesso
-                      </p>
+                      <p className="text-xs text-bolt-elements-textTertiary mt-1">{totalFiles} arquivos enviados com sucesso</p>
+                      <p className="text-xs text-bolt-elements-textTertiary mt-0.5">Pasta: omini/{getActiveProject().name || 'Omni-Builder Project'}</p>
                     </div>
                   </div>
 
@@ -574,7 +647,7 @@ export function SaveToDrive() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -586,13 +659,15 @@ function _getChatHistoryMessages(): { role: string; content: string }[] {
   return chatMessagesRef.current;
 }
 
-// Exported autosave function - can be called from anywhere
+// Exported autosave function - can be called from anywhere (respects the autosave toggle)
 let autosaveInProgress = false;
 
 export async function autosaveToDrive(): Promise<boolean> {
   if (autosaveInProgress) return false;
-
   if (!supabaseEnabled) return false;
+
+  // Respect the autosave toggle
+  if (!autosaveDriveEnabled.get()) return false;
 
   const token = googleProviderTokenStore.get();
   if (!token) return false;
@@ -608,10 +683,7 @@ export async function autosaveToDrive(): Promise<boolean> {
     const files = wb.files.get();
     const fileEntries = Object.entries(files).filter(
       ([path, dirent]) =>
-        dirent?.type === 'file' &&
-        !dirent.isBinary &&
-        !path.includes('node_modules') &&
-        !path.includes('.git'),
+        dirent?.type === 'file' && !dirent.isBinary && !path.includes('node_modules') && !path.includes('.git'),
     );
 
     if (fileEntries.length === 0) {
@@ -622,11 +694,42 @@ export async function autosaveToDrive(): Promise<boolean> {
     const project = getProject();
     const projectName = (project.name || 'Omni-Builder Project').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Omni-Builder-Project';
 
-    // Search/create folder
-    const query = encodeURIComponent(`name='${projectName}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`);
-    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id)&pageSize=1`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Ensure the "omini" parent folder exists
+    const ominiQuery = encodeURIComponent(
+      `name='${OMINI_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
+    );
+    const ominiSearchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${ominiQuery}&fields=files(id)&pageSize=1`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    let ominiFolderId: string;
+    if (ominiSearchRes.ok) {
+      const ominiData = await ominiSearchRes.json();
+      if (ominiData.files?.length > 0) {
+        ominiFolderId = ominiData.files[0].id;
+      } else {
+        const ominiCreateRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: OMINI_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
+        });
+        const ominiCreateData = await ominiCreateRes.json();
+        ominiFolderId = ominiCreateData.id;
+      }
+    } else {
+      autosaveInProgress = false;
+      return false;
+    }
+
+    // Search/create project folder inside omini
+    const query = encodeURIComponent(
+      `name='${projectName}' and mimeType='application/vnd.google-apps.folder' and '${ominiFolderId}' in parents and trashed=false`,
+    );
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id)&pageSize=1`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
 
     let folderId: string;
     if (searchRes.ok) {
@@ -637,7 +740,7 @@ export async function autosaveToDrive(): Promise<boolean> {
         const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: projectName, mimeType: 'application/vnd.google-apps.folder' }),
+          body: JSON.stringify({ name: projectName, mimeType: 'application/vnd.google-apps.folder', parents: [ominiFolderId] }),
         });
         const createData = await createRes.json();
         folderId = createData.id;
@@ -647,12 +750,19 @@ export async function autosaveToDrive(): Promise<boolean> {
       return false;
     }
 
-    // Upload each file (simplified - no subdirectory creation for autosave speed)
     const mimeMap: Record<string, string> = {
-      '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
-      '.ts': 'text/typescript', '.tsx': 'text/typescript', '.jsx': 'text/typescript',
-      '.json': 'application/json', '.md': 'text/markdown', '.svg': 'image/svg+xml',
-      '.py': 'text/x-python', '.env': 'text/plain', '.txt': 'text/plain',
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+      '.ts': 'text/typescript',
+      '.tsx': 'text/typescript',
+      '.jsx': 'text/typescript',
+      '.json': 'application/json',
+      '.md': 'text/markdown',
+      '.svg': 'image/svg+xml',
+      '.py': 'text/x-python',
+      '.env': 'text/plain',
+      '.txt': 'text/plain',
     };
 
     for (const [path, dirent] of fileEntries) {
@@ -674,6 +784,39 @@ export async function autosaveToDrive(): Promise<boolean> {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
         body: multipartBody,
       }).catch(() => {});
+    }
+
+    // Also save chat history in autosave
+    const historyMessages = _getChatHistoryMessages();
+    if (historyMessages.length > 0) {
+      try {
+        const { chatId: chatIdStore } = await import('~/lib/persistence/useChatHistory');
+        const historyContent = JSON.stringify(
+          {
+            id: chatIdStore.get() || null,
+            exportedAt: new Date().toISOString(),
+            messageCount: historyMessages.length,
+            messages: historyMessages.map((m) => ({ role: m.role, content: m.content })),
+          },
+          null,
+          2,
+        );
+        const chatBoundary = '-------auto-chat' + Date.now();
+        const chatDelimiter = `\r\n--${chatBoundary}\r\n`;
+        const chatCloseDelimiter = `\r\n--${chatBoundary}--`;
+        const chatMetadata = { name: 'chat-history.json', mimeType: 'application/json', parents: [folderId] };
+        const chatBase64 = btoa(unescape(encodeURIComponent(historyContent)));
+        const chatMultipartBody =
+          `${chatDelimiter}Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(chatMetadata)}${chatDelimiter}Content-Type: application/json\r\nContent-Transfer-Encoding: base64\r\n\r\n${chatBase64}${chatCloseDelimiter}`;
+
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${chatBoundary}` },
+          body: chatMultipartBody,
+        }).catch(() => {});
+      } catch {
+        // Silently ignore chat history autosave failures
+      }
     }
 
     autosaveInProgress = false;

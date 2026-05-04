@@ -272,14 +272,23 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
           parsedMessagesRef.current = messages.length;
           // Only snapshot if there's actual content (artifact or code)
           if (lastMsg.content.includes('boltArtifact') || lastMsg.content.includes('boltAction')) {
-            createAutoSnapshot(messages.length - 1, `Msg #${messages.length}`);
+            // Extract artifact title for a better snapshot description
+            const titleMatch = lastMsg.content.match(/<boltArtifact[^>]*title="([^"]+)"/);
+            const artifactTitle = titleMatch ? titleMatch[1] : undefined;
+            const hasAction = lastMsg.content.includes('boltAction');
+            const desc = artifactTitle
+              ? `${artifactTitle}${hasAction ? ' + Action' : ''}`
+              : hasAction
+                ? `Action #${messages.length}`
+                : `Msg #${messages.length}`;
+            createAutoSnapshot(messages.length - 1, desc);
           }
           // Clear the pre-action ref since the response succeeded
           preActionSnapshotRef.current = null;
         }
       }
 
-      // Auto-save to Google Drive after AI finishes (debounced)
+      // Auto-save to Google Drive after AI finishes (debounced) - respects autosave toggle
       if (lastMsg?.role === 'assistant') {
         if (autosaveTimeoutRef.current) {
           clearTimeout(autosaveTimeoutRef.current);
@@ -288,7 +297,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
           autosaveToDrive().then((ok) => {
             if (ok) console.log('[autosave] Project saved to Google Drive');
           });
-        }, 3000); // 3 second debounce
+        }, 3000); // 3 second debounce (autosaveToDrive checks the toggle internally)
       }
     }
   }, [messages, isLoading, parseMessages]);
