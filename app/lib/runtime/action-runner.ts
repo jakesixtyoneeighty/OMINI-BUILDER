@@ -16,7 +16,7 @@ export type BaseActionState = BoltAction & {
   executed: boolean;
   abortSignal: AbortSignal;
   isNewFile?: boolean;
- additions?: number;
+  additions?: number;
   deletions?: number;
 };
 
@@ -97,6 +97,8 @@ export class ActionRunner {
     const webcontainer = await this.#webcontainer;
     const wc = await webcontainer;
 
+    const actionId = Object.entries(this.actions.get()).find(([, a]) => a === action)?.[0];
+
     // Check if file already exists to determine if it's new or edited
     let isNewFile = true;
     let prevContent = '';
@@ -108,37 +110,46 @@ export class ActionRunner {
       isNewFile = true;
     }
 
-    // Compute diff stats for edited files
+    let finalContent: string;
     let additions = 0;
     let deletions = 0;
-    if (!isNewFile && prevContent) {
-      const oldLines = prevContent.split('\n');
-      const newLines = action.content.split('\n');
-      // Simple line-based diff using Set comparison for uniqueness
-      const oldSet = new Set(oldLines);
-      const newSet = new Set(newLines);
-      // Count lines added (in new but not in old)
-      for (const line of newLines) {
-        if (!oldSet.has(line)) {
-          additions++;
-        }
+    const mode = (action as FileAction).mode;
+
+    if (mode === 'edit' && !isNewFile) {
+      // PARTIAL EDIT MODE: apply search/replace blocks to existing file
+      const result = applySearchReplace(prevContent, action.content);
+      if (result.error) {
+        throw new Error(`Search/replace failed for ${action.filePath}: ${result.error}`);
       }
-      // Count lines removed (in old but not in new)
-      for (const line of oldLines) {
-        if (!newSet.has(line)) {
-          deletions++;
+      finalContent = result.content;
+      additions = result.additions;
+      deletions = result.deletions;
+    } else {
+      // FULL FILE MODE (default or new file)
+      finalContent = action.content;
+
+      // Compute diff stats for edited files
+      if (!isNewFile && prevContent) {
+        const oldLines = prevContent.split('\n');
+        const newLines = finalContent.split('\n');
+        const oldSet = new Set(oldLines);
+        const newSet = new Set(newLines);
+        for (const line of newLines) {
+          if (!oldSet.has(line)) additions++;
         }
+        for (const line of oldLines) {
+          if (!newSet.has(line)) deletions++;
+        }
+      } else if (isNewFile) {
+        additions = finalContent.split('\n').filter((l) => l.trim()).length;
       }
-    } else if (isNewFile) {
-      additions = action.content.split('\n').filter((l) => l.trim()).length;
     }
 
     let folder = nodePath.dirname(action.filePath).replace(/\/+$/g, '');
     if (folder !== '.') await wc.fs.mkdir(folder, { recursive: true });
-    await wc.fs.writeFile(action.filePath, action.content);
+    await wc.fs.writeFile(action.filePath, finalContent);
 
-    // Update action state with isNewFile and diff stats
-    const actionId = Object.entries(this.actions.get()).find(([, a]) => a === action)?.[0];
+    // Update action state with isNewFile, mode, and diff stats
     if (actionId) {
       this.#updateAction(actionId, { isNewFile, additions, deletions } as any);
     }
@@ -147,4 +158,97 @@ export class ActionRunner {
   #updateAction(id: string, newState: ActionStateUpdate) {
     this.actions.setKey(id, { ...this.actions.get()[id], ...newState });
   }
+}
+
+/**
+ * Apply search/replace blocks to existing content.
+ *
+ * Format:
+ * <<<<<<< SEARCH
+ * text to find (exact match)
+ * =======
+ * replacement text
+ * >>>>>>> REPLACE
+ *
+ * Multiple blocks are supported.
+ */
+function applySearchReplace(
+  originalContent: string,
+  patchContent: string,
+): { content: string; additions: number; deletions: number; error?: string } {
+  const SEARCH_MARKER = '<<<<<<< SEARCH';
+  const DIVIDER_MARKER = '=======';
+  const REPLACE_MARKER = '>>>>>>> REPLACE';
+
+  const blocks = patchContent.split(SEARCH_MARKER).slice(1);
+
+  if (blocks.length === 0) {
+    return {
+      content: originalContent,
+      additions: 0,
+      deletions: 0,
+      error: 'No search/replace blocks found. Use <<<<<<< SEARCH / ======= / >>>>>>> REPLACE format.',
+    };
+  }
+
+  let content = originalContent;
+  let totalAdditions = 0;
+  let totalDeletions = 0;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+    const dividerIndex = block.indexOf(DIVIDER_MARKER);
+    const replaceIndex = block.indexOf(REPLACE_MARKER);
+
+    if (dividerIndex === -1 || replaceIndex === -1) {
+      return {
+        content: originalContent,
+        additions: 0,
+        deletions: 0,
+        error: `Block #${i + 1} is malformed — missing ======= or >>>>>>> REPLACE marker.`,
+      };
+    }
+
+    const searchText = block.substring(0, dividerIndex);
+    const replaceText = block.substring(dividerIndex + DIVIDER_MARKER.length, replaceIndex);
+
+    // Normalize line endings for matching
+    const normalizedContent = content.replace(/\r\n/g, '\n');
+    const normalizedSearch = searchText.replace(/\r\n/g, '\n').trim();
+    const normalizedReplace = replaceText.replace(/\r\n/g, '\n');
+
+    if (!normalizedContent.includes(normalizedSearch)) {
+      // Try without trimming the search text
+      const untrimmedSearch = searchText.replace(/\r\n/g, '\n');
+      if (normalizedContent.includes(untrimmedSearch)) {
+        const newContent = normalizedContent.replace(untrimmedSearch, normalizedReplace);
+        const oldLines = untrimmedSearch.split('\n').filter((l) => l.length > 0).length;
+        const newLines = normalizedReplace.split('\n').filter((l) => l.length > 0).length;
+        totalDeletions += oldLines;
+        totalAdditions += newLines;
+        content = newContent;
+        continue;
+      }
+
+      return {
+        content: originalContent,
+        additions: 0,
+        deletions: 0,
+        error: `Block #${i + 1}: search text not found in file. The content to replace may have changed.`,
+      };
+    }
+
+    const oldLines = normalizedSearch.split('\n').filter((l) => l.length > 0).length;
+    const newLines = normalizedReplace.split('\n').filter((l) => l.length > 0).length;
+    totalDeletions += oldLines;
+    totalAdditions += newLines;
+
+    content = normalizedContent.replace(normalizedSearch, normalizedReplace);
+  }
+
+  return {
+    content,
+    additions: totalAdditions,
+    deletions: totalDeletions,
+  };
 }

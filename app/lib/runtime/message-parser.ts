@@ -250,12 +250,16 @@ export class StreamingMessageParser {
 
     if (actionType === 'file') {
       const filePath = this.#extractAttribute(actionTag, 'filePath') as string;
+      const mode = this.#extractAttribute(actionTag, 'mode') as 'create' | 'edit' | undefined;
 
       if (!filePath) {
         logger.debug('File path not specified');
       }
 
       (actionAttributes as FileAction).filePath = filePath;
+      if (mode) {
+        (actionAttributes as FileAction).mode = mode;
+      }
     } else if (actionType !== 'shell') {
       logger.warn(`Unknown action type '${actionType}'`);
     }

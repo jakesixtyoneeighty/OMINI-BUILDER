@@ -363,11 +363,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedEnvMessages.current.has(i)) continue;
       const content = msg.content || '';
-      const envRequestMatch = content.match(/<env_request>([\s\S]*?)<\/env_request>/);
+      const envRequestMatch = content.match(/<env_request>([\s\S]*?)<\/env_request>/i);
       if (envRequestMatch) {
         processedEnvMessages.current.add(i);
         const vars = envRequestMatch[1]
-          .split(/<var\s/g)
+          .split(/<var\b[^>]*>/g)
           .filter(Boolean)
           .map((raw) => {
             const nameMatch = raw.match(/name=["']([^"']+)["']/);
@@ -393,12 +393,14 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedDbMessages.current.has(i)) continue;
       const content = msg.content || '';
-      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request>/);
+      // More robust regex: allows whitespace variations, optional quotes, self-closing fields
+      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request>/i);
       if (dbRequestMatch) {
         processedDbMessages.current.add(i);
-        const reqType = dbRequestMatch[1] as 'supabase' | 'firebase';
-        const fieldsRaw = dbRequestMatch[2]
-          .split(/<field\s/g)
+        const reqType = dbRequestMatch[1].toLowerCase() as 'supabase' | 'firebase';
+        const body = dbRequestMatch[2];
+        const fieldsRaw = body
+          .split(/<field\b[^>]*>/g)
           .filter(Boolean)
           .map((raw) => {
             const nameMatch = raw.match(/name=["']([^"']+)["']/);
@@ -421,12 +423,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedQuestionMessages.current.has(i)) continue;
       const content = msg.content || '';
-      const questionMatch = content.match(/<user_question\s+question=["']([^"']+)["']\s*>([\s\S]*?)<\/user_question>/);
+      const questionMatch = content.match(/<user_question\s+question=["']([^"']+)["']\s*>([\s\S]*?)<\/user_question>/i);
       if (questionMatch) {
         processedQuestionMessages.current.add(i);
         const question = questionMatch[1];
         const optionsRaw = questionMatch[2]
-          .split(/<option\s/g)
+          .split(/<option\b[^>]*>/g)
           .filter(Boolean)
           .map((raw) => {
             const labelMatch = raw.match(/label=["']([^"']+)["']/);

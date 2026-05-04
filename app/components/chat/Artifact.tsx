@@ -207,81 +207,83 @@ function FileActionItem({ action, isLast }: { action: ActionState; isLast: boole
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
+  const isPartialEdit = !isCreated && (action as any).mode === 'edit';
 
   return (
-    <div
-      className={classNames(
-        'flex items-center gap-2.5 px-4 py-2.5 transition-colors cursor-pointer group',
-        !isLast && 'border-b border-bolt-elements-borderColor/50',
-        'hover:bg-bolt-elements-item-backgroundActive/50',
-      )}
-      onClick={() => setExpanded(!expanded)}
-    >
-      {/* Status icon */}
-      <div className="shrink-0 w-5 h-5 flex items-center justify-center">
-        {isRunning ? (
-          <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-loader-progress" />
-        ) : isComplete ? (
-          <div className="i-ph:check-circle-fill text-sm text-emerald-400" />
-        ) : isFailed ? (
-          <div className="i-ph:x-circle-fill text-sm text-red-400" />
-        ) : action.status === 'pending' ? (
-          <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-        ) : (
-          <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-        )}
-      </div>
+    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/50' : ''}>
+      {/* Action summary line - click to expand/collapse */}
+      <div
+        className="flex items-center gap-2.5 px-4 py-2.5 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/50"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Status icon */}
+        <div className="shrink-0 w-5 h-5 flex items-center justify-center">
+          {isRunning ? (
+            <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-loader-progress" />
+          ) : isComplete ? (
+            <div className="i-ph:check-circle-fill text-sm text-emerald-400" />
+          ) : isFailed ? (
+            <div className="i-ph:x-circle-fill text-sm text-red-400" />
+          ) : action.status === 'pending' ? (
+            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
+          ) : (
+            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
+          )}
+        </div>
 
-      {/* Action type icon */}
-      <div className={classNames(
-        'shrink-0 w-5 h-5 flex items-center justify-center rounded',
-        isCreated ? 'bg-emerald-500/10' : 'bg-amber-500/10',
-      )}>
-        {isCreated ? (
-          <div className="i-ph:file-plus text-xs text-emerald-400" />
-        ) : (
-          <div className="i-ph:pencil-simple text-xs text-amber-400" />
-        )}
-      </div>
-
-      {/* Text content */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <span className={classNames(
-          'text-xs font-medium shrink-0',
-          isCreated ? 'text-emerald-400' : 'text-amber-400',
+        {/* Action type icon */}
+        <div className={classNames(
+          'shrink-0 w-5 h-5 flex items-center justify-center rounded',
+          isCreated ? 'bg-emerald-500/10' : isPartialEdit ? 'bg-violet-500/10' : 'bg-amber-500/10',
         )}>
-          {isCreated ? 'Created' : 'Edited'}
-        </span>
-        <code className="text-xs text-bolt-elements-textPrimary bg-bolt-elements-background-depth-2/80 px-1.5 py-0.5 rounded truncate">
-          {action.filePath || fileName}
-        </code>
+          {isCreated ? (
+            <div className="i-ph:file-plus text-xs text-emerald-400" />
+          ) : isPartialEdit ? (
+            <div className="i-ph:code text-xs text-violet-400" />
+          ) : (
+            <div className="i-ph:pencil-simple text-xs text-amber-400" />
+          )}
+        </div>
 
-        {/* Diff stats for edits */}
-        {!isCreated && isComplete && (action.additions !== undefined || action.deletions !== undefined) && (
-          <span className="text-[11px] font-mono shrink-0 flex items-center gap-1">
-            {action.additions !== undefined && action.additions > 0 && (
-              <span className="text-emerald-400">+{action.additions}</span>
-            )}
-            {action.deletions !== undefined && action.deletions > 0 && (
-              <span className="text-red-400">-{action.deletions}</span>
-            )}
+        {/* Text content */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className={classNames(
+            'text-xs font-medium shrink-0',
+            isCreated ? 'text-emerald-400' : isPartialEdit ? 'text-violet-400' : 'text-amber-400',
+          )}>
+            {isCreated ? 'Created' : isPartialEdit ? 'Edited (partial)' : 'Edited'}
           </span>
-        )}
+          <code className="text-xs text-bolt-elements-textPrimary bg-bolt-elements-background-depth-2/80 px-1.5 py-0.5 rounded truncate">
+            {action.filePath || fileName}
+          </code>
 
-        {/* Line count for new files */}
-        {isCreated && isComplete && action.additions !== undefined && action.additions > 0 && (
-          <span className="text-[11px] font-mono text-emerald-400 shrink-0">
-            +{action.additions}
-          </span>
-        )}
-      </div>
+          {/* Diff stats for edits */}
+          {!isCreated && isComplete && (action.additions !== undefined || action.deletions !== undefined) && (
+            <span className="text-[11px] font-mono shrink-0 flex items-center gap-1">
+              {action.additions !== undefined && action.additions > 0 && (
+                <span className="text-emerald-400">+{action.additions}</span>
+              )}
+              {action.deletions !== undefined && action.deletions > 0 && (
+                <span className="text-red-400">-{action.deletions}</span>
+              )}
+            </span>
+          )}
 
-      {/* Expand chevron */}
-      <div className={classNames(
-        'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-        expanded && 'rotate-180',
-      )}>
-        <div className="i-ph:caret-down text-xs" />
+          {/* Line count for new files */}
+          {isCreated && isComplete && action.additions !== undefined && action.additions > 0 && (
+            <span className="text-[11px] font-mono text-emerald-400 shrink-0">
+              +{action.additions}
+            </span>
+          )}
+        </div>
+
+        {/* Expand chevron */}
+        <div className={classNames(
+          'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
+          expanded && 'rotate-180',
+        )}>
+          <div className="i-ph:caret-down text-xs" />
+        </div>
       </div>
 
       {/* Expanded code view */}
@@ -292,13 +294,14 @@ function FileActionItem({ action, isLast }: { action: ActionState; isLast: boole
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 z-10"
-            onClick={(e) => e.stopPropagation()}
+            className="overflow-hidden"
           >
-            <div className="border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 p-3 mt-2 mx-2 rounded-lg shadow-lg max-h-[300px] overflow-auto">
-              <pre className="text-[11px] font-mono text-bolt-elements-textSecondary whitespace-pre-wrap break-all leading-relaxed">
-                {action.content}
-              </pre>
+            <div className="px-4 pb-3">
+              <div className="border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 p-3 rounded-lg max-h-[300px] overflow-auto">
+                <pre className="text-[11px] font-mono text-bolt-elements-textSecondary whitespace-pre-wrap break-all leading-relaxed">
+                  {action.content}
+                </pre>
+              </div>
             </div>
           </motion.div>
         )}

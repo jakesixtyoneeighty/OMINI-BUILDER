@@ -7,6 +7,11 @@ export interface BaseAction {
 export interface FileAction extends BaseAction {
   type: 'file';
   filePath: string;
+  /**
+   * 'create' = full file content (default)
+   * 'edit' = search/replace blocks (partial edit)
+   */
+  mode?: 'create' | 'edit';
 }
 
 export interface ShellAction extends BaseAction {
