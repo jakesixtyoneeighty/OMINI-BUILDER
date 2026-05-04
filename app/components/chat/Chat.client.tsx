@@ -183,12 +183,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     const promptParam = searchParams.get('prompt');
     if (promptParam && !promptParamHandled.current && !isLoading && messages.length <= initialMessages.length) {
       promptParamHandled.current = true;
-      // Clean URL without triggering re-render
       setSearchParams({}, { replace: true });
-      // Small delay to let the chat initialize
       setTimeout(() => {
         setInput(promptParam);
-        // Auto-send the prompt after a brief moment
         setTimeout(() => {
           append({ role: 'user', content: promptParam });
           setInput('');
@@ -242,7 +239,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       try {
         const parsed = JSON.parse(entry);
         if (parsed.type === 'token_usage') {
-          // Find the last assistant message index
           let lastAssistantIdx = messages.length - 1;
           for (let i = messages.length - 1; i >= 0; i--) {
             if (messages[i].role === 'assistant') {
@@ -271,9 +267,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         const prevLength = parsedMessagesRef.current;
         if (prevLength < messages.length) {
           parsedMessagesRef.current = messages.length;
-          // Only snapshot if there's actual content (artifact or code)
           if (lastMsg.content.includes('boltArtifact') || lastMsg.content.includes('boltAction')) {
-            // Extract artifact title for a better snapshot description
             const titleMatch = lastMsg.content.match(/<boltArtifact[^>]*title="([^"]+)"/);
             const artifactTitle = titleMatch ? titleMatch[1] : undefined;
             const hasAction = lastMsg.content.includes('boltAction');
@@ -284,12 +278,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
                 : `Msg #${messages.length}`;
             createAutoSnapshot(messages.length - 1, desc);
           }
-          // Clear the pre-action ref since the response succeeded
           preActionSnapshotRef.current = null;
         }
       }
 
-      // Auto-save to Google Drive after AI finishes (debounced) - respects autosave toggle
+      // Auto-save to Google Drive after AI finishes (debounced)
       if (lastMsg?.role === 'assistant') {
         if (autosaveTimeoutRef.current) {
           clearTimeout(autosaveTimeoutRef.current);
@@ -298,7 +291,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
           autosaveToDrive().then((ok) => {
             if (ok) console.log('[autosave] Project saved to Google Drive');
           });
-        }, 3000); // 3 second debounce (autosaveToDrive checks the toggle internally)
+        }, 3000);
       }
     }
   }, [messages, isLoading, parseMessages]);
@@ -322,10 +315,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     chatStore.setKey('aborted', false);
     runAnimation();
 
-    // Create a pre-action snapshot so we can rollback if the AI response causes errors
     preActionSnapshotRef.current = createPreActionSnapshot(messages.length);
 
-    // Plan mode is now handled server-side via system prompt (planMode in chatBody)
     const messageContent = _input;
 
     if (fileModifications !== undefined) {
@@ -364,15 +355,16 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedEnvMessages.current.has(i)) continue;
       const content = msg.content || '';
-      const envRequestMatch = content.match(/<env_request>([\s\S]*?)<\/env_request>/i);
+      // Robust regex: handles whitespace variations, multiline, self-closing
+      const envRequestMatch = content.match(/<env_request\s*>([\s\S]*?)<\/env_request\s*>/i);
       if (envRequestMatch) {
         processedEnvMessages.current.add(i);
         const vars = envRequestMatch[1]
-          .split(/<var\b[^>]*>/g)
+          .split(/<var\b[^>]*\/?>/g)
           .filter(Boolean)
           .map((raw) => {
-            const nameMatch = raw.match(/name=["']([^"']+)["']/);
-            const descMatch = raw.match(/description=["']([^"']+)["']/);
+            const nameMatch = raw.match(/name=["']([^"']+)["']/i);
+            const descMatch = raw.match(/description=["']([^"']+)["']/i);
             return {
               name: nameMatch?.[1] || '',
               description: descMatch?.[1] || '',
@@ -394,54 +386,77 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedDbMessages.current.has(i)) continue;
       const content = msg.content || '';
-      // More robust regex: allows whitespace variations, optional quotes, self-closing fields
-      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request>/i);
+      // Very robust regex: handles all whitespace/quote variations, multiline, self-closing
+      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request\s*>/i);
       if (dbRequestMatch) {
         processedDbMessages.current.add(i);
         const reqType = dbRequestMatch[1].toLowerCase() as 'supabase' | 'firebase';
         const body = dbRequestMatch[2];
+        // Parse <field> tags (supports self-closing <field ... />)
         const fieldsRaw = body
-          .split(/<field\b[^>]*>/g)
+          .split(/<field\b[^>]*\/?>/g)
           .filter(Boolean)
           .map((raw) => {
-            const nameMatch = raw.match(/name=["']([^"']+)["']/);
-            const descMatch = raw.match(/description=["']([^"']+)["']/);
+            const nameMatch = raw.match(/name=["']([^"']+)["']/i);
+            const descMatch = raw.match(/description=["']([^"']+)["']/i);
             return { name: nameMatch?.[1] || '', description: descMatch?.[1] || '' };
           })
           .filter((f) => f.name);
-        if (fieldsRaw.length > 0) {
-          setDbType(reqType);
-          setDbFields(fieldsRaw);
-          setDbModalOpen(true);
-        }
+
+        // If no fields were parsed from the AI response, use default fields based on db type
+        const defaultFields: DbFieldRequest[] = reqType === 'supabase'
+          ? [
+              { name: 'url', description: 'Project URL from Supabase dashboard (e.g. https://xxxxx.supabase.co)' },
+              { name: 'anonKey', description: 'Anonymous/public key from Project Settings > API' },
+            ]
+          : [
+              { name: 'apiKey', description: 'Web API Key from Firebase Console' },
+              { name: 'authDomain', description: 'Auth domain (e.g. myapp.firebaseapp.com)' },
+              { name: 'projectId', description: 'Firebase project ID' },
+              { name: 'storageBucket', description: 'Cloud Storage bucket name' },
+              { name: 'messagingSenderId', description: 'Cloud Messaging sender ID' },
+              { name: 'appId', description: 'Firebase App ID' },
+            ];
+
+        const finalFields = fieldsRaw.length > 0 ? fieldsRaw : defaultFields;
+        setDbType(reqType);
+        setDbFields(finalFields);
+        setDbModalOpen(true);
       }
     }
   }, [messages, isLoading]);
 
   // Detect <user_question> tags in assistant messages
   useEffect(() => {
+    if (isLoading) return;
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role !== 'assistant' || processedQuestionMessages.current.has(i)) continue;
       const content = msg.content || '';
-      const questionMatch = content.match(/<user_question\s+question=["']([^"']+)["']\s*>([\s\S]*?)<\/user_question>/i);
+      // Very robust regex: handles multiline, extra whitespace, self-closing options
+      const questionMatch = content.match(/<user_question\s+question=["']([^"']*)["']\s*>([\s\S]*?)<\/user_question\s*>/i);
       if (questionMatch) {
         processedQuestionMessages.current.add(i);
         const question = questionMatch[1];
+        // Parse <option> tags (supports self-closing <option ... />)
         const optionsRaw = questionMatch[2]
-          .split(/<option\b[^>]*>/g)
+          .split(/<option\b[^>]*\/?>/g)
           .filter(Boolean)
           .map((raw) => {
-            const labelMatch = raw.match(/label=["']([^"']+)["']/);
+            const labelMatch = raw.match(/label=["']([^"']+)["']/i);
             return labelMatch?.[1] || '';
           })
           .filter(Boolean);
-        if (optionsRaw.length >= 2) {
+        // Show question card even with 1 option (user can still type custom answer)
+        if (question && optionsRaw.length >= 1) {
           setUserQuestions(prev => ({ ...prev, [i]: { question, options: optionsRaw.map(l => ({ label: l })) } }));
+        } else if (question) {
+          // No options parsed but question exists — show as Yes/No
+          setUserQuestions(prev => ({ ...prev, [i]: { question, options: [{ label: 'Yes' }, { label: 'No' }] } }));
         }
       }
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // Auto-prompt AI when database is configured in settings
   useEffect(() => {
@@ -449,21 +464,28 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const { type, config } = event.detail;
       if (!config || type === 'none') return;
 
+      // Validate that config has at least some values filled
+      if (type === 'supabase' && !config.url) return;
+      if (type === 'firebase' && !config.apiKey) return;
+
       if (!chatStarted) {
         runAnimation();
       }
 
-      if (type === 'supabase') {
-        append({
-          role: 'user',
-          content: `I just configured a Supabase database for this project. Here are the connection details:\n- Project URL: ${config.url}\n- Anon Key: ${config.anonKey}\n\nPlease:\n1. Install @supabase/supabase-js if not already installed\n2. Create a lib/database.ts or lib/supabase.ts file with the Supabase client initialized\n3. Set up the database connection in the project\n4. Make sure all API routes and components that need data use this Supabase client\n5. Create any necessary types for the database tables\n\nThe database is ready to use. Please configure the project to connect to it.`,
-        });
-      } else if (type === 'firebase') {
-        append({
-          role: 'user',
-          content: `I just configured a Firebase database for this project. Here are the connection details:\n- API Key: ${config.apiKey}\n- Auth Domain: ${config.authDomain}\n- Project ID: ${config.projectId}\n- Storage Bucket: ${config.storageBucket}\n- App ID: ${config.appId}\n\nPlease:\n1. Install firebase if not already installed\n2. Create a lib/firebase.ts file with Firebase initialized using these credentials\n3. Set up Firestore or Firebase Realtime Database as needed\n4. Make sure all components that need data use this Firebase instance\n5. Create any necessary types for the database collections\n\nThe database is ready to use. Please configure the project to connect to it.`,
-        });
-      }
+      // Small delay to ensure the chat UI is ready before appending
+      setTimeout(() => {
+        if (type === 'supabase') {
+          append({
+            role: 'user',
+            content: `I just configured a Supabase database for this project. Here are the connection details:\n- Project URL: ${config.url}\n- Anon Key: ${config.anonKey}\n\nPlease:\n1. Install @supabase/supabase-js if not already installed\n2. Create a lib/database.ts or lib/supabase.ts file with the Supabase client initialized\n3. Set up the database connection in the project\n4. Make sure all API routes and components that need data use this Supabase client\n5. Create any necessary types for the database tables\n\nThe database is ready to use. Please configure the project to connect to it.`,
+          });
+        } else if (type === 'firebase') {
+          append({
+            role: 'user',
+            content: `I just configured a Firebase database for this project. Here are the connection details:\n- API Key: ${config.apiKey}\n- Auth Domain: ${config.authDomain}\n- Project ID: ${config.projectId}\n- Storage Bucket: ${config.storageBucket}\n- App ID: ${config.appId}\n\nPlease:\n1. Install firebase if not already installed\n2. Create a lib/firebase.ts file with Firebase initialized using these credentials\n3. Set up Firestore or Firebase Realtime Database as needed\n4. Make sure all components that need data use this Firebase instance\n5. Create any necessary types for the database collections\n\nThe database is ready to use. Please configure the project to connect to it.`,
+          });
+        }
+      }, 300);
     };
 
     window.addEventListener('database-config-changed', handleDbConfig as EventListener);
@@ -473,7 +495,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const handleEnvSave = async (vars: { key: string; value: string }[]) => {
     setEnvModalOpen(false);
 
-    // Get current project env vars and merge
     const current = projects[projectId] ?? getActiveProject();
     const existingVars = current.settings?.envVars || [];
     const updatedVars = [...existingVars];
@@ -494,7 +515,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       console.warn('Failed to write .env file:', err);
     }
 
-    // Send confirmation to AI (without the actual values for security)
     const varNames = vars.map((v) => v.key).join(', ');
     append({
       role: 'user',
@@ -509,7 +529,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const handleDbSave = async (type: string, values: Record<string, string>) => {
     setDbModalOpen(false);
 
-    // Update project settings with database config
     if (type === 'supabase') {
       const { updateActiveProjectSettings } = await import('~/lib/stores/project');
       updateActiveProjectSettings({
@@ -545,7 +564,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const handleQuestionAnswer = (msgIndex: number, answer: string) => {
     setAnsweredQuestions(prev => new Set(prev).add(msgIndex));
-    // Send the answer back to the AI as a user message
     append({
       role: 'user',
       content: `[Question Answer] "${answer}" — Please continue based on my choice.`,
@@ -562,14 +580,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       const { webcontainer } = await import('~/lib/webcontainer');
       const wc = await webcontainer;
 
-      // Clear workspace
       try {
         await workbenchStore.clearWorkspace();
       } catch (clearErr) {
         console.warn('clearWorkspace failed, continuing anyway:', clearErr);
       }
 
-      // Build directory tree first to create all folders
       const dirs = new Set<string>();
       for (const f of result.files) {
         const parts = f.path.split('/');
@@ -584,7 +600,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         } catch {}
       }
 
-      // Write all files to WebContainer and update file store
       let written = 0;
       let failed = 0;
 
@@ -599,13 +614,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         }
       }
 
-      // Set documents so the editor shows the files
       const currentFiles = workbenchStore.files.get();
       workbenchStore.setDocuments(currentFiles);
       workbenchStore.showWorkbench.set(true);
       runAnimation();
-
-      // Save to localStorage for persistence across reloads
       workbenchStore.filesStore.saveFilesToCache();
 
       if (written > 0) {

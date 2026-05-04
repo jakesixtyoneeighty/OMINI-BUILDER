@@ -119,11 +119,20 @@ export class ActionRunner {
       // PARTIAL EDIT MODE: apply search/replace blocks to existing file
       const result = applySearchReplace(prevContent, action.content);
       if (result.error) {
-        throw new Error(`Search/replace failed for ${action.filePath}: ${result.error}`);
+        // If search/replace fails, fall back to full file write instead of throwing
+        logger.warn(`Search/replace failed for ${action.filePath}: ${result.error}. Falling back to full file write.`);
+        finalContent = action.content;
+        const oldLines = prevContent.split('\n');
+        const newLines = finalContent.split('\n');
+        const oldSet = new Set(oldLines);
+        const newSet = new Set(newLines);
+        for (const line of newLines) { if (!oldSet.has(line)) additions++; }
+        for (const line of oldLines) { if (!newSet.has(line)) deletions++; }
+      } else {
+        finalContent = result.content;
+        additions = result.additions;
+        deletions = result.deletions;
       }
-      finalContent = result.content;
-      additions = result.additions;
-      deletions = result.deletions;
     } else {
       // FULL FILE MODE (default or new file)
       finalContent = action.content;
@@ -145,9 +154,32 @@ export class ActionRunner {
       }
     }
 
+    // Ensure parent directories exist (recursive mkdir is safe even if they exist)
     let folder = nodePath.dirname(action.filePath).replace(/\/+$/g, '');
-    if (folder !== '.') await wc.fs.mkdir(folder, { recursive: true });
-    await wc.fs.writeFile(action.filePath, finalContent);
+    if (folder !== '.') {
+      try {
+        await wc.fs.mkdir(folder, { recursive: true });
+      } catch (mkdirErr) {
+        logger.warn(`mkdir failed for ${folder}, attempting to write file anyway:`, mkdirErr);
+      }
+    }
+
+    try {
+      await wc.fs.writeFile(action.filePath, finalContent);
+    } catch (writeErr) {
+      // Retry once after a short delay (WebContainer can have race conditions)
+      logger.warn(`First write attempt failed for ${action.filePath}, retrying in 500ms...`);
+      await new Promise((r) => setTimeout(r, 500));
+      try {
+        // Try mkdir again in case it was a race condition
+        if (folder !== '.') {
+          await wc.fs.mkdir(folder, { recursive: true });
+        }
+        await wc.fs.writeFile(action.filePath, finalContent);
+      } catch (retryErr) {
+        throw new Error(`Failed to write ${action.filePath}: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`);
+      }
+    }
 
     // Update action state with isNewFile, mode, and diff stats
     if (actionId) {

@@ -288,11 +288,21 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     toast.success('Database settings saved!');
 
     // Dispatch event so Chat can auto-prompt the AI to configure the database
-    if (type !== 'none') {
-      const config = type === 'firebase' ? firebase : supabase;
-      window.dispatchEvent(new CustomEvent('database-config-changed', {
-        detail: { type, config },
-      }));
+    // Only dispatch if the user has actually filled in credentials
+    if (type === 'supabase' && supabase.url) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('database-config-changed', {
+          detail: { type: 'supabase', config: supabase },
+        }));
+      }, 100);
+    } else if (type === 'firebase' && firebase.apiKey) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('database-config-changed', {
+          detail: { type: 'firebase', config: firebase },
+        }));
+      }, 100);
+    } else if (type !== 'none') {
+      toast.info('Preencha as credenciais do banco de dados para ativar a integração com a IA.');
     }
   };
 
