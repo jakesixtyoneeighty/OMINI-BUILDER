@@ -62,6 +62,15 @@ const EXAMPLE_PROMPTS = [
   { text: 'How do I center a div?' },
 ];
 
+const FEATURE_TAGS = [
+  { icon: 'i-ph:layout-duotone', label: 'Landing Pages', color: 'from-pink-500/20 to-rose-500/20 text-pink-400 border-pink-500/20' },
+  { icon: 'i-ph:shopping-cart-duotone', label: 'E-Commerce', color: 'from-emerald-500/20 to-green-500/20 text-emerald-400 border-emerald-500/20' },
+  { icon: 'i-ph:chart-line-up-duotone', label: 'Dashboards', color: 'from-blue-500/20 to-cyan-500/20 text-blue-400 border-blue-500/20' },
+  { icon: 'i-ph:device-mobile-duotone', label: 'Mobile Apps', color: 'from-violet-500/20 to-purple-500/20 text-violet-400 border-violet-500/20' },
+  { icon: 'i-ph:robot-duotone', label: 'AI Tools', color: 'from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/20' },
+  { icon: 'i-ph:game-controller-duotone', label: 'Games', color: 'from-red-500/20 to-rose-500/20 text-red-400 border-red-500/20' },
+];
+
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -155,18 +164,47 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
-              <div id="intro" className="mt-[26vh] max-w-chat mx-auto">
-                <h1 className="text-5xl text-center font-bold text-bolt-elements-textPrimary mb-2">
-                  Where ideas begin
-                </h1>
-                <p className="mb-4 text-center text-bolt-elements-textSecondary">
-                  Bring ideas to life in seconds or get help on existing projects.
-                </p>
-                {importFromGithub && (
-                  <div className="flex justify-center mt-4">
-                    <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+              <div id="intro" className="w-full">
+                {/* Hero section */}
+                <div className="mt-[18vh] max-w-2xl mx-auto px-4 text-center">
+                  {/* Logo + Name */}
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-12 omni-logo-themed" />
+                    <span className="text-2xl font-bold text-bolt-elements-textPrimary tracking-tight">Omni-Builder</span>
                   </div>
-                )}
+
+                  {/* Headline */}
+                  <h1 className="text-4xl sm:text-5xl font-bold text-bolt-elements-textPrimary mb-3 leading-tight">
+                    O que voce vai construir
+                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"> hoje?</span>
+                  </h1>
+
+                  {/* Subtitle */}
+                  <p className="text-base text-bolt-elements-textTertiary mb-8 max-w-md mx-auto leading-relaxed">
+                    Crie aplicativos e sites incriveis conversando com a IA. Do idea ao deploy em segundos.
+                  </p>
+
+                  {/* Feature tags */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                    {FEATURE_TAGS.map((tag) => (
+                      <button
+                        key={tag.label}
+                        onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border bg-gradient-to-r transition-all hover:scale-[1.03] hover:shadow-md ${tag.color}`}
+                      >
+                        <div className={`${tag.icon} text-sm`} />
+                        {tag.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* GitHub import */}
+                  {importFromGithub && (
+                    <div className="flex justify-center mt-2">
+                      <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             <div
@@ -311,8 +349,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               </div>
             </div>
             {!chatStarted && (
-              <div id="examples" className="relative w-full max-w-xl mx-auto mt-8 flex justify-center">
-                <div className="flex flex-col space-y-2 [mask-image:linear-gradient(to_bottom,black_0%,transparent_180%)] hover:[mask-image:none]">
+              <div id="examples" className="relative w-full max-w-lg mx-auto mt-6 mb-8 flex justify-center">
+                <div className="flex flex-col space-y-1.5 [mask-image:linear-gradient(to_bottom,black_0%,transparent_200%)] hover:[mask-image:none]">
                   {EXAMPLE_PROMPTS.map((examplePrompt, index) => {
                     return (
                       <button
@@ -320,10 +358,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         onClick={(event) => {
                           sendMessage?.(event, examplePrompt.text);
                         }}
-                        className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme"
+                        className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme text-sm"
                       >
                         {examplePrompt.text}
-                        <div className="i-ph:arrow-bend-down-left" />
+                        <div className="i-ph:arrow-bend-down-left text-xs opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     );
                   })}
