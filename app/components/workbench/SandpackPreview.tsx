@@ -1,11 +1,13 @@
 import { useStore } from '@nanostores/react';
-import { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 import {
   SandpackProvider,
   SandpackPreview as SPPreview,
   getSandpackCssText,
+  useSandpack,
 } from '@codesandbox/sandpack-react';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { errorStore } from '~/lib/stores/errors';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
 /**
@@ -216,6 +218,43 @@ const SANDBOX_STYLES = `
 }
 `;
 
+/**
+ * Component that listens for Sandpack compilation/runtime errors
+ * and reports them to the error store.
+ */
+function SandpackErrorListener() {
+  const { sandpack } = useSandpack();
+  const lastErrorRef = useState<string>('');
+
+  useEffect(() => {
+    // Sandpack fires these when compilation fails
+    const unsubscribe = sandpack.listen((message) => {
+      if (message.type === 'compile') {
+        if (message.compilatonError === true || message.compilationError === true) {
+          const errMsg = (message as any).message || 'Compilation error in preview';
+          if (lastErrorRef[0] !== errMsg) {
+            lastErrorRef[1](errMsg);
+            errorStore.addError({
+              type: 'compile',
+              source: 'Sandpack Preview',
+              message: 'Erro de compilação no preview',
+              details: errMsg,
+            });
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [sandpack]);
+
+  return null;
+}
+
 function SandpackPreviewInner({ files, projectType }: { files: FileMap; projectType: ProjectType }) {
   const sandpackFiles = useMemo(() => mapToSandpackFiles(files, projectType), [files, projectType]);
   const { template, customSetup } = useMemo(() => getTemplateConfig(projectType, files), [files, projectType]);
@@ -254,6 +293,7 @@ function SandpackPreviewInner({ files, projectType }: { files: FileMap; projectT
           autoReload: true,
         }}
       >
+        <SandpackErrorListener />
         <SPPreview
           showNavigator={false}
           showRefreshButton={false}

@@ -10,6 +10,8 @@ import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
 import { ModelPicker } from '../header/ModelPicker.client';
+import { ErrorBanner } from './ErrorBanner';
+import type { DetectedError } from '~/lib/stores/errors';
 
 import styles from './BaseChat.module.scss';
 
@@ -48,6 +50,7 @@ interface BaseChatProps {
   userQuestions?: Record<number, any>;
   answeredQuestions?: Set<number>;
   onQuestionAnswer?: (msgIndex: number, answer: string) => void;
+  errorFixHandler?: (error: DetectedError) => void;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -84,6 +87,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       userQuestions,
       answeredQuestions,
       onQuestionAnswer,
+      errorFixHandler,
     },
     ref,
   ) => {
@@ -124,7 +128,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               <ClientOnly>
                 {() => {
                   return chatStarted ? (
-                    <Messages
+                    <>
+                      <ClientOnly>{() => <ErrorBanner onFixError={errorFixHandler} />}</ClientOnly>
+                      <Messages
                       ref={messageRef}
                       className="flex flex-col w-full flex-1 max-w-chat px-4 pb-6 mx-auto z-1"
                       messages={messages}
@@ -134,6 +140,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       answeredQuestions={answeredQuestions}
                       onQuestionAnswer={onQuestionAnswer}
                     />
+                    </>
                   ) : null;
                 }}
               </ClientOnly>

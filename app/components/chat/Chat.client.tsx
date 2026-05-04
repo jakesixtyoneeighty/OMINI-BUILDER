@@ -6,7 +6,7 @@ import { useAnimate } from 'framer-motion';
 import { useSearchParams } from '@remix-run/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
-import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
+import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll, useErrorDetector, usePreviewErrorDetector } from '~/lib/hooks';
 import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -20,6 +20,8 @@ import { BaseChat } from './BaseChat';
 import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
 import { DbRequestModal, type DbFieldRequest } from './DbRequestModal';
 import { UserQuestionCard, type UserQuestionData } from './UserQuestionCard';
+import { ErrorBanner } from './ErrorBanner';
+import type { DetectedError } from '~/lib/stores/errors';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -71,6 +73,8 @@ interface ChatProps {
 
 export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProps) => {
   useShortcuts();
+  useErrorDetector();
+  usePreviewErrorDetector();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -635,6 +639,29 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     chatStore.setKey('planMode', !planMode);
   }, [planMode]);
 
+  const handleFixError = useCallback(
+    (error: DetectedError) => {
+      const errorContext = [
+        `Erro detectado - [${error.type.toUpperCase()}]`,
+        `Mensagem: ${error.message}`,
+        error.source ? `Fonte: ${error.source}` : '',
+        error.filePath ? `Arquivo: ${error.filePath}` : '',
+        error.details ? `Detalhes:\n${error.details}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const fixPrompt = `Corrija o seguinte erro no projeto:\n\n${errorContext}\n\nAnalise o erro, identifique a causa raiz e corrija o código. Se o erro for em um arquivo específico, reescreva o arquivo com a correção. Se necessario, instale dependencias que estejam faltando.`;
+
+      if (!chatStarted) {
+        runAnimation();
+      }
+
+      append({ role: 'user', content: fixPrompt });
+    },
+    [append, chatStarted],
+  );
+
   return (
     <>
       <BaseChat
@@ -660,6 +687,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         userQuestions={userQuestions}
         answeredQuestions={answeredQuestions}
         onQuestionAnswer={handleQuestionAnswer}
+        errorFixHandler={handleFixError}
       />
       {envModalOpen && envRequests.length > 0 && (
         <EnvRequestModal

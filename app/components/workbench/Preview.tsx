@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useRef, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useRef, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
 import {
   SandpackProvider,
@@ -7,6 +7,7 @@ import {
   getSandpackCssText,
 } from '@codesandbox/sandpack-react';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { errorStore } from '~/lib/stores/errors';
 import { PortDropdown } from './PortDropdown';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 import { SandpackPreview, detectProjectType, type ProjectType } from './SandpackPreview';
@@ -14,6 +15,35 @@ import { ReactLivePreview } from './ReactLivePreview';
 import { PlayCodePreview } from './PlayCodePreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
+
+/**
+ * Wrapper that catches errors from preview iframes and reports them.
+ */
+function PreviewErrorCatcher({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.type === 'preview-error') {
+        const { message, source } = customEvent.detail;
+        errorStore.addError({
+          type: 'runtime',
+          source: source || 'Preview',
+          message: message || 'Erro no preview',
+        });
+      }
+    };
+
+    el.addEventListener('preview-error', handler);
+    return () => el.removeEventListener('preview-error', handler);
+  }, []);
+
+  return <div ref={ref}>{children}</div>;
+}
 
 const PREVIEW_OPTIONS: { mode: PreviewMode; label: string; icon: string; desc: string }[] = [
   { mode: 'webcontainer', label: 'WebContainer', icon: 'i-ph:cube-duotone', desc: 'Full preview with server, terminal, and hot reload' },
@@ -320,7 +350,9 @@ export const Preview = memo(function Preview() {
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content>
           {activePreview ? (
-            <iframe ref={iframeRef} className="w-full h-full bg-white border-0" src={activePreview.baseUrl} />
+            <PreviewErrorCatcher>
+              <iframe ref={iframeRef} className="w-full h-full bg-white border-0" src={activePreview.baseUrl} />
+            </PreviewErrorCatcher>
           ) : (
             <div className="flex items-center justify-center h-full text-bolt-elements-textTertiary">
               <div className="text-center">
