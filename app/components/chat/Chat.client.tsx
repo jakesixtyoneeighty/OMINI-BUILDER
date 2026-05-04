@@ -11,8 +11,8 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
-import { createAutoSnapshot } from '~/lib/stores/snapshots';
-import { autosaveToDrive } from './SaveToDrive.client';
+import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
+import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -76,6 +76,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parsedMessagesRef = useRef(0);
   const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const preActionSnapshotRef = useRef<number | null>(null);
   const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
   const [tokenUsage, setTokenUsage] = useState<
     Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>
@@ -116,6 +117,16 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     body: chatBody,
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
+
+      // Auto-rollback: restore files to the snapshot taken before this action
+      if (preActionSnapshotRef.current) {
+        const snapId = preActionSnapshotRef.current;
+        preActionSnapshotRef.current = null;
+        const restored = await restoreSnapshot(snapId);
+        if (restored) {
+          toast.info('Projeto restaurado para o estado anterior ao erro.', { autoClose: 5000 });
+        }
+      }
 
       // Extrair detalhes completos do erro
       let errorMsg = 'Erro desconhecido';
@@ -246,6 +257,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   useEffect(() => {
     parseMessages(messages, isLoading);
+    // Sync messages to ref for Google Drive save
+    chatMessagesRef.current = messages.map((m) => ({ role: m.role, content: m.content }));
     if (messages.length > initialMessages.length) {
       storeMessageHistory(messages).catch((error) => toast.error(error.message));
     }
@@ -261,6 +274,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
           if (lastMsg.content.includes('boltArtifact') || lastMsg.content.includes('boltAction')) {
             createAutoSnapshot(messages.length - 1, `Msg #${messages.length}`);
           }
+          // Clear the pre-action ref since the response succeeded
+          preActionSnapshotRef.current = null;
         }
       }
 
@@ -296,6 +311,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     const fileModifications = workbenchStore.getFileModifcations();
     chatStore.setKey('aborted', false);
     runAnimation();
+
+    // Create a pre-action snapshot so we can rollback if the AI response causes errors
+    preActionSnapshotRef.current = createPreActionSnapshot(messages.length);
 
     // Plan mode is now handled server-side via system prompt (planMode in chatBody)
     const messageContent = _input;

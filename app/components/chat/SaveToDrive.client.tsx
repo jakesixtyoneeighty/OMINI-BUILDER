@@ -4,6 +4,7 @@ import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { getActiveProject } from '~/lib/stores/project';
 import { supabaseEnabled, googleProviderTokenStore, authStore, signInWithGoogleDrive } from '~/lib/stores/auth';
+import { chatId } from '~/lib/persistence/useChatHistory';
 
 const DRIVE_SAVE_PENDING_KEY = 'bolt.drive.save_pending';
 
@@ -285,6 +286,9 @@ export function SaveToDrive() {
       setStep('uploading');
       setProgress(0);
 
+      // Save chat history alongside files
+      const historyMessages = _getChatHistoryMessages();
+
       for (let i = 0; i < fileEntries.length; i++) {
         const [path, dirent] = fileEntries[i];
         const content = (dirent as any).content || '';
@@ -297,6 +301,24 @@ export function SaveToDrive() {
         }
 
         setProgress(Math.round(((i + 1) / fileEntries.length) * 100));
+      }
+
+      // Upload chat history as JSON if available
+      if (historyMessages.length > 0) {
+        try {
+          const historyContent = JSON.stringify({
+            id: chatId.get() || null,
+            exportedAt: new Date().toISOString(),
+            messageCount: historyMessages.length,
+            messages: historyMessages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+          }, null, 2);
+          await uploadFile(token, folderId, 'chat-history.json', historyContent);
+        } catch (err) {
+          console.warn('Failed to upload chat history:', err);
+        }
       }
 
       const folderUrl = `https://drive.google.com/drive/folders/${folderId}`;
@@ -554,6 +576,14 @@ export function SaveToDrive() {
       )}
     </>
   );
+}
+
+// Global ref for chat messages — written by Chat.client.tsx, read by SaveToDrive
+export const chatMessagesRef: { current: { role: string; content: string }[] } = { current: [] };
+
+// Helper to get current chat messages
+function _getChatHistoryMessages(): { role: string; content: string }[] {
+  return chatMessagesRef.current;
 }
 
 // Exported autosave function - can be called from anywhere

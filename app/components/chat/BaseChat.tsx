@@ -3,14 +3,12 @@ import React, { type RefCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
-import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
-import { SaveToDrive } from './SaveToDrive.client';
 import { ModelPicker } from '../header/ModelPicker.client';
 
 import styles from './BaseChat.module.scss';
@@ -233,9 +231,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
                         </div>
                       ) : null}
-                      <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                       <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
-                      <ThemeSwitch />
                     </div>
                   </div>
                 </div>
