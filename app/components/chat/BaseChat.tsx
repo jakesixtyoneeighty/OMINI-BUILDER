@@ -201,7 +201,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 {/* Single-row input container - matches Lovable style */}
                 <div
                   className={classNames(
-                    'flex items-center gap-2 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-2 py-1.5',
+                    'flex items-center gap-2.5 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-3 py-3',
                     planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                   )}
                 >
@@ -236,7 +236,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   {/* Center: textarea */}
                   <textarea
                     ref={textareaRef}
-                    className="flex-1 py-1.5 px-2 focus:outline-none resize-none text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[24px]"
+                    className="flex-1 py-2 px-2 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
                     onKeyDown={handleKeyDown}
                     value={input}
                     onChange={(event) => {
@@ -249,7 +249,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     placeholder="Ask Omni..."
                     translate="no"
                     rows={1}
-                    style={{ maxHeight: chatStarted ? 200 : 120 }}
+                    style={{ maxHeight: chatStarted ? 300 : 180 }}
                   />
 
                   {/* Right side buttons */}
@@ -304,8 +304,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       </button>
                     )}
 
-                    {/* Settings */}
-                    <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
+
                   </div>
                 </div>
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
