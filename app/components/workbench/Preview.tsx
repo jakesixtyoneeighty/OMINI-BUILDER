@@ -148,11 +148,13 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
 }
 
 const SANDBOX_STYLES = `
-.sp-wrapper { width: 100% !important; height: 100% !important; border: none !important; background: white !important; }
-.sp-preview { height: 100% !important; }
-.sp-preview-iframe { height: 100% !important; }
-.sp-layout { border: none !important; height: 100% !important; background: transparent !important; }
-.sp-preview-container { height: 100% !important; }
+.sp-wrapper { width: 100% !important; height: 100% !important; border: none !important; background: white !important; display: flex !important; flex-direction: column !important; }
+.sp-preview { height: 100% !important; flex: 1 !important; min-height: 0 !important; }
+.sp-preview-iframe { height: 100% !important; width: 100% !important; }
+.sp-layout { border: none !important; height: 100% !important; background: transparent !important; flex: 1 !important; }
+.sp-preview-container { height: 100% !important; flex: 1 !important; }
+.sp-preview-iframe-container { height: 100% !important; width: 100% !important; }
+.sp-stack { height: 100% !important; }
 `;
 
 /**
@@ -192,7 +194,7 @@ function IframePreview() {
     const { template, customSetup } = useMemo(() => getTemplateConfig(projectType, files), [files, projectType]);
 
     return (
-      <div style={{ width: '100%', height: '100%' }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <style dangerouslySetInnerHTML={{ __html: SANDBOX_STYLES }} />
         <style dangerouslySetInnerHTML={{ __html: getSandpackCssText() }} />
         <SandpackProvider
@@ -326,7 +328,7 @@ export const Preview = memo(function Preview() {
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
@@ -370,7 +372,7 @@ export const Preview = memo(function Preview() {
   // Sandpack mode — full Sandpack with React/Vue/HTML support
   if (previewMode === 'sandpack') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
@@ -392,7 +394,7 @@ export const Preview = memo(function Preview() {
   // Iframe srcdoc mode — uses Sandpack for React, srcdoc for static
   if (previewMode === 'iframe') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
@@ -414,7 +416,7 @@ export const Preview = memo(function Preview() {
   // React Live mode
   if (previewMode === 'reactlive') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
@@ -436,7 +438,7 @@ export const Preview = memo(function Preview() {
   // PlayCode mode
   if (previewMode === 'playcode') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium">
@@ -457,7 +459,7 @@ export const Preview = memo(function Preview() {
   // New Tab mode
   if (previewMode === 'newtab') {
     return (
-      <div className="w-full h-full flex flex-col absolute inset-0 bg-bolt-elements-background-depth-1">
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink-500/10 text-pink-400 text-xs font-medium">
             <div className="i-ph:arrow-square-out-duotone text-sm" />

@@ -203,10 +203,12 @@ export const ErrorBanner = memo(function ErrorBanner({ onFixError }: ErrorBanner
   const showErrorPanel = useStore(errorStore.showErrors);
 
   const activeErrors = useMemo(
-    () =>
-      Object.values(errorsMap)
-        .filter((e) => !e.dismissed)
-        .sort((a, b) => b.timestamp - a.timestamp),
+    () => {
+      const map = errorsMap && typeof errorsMap === 'object' ? errorsMap : {};
+      return Object.values(map)
+        .filter((e): e is DetectedError => e && !e.dismissed)
+        .sort((a, b) => b.timestamp - a.timestamp);
+    },
     [errorsMap],
   );
 

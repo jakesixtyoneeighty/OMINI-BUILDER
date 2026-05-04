@@ -201,19 +201,33 @@ const SANDBOX_STYLES = `
   height: 100% !important;
   border: none !important;
   background: white !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .sp-preview {
   height: 100% !important;
+  flex: 1 !important;
+  min-height: 0 !important;
 }
 .sp-preview-iframe {
   height: 100% !important;
+  width: 100% !important;
 }
 .sp-layout {
   border: none !important;
   height: 100% !important;
   background: transparent !important;
+  flex: 1 !important;
 }
 .sp-preview-container {
+  height: 100% !important;
+  flex: 1 !important;
+}
+.sp-preview-iframe-container {
+  height: 100% !important;
+  width: 100% !important;
+}
+.sp-stack {
   height: 100% !important;
 }
 `;
@@ -272,7 +286,7 @@ function SandpackPreviewInner({ files, projectType }: { files: FileMap; projectT
   }
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <style dangerouslySetInnerHTML={{ __html: SANDBOX_STYLES }} />
       <style dangerouslySetInnerHTML={{ __html: getSandpackCssText() }} />
       <SandpackProvider
@@ -325,7 +339,7 @@ export const SandpackPreview = memo(function SandpackPreview() {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ position: 'relative' }}>
       <SandpackPreviewInner files={files} projectType={projectType} />
     </div>
   );
