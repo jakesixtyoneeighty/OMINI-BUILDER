@@ -1,11 +1,12 @@
 import { useStore } from '@nanostores/react';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { AuthButton } from './AuthButton.client';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { AppSettingsDialog } from './AppSettingsDialog.client';
+import { DeployButton } from './DeployButton.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
@@ -17,11 +18,6 @@ export function Header() {
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
   const appSettingsRef = useRef<{ setTab: (t: string) => void } | null>(null);
-
-  const openDeploy = useCallback(() => {
-    setSettingsTab('deploy');
-    setAppSettingsOpen(true);
-  }, []);
 
   return (
     <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
@@ -48,9 +44,7 @@ export function Header() {
               {chat.started && (
                 <>
                   <SaveProjectButton />
-                  <button onClick={openDeploy} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 text-xs font-medium shadow-sm">
-                    <div className="i-ph:rocket-launch-duotone" /> Deploy
-                  </button>
+                  <ClientOnly>{() => <DeployButton onOpenSettings={() => { setSettingsTab('deploy'); setAppSettingsOpen(true); }} />}</ClientOnly>
                   <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                   <ClientOnly>{() => <ThemeSwitch />}</ClientOnly>
                   <GitHubPush />
