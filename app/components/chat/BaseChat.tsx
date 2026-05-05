@@ -71,6 +71,12 @@ const FEATURE_TAGS = [
   { icon: 'i-ph:game-controller-duotone', label: 'Games', color: 'from-red-500/20 to-rose-500/20 text-red-400 border-red-500/20' },
 ];
 
+const BOTTOM_TABS = [
+  { id: 'projects', label: 'Meus Projetos', icon: 'i-ph:folder-open' },
+  { id: 'recent', label: 'Recentes', icon: 'i-ph:clock-counter-clockwise' },
+  { id: 'templates', label: 'Templates', icon: 'i-ph:layout-grid' },
+];
+
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -100,6 +106,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     ref,
   ) => {
     const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([]);
+    const [activeTab, setActiveTab] = useState('projects');
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
@@ -119,7 +126,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               target: { value: newVal },
             } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
             handleInputChange?.(syntheticEvent);
-            // Focus and scroll to end
             textarea.focus();
             requestAnimationFrame(() => {
               textarea.scrollTop = textarea.scrollHeight;
@@ -163,29 +169,37 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <ClientOnly>{() => <Menu />}</ClientOnly>
         <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
+
+            {/* ============ LANDING PAGE VIEW ============ */}
             {!chatStarted && (
-              <div id="intro" className="w-full">
-                {/* Hero section */}
-                <div className="mt-[12vh] max-w-2xl mx-auto px-4 text-center">
+              <div className="w-full flex flex-col h-full">
+                {/* Hero Section - Top */}
+                <div className="mt-[10vh] max-w-2xl mx-auto px-4 text-center">
                   {/* Logo + Name */}
-                  <div className="flex items-center justify-center gap-3 mb-8">
+                  <div className="flex items-center justify-center gap-3 mb-6">
                     <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-14 omni-logo-themed drop-shadow-lg" />
                     <span className="text-3xl font-bold text-bolt-elements-textPrimary tracking-tight">Omni-Builder</span>
                   </div>
 
                   {/* Headline */}
-                  <h1 className="text-4xl sm:text-5xl font-bold text-bolt-elements-textPrimary mb-4 leading-tight">
-                    O que voce vai construir
-                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"> hoje?</span>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-bolt-elements-textPrimary mb-3 leading-tight">
+                    What should we build
+                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"> today?</span>
                   </h1>
 
-                  {/* Subtitle */}
-                  <p className="text-base text-bolt-elements-textTertiary mb-10 max-w-lg mx-auto leading-relaxed">
-                    Crie aplicativos e sites incriveis conversando com a IA. Da idea ao deploy em segundos.
-                  </p>
+                  {/* Badge + Subtitle */}
+                  <div className="flex items-center justify-center gap-2 mb-8">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm">
+                      <div className="i-ph:sparkle-fill text-[10px]" />
+                      NOVO
+                    </span>
+                    <p className="text-sm text-bolt-elements-textTertiary">
+                      Crie aplicativos e sites incriveis conversando com a IA
+                    </p>
+                  </div>
 
                   {/* Feature tags */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
                     {FEATURE_TAGS.map((tag) => (
                       <button
                         key={tag.label}
@@ -198,15 +212,181 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     ))}
                   </div>
 
-                  {/* GitHub import */}
+                  {/* Import Buttons - GitHub / ZIP / Folder */}
                   {importFromGithub && (
-                    <div className="flex justify-center mt-2">
+                    <div className="flex justify-center mt-4 mb-6">
                       <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
                     </div>
                   )}
                 </div>
+
+                {/* Spacer */}
+                <div className="flex-1" />
+
+                {/* Input Box + Prompt Area */}
+                <div className="px-6 pb-3">
+                  <div className="relative w-full max-w-chat mx-auto z-prompt">
+                    {/* Input box: textarea + buttons inside, buttons in separate row below */}
+                    <div
+                      className={classNames(
+                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
+                        planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                      )}
+                    >
+                      {/* Textarea area - top */}
+                      <div className="px-4 pt-3 pb-1">
+                        <textarea
+                          ref={textareaRef}
+                          className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
+                          onKeyDown={handleKeyDown}
+                          value={input}
+                          onChange={(event) => {
+                            handleInputChange?.(event);
+                            const el = event.target;
+                            el.style.height = 'auto';
+                            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+                          }}
+                          placeholder="Ask Omni..."
+                          translate="no"
+                          rows={2}
+                          style={{ maxHeight: 180 }}
+                        />
+                      </div>
+
+                      {/* Divider */}
+                      <div className="mx-4 border-t border-bolt-elements-borderColor" />
+
+                      {/* Buttons toolbar row - inside the same box */}
+                      <div className="flex items-center justify-between px-3 py-2.5">
+                        {/* Left group */}
+                        <div className="flex items-center gap-2">
+                          {/* + file upload */}
+                          <ClientOnly>
+                            {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
+                          </ClientOnly>
+
+                          {/* Enhance button */}
+                          <button
+                            type="button"
+                            title="Enhance prompt"
+                            disabled={input.length === 0 || enhancingPrompt}
+                            onClick={() => enhancePrompt?.()}
+                            className={classNames(
+                              'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
+                              enhancingPrompt
+                                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                                : promptEnhanced
+                                  ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                                  : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
+                            )}
+                          >
+                            {enhancingPrompt ? (
+                              <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
+                            ) : (
+                              <div className="i-bolt:stars text-[11px]" />
+                            )}
+                            {!enhancingPrompt && <span>Enhance</span>}
+                          </button>
+
+                          {/* Model picker */}
+                          <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+
+                          {/* Build / Plan dropdown */}
+                          <ClientOnly>
+                            {() => (
+                              <BuildPlanDropdown
+                                planMode={planMode}
+                                isStreaming={isStreaming}
+                                onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
+                                onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                              />
+                            )}
+                          </ClientOnly>
+                        </div>
+
+                        {/* Right group */}
+                        <div className="flex items-center gap-2">
+                          {/* Microphone */}
+                          <ClientOnly>
+                            {() => <VoiceRecordButton onTranscript={(text) => {
+                              if (textareaRef?.current) {
+                                const textarea = textareaRef.current;
+                                const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
+                                const syntheticEvent = {
+                                  target: { value: newVal },
+                                } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                                handleInputChange?.(syntheticEvent);
+                                textarea.focus();
+                              }
+                            }} />}
+                          </ClientOnly>
+
+                          {/* Send / Stop button */}
+                          {showSendButton && (
+                            <button
+                              type="button"
+                              onClick={handleSend}
+                              className={classNames(
+                                'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
+                                isStreaming
+                                  ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                                  : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
+                              )}
+                            >
+                              {isStreaming ? (
+                                <div className="i-ph:stop-bold text-[13px]" />
+                              ) : (
+                                <div className="i-ph:arrow-up-bold text-[14px]" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Navigation Bar */}
+                <div className="w-full border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-1/80 backdrop-blur-sm">
+                  <div className="max-w-3xl mx-auto px-6 py-2.5 flex items-center justify-between">
+                    {/* Left tabs */}
+                    <div className="flex items-center gap-1">
+                      {BOTTOM_TABS.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            if (tab.id === 'templates') {
+                              window.location.href = '/templates';
+                            }
+                          }}
+                          className={classNames(
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                            activeTab === tab.id
+                              ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary shadow-sm'
+                              : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-background-depth-2/50',
+                          )}
+                        >
+                          <div className={`${tab.icon} text-sm`} />
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Browse all */}
+                    <button
+                      onClick={() => { window.location.href = '/templates'; }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-all"
+                    >
+                      Ver tudo
+                      <div className="i-ph:arrow-right text-sm" />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* ============ CHAT VIEW ============ */}
             <div
               className={classNames('pt-6 px-6', {
                 'h-full flex flex-col': chatStarted,
@@ -231,131 +411,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   ) : null;
                 }}
               </ClientOnly>
-              <div
-                className={classNames('relative w-full max-w-chat mx-auto z-prompt', {
-                  'sticky bottom-0': chatStarted,
-                })}
-              >
-                {!chatStarted ? (
-                  /* ===== LANDING PAGE: textarea + buttons inside same box, buttons on separate row below ===== */
-                  <div
-                    className={classNames(
-                      'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
-                      planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
-                    )}
-                  >
-                    {/* Textarea area - top */}
-                    <div className="px-4 pt-3 pb-1">
-                      <textarea
-                        ref={textareaRef}
-                        className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
-                        onKeyDown={handleKeyDown}
-                        value={input}
-                        onChange={(event) => {
-                          handleInputChange?.(event);
-                          const el = event.target;
-                          el.style.height = 'auto';
-                          el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-                        }}
-                        placeholder="Ask Omni..."
-                        translate="no"
-                        rows={2}
-                        style={{ maxHeight: 180 }}
-                      />
-                    </div>
-
-                    {/* Divider */}
-                    <div className="mx-4 border-t border-bolt-elements-borderColor" />
-
-                    {/* Buttons toolbar row - inside the same box */}
-                    <div className="flex items-center justify-between px-3 py-2.5">
-                      {/* Left group */}
-                      <div className="flex items-center gap-2">
-                        {/* + file upload */}
-                        <ClientOnly>
-                          {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
-                        </ClientOnly>
-
-                        {/* Enhance button */}
-                        <button
-                          type="button"
-                          title="Enhance prompt"
-                          disabled={input.length === 0 || enhancingPrompt}
-                          onClick={() => enhancePrompt?.()}
-                          className={classNames(
-                            'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
-                            enhancingPrompt
-                              ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                              : promptEnhanced
-                                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                                : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
-                          )}
-                        >
-                          {enhancingPrompt ? (
-                            <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
-                          ) : (
-                            <div className="i-bolt:stars text-[11px]" />
-                          )}
-                          {!enhancingPrompt && <span>Enhance</span>}
-                        </button>
-
-                        {/* Model picker */}
-                        <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-
-                        {/* Build / Plan dropdown */}
-                        <ClientOnly>
-                          {() => (
-                            <BuildPlanDropdown
-                              planMode={planMode}
-                              isStreaming={isStreaming}
-                              onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
-                              onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
-                            />
-                          )}
-                        </ClientOnly>
-                      </div>
-
-                      {/* Right group */}
-                      <div className="flex items-center gap-2">
-                        {/* Microphone */}
-                        <ClientOnly>
-                          {() => <VoiceRecordButton onTranscript={(text) => {
-                            if (textareaRef?.current) {
-                              const textarea = textareaRef.current;
-                              const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
-                              const syntheticEvent = {
-                                target: { value: newVal },
-                              } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                              handleInputChange?.(syntheticEvent);
-                              textarea.focus();
-                            }
-                          }} />}
-                        </ClientOnly>
-
-                        {/* Send / Stop button */}
-                        {showSendButton && (
-                          <button
-                            type="button"
-                            onClick={handleSend}
-                            className={classNames(
-                              'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
-                              isStreaming
-                                ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                                : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
-                            )}
-                          >
-                            {isStreaming ? (
-                              <div className="i-ph:stop-bold text-[13px]" />
-                            ) : (
-                              <div className="i-ph:arrow-up-bold text-[14px]" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* ===== CHAT VIEW: original single-row inline layout (unchanged) ===== */
+              {chatStarted && (
+                <div
+                  className="relative w-full max-w-chat mx-auto z-prompt sticky bottom-0"
+                >
+                  {/* Chat input - single row inline layout */}
                   <div
                     className={classNames(
                       'flex items-center gap-2.5 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-3 py-3',
@@ -457,30 +517,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       )}
                     </div>
                   </div>
-                )}
-                <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
-              </div>
-            </div>
-            {!chatStarted && (
-              <div id="examples" className="relative w-full max-w-lg mx-auto mt-6 mb-8 flex justify-center">
-                <div className="flex flex-col space-y-1.5 [mask-image:linear-gradient(to_bottom,black_0%,transparent_200%)] hover:[mask-image:none]">
-                  {EXAMPLE_PROMPTS.map((examplePrompt, index) => {
-                    return (
-                      <button
-                        key={index}
-                        onClick={(event) => {
-                          sendMessage?.(event, examplePrompt.text);
-                        }}
-                        className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme text-sm"
-                      >
-                        {examplePrompt.text}
-                        <div className="i-ph:arrow-bend-down-left text-xs opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    );
-                  })}
+                  <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
