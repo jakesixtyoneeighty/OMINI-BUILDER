@@ -241,3 +241,23 @@ Stage Summary:
 - Database modal opens even when AI doesn't include field definitions
 - File creation errors reduced with retry logic and search/replace fallback
 - Auto-prompt AI when database configured in settings (with credential validation)
+---
+Task ID: 1
+Agent: Main Agent
+Task: Redesign landing page - separate buttons from textarea, bigger logo, modern layout
+
+Work Log:
+- Analyzed uploaded design image using VLM to understand layout requirements
+- Read BaseChat.tsx to understand current structure
+- Redesigned landing page (chatStarted=false) with: bigger logo (h-14), larger name text, more spacing
+- Split input area into two rows: textarea on top in rounded container, buttons toolbar in separate row below
+- Left group: file upload, enhance, model picker, build/plan dropdown
+- Right group: microphone, send/stop button
+- Chat view (chatStarted=true) kept EXACTLY unchanged - same single-row inline layout
+- Built and pushed to GitHub successfully
+
+Stage Summary:
+- Landing page now has textarea and buttons on SEPARATE rows
+- Chat input field NOT modified
+- Logo size increased from h-12 to h-14 with drop shadow
+- Pushed commit: e10b8e0
