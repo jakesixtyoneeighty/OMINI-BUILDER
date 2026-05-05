@@ -52,36 +52,46 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     return json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  let query = supabase
-    .from('gallery_projects')
-    .select('id, author_id, author_name, name, description, thumbnail, cover_image, logo, tags, category, likes, views, is_featured, published_at')
-    .eq('is_published', true);
+  // Build full query with all filters
+  function buildQuery(includeCoverAndLogo: boolean) {
+    const columns = includeCoverAndLogo
+      ? 'id, author_id, author_name, name, description, thumbnail, cover_image, logo, tags, category, likes, views, is_featured, published_at'
+      : 'id, author_id, author_name, name, description, thumbnail, tags, category, likes, views, is_featured, published_at';
 
-  if (category && category !== 'all') {
-    query = query.eq('category', category);
+    let q = supabase
+      .from('gallery_projects')
+      .select(columns)
+      .eq('is_published', true);
+
+    if (category && category !== 'all') {
+      q = q.eq('category', category);
+    }
+    if (search) {
+      q = q.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+    switch (sort) {
+      case 'popular':
+        q = q.order('likes', { ascending: false });
+        break;
+      case 'featured':
+        q = q.eq('is_featured', true).order('published_at', { ascending: false });
+        break;
+      case 'newest':
+      default:
+        q = q.order('published_at', { ascending: false });
+        break;
+    }
+    q = q.range(offset, offset + limit - 1);
+    return q;
   }
 
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  // Try with cover_image/logo first, fallback without if columns don't exist
+  let { data: projects, error } = await buildQuery(true);
+
+  if (error && (error.message.includes('cover_image') || error.message.includes('logo') || error.code === '42703')) {
+    console.warn('[Gallery API] cover_image/logo columns not found, using fallback. Run the migration SQL in Supabase SQL Editor.');
+    ({ data: projects, error } = await buildQuery(false));
   }
-
-  // Sorting
-  switch (sort) {
-    case 'popular':
-      query = query.order('likes', { ascending: false });
-      break;
-    case 'featured':
-      query = query.eq('is_featured', true).order('published_at', { ascending: false });
-      break;
-    case 'newest':
-    default:
-      query = query.order('published_at', { ascending: false });
-      break;
-  }
-
-  query = query.range(offset, offset + limit - 1);
-
-  const { data: projects, error } = await query;
 
   if (error) {
     return json({ error: error.message }, { status: 500 });
@@ -128,22 +138,37 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return json({ error: 'Name and files are required' }, { status: 400 });
     }
 
-    // Create the gallery project
-    const { data: project, error: projectError } = await supabase
+    // Create the gallery project - try with cover_image/logo, fallback without
+    let insertData: Record<string, any> = {
+      author_name: authorName || 'Anonymous',
+      author_email: authorEmail || null,
+      name,
+      description: description || '',
+      thumbnail: thumbnail || '',
+      tags: tags || [],
+      category: category || 'web-apps',
+    };
+
+    // Try with cover_image/logo first
+    let { data: project, error: projectError } = await supabase
       .from('gallery_projects')
       .insert({
-        author_name: authorName || 'Anonymous',
-        author_email: authorEmail || null,
-        name,
-        description: description || '',
-        thumbnail: thumbnail || '',
+        ...insertData,
         cover_image: coverImage || '',
         logo: logo || '',
-        tags: tags || [],
-        category: category || 'web-apps',
       })
       .select('id')
       .single();
+
+    // If columns don't exist, retry without them
+    if (projectError && (projectError.message.includes('cover_image') || projectError.message.includes('logo') || projectError.code === '42703')) {
+      console.warn('[Gallery API] cover_image/logo columns not found, publishing without them.');
+      ({ data: project, error: projectError } = await supabase
+        .from('gallery_projects')
+        .insert(insertData)
+        .select('id')
+        .single());
+    }
 
     if (projectError) {
       return json({ error: projectError.message }, { status: 500 });
@@ -177,12 +202,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   if (galleryAction === 'get') {
     // Get a specific gallery project with files
-    const { data: project, error } = await supabase
+    // Try with cover_image/logo first
+    let { data: project, error } = await supabase
       .from('gallery_projects')
       .select('id, author_id, author_name, name, description, thumbnail, cover_image, logo, tags, category, likes, views, published_at')
       .eq('id', projectId)
       .eq('is_published', true)
       .single();
+
+    // Fallback without cover_image/logo if columns don't exist
+    if (error && (error.message.includes('cover_image') || error.message.includes('logo') || error.code === '42703')) {
+      ({ data: project, error } = await supabase
+        .from('gallery_projects')
+        .select('id, author_id, author_name, name, description, thumbnail, tags, category, likes, views, published_at')
+        .eq('id', projectId)
+        .eq('is_published', true)
+        .single());
+    }
 
     if (error || !project) {
       return json({ error: 'Project not found' }, { status: 404 });
@@ -292,11 +328,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return json({ projects: [] });
     }
 
-    const { data: projects, error } = await supabase
+    // Try with cover_image/logo first
+    let { data: projects, error } = await supabase
       .from('gallery_projects')
       .select('id, name, description, thumbnail, cover_image, logo, tags, category, likes, views, is_featured, is_published, published_at, created_at')
       .eq('author_id', userId)
       .order('created_at', { ascending: false });
+
+    // Fallback without cover_image/logo
+    if (error && (error.message.includes('cover_image') || error.message.includes('logo') || error.code === '42703')) {
+      ({ data: projects, error } = await supabase
+        .from('gallery_projects')
+        .select('id, name, description, thumbnail, tags, category, likes, views, is_featured, is_published, published_at, created_at')
+        .eq('author_id', userId)
+        .order('created_at', { ascending: false }));
+    }
 
     if (error) {
       return json({ error: error.message }, { status: 500 });
