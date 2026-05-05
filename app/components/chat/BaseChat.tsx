@@ -71,11 +71,6 @@ const FEATURE_TAGS = [
   { icon: 'i-ph:game-controller-duotone', label: 'Games', color: 'from-red-500/20 to-rose-500/20 text-red-400 border-red-500/20' },
 ];
 
-const BOTTOM_TABS = [
-  { id: 'projects', label: 'Meus Projetos', icon: 'i-ph:folder-open' },
-  { id: 'recent', label: 'Recentes', icon: 'i-ph:clock-counter-clockwise' },
-  { id: 'templates', label: 'Templates', icon: 'i-ph:layout-grid' },
-];
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
@@ -106,7 +101,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     ref,
   ) => {
     const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([]);
-    const [activeTab, setActiveTab] = useState('projects');
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
@@ -170,61 +164,40 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
 
-            {/* ============ LANDING PAGE VIEW ============ */}
+            {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
             {!chatStarted && (
-              <div className="w-full flex flex-col h-full">
-                {/* Hero Section - Top */}
-                <div className="mt-[10vh] max-w-2xl mx-auto px-4 text-center">
-                  {/* Logo + Name */}
-                  <div className="flex items-center justify-center gap-3 mb-6">
-                    <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-14 omni-logo-themed drop-shadow-lg" />
-                    <span className="text-3xl font-bold text-bolt-elements-textPrimary tracking-tight">Omni-Builder</span>
-                  </div>
+              <div className="w-full flex flex-col h-full relative">
+                {/* Subtle background gradient glow at bottom */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-blue-600/10 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-                  {/* Headline */}
-                  <h1 className="text-3xl sm:text-4xl font-bold text-bolt-elements-textPrimary mb-3 leading-tight">
-                    What should we build
-                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"> today?</span>
+                {/* Announcement banner */}
+                <div className="flex justify-center mt-4 mb-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-all cursor-default">
+                    <div className="i-ph:sparkle-fill text-xs" />
+                    Introducing Omni-Builder — AI-powered app builder
+                  </span>
+                </div>
+
+                {/* Hero Section */}
+                <div className="mt-[12vh] max-w-2xl mx-auto px-4 text-center relative z-10">
+                  {/* Headline - Bolt style */}
+                  <h1 className="text-4xl sm:text-[52px] font-bold text-bolt-elements-textPrimary mb-4 leading-[1.1] tracking-tight">
+                    What will you{' '}
+                    <span className="text-blue-400">build</span>
+                    {' '}today?
                   </h1>
 
-                  {/* Badge + Subtitle */}
-                  <div className="flex items-center justify-center gap-2 mb-8">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm">
-                      <div className="i-ph:sparkle-fill text-[10px]" />
-                      NOVO
-                    </span>
-                    <p className="text-sm text-bolt-elements-textTertiary">
-                      Crie aplicativos e sites incriveis conversando com a IA
-                    </p>
-                  </div>
-
-                  {/* Feature tags */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-                    {FEATURE_TAGS.map((tag) => (
-                      <button
-                        key={tag.label}
-                        onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border bg-gradient-to-r transition-all hover:scale-[1.03] hover:shadow-md ${tag.color}`}
-                      >
-                        <div className={`${tag.icon} text-sm`} />
-                        {tag.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Import Buttons - GitHub / ZIP / Folder */}
-                  {importFromGithub && (
-                    <div className="flex justify-center mt-4 mb-6">
-                      <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
-                    </div>
-                  )}
+                  {/* Subtitle */}
+                  <p className="text-base text-bolt-elements-textTertiary mb-10 max-w-md mx-auto leading-relaxed">
+                    Create stunning apps & websites by chatting with AI.
+                  </p>
                 </div>
 
                 {/* Spacer */}
-                <div className="flex-1" />
+                <div className="flex-1 relative z-10" />
 
-                {/* Input Box + Prompt Area */}
-                <div className="px-6 pb-3">
+                {/* Input Box Area */}
+                <div className="px-6 pb-4 relative z-10">
                   <div className="relative w-full max-w-chat mx-auto z-prompt">
                     {/* Input box: textarea + buttons inside, buttons in separate row below */}
                     <div
@@ -343,44 +316,58 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       </div>
                     </div>
+
+                    {/* "or start from" row - Bolt style */}
+                    {importFromGithub && (
+                      <div className="mt-3 flex items-center justify-center gap-2">
+                        <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
+                        <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Bottom Navigation Bar */}
-                <div className="w-full border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-1/80 backdrop-blur-sm">
-                  <div className="max-w-3xl mx-auto px-6 py-2.5 flex items-center justify-between">
-                    {/* Left tabs */}
-                    <div className="flex items-center gap-1">
-                      {BOTTOM_TABS.map((tab) => (
+                {/* Recently Viewed Section - Bolt style */}
+                <div className="px-6 pb-4 relative z-10">
+                  <div className="max-w-3xl mx-auto">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-sm font-semibold text-bolt-elements-textSecondary">Recently viewed</h2>
+                      <button
+                        onClick={() => { window.location.href = '/templates'; }}
+                        className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        View all
+                        <div className="i-ph:arrow-right text-xs" />
+                      </button>
+                    </div>
+
+                    {/* Feature tags as quick-start cards */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {FEATURE_TAGS.slice(0, 3).map((tag) => (
                         <button
-                          key={tab.id}
-                          onClick={() => {
-                            setActiveTab(tab.id);
-                            if (tab.id === 'templates') {
-                              window.location.href = '/templates';
-                            }
-                          }}
-                          className={classNames(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                            activeTab === tab.id
-                              ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary shadow-sm'
-                              : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-background-depth-2/50',
-                          )}
+                          key={tag.label}
+                          onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
+                          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all hover:scale-[1.02] hover:shadow-md text-left ${tag.color}`}
                         >
-                          <div className={`${tab.icon} text-sm`} />
-                          {tab.label}
+                          <div className={`${tag.icon} text-base`} />
+                          {tag.label}
                         </button>
                       ))}
                     </div>
 
-                    {/* Browse all */}
-                    <button
-                      onClick={() => { window.location.href = '/templates'; }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-all"
-                    >
-                      Ver tudo
-                      <div className="i-ph:arrow-right text-sm" />
-                    </button>
+                    {/* Second row of tags */}
+                    <div className="grid grid-cols-3 gap-3 mt-2">
+                      {FEATURE_TAGS.slice(3, 6).map((tag) => (
+                        <button
+                          key={tag.label}
+                          onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
+                          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all hover:scale-[1.02] hover:shadow-md text-left ${tag.color}`}
+                        >
+                          <div className={`${tag.icon} text-base`} />
+                          {tag.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
