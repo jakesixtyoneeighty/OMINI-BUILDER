@@ -237,15 +237,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 })}
               >
                 {!chatStarted ? (
-                  /* ===== LANDING PAGE: textarea on top, buttons in separate row below ===== */
-                  <div className="flex flex-col gap-3">
-                    {/* Textarea container */}
-                    <div
-                      className={classNames(
-                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-4 py-3',
-                        planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
-                      )}
-                    >
+                  /* ===== LANDING PAGE: textarea + buttons inside same box, buttons on separate row below ===== */
+                  <div
+                    className={classNames(
+                      'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
+                      planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                    )}
+                  >
+                    {/* Textarea area - top */}
+                    <div className="px-4 pt-3 pb-1">
                       <textarea
                         ref={textareaRef}
                         className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
@@ -264,8 +264,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       />
                     </div>
 
-                    {/* Buttons toolbar row - separate from textarea */}
-                    <div className="flex items-center justify-between px-1">
+                    {/* Divider */}
+                    <div className="mx-4 border-t border-bolt-elements-borderColor" />
+
+                    {/* Buttons toolbar row - inside the same box */}
+                    <div className="flex items-center justify-between px-3 py-2.5">
                       {/* Left group */}
                       <div className="flex items-center gap-2">
                         {/* + file upload */}
