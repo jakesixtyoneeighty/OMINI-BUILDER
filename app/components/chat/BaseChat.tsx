@@ -94,10 +94,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
+        const isImage = file.type.startsWith('image/');
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
-          const isImage = file.type.startsWith('image/');
           setAttachedFiles((prev) => [
             ...prev,
             {

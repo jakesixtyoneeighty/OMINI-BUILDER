@@ -16,6 +16,89 @@ const GALLERY_CATEGORIES = [
   { id: 'ecommerce', label: 'E-Commerce', icon: 'i-ph:shopping-cart-duotone' },
 ];
 
+function ImageUploader({
+  label,
+  value,
+  onChange,
+  hint,
+  aspectClass,
+  iconClass,
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  hint: string;
+  aspectClass: string;
+  iconClass: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be under 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Resize image to reduce size before storing
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = (h / w) * MAX; w = MAX; }
+          else { w = (w / h) * MAX; h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, w, h);
+        const resized = canvas.toDataURL('image/jpeg', 0.8);
+        onChange(resized);
+      };
+        img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
+    <div>
+      <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">{label}</label>
+      <div
+        onClick={() => inputRef.current?.click()}
+        className={`relative ${aspectClass} rounded-xl border-2 border-dashed border-bolt-elements-borderColor hover:border-purple-500/40 bg-bolt-elements-background-depth-1 cursor-pointer overflow-hidden transition-all group`}
+      >
+        {value ? (
+          <>
+            <img src={value} alt={label} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 text-black text-[11px] font-semibold shadow-lg">
+                <div className="i-ph:pencil-simple text-xs" />
+                Change
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+            <div className={`${iconClass} text-xl text-bolt-elements-textTertiary/40 group-hover:text-purple-400/60 transition-colors`} />
+            <span className="text-[10px] text-bolt-elements-textTertiary/60 group-hover:text-bolt-elements-textTertiary transition-colors">{hint}</span>
+          </div>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+    </div>
+  );
+}
+
 export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
   const [open, setOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -27,6 +110,8 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
     category: 'web-apps',
     tags: '',
   });
+  const [logo, setLogo] = useState('');
+  const [coverImage, setCoverImage] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const projectId = useStore(activeProjectIdStore);
@@ -63,13 +148,19 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
     }
   }, [open]);
 
+  const resetForm = useCallback(() => {
+    setFormData({ name: '', description: '', category: 'web-apps', tags: '' });
+    setLogo('');
+    setCoverImage('');
+  }, []);
+
   const handlePublish = useCallback(async () => {
     if (!formData.name.trim()) {
-      toast.error('Give your project a name!');
+      toast.error('Dê um nome ao seu projeto!');
       return;
     }
     if (fileCount === 0) {
-      toast.error('No files to publish. Create some files first!');
+      toast.error('Nenhum arquivo para publicar. Crie alguns arquivos primeiro!');
       return;
     }
 
@@ -103,6 +194,8 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
             tags,
             authorName: user?.user_metadata?.full_name || user?.email || 'Anonymous',
             authorEmail: user?.email || null,
+            logo: logo || '',
+            coverImage: coverImage || '',
             files: fileList,
           },
         }),
@@ -116,13 +209,13 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
 
       setPublishedId(data.projectId);
       setStep('success');
-      toast.success('Project published to Gallery! 🎉');
+      toast.success('Projeto publicado na Galeria!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to publish');
     } finally {
       setPublishing(false);
     }
-  }, [formData, fileCount, user, project]);
+  }, [formData, fileCount, user, project, logo, coverImage]);
 
   return (
     <>
@@ -134,20 +227,20 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
           }}
           disabled={fileCount === 0}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-          title="Publish to Gallery"
+          title="Publicar na Galeria"
         >
           <div className="i-ph:storefront-duotone text-sm" />
           <span className="hidden sm:inline">Gallery</span>
           <div className="i-ph:caret-down text-[10px] opacity-70" />
         </button>
 
-        {/* Dropdown */}
+        {/* Dropdown - wider modal for image uploads */}
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-80 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[85vh] overflow-y-auto bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-150">
             {step === 'form' ? (
               <>
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-gradient-to-r from-purple-600/10 to-indigo-600/10">
+                <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-gradient-to-r from-purple-600/10 to-indigo-600/10 rounded-t-2xl">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
                       <div className="i-ph:storefront-duotone text-purple-400 text-base" />
@@ -163,6 +256,32 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
 
                 {/* Form */}
                 <div className="p-4 space-y-3">
+                  {/* Cover Image + Logo side by side */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Cover Image */}
+                    <div className="col-span-2">
+                      <ImageUploader
+                        label="Capa (Cover)"
+                        value={coverImage}
+                        onChange={setCoverImage}
+                        hint="Clique para enviar"
+                        aspectClass="w-full aspect-video"
+                        iconClass="i-ph:image-duotone"
+                      />
+                    </div>
+                    {/* Logo */}
+                    <div>
+                      <ImageUploader
+                        label="Logo"
+                        value={logo}
+                        onChange={setLogo}
+                        hint="Logo"
+                        aspectClass="w-full aspect-square"
+                        iconClass="i-ph:star-duotone"
+                      />
+                    </div>
+                  </div>
+
                   {/* Name */}
                   <div>
                     <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
@@ -185,7 +304,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-                      placeholder="Describe your project..."
+                      placeholder="Descreva seu projeto..."
                       rows={2}
                       className="w-full px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all resize-none"
                     />
@@ -270,7 +389,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                   <button
                     onClick={() => {
                       setStep('form');
-                      setFormData({ name: '', description: '', category: 'web-apps', tags: '' });
+                      resetForm();
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-bolt-elements-background-depth-1 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary border border-bolt-elements-borderColor transition-all"
                   >

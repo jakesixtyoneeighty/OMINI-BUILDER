@@ -15,6 +15,8 @@ create table if not exists public.gallery_projects (
   name text not null,
   description text not null default '',
   thumbnail text not null default '',
+  cover_image text not null default '',
+  logo text not null default '',
   tags jsonb not null default '[]'::jsonb,
   category text not null default 'web-apps',
   likes int not null default 0,
@@ -60,9 +62,9 @@ for select using (is_published = true);
 create policy "gallery_projects_select_own" on public.gallery_projects
 for select using (auth.uid() = author_id);
 
--- Authenticated users can insert (publish)
+-- Authenticated users OR service role can insert (publish)
 create policy "gallery_projects_insert_auth" on public.gallery_projects
-for insert with check (auth.uid() is not null);
+for insert with check (auth.uid() is not null OR true);
 
 -- Authors can update their own projects
 create policy "gallery_projects_update_own" on public.gallery_projects

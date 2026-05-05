@@ -2,17 +2,24 @@ import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-r
 import { createClient } from '@supabase/supabase-js';
 
 // Server-side Supabase using environment variables from Cloudflare Pages
+// Uses SERVICE_ROLE_KEY to bypass RLS so anyone can publish to gallery
 function getServerSupabase(request: Request) {
-  // Try to get from env (Cloudflare Workers/Pages)
   const env = (request as any).env;
   const url = env?.SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const key = env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  // Use service role key to bypass RLS (gallery is public)
+  const key = env?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
   if (!url || !key) {
     return null;
   }
 
-  return createClient(url, key);
+  const opts: any = {};
+  // If using service role key, set admin auth
+  if (env?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    opts.auth = { persistSession: false, autoRefreshToken: false };
+  }
+
+  return createClient(url, key, opts);
 }
 
 // GET /api/gallery - List published gallery projects
@@ -31,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   let query = supabase
     .from('gallery_projects')
-    .select('id, author_id, author_name, name, description, thumbnail, tags, category, likes, views, is_featured, published_at')
+    .select('id, author_id, author_name, name, description, thumbnail, cover_image, logo, tags, category, likes, views, is_featured, published_at')
     .eq('is_published', true);
 
   if (category && category !== 'all') {
@@ -99,7 +106,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (galleryAction === 'publish') {
     // Publish a new project to gallery
-    const { name, description, thumbnail, tags, category, authorName, authorEmail, files } = projectData || {};
+    const { name, description, thumbnail, coverImage, logo, tags, category, authorName, authorEmail, files } = projectData || {};
 
     if (!name || !files || files.length === 0) {
       return json({ error: 'Name and files are required' }, { status: 400 });
@@ -114,6 +121,8 @@ export async function action({ request }: ActionFunctionArgs) {
         name,
         description: description || '',
         thumbnail: thumbnail || '',
+        cover_image: coverImage || '',
+        logo: logo || '',
         tags: tags || [],
         category: category || 'web-apps',
       })
@@ -154,7 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Get a specific gallery project with files
     const { data: project, error } = await supabase
       .from('gallery_projects')
-      .select('id, author_id, author_name, name, description, thumbnail, tags, category, likes, views, published_at')
+      .select('id, author_id, author_name, name, description, thumbnail, cover_image, logo, tags, category, likes, views, published_at')
       .eq('id', projectId)
       .eq('is_published', true)
       .single();
@@ -273,7 +282,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const { data: projects, error } = await supabase
       .from('gallery_projects')
-      .select('id, name, description, thumbnail, tags, category, likes, views, is_featured, is_published, published_at, created_at')
+      .select('id, name, description, thumbnail, cover_image, logo, tags, category, likes, views, is_featured, is_published, published_at, created_at')
       .eq('author_id', userId)
       .order('created_at', { ascending: false });
 
