@@ -1,21 +1,20 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { createClient } from '@supabase/supabase-js';
 
-// Server-side Supabase using environment variables from Cloudflare Pages
-// Uses SERVICE_ROLE_KEY to bypass RLS so anyone can publish to gallery
-function getServerSupabase(request: Request) {
-  const env = (request as any).env;
-  const url = env?.SUPABASE_URL || process.env.SUPABASE_URL || '';
-  // Use service role key to bypass RLS (gallery is public)
-  const key = env?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+// Server-side Supabase using context.cloudflare.env (the correct way for Remix on Cloudflare Pages)
+function getServerSupabase(context: any) {
+  const env = context?.cloudflare?.env || (typeof process !== 'undefined' ? process.env : {}) || {};
+  const url = env.SUPABASE_URL || '';
+  // Use service role key to bypass RLS (gallery is public), fallback to anon key
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY || '';
 
   if (!url || !key) {
     return null;
   }
 
   const opts: any = {};
-  // If using service role key, set admin auth
-  if (env?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  // If using service role key, disable session persistence
+  if (env.SUPABASE_SERVICE_ROLE_KEY) {
     opts.auth = { persistSession: false, autoRefreshToken: false };
   }
 
@@ -23,7 +22,7 @@ function getServerSupabase(request: Request) {
 }
 
 // GET /api/gallery - List published gallery projects
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const category = url.searchParams.get('category');
   const search = url.searchParams.get('search');
@@ -31,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const limit = parseInt(url.searchParams.get('limit') || '50');
   const offset = parseInt(url.searchParams.get('offset') || '0');
 
-  const supabase = getServerSupabase(request);
+  const supabase = getServerSupabase(context);
   if (!supabase) {
     return json({ error: 'Database not configured' }, { status: 500 });
   }
@@ -95,8 +94,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // POST /api/gallery - Publish a project to gallery
-export async function action({ request }: ActionFunctionArgs) {
-  const supabase = getServerSupabase(request);
+export async function action({ request, context }: ActionFunctionArgs) {
+  const supabase = getServerSupabase(context);
   if (!supabase) {
     return json({ error: 'Database not configured' }, { status: 500 });
   }
@@ -208,10 +207,6 @@ export async function action({ request }: ActionFunctionArgs) {
     if (existing) {
       // Unlike
       await supabase.from('gallery_likes').delete().eq('id', existing.id);
-      await supabase
-        .from('gallery_projects')
-        .update({ likes: supabase.rpc ? 0 : 0 }) // decrement handled below
-        .eq('id', projectId);
 
       // Decrement likes
       const { data: proj } = await supabase
