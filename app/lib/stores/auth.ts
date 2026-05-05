@@ -46,11 +46,39 @@ if (typeof window !== 'undefined') {
   });
 }
 
+let _authListenerRegistered = false;
+
 export async function initAuth() {
   const sb = getSupabase();
   authStore.setKey('initialized', true);
   if (!sb) return;
-  
+
+  // Prevent multiple onAuthStateChange registrations (causes infinite loop)
+  if (_authListenerRegistered) {
+    // Still refresh the session
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      authStore.set({
+        user: data.session.user,
+        session: data.session,
+        loading: false,
+        initialized: true,
+      });
+      if (data.session.provider_token) {
+        if (data.session.user.app_metadata.provider === 'github') {
+          githubProviderTokenStore.set(data.session.provider_token);
+        } else if (data.session.user.app_metadata.provider === 'google') {
+          googleProviderTokenStore.set(data.session.provider_token);
+        }
+      }
+      const { loadKeysFromSupabase } = await import('./llm');
+      await loadKeysFromSupabase();
+    }
+    return;
+  }
+
+  _authListenerRegistered = true;
+
   const { data } = await sb.auth.getSession();
   if (data.session) {
     authStore.set({
@@ -66,11 +94,10 @@ export async function initAuth() {
         googleProviderTokenStore.set(data.session.provider_token);
       }
     }
-    
     const { loadKeysFromSupabase } = await import('./llm');
     await loadKeysFromSupabase();
   }
-  
+
   sb.auth.onAuthStateChange(async (event, session) => {
     authStore.set({
       user: session?.user ?? null,

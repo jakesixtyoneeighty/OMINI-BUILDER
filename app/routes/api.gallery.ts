@@ -3,12 +3,29 @@ import { createClient } from '@supabase/supabase-js';
 
 // Server-side Supabase using context.cloudflare.env (the correct way for Remix on Cloudflare Pages)
 function getServerSupabase(context: any) {
-  const env = context?.cloudflare?.env || (typeof process !== 'undefined' ? process.env : {}) || {};
+  // Try multiple env access patterns for Cloudflare Pages
+  let env: Record<string, any> = {};
+
+  if (context?.cloudflare?.env) {
+    env = context.cloudflare.env;
+  } else if (context?.env) {
+    env = context.env;
+  } else if (typeof process !== 'undefined' && process.env) {
+    env = process.env;
+  }
+
   const url = env.SUPABASE_URL || '';
   // Use service role key to bypass RLS (gallery is public), fallback to anon key
   const key = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY || '';
 
   if (!url || !key) {
+    console.error('[Gallery API] Database not configured. Missing env vars:', {
+      hasUrl: !!url,
+      hasKey: !!key,
+      hasContext: !!context,
+      hasCloudflareEnv: !!context?.cloudflare?.env,
+      hasContextEnv: !!context?.env,
+    });
     return null;
   }
 

@@ -568,6 +568,110 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 </div>
               )}
             </div>
+            {/* ============ FLOATING AI INPUT (visible when chat panel is hidden) ============ */}
+            {chatStarted && !showChat && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[700px] px-4">
+                <div
+                  className={classNames(
+                    'flex items-center gap-2 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-3 py-3 shadow-lg',
+                    'border-bolt-elements-borderColor',
+                  )}
+                >
+                  {/* Left: file upload */}
+                  <ClientOnly>
+                    {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
+                  </ClientOnly>
+
+                  {/* Enhance button */}
+                  <button
+                    type="button"
+                    title="Enhance prompt"
+                    disabled={input.length === 0 || enhancingPrompt}
+                    onClick={() => enhancePrompt?.()}
+                    className={classNames(
+                      'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
+                      enhancingPrompt || promptEnhanced
+                        ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
+                        : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
+                    )}
+                  >
+                    {enhancingPrompt ? (
+                      <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
+                    ) : (
+                      <div className="i-bolt:stars text-[11px]" />
+                    )}
+                    {!enhancingPrompt && <span>Enhance</span>}
+                  </button>
+
+                  {/* Center: textarea */}
+                  <textarea
+                    ref={textareaRef}
+                    className="flex-1 py-2 px-2 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
+                    onKeyDown={handleKeyDown}
+                    value={input}
+                    onChange={(event) => {
+                      handleInputChange?.(event);
+                      const el = event.target;
+                      el.style.height = 'auto';
+                      el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                    }}
+                    placeholder="Ask Omni..."
+                    translate="no"
+                    rows={1}
+                    style={{ maxHeight: 300 }}
+                  />
+
+                  {/* Right side buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+
+                    <ClientOnly>
+                      {() => (
+                        <BuildPlanDropdown
+                          planMode={planMode}
+                          isStreaming={isStreaming}
+                          onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
+                          onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                        />
+                      )}
+                    </ClientOnly>
+
+                    <ClientOnly>
+                      {() => <VoiceRecordButton onTranscript={(text) => {
+                        if (textareaRef?.current) {
+                          const textarea = textareaRef.current;
+                          const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
+                          const syntheticEvent = {
+                            target: { value: newVal },
+                          } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                          handleInputChange?.(syntheticEvent);
+                          textarea.focus();
+                        }
+                      }} />}
+                    </ClientOnly>
+
+                    {showSendButton && (
+                      <button
+                        type="button"
+                        onClick={handleSendWithAttachments}
+                        className={classNames(
+                          'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
+                          isStreaming
+                            ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                            : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
+                        )}
+                      >
+                        {isStreaming ? (
+                          <div className="i-ph:stop-bold text-[13px]" />
+                        ) : (
+                          <div className="i-ph:arrow-up-bold text-[14px]" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
