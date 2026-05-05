@@ -62,16 +62,6 @@ const EXAMPLE_PROMPTS = [
   { text: 'How do I center a div?' },
 ];
 
-const FEATURE_TAGS = [
-  { icon: 'i-ph:layout-duotone', label: 'Landing Pages', color: 'from-pink-500/20 to-rose-500/20 text-pink-400 border-pink-500/20' },
-  { icon: 'i-ph:shopping-cart-duotone', label: 'E-Commerce', color: 'from-emerald-500/20 to-green-500/20 text-emerald-400 border-emerald-500/20' },
-  { icon: 'i-ph:chart-line-up-duotone', label: 'Dashboards', color: 'from-blue-500/20 to-cyan-500/20 text-blue-400 border-blue-500/20' },
-  { icon: 'i-ph:device-mobile-duotone', label: 'Mobile Apps', color: 'from-violet-500/20 to-purple-500/20 text-violet-400 border-violet-500/20' },
-  { icon: 'i-ph:robot-duotone', label: 'AI Tools', color: 'from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/20' },
-  { icon: 'i-ph:game-controller-duotone', label: 'Games', color: 'from-red-500/20 to-rose-500/20 text-red-400 border-red-500/20' },
-];
-
-
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -316,58 +306,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       </div>
                     </div>
+                    {/* End input box */}
 
-                    {/* "or start from" row - Bolt style */}
+                    {/* "or start from" links - Bolt style */}
                     {importFromGithub && (
-                      <div className="mt-3 flex items-center justify-center gap-2">
+                      <div className="mt-3 flex items-center justify-center gap-3">
                         <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
                         <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
                       </div>
                     )}
-                  </div>
-                </div>
-
-                {/* Recently Viewed Section - Bolt style */}
-                <div className="px-6 pb-4 relative z-10">
-                  <div className="max-w-3xl mx-auto">
-                    <div className="flex items-center justify-between mb-3">
-                      <h2 className="text-sm font-semibold text-bolt-elements-textSecondary">Recently viewed</h2>
-                      <button
-                        onClick={() => { window.location.href = '/templates'; }}
-                        className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
-                      >
-                        View all
-                        <div className="i-ph:arrow-right text-xs" />
-                      </button>
-                    </div>
-
-                    {/* Feature tags as quick-start cards */}
-                    <div className="grid grid-cols-3 gap-3">
-                      {FEATURE_TAGS.slice(0, 3).map((tag) => (
-                        <button
-                          key={tag.label}
-                          onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
-                          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all hover:scale-[1.02] hover:shadow-md text-left ${tag.color}`}
-                        >
-                          <div className={`${tag.icon} text-base`} />
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Second row of tags */}
-                    <div className="grid grid-cols-3 gap-3 mt-2">
-                      {FEATURE_TAGS.slice(3, 6).map((tag) => (
-                        <button
-                          key={tag.label}
-                          onClick={(e) => sendMessage?.(e, `Build a modern ${tag.label.toLowerCase()} application with a clean, responsive design`)}
-                          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all hover:scale-[1.02] hover:shadow-md text-left ${tag.color}`}
-                        >
-                          <div className={`${tag.icon} text-base`} />
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>

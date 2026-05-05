@@ -8,6 +8,7 @@ export interface Template {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   icon: string;
   gradient: string;
+  thumbnail: string;
   featured?: boolean;
   githubUrl: string;
   stars?: number;
