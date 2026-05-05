@@ -350,10 +350,26 @@ export const Preview = memo(function Preview() {
             />
           )}
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           {activePreview ? (
             <PreviewErrorCatcher>
-              <iframe ref={iframeRef} className="w-full h-full bg-white border-0" src={activePreview.baseUrl} />
+              <iframe
+                ref={iframeRef}
+                className="webcontainer-preview-frame"
+                src={activePreview.baseUrl}
+                title="Preview"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  background: 'white',
+                  margin: 0,
+                  padding: 0,
+                }}
+              />
             </PreviewErrorCatcher>
           ) : (
             <div className="flex items-center justify-center h-full text-bolt-elements-textTertiary">
@@ -384,7 +400,7 @@ export const Preview = memo(function Preview() {
             React, Vue, HTML Preview
           </div>
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <SandpackPreview />
         </div>
       </div>
@@ -406,7 +422,7 @@ export const Preview = memo(function Preview() {
             Iframe preview (React supported)
           </div>
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <IframePreview />
         </div>
       </div>
@@ -428,7 +444,7 @@ export const Preview = memo(function Preview() {
             Live React component preview
           </div>
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <ReactLivePreview />
         </div>
       </div>
@@ -449,7 +465,7 @@ export const Preview = memo(function Preview() {
             CodeSandbox API embed
           </div>
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <PlayCodePreview />
         </div>
       </div>
@@ -470,7 +486,7 @@ export const Preview = memo(function Preview() {
           </div>
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
         </div>
-        <div className="flex-1 relative overflow-hidden" data-preview-content>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <NewTabPreview />
         </div>
       </div>

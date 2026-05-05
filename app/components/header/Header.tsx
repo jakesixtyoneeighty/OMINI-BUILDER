@@ -11,6 +11,7 @@ import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
 import { SaveToDrive } from '~/components/chat/SaveToDrive.client';
+import { PublishToGalleryButton } from './PublishToGalleryButton.client';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 
 export function Header() {
@@ -33,6 +34,13 @@ export function Header() {
           <div className="i-ph:layout-grid-duotone text-sm" />
           Templates
         </a>
+        <a
+          href="/gallery"
+          className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/35 transition-all"
+        >
+          <div className="i-ph:storefront-duotone text-sm" />
+          Galeria
+        </a>
       </div>
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
         <ClientOnly>{() => <ChatDescription />}</ClientOnly>
@@ -44,6 +52,7 @@ export function Header() {
               {chat.started && (
                 <>
                   <SaveProjectButton />
+                  <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
                   <ClientOnly>{() => <DeployButton onOpenSettings={() => { setSettingsTab('deploy'); setAppSettingsOpen(true); }} />}</ClientOnly>
                   <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                   <ClientOnly>{() => <ThemeSwitch />}</ClientOnly>

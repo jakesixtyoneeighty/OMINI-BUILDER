@@ -158,7 +158,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                   }}
                 />
               </div>
-              <div className="relative flex-1 overflow-hidden">
+              <div className="relative flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                 <View
                   initial={{ x: selectedView === 'code' ? 0 : '-100%' }}
                   animate={{ x: selectedView === 'code' ? 0 : '-100%' }}

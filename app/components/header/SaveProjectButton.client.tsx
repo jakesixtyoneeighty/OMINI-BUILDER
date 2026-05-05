@@ -39,7 +39,7 @@ export const SaveProjectButton = memo(({}: SaveProjectButtonProps) => {
       // 2. Save all files in the workspace to Supabase
       await workbenchStore.saveEntireProject();
       
-      toast.success('Project and all files saved successfully');
+      toast.success('Projeto salvo no Omni Builder!');
     } catch (error) {
       toast.error(`Failed to save: ${error instanceof Error ? error.message : error}`);
     } finally {
@@ -52,14 +52,14 @@ export const SaveProjectButton = memo(({}: SaveProjectButtonProps) => {
       onClick={handleSave}
       disabled={saving}
       className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-all text-xs font-medium shadow-sm"
-      title="Save entire project to cloud"
+      title="Save to Omni Builder cloud"
     >
       {saving ? (
         <div className="i-svg-spinners:90-ring-with-bg text-sm" />
       ) : (
         <div className="i-ph:floppy-disk-duotone text-sm" />
       )}
-      <span>{saving ? 'Saving...' : 'Save Project'}</span>
+      <span>{saving ? 'Saving...' : 'Salvar no Omni'}</span>
     </button>
   );
 });
