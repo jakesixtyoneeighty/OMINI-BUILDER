@@ -16,6 +16,8 @@ interface GalleryProject {
   name: string;
   description: string;
   thumbnail: string;
+  cover_image: string;
+  logo: string;
   tags: string[];
   category: string;
   likes: number;
@@ -346,26 +348,33 @@ function GalleryCard({
 
   const catInfo = CATEGORIES.find((c) => c.id === project.category);
 
+  // Prefer cover_image over thumbnail
+  const mainImage = project.cover_image || project.thumbnail;
+  const hasImage = !!mainImage;
+  const hasLogo = !!project.logo;
+
   return (
     <div className="group relative flex flex-col rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 overflow-hidden transition-all duration-200 hover:border-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/5 hover:scale-[1.01]">
-      {/* Thumbnail */}
+      {/* Thumbnail / Cover Image */}
       <button onClick={handleUse} className="relative w-full aspect-[4/3] overflow-hidden bg-gradient-to-br from-bolt-elements-background-depth-1 to-bolt-elements-background-depth-2 cursor-pointer">
         {/* Fallback gradient thumbnail with icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-5xl text-bolt-elements-textTertiary/20`} />
-        </div>
+        {!hasImage && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-5xl text-bolt-elements-textTertiary/20`} />
+          </div>
+        )}
 
-        {/* If project has a thumbnail image */}
-        {project.thumbnail && (
+        {/* Cover image */}
+        {hasImage && (
           <img
-            src={project.thumbnail}
+            src={mainImage}
             alt={project.name}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
         {/* Featured badge */}
         {project.is_featured && (
@@ -391,9 +400,25 @@ function GalleryCard({
           </span>
         </div>
 
-        {/* Name overlay */}
-        <div className="absolute bottom-2 left-2 right-2">
-          <h3 className="text-sm font-bold text-white drop-shadow-md truncate">{project.name}</h3>
+        {/* Bottom overlay with name */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <div className="flex items-end gap-2.5">
+            {/* Project logo or fallback icon */}
+            {hasLogo ? (
+              <img
+                src={project.logo}
+                alt=""
+                className="w-9 h-9 rounded-lg object-cover border-2 border-white/30 shadow-md flex-shrink-0 bg-white"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
+                <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-base text-white/80`} />
+              </div>
+            )}
+            <h3 className="text-sm font-bold text-white drop-shadow-md truncate leading-tight flex-1">
+              {project.name}
+            </h3>
+          </div>
         </div>
       </button>
 
@@ -404,9 +429,13 @@ function GalleryCard({
         {/* Author + stats */}
         <div className="flex items-center justify-between mt-3 mb-2">
           <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              <div className="i-ph:user text-[10px] text-indigo-400" />
-            </div>
+            {hasLogo ? (
+              <img src={project.logo} alt="" className="w-5 h-5 rounded-full object-cover border border-bolt-elements-borderColor" />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <div className="i-ph:user text-[10px] text-indigo-400" />
+              </div>
+            )}
             <span className="text-[10px] text-bolt-elements-textTertiary font-medium truncate max-w-[80px]">
               {project.author_name}
             </span>
