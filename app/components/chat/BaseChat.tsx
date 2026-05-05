@@ -90,31 +90,25 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
-    const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([]);
+    const [attachedFiles, setAttachedFiles] = useState<{ id: string; name: string; type: string; size: number; preview: string; content: string }[]>([]);
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
         const reader = new FileReader();
         reader.onload = () => {
-          const content = reader.result as string;
+          const result = reader.result as string;
           const isImage = file.type.startsWith('image/');
-          const prefix = isImage
-            ? `[Image: ${file.name}]\n`
-            : `[File: ${file.name}]\n\`\`\`\n${content}\n\`\`\`\n\n`;
-
-          if (textareaRef?.current) {
-            const textarea = textareaRef.current;
-            const currentVal = textarea.value;
-            const newVal = currentVal + prefix;
-            const syntheticEvent = {
-              target: { value: newVal },
-            } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-            handleInputChange?.(syntheticEvent);
-            textarea.focus();
-            requestAnimationFrame(() => {
-              textarea.scrollTop = textarea.scrollHeight;
-            });
-          }
+          setAttachedFiles((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              preview: isImage ? result : '',
+              content: result,
+            },
+          ]);
         };
         if (isImage) {
           reader.readAsDataURL(file);
@@ -122,24 +116,69 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           reader.readAsText(file);
         }
       });
-    }, [textareaRef, handleInputChange]);
+    }, []);
 
-    const handleSend = useCallback((event: React.UIEvent) => {
+    const removeAttachedFile = useCallback((id: string) => {
+      setAttachedFiles((prev) => prev.filter((f) => f.id !== id));
+    }, []);
+
+    const getFileIcon = (type: string, name: string) => {
+      if (type.startsWith('image/')) return 'i-ph:image';
+      if (type.includes('pdf')) return 'i-ph:file-pdf';
+      if (type.includes('json')) return 'i-ph:brackets-curly';
+      if (name.endsWith('.zip')) return 'i-ph:archive';
+      if (name.endsWith('.html') || name.endsWith('.css')) return 'i-ph:code';
+      if (name.endsWith('.js') || name.endsWith('.ts') || name.endsWith('.tsx') || name.endsWith('.jsx')) return 'i-ph:file-js';
+      if (name.endsWith('.py')) return 'i-ph:file-py';
+      return 'i-ph:file';
+    };
+
+    const formatFileSize = (bytes: number) => {
+      if (bytes < 1024) return `${bytes}B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+    };
+
+    // Build attachment text to prepend when sending
+    const buildAttachmentPrefix = useCallback(() => {
+      return attachedFiles.map((f) => {
+        const isImage = f.type.startsWith('image/');
+        if (isImage) {
+          return `[Image: ${f.name}]\n${f.preview}\n\n`;
+        }
+        return `[File: ${f.name}]\n\`\`\`\n${f.content}\n\`\`\`\n\n`;
+      }).join('');
+    }, [attachedFiles]);
+
+    const handleSendWithAttachments = useCallback((event: React.UIEvent) => {
       if (isStreaming) {
         handleStop?.();
         return;
       }
+      // Prepend attachment content to message
+      const prefix = buildAttachmentPrefix();
+      if (prefix && textareaRef?.current) {
+        const textarea = textareaRef.current;
+        const currentVal = textarea.value;
+        const newVal = prefix + currentVal;
+        const syntheticEvent = {
+          target: { value: newVal },
+        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+        handleInputChange?.(syntheticEvent);
+        // Clear attachments after sending
+        setAttachedFiles([]);
+      }
       sendMessage?.(event);
-    }, [isStreaming, handleStop, sendMessage]);
+    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef]);
 
     const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        sendMessage?.(event);
+        handleSendWithAttachments(event);
       }
     }, [sendMessage]);
 
-    const showSendButton = input.length > 0 || isStreaming;
+    const showSendButton = input.length > 0 || attachedFiles.length > 0 || isStreaming;
 
     return (
       <div
@@ -196,6 +235,43 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
+                      {/* Attached files preview */}
+                      {attachedFiles.length > 0 && (
+                        <div className="px-3 pt-3 pb-1">
+                          <div className="flex flex-wrap gap-2">
+                            {attachedFiles.map((file) => (
+                              <div
+                                key={file.id}
+                                className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
+                              >
+                                {file.type.startsWith('image/') ? (
+                                  <img
+                                    src={file.preview}
+                                    alt={file.name}
+                                    className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                                    <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+                                  </div>
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
+                                  <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeAttachedFile(file.id)}
+                                  className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Textarea area - top */}
                       <div className="px-4 pt-3 pb-1">
                         <textarea
@@ -288,7 +364,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           {showSendButton && (
                             <button
                               type="button"
-                              onClick={handleSend}
+                              onClick={handleSendWithAttachments}
                               className={classNames(
                                 'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
                                 isStreaming
@@ -349,6 +425,43 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 <div
                   className="relative w-full max-w-chat mx-auto z-prompt sticky bottom-0"
                 >
+                  {/* Attached files preview - chat view */}
+                  {attachedFiles.length > 0 && (
+                    <div className="mb-2 p-2 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-blur-[8px]">
+                      <div className="flex flex-wrap gap-2">
+                        {attachedFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
+                          >
+                            {file.type.startsWith('image/') ? (
+                              <img
+                                src={file.preview}
+                                alt={file.name}
+                                className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                                <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+                              </div>
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
+                              <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeAttachedFile(file.id)}
+                              className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                            >
+                              <div className="i-ph:x-bold text-[8px]" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Chat input - single row inline layout */}
                   <div
                     className={classNames(
@@ -434,7 +547,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       {showSendButton && (
                         <button
                           type="button"
-                          onClick={handleSend}
+                          onClick={handleSendWithAttachments}
                           className={classNames(
                             'flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95',
                             isStreaming
