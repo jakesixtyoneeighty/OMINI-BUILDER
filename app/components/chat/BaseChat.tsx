@@ -285,7 +285,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="What do you want to build?"
+                          placeholder="How can Omni-Builder help you today? (or /command)"
                           translate="no"
                           rows={2}
                           style={{ maxHeight: 180 }}
@@ -442,7 +442,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="What do you want to build?"
+                          placeholder="How can Omni-Builder help you today? (or /command)"
                           translate="no"
                           rows={1}
                           style={{ maxHeight: 180 }}
@@ -524,7 +524,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       el.style.height = 'auto';
                       el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                     }}
-                    placeholder="What do you want to build?"
+                    placeholder="How can Omni-Builder help you today? (or /command)"
                     translate="no"
                     rows={1}
                     style={{ maxHeight: 300 }}

@@ -188,12 +188,23 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
         </div>
       </motion.div>
     ) : (
-      <div className="flex-1 flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-3 text-center px-4">
-          <div className="i-ph:code-duotone text-4xl text-bolt-elements-textTertiary" />
-          <p className="text-sm text-bolt-elements-textTertiary max-w-xs">
-            Start prompting (or editing) to see magic happen :)
-          </p>
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-bolt-elements-background-depth-2">
+        <div className="flex flex-col items-center gap-4 text-center px-4 max-w-md">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-bolt-elements-background-depth-3 border border-bolt-elements-borderColor flex items-center justify-center">
+            <div className="i-ph:code-duotone text-3xl text-bolt-elements-textTertiary" />
+          </div>
+          {/* Text */}
+          <div>
+            <p className="text-base font-medium text-bolt-elements-textSecondary">
+              Start prompting (or editing) to see magic happen :)
+            </p>
+          </div>
+        </div>
+        {/* Branding */}
+        <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+          <img src="/omni-builder-logo.svg" alt="" className="h-3.5 w-3.5 omni-logo-themed" />
+          <span className="text-[10px] font-medium text-bolt-elements-textTertiary">Made in Omni-Builder</span>
         </div>
       </div>
     )
