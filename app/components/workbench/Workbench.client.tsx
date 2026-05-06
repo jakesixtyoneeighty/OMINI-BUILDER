@@ -117,7 +117,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   }, []);
 
   return (
-    chatStarted && (
+    chatStarted ? (
       <motion.div
         initial="closed"
         animate={showWorkbench ? 'open' : 'closed'}
@@ -187,6 +187,15 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
           </div>
         </div>
       </motion.div>
+    ) : (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-3 text-center px-4">
+          <div className="i-ph:code-duotone text-4xl text-bolt-elements-textTertiary" />
+          <p className="text-sm text-bolt-elements-textTertiary max-w-xs">
+            Start prompting (or editing) to see magic happen :)
+          </p>
+        </div>
+      </div>
     )
   );
 });

@@ -190,7 +190,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         data-chat-visible={showChat}
       >
         <ClientOnly>{() => <Menu />}</ClientOnly>
-        <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
+        <div ref={scrollRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
@@ -360,142 +360,144 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             )}
 
             {/* ============ CHAT VIEW ============ */}
-            <div
-              className={classNames('pt-6 px-6', {
-                'h-full flex flex-col': chatStarted,
-              })}
-            >
-              <ClientOnly>
-                {() => {
-                  return chatStarted ? (
-                    <>
-                      <ClientOnly>{() => <ErrorBanner onFixError={errorFixHandler} />}</ClientOnly>
-                      <Messages
-                        ref={messageRef}
-                        className="flex flex-col w-full flex-1 max-w-chat px-4 pb-6 mx-auto z-1"
-                        messages={messages}
-                        isStreaming={isStreaming}
-                        tokenUsage={tokenUsage}
-                        userQuestions={userQuestions}
-                        answeredQuestions={answeredQuestions}
-                        onQuestionAnswer={onQuestionAnswer}
-                      />
-                    </>
-                  ) : null;
-                }}
-              </ClientOnly>
-              {chatStarted && (
-                <div
-                  className="relative w-full max-w-chat mx-auto z-prompt sticky bottom-0"
-                >
-                  {/* Attached files preview - chat view */}
-                  {attachedFiles.length > 0 && (
-                    <div className="mb-2 p-2 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-blur-[8px]">
-                      <div className="flex flex-wrap gap-2">
-                        {attachedFiles.map((file) => (
-                          <div
-                            key={file.id}
-                            className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
-                          >
-                            {file.type.startsWith('image/') ? (
-                              <img
-                                src={file.preview}
-                                alt={file.name}
-                                className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                                <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+            {chatStarted && (
+              <div className="flex flex-col h-full w-full">
+                {/* Messages area - scrollable */}
+                <div className="flex-1 overflow-y-auto px-4 pt-4">
+                  <ClientOnly>
+                    {() => (
+                      <>
+                        <ClientOnly>{() => <ErrorBanner onFixError={errorFixHandler} />}</ClientOnly>
+                        <Messages
+                          ref={messageRef}
+                          className="flex flex-col w-full max-w-chat mx-auto z-1"
+                          messages={messages}
+                          isStreaming={isStreaming}
+                          tokenUsage={tokenUsage}
+                          userQuestions={userQuestions}
+                          answeredQuestions={answeredQuestions}
+                          onQuestionAnswer={onQuestionAnswer}
+                        />
+                      </>
+                    )}
+                  </ClientOnly>
+                </div>
+
+                {/* Sticky input at bottom - card style matching landing page */}
+                <div className="shrink-0 px-4 pb-4 pt-2">
+                  <div className="relative w-full max-w-chat mx-auto z-prompt">
+                    <div
+                      className={classNames(
+                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
+                        planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                      )}
+                    >
+                      {/* Attached files preview */}
+                      {attachedFiles.length > 0 && (
+                        <div className="px-3 pt-3 pb-1">
+                          <div className="flex flex-wrap gap-2">
+                            {attachedFiles.map((file) => (
+                              <div
+                                key={file.id}
+                                className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
+                              >
+                                {file.type.startsWith('image/') ? (
+                                  <img
+                                    src={file.preview}
+                                    alt={file.name}
+                                    className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                                    <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+                                  </div>
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
+                                  <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeAttachedFile(file.id)}
+                                  className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
                               </div>
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
-                              <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeAttachedFile(file.id)}
-                              className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
-                            >
-                              <div className="i-ph:x-bold text-[8px]" />
-                            </button>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      {/* Textarea area */}
+                      <div className="px-4 pt-3 pb-1">
+                        <textarea
+                          ref={textareaRef}
+                          className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
+                          onKeyDown={handleKeyDown}
+                          value={input}
+                          onChange={(event) => {
+                            handleInputChange?.(event);
+                            const el = event.target;
+                            el.style.height = 'auto';
+                            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+                          }}
+                          placeholder="What do you want to build?"
+                          translate="no"
+                          rows={1}
+                          style={{ maxHeight: 180 }}
+                        />
+                      </div>
+
+                      {/* Divider */}
+                      <div className="mx-4 border-t border-bolt-elements-borderColor" />
+
+                      {/* Toolbar row */}
+                      <div className="flex items-center justify-between px-3 py-2">
+                        {/* Left group */}
+                        <div className="flex items-center gap-2">
+                          <ClientOnly>
+                            {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
+                          </ClientOnly>
+                          <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+                          <ClientOnly>
+                            {() => (
+                              <BuildPlanDropdown
+                                planMode={planMode}
+                                isStreaming={isStreaming}
+                                onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
+                                onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                              />
+                            )}
+                          </ClientOnly>
+                        </div>
+
+                        {/* Right: Send button */}
+                        <button
+                          type="button"
+                          onClick={handleSendWithAttachments}
+                          disabled={!input && !isStreaming && attachedFiles.length === 0}
+                          className={classNames(
+                            'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
+                            isStreaming
+                              ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                              : input || attachedFiles.length > 0
+                                ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
+                                : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
+                          )}
+                        >
+                          {isStreaming ? (
+                            <div className="i-ph:stop-bold text-[13px]" />
+                          ) : (
+                            <div className="i-ph:arrow-up-bold text-[14px]" />
+                          )}
+                        </button>
                       </div>
                     </div>
-                  )}
-
-                  {/* Chat input - single row inline layout */}
-                  <div
-                    className={classNames(
-                      'flex items-center gap-2.5 border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 px-3 py-3',
-                      planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
-                    )}
-                  >
-                    {/* Left: + button */}
-                    <ClientOnly>
-                      {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
-                    </ClientOnly>
-
-                    {/* Center: textarea */}
-                    <textarea
-                      ref={textareaRef}
-                      className="flex-1 py-2 px-2 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
-                      onKeyDown={handleKeyDown}
-                      value={input}
-                      onChange={(event) => {
-                        handleInputChange?.(event);
-                        const el = event.target;
-                        el.style.height = 'auto';
-                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                      }}
-                      placeholder="What do you want to build?"
-                      translate="no"
-                      rows={1}
-                      style={{ maxHeight: 300 }}
-                    />
-
-                    {/* Right side buttons */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-
-                      <ClientOnly>
-                        {() => (
-                          <BuildPlanDropdown
-                            planMode={planMode}
-                            isStreaming={isStreaming}
-                            onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
-                            onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
-                          />
-                        )}
-                      </ClientOnly>
-
-                      {/* Send button - always visible */}
-                      <button
-                        type="button"
-                        onClick={handleSendWithAttachments}
-                        disabled={!input && !isStreaming && attachedFiles.length === 0}
-                        className={classNames(
-                          'flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95',
-                          isStreaming
-                            ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                            : input || attachedFiles.length > 0
-                              ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
-                              : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
-                        )}
-                      >
-                        {isStreaming ? (
-                          <div className="i-ph:stop-bold text-[12px]" />
-                        ) : (
-                          <div className="i-ph:arrow-up-bold text-[13px]" />
-                        )}
-                      </button>
-                    </div>
                   </div>
-                  <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             {/* ============ FLOATING AI INPUT (visible when chat panel is hidden) ============ */}
             {chatStarted && !showChat && (
               <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[700px] px-4">

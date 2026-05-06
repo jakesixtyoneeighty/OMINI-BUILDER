@@ -21,18 +21,17 @@ export function Header() {
   const appSettingsRef = useRef<{ setTab: (t: string) => void } | null>(null);
 
   return (
-    <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
+    <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 px-4 py-1.5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
-        <div className="i-ph:sidebar-simple-duotone text-xl" />
         <a href="/" className="flex items-center">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-12 omni-logo-themed" />
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-8 omni-logo-themed" />
         </a>
         <a
           href="/gallery"
-          className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/35 transition-all"
+          className="ml-1 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-bolt-elements-button-secondary-background text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:bg-bolt-elements-button-secondary-backgroundHover hover:text-bolt-elements-textPrimary transition-all"
         >
-          <div className="i-ph:storefront-duotone text-sm" />
-          Galeria
+          <div className="i-ph:storefront-duotone text-xs" />
+          Gallery
         </a>
       </div>
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
