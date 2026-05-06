@@ -7,6 +7,7 @@ import { classNames } from '~/utils/classNames';
 import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
+import { GitHubImport } from './GitHubImport.client';
 import { RecentlyViewed } from './RecentlyViewed';
 import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
