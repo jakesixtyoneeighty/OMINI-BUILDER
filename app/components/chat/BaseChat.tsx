@@ -1,6 +1,7 @@
 import type { Message } from 'ai';
-import React, { type RefCallback, useState, useCallback } from 'react';
+import React, { type RefCallback, useState, useCallback, useRef, useEffect } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
+import { useStore } from '@nanostores/react';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
@@ -11,6 +12,8 @@ import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { RecentlyViewed } from './RecentlyViewed';
 import type { DetectedError } from '~/lib/stores/errors';
+import { chatWidthStore } from '~/lib/stores/layout';
+import { chatStore } from '~/lib/stores/chat';
 
 import styles from './BaseChat.module.scss';
 
@@ -84,6 +87,43 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   ) => {
     const [attachedFiles, setAttachedFiles] = useState<{ id: string; name: string; type: string; size: number; preview: string; content: string }[]>([]);
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
+
+    // Resizable layout state
+    const chatWidthPct = useStore(chatWidthStore);
+    const showWorkbench = useStore(chatStore).started;
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isResizing, setIsResizing] = useState(false);
+
+    // Resize handle logic
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      const startX = e.clientX;
+      const startWidth = chatWidthPct;
+      const containerEl = containerRef.current;
+      if (!containerEl) return;
+      const containerWidth = containerEl.offsetWidth;
+
+      const handleMove = (moveEvent: MouseEvent) => {
+        const delta = moveEvent.clientX - startX;
+        const deltaPct = (delta / containerWidth) * 100;
+        const newPct = Math.min(80, Math.max(20, startWidth + deltaPct));
+        chatWidthStore.set(newPct);
+      };
+
+      const handleUp = () => {
+        setIsResizing(false);
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mouseup', handleUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleUp);
+    }, [chatWidthPct]);
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
@@ -180,8 +220,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         )}
         data-chat-visible={showChat}
       >
-        <div ref={scrollRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
-          <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
+        <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
+          {/* Chat panel - resizable */}
+          <div
+            className={classNames(styles.Chat, 'flex flex-col h-full shrink-0')}
+            style={chatStarted ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
+          >
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
             {!chatStarted && (
@@ -617,6 +661,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               </div>
             )}
           </div>
+
+          {/* Resize handle - only visible when chat is started */}
+          {chatStarted && (
+            <div
+              onMouseDown={handleResizeStart}
+              className={classNames(
+                'relative w-[5px] shrink-0 cursor-col-resize group z-10',
+                isResizing ? 'bg-bolt-elements-item-contentAccent' : 'hover:bg-bolt-elements-borderColorActive',
+                'transition-colors duration-100',
+              )}
+              title="Drag to resize"
+            >
+              {/* Visible handle indicator */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3px] h-8 rounded-full bg-bolt-elements-borderColor group-hover:bg-bolt-elements-item-contentAccent transition-colors" />
+            </div>
+          )}
+
+          {/* Workbench panel - takes remaining space */}
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
       </div>
