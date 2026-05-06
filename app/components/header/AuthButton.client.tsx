@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react';
 import { useEffect, useState } from 'react';
 import { authStore, githubProviderTokenStore, initAuth, signOut, supabaseEnabled } from '~/lib/stores/auth';
 import { AuthDialog } from './AuthDialog.client';
+import { AccountSettingsDialog } from './AccountSettingsDialog.client';
 
 let initialized = false;
 
@@ -10,6 +11,7 @@ export function AuthButton() {
   const ghToken = useStore(githubProviderTokenStore);
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
@@ -71,6 +73,16 @@ export function AuthButton() {
             </div>
           </div>
           <button
+            onClick={() => {
+              setMenu(false);
+              setAccountSettingsOpen(true);
+            }}
+            className="w-full text-left px-4 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive flex items-center gap-2 transition-all"
+          >
+            <div className="i-ph:user-circle text-base" />
+            Account Settings
+          </button>
+          <button
             onClick={async () => {
               setMenu(false);
               await signOut();
@@ -82,6 +94,7 @@ export function AuthButton() {
           </button>
         </div>
       )}
+      <AccountSettingsDialog open={accountSettingsOpen} onClose={() => setAccountSettingsOpen(false)} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
+import { AccountSettingsDialog } from '~/components/header/AccountSettingsDialog.client';
 import { getDb, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -50,6 +51,7 @@ export function Menu() {
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [navSection, setNavSection] = useState<'main' | 'chats'>('main');
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -170,11 +172,14 @@ export function Menu() {
 
   const sidebar = (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      {/* User account section */}
-      <div className={`flex items-center gap-3 border-b border-bolt-elements-borderColor ${collapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'}`}>
+      {/* User account section - clickable to open settings */}
+      <button
+        onClick={() => setAccountSettingsOpen(true)}
+        className={`w-full flex items-center gap-3 border-b border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive transition-all ${collapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'}`}
+        title={collapsed ? `${displayName} — Account Settings` : 'Account Settings'}
+      >
         <div
           className="flex items-center justify-center w-8 h-8 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText text-xs font-bold shrink-0 overflow-hidden"
-          title={collapsed ? displayName : undefined}
         >
           {userAvatar ? (
             <img src={userAvatar} alt={displayName} className="w-full h-full object-cover" />
@@ -183,7 +188,7 @@ export function Menu() {
           )}
         </div>
         {!collapsed && (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <div className="text-sm font-medium text-bolt-elements-textPrimary truncate">{displayName}</div>
             {userEmail && (
               <div className="text-[11px] text-bolt-elements-textTertiary truncate">{userEmail}</div>
@@ -191,11 +196,9 @@ export function Menu() {
           </div>
         )}
         {!collapsed && (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText">
-            Free
-          </span>
+          <div className="i-ph:gear-six text-sm text-bolt-elements-textTertiary" />
         )}
-      </div>
+      </button>
 
       {/* Navigation items */}
       {navSection === 'main' ? (
@@ -454,6 +457,7 @@ export function Menu() {
       >
         {sidebar}
       </motion.div>
+      <AccountSettingsDialog open={accountSettingsOpen} onClose={() => setAccountSettingsOpen(false)} />
     </>
   );
 }

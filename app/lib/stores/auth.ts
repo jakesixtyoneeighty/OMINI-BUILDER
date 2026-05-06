@@ -53,6 +53,33 @@ export async function initAuth() {
   authStore.setKey('initialized', true);
   if (!sb) return;
 
+  // Helper to load profile from profiles table and merge into user_metadata
+  const mergeProfile = async (userId: string) => {
+    try {
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', userId)
+        .single();
+      if (profile) {
+        const current = authStore.get();
+        if (current.user) {
+          const meta = { ...current.user.user_metadata };
+          if (profile.display_name && !meta.full_name && !meta.name) {
+            meta.full_name = profile.display_name;
+          }
+          if (profile.avatar_url && !meta.avatar_url) {
+            meta.avatar_url = profile.avatar_url;
+          }
+          // Update the user object with merged metadata
+          authStore.setKey('user', { ...current.user, user_metadata: meta });
+        }
+      }
+    } catch {
+      // Profile may not exist yet, that's fine
+    }
+  };
+
   // Prevent multiple onAuthStateChange registrations (causes infinite loop)
   if (_authListenerRegistered) {
     // Still refresh the session
@@ -73,6 +100,8 @@ export async function initAuth() {
       }
       const { loadKeysFromSupabase } = await import('./llm');
       await loadKeysFromSupabase();
+      // Load profile data (avatar, display name) from profiles table
+      await mergeProfile(data.session.user.id);
     }
     return;
   }
@@ -96,6 +125,8 @@ export async function initAuth() {
     }
     const { loadKeysFromSupabase } = await import('./llm');
     await loadKeysFromSupabase();
+    // Load profile data (avatar, display name) from profiles table
+    await mergeProfile(data.session.user.id);
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
@@ -119,6 +150,10 @@ export async function initAuth() {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
       const { loadKeysFromSupabase } = await import('./llm');
       await loadKeysFromSupabase();
+      // Load profile data from profiles table after sign in
+      if (session?.user) {
+        await mergeProfile(session.user.id);
+      }
     }
   });
 }
