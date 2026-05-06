@@ -86,3 +86,58 @@ body {
   outline: 1px solid rgba(129, 140, 248, 0.5);
   outline-offset: 1px;
 }
+
+/* ===== Sidebar Styles ===== */
+.bg-bolt-elements-sidebar-background {
+  background-color: var(--bolt-elements-sidebar-background);
+}
+
+/* Light theme sidebar text adjustments */
+[data-theme="light"] .bg-bolt-elements-sidebar-background {
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Sidebar scrollbar styling */
+.bg-bolt-elements-sidebar-background ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.bg-bolt-elements-sidebar-background ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bg-bolt-elements-sidebar-background ::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 2px;
+}
+
+.bg-bolt-elements-sidebar-background ::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.35);
+}
+
+/* ===== Landing Page Arc Decorations ===== */
+/* The arc and gradient decorations use CSS custom properties for theme-aware rendering */
+
+/* ===== Light Theme Homepage Enhancements ===== */
+[data-theme="light"] .bg-bolt-elements-background-depth-1 {
+  /* Ensure the landing page background is clean white in light mode */
+  background-color: #ffffff;
+}
+
+/* Light theme prompt card shadow */
+[data-theme="light"] .z-prompt:focus-within {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 20px -5px rgba(59, 130, 246, 0.08);
+}
+
+/* Light theme sidebar shadow */
+[data-theme="light"] .bg-bolt-elements-sidebar-background {
+  box-shadow: 1px 0 0 0 var(--bolt-elements-borderColor);
+}
+
+/* ===== GitHub Import Button Style Override ===== */
+/* Make the GitHub import button match the "or start from" row style */
+.or-start-from-github .inline-flex.items-center.gap-2.px-4.py-2 {
+  padding: 6px 12px;
+  font-size: 12px;
+}

@@ -1,8 +1,6 @@
 import type { Message } from 'ai';
 import React, { type RefCallback, useState, useCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
-import { Menu } from '~/components/sidebar/Menu.client';
-import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
@@ -11,6 +9,7 @@ import { ModelPicker } from '../header/ModelPicker.client';
 import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
+import { RecentlyViewed } from './RecentlyViewed';
 import type { DetectedError } from '~/lib/stores/errors';
 
 import styles from './BaseChat.module.scss';
@@ -53,13 +52,7 @@ interface BaseChatProps {
   errorFixHandler?: (error: DetectedError) => void;
 }
 
-const EXAMPLE_PROMPTS = [
-  { text: 'Build a todo app in React using Tailwind' },
-  { text: 'Build a simple blog using Astro' },
-  { text: 'Create a cookie consent form using Material UI' },
-  { text: 'Make a space invaders game' },
-  { text: 'How do I center a div?' },
-];
+type BuildMode = 'standard' | 'design-system' | 'plan';
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
@@ -90,6 +83,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     ref,
   ) => {
     const [attachedFiles, setAttachedFiles] = useState<{ id: string; name: string; type: string; size: number; preview: string; content: string }[]>([]);
+    const [buildMode, setBuildMode] = useState<BuildMode>('standard');
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
@@ -177,9 +171,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     }, [sendMessage]);
 
-    // Send button is always visible (Bolt.new style)
-    const showSendButton = true;
-
     return (
       <div
         ref={ref}
@@ -189,30 +180,31 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         )}
         data-chat-visible={showChat}
       >
-        <ClientOnly>{() => <Menu />}</ClientOnly>
         <div ref={scrollRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
             {!chatStarted && (
-              <div className="w-full flex flex-col h-full relative">
-                {/* Subtle background gradient glow at bottom */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-blue-600/10 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-                {/* Announcement banner */}
-                <div className="flex justify-center mt-4 mb-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-all cursor-default">
-                    <div className="i-ph:sparkle-fill text-xs" />
-                    Introducing Omni-Builder — AI-powered app builder
-                  </span>
+              <div className="w-full flex flex-col h-full relative overflow-y-auto">
+                {/* Background gradient with arc decoration - theme-aware */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  {/* Main gradient */}
+                  <div className="absolute top-0 left-0 right-0 h-[70%]" style={{ background: `linear-gradient(to bottom, var(--bolt-elements-homepage-gradient-from), var(--bolt-elements-homepage-gradient-to))` }} />
+                  {/* Decorative arcs */}
+                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[120%] h-[500px] border-[1px] rounded-[50%]" style={{ borderColor: 'var(--bolt-elements-homepage-arc)' }} />
+                  <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[90%] h-[400px] border-[1px] rounded-[50%]" style={{ borderColor: 'var(--bolt-elements-homepage-arc)', opacity: 0.5 }} />
+                  {/* Gradient glow at bottom center */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full blur-3xl" style={{ background: `linear-gradient(to top, var(--bolt-elements-homepage-glow), transparent)` }} />
+                  {/* Subtle accent dot */}
+                  <div className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--bolt-elements-homepage-arc)' }} />
                 </div>
 
                 {/* Hero Section */}
                 <div className="mt-[12vh] max-w-2xl mx-auto px-4 text-center relative z-10">
-                  {/* Headline - Bolt style */}
+                  {/* Headline */}
                   <h1 className="text-4xl sm:text-[52px] font-bold text-bolt-elements-textPrimary mb-4 leading-[1.1] tracking-tight">
                     What will you{' '}
-                    <span className="text-blue-400">build</span>
+                    <span className="text-bolt-elements-item-contentAccent">build</span>
                     {' '}today?
                   </h1>
 
@@ -222,22 +214,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   </p>
                 </div>
 
-                {/* Spacer */}
-                <div className="flex-1 relative z-10" />
-
-                {/* Input Box Area */}
-                <div className="px-6 pb-4 relative z-10">
+                {/* "Let's build" Input Card */}
+                <div className="px-4 pb-4 relative z-10">
                   <div className="relative w-full max-w-chat mx-auto z-prompt">
-                    {/* Input box: textarea + buttons inside, buttons in separate row below */}
+                    {/* Input card */}
                     <div
                       className={classNames(
-                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
-                        planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
+                        planMode || buildMode === 'plan' ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
+                      {/* Card header */}
+                      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">Let&apos;s build</span>
+                      </div>
+
                       {/* Attached files preview */}
                       {attachedFiles.length > 0 && (
-                        <div className="px-3 pt-3 pb-1">
+                        <div className="px-3 pt-1 pb-1">
                           <div className="flex flex-wrap gap-2">
                             {attachedFiles.map((file) => (
                               <div
@@ -272,8 +266,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       )}
 
-                      {/* Textarea area - top */}
-                      <div className="px-4 pt-3 pb-1">
+                      {/* Textarea area */}
+                      <div className="px-4 pt-1 pb-1">
                         <textarea
                           ref={textareaRef}
                           className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
@@ -285,7 +279,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="How can Omni-Builder help you today? (or /command)"
+                          placeholder="How can Omni-Builder help you today?"
                           translate="no"
                           rows={2}
                           style={{ maxHeight: 180 }}
@@ -295,66 +289,119 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       {/* Divider */}
                       <div className="mx-4 border-t border-bolt-elements-borderColor" />
 
-                      {/* Buttons toolbar row - inside the same box */}
+                      {/* Toolbar row with build modes + Build now button */}
                       <div className="flex items-center justify-between px-3 py-2.5">
-                        {/* Left group */}
-                        <div className="flex items-center gap-2">
+                        {/* Left group: + button + mode options */}
+                        <div className="flex items-center gap-1.5">
                           {/* + file upload */}
                           <ClientOnly>
                             {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                           </ClientOnly>
 
-                          {/* Model picker */}
-                          <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+                          {/* Separator */}
+                          <div className="w-px h-5 bg-bolt-elements-borderColor mx-0.5" />
 
-                          {/* Build / Plan dropdown */}
-                          <ClientOnly>
-                            {() => (
-                              <BuildPlanDropdown
-                                planMode={planMode}
-                                isStreaming={isStreaming}
-                                onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
-                                onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
-                              />
-                            )}
-                          </ClientOnly>
-                        </div>
-
-                        {/* Right group */}
-                        <div className="flex items-center gap-2">
-                          {/* Send / Stop button - always visible */}
+                          {/* Standard mode */}
                           <button
                             type="button"
-                            onClick={handleSendWithAttachments}
-                            disabled={!input && !isStreaming && attachedFiles.length === 0}
+                            onClick={() => setBuildMode('standard')}
                             className={classNames(
-                              'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
-                              isStreaming
-                                ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                                : input || attachedFiles.length > 0
-                                  ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
-                                  : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
+                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                              buildMode === 'standard'
+                                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
+                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
                             )}
                           >
-                            {isStreaming ? (
-                              <div className="i-ph:stop-bold text-[13px]" />
-                            ) : (
-                              <div className="i-ph:arrow-up-bold text-[14px]" />
+                            <div className="i-ph:code text-sm" />
+                            Standard
+                          </button>
+
+                          {/* Design System mode */}
+                          <button
+                            type="button"
+                            onClick={() => setBuildMode('design-system')}
+                            className={classNames(
+                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                              buildMode === 'design-system'
+                                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
+                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
                             )}
+                          >
+                            <div className="i-ph:palette text-sm" />
+                            Design System
+                          </button>
+
+                          {/* Plan mode */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBuildMode('plan');
+                              if (!planMode) onTogglePlanMode?.();
+                            }}
+                            className={classNames(
+                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                              buildMode === 'plan'
+                                ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
+                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                            )}
+                          >
+                            <div className="i-ph:list-checks text-sm" />
+                            Plan
                           </button>
                         </div>
+
+                        {/* Right group: Build now button */}
+                        <button
+                          type="button"
+                          onClick={handleSendWithAttachments}
+                          disabled={!input && !isStreaming && attachedFiles.length === 0}
+                          className={classNames(
+                            'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
+                            isStreaming
+                              ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent'
+                              : input || attachedFiles.length > 0
+                                ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110 shadow-sm'
+                                : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
+                          )}
+                        >
+                          Build now
+                          <div className="i-ph:arrow-right text-sm" />
+                        </button>
                       </div>
                     </div>
-                    {/* End input box */}
+                    {/* End input card */}
 
-                    {/* "or start from" links - Bolt style */}
-                    {importFromGithub && (
-                      <div className="mt-3 flex items-center justify-center gap-3">
-                        <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
-                        <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+                    {/* "or start from" row */}
+                    <div className="mt-3 flex items-center justify-center gap-3">
+                      <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                        >
+                          <div className="i-ph:figma-logo text-sm" />
+                          Figma
+                        </button>
+
+                        {importFromGithub && (
+                          <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+                        )}
+
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                        >
+                          <div className="i-ph:files text-sm" />
+                          Team template
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Recently viewed section */}
+                <div className="pb-8 pt-6 relative z-10">
+                  <RecentlyViewed />
                 </div>
               </div>
             )}
@@ -389,7 +436,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div
                       className={classNames(
                         'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
-                        planMode ? 'border-blue-400/50 shadow-[0_0_0_2px_rgba(96,165,250,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                        planMode ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
                       {/* Attached files preview */}

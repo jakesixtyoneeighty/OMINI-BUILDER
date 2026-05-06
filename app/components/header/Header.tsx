@@ -81,6 +81,11 @@ export function Header() {
   // Preview URL for address bar
   const previewUrl = previews.length > 0 ? previews[0].baseUrl : '';
 
+  // If chat hasn't started, show the homepage header
+  if (!chat.started) {
+    return <HomepageHeader />;
+  }
+
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo */}
@@ -230,6 +235,112 @@ export function Header() {
             </>
           )}
         </ClientOnly>
+      </div>
+    </header>
+  );
+}
+
+/* ===== Homepage Header ===== */
+function HomepageHeader() {
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const resourcesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!resourcesOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (resourcesRef.current && !resourcesRef.current.contains(e.target as Node)) {
+        setResourcesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [resourcesOpen]);
+
+  return (
+    <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
+      {/* LEFT: Logo */}
+      <div className="flex items-center gap-2.5 px-4 shrink-0">
+        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-6 w-6 omni-logo-themed" />
+          <span className="text-sm font-bold text-bolt-elements-textPrimary">Omni Builder</span>
+        </a>
+      </div>
+
+      {/* CENTER: Search bar */}
+      <div className="flex-1 flex items-center justify-center px-4 max-w-xl mx-auto">
+        <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-borderColorActive transition-all cursor-text">
+          <div className="i-ph:magnifying-glass text-sm text-bolt-elements-textTertiary" />
+          <span className="text-sm text-bolt-elements-textTertiary">Search</span>
+          <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+            Ctrl+K
+          </kbd>
+        </div>
+      </div>
+
+      {/* RIGHT: Navigation links */}
+      <div className="flex items-center gap-1 px-4 shrink-0">
+        <a
+          href="https://discord.gg/stackblitz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+        >
+          Community
+        </a>
+        <a
+          href="#"
+          className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+        >
+          Enterprise
+        </a>
+        <div ref={resourcesRef} className="relative hidden md:block">
+          <button
+            onClick={() => setResourcesOpen(!resourcesOpen)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+          >
+            Resources
+            <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${resourcesOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {resourcesOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">
+              <a
+                href="/gallery"
+                onClick={() => setResourcesOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+              >
+                <div className="i-ph:storefront text-base" />
+                Gallery
+              </a>
+              <a
+                href="https://github.com/stackblitz/bolt.new"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setResourcesOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+              >
+                <div className="i-ph:book-open-text text-base" />
+                Documentation
+              </a>
+              <a
+                href="https://github.com/stackblitz/bolt.new"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setResourcesOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+              >
+                <div className="i-ph:github-logo text-base" />
+                GitHub
+              </a>
+            </div>
+          )}
+        </div>
+        <a
+          href="#"
+          className="flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+        >
+          Pricing
+        </a>
+        <ClientOnly>{() => <AuthButton />}</ClientOnly>
       </div>
     </header>
   );

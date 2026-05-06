@@ -63,12 +63,18 @@
 
   --bolt-elements-dividerColor: theme('colors.gray.100');
 
-  --bolt-elements-prompt-background: theme('colors.alpha.white.80');
+  --bolt-elements-prompt-background: rgba(255, 255, 255, 0.92);
 
   --bolt-elements-sidebar-dropdownShadow: theme('colors.alpha.gray.10');
   --bolt-elements-sidebar-buttonBackgroundDefault: theme('colors.alpha.accent.10');
   --bolt-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.accent.20');
   --bolt-elements-sidebar-buttonText: theme('colors.accent.700');
+  --bolt-elements-sidebar-background: #ffffff;
+
+  --bolt-elements-homepage-gradient-from: rgba(59, 130, 246, 0.08);
+  --bolt-elements-homepage-gradient-to: rgba(255, 255, 255, 0);
+  --bolt-elements-homepage-arc: rgba(59, 130, 246, 0.08);
+  --bolt-elements-homepage-glow: rgba(59, 130, 246, 0.1);
 
   --bolt-elements-preview-addressBar-background: theme('colors.gray.100');
   --bolt-elements-preview-addressBar-backgroundHover: theme('colors.alpha.gray.5');
@@ -175,6 +181,12 @@
   --bolt-elements-sidebar-buttonBackgroundDefault: rgba(99, 102, 241, 0.1);
   --bolt-elements-sidebar-buttonBackgroundHover: rgba(99, 102, 241, 0.2);
   --bolt-elements-sidebar-buttonText: #818cf8;
+  --bolt-elements-sidebar-background: #1e1e1e;
+
+  --bolt-elements-homepage-gradient-from: rgba(30, 58, 138, 0.35);
+  --bolt-elements-homepage-gradient-to: rgba(0, 0, 0, 0);
+  --bolt-elements-homepage-arc: rgba(99, 102, 241, 0.1);
+  --bolt-elements-homepage-glow: rgba(99, 102, 241, 0.15);
 
   --bolt-elements-preview-addressBar-background: #111114;
   --bolt-elements-preview-addressBar-backgroundHover: rgba(255, 255, 255, 0.04);
@@ -217,6 +229,7 @@
  */
 :root {
   --header-height: 54px;
+  --sidebar-width: 240px;
   --chat-max-width: 37rem;
   --chat-min-width: 640px;
   --workbench-width: min(calc(100% - var(--chat-min-width)), 1536px);

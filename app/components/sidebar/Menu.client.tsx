@@ -1,34 +1,31 @@
+import { useStore } from '@nanostores/react';
 import { motion, type Variants } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
-import { IconButton } from '~/components/ui/IconButton';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { db, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore } from '~/lib/stores/project';
+import { authStore } from '~/lib/stores/auth';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
 import { binDates } from './date-binning';
 
-const menuVariants = {
+const sidebarVariants = {
   closed: {
-    opacity: 0,
-    visibility: 'hidden',
-    left: '-150px',
+    x: '-100%',
     transition: {
-      duration: 0.2,
+      duration: 0.25,
       ease: cubicEasingFn,
     },
   },
   open: {
-    opacity: 1,
-    visibility: 'initial',
-    left: 0,
+    x: 0,
     transition: {
-      duration: 0.2,
+      duration: 0.25,
       ease: cubicEasingFn,
     },
   },
@@ -36,11 +33,38 @@ const menuVariants = {
 
 type DialogContent = { type: 'delete'; item: ChatHistoryItem } | null;
 
+type NavItem = {
+  icon: string;
+  label: string;
+  href?: string;
+  active?: boolean;
+  external?: boolean;
+  onClick?: () => void;
+};
+
 export function Menu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<ChatHistoryItem[]>([]);
-  const [open, setOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [navSection, setNavSection] = useState<'main' | 'chats'>('main');
+  const { user } = useStore(authStore);
+  const chatStarted = useStore(chatStore).started;
+
+  // Navigation items
+  const navItems: NavItem[] = [
+    { icon: 'i-ph:house', label: 'Home', href: '/', active: !chatStarted },
+    { icon: 'i-ph:folder', label: 'Projects', onClick: () => setNavSection('chats') },
+    { icon: 'i-ph:star', label: 'Starred' },
+    { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed' },
+    { icon: 'i-ph:users-three', label: 'Shared with you' },
+    {
+      icon: 'i-ph:book-open-text',
+      label: 'Docs & Help center',
+      href: 'https://github.com/stackblitz/bolt.new',
+      external: true,
+    },
+  ];
 
   const loadEntries = useCallback(() => {
     if (db) {
@@ -60,7 +84,6 @@ export function Menu() {
           loadEntries();
 
           if (chatId.get() === item.id) {
-            // hard page navigation to clear the stores
             window.location.pathname = '/';
           }
         })
@@ -76,118 +99,273 @@ export function Menu() {
   };
 
   useEffect(() => {
-    if (open) {
-      loadEntries();
-    }
-  }, [open]);
+    loadEntries();
+  }, [loadEntries]);
 
+  // Close mobile sidebar on route change or chat start
   useEffect(() => {
-    const enterThreshold = 40;
-    const exitThreshold = 40;
+    setMobileOpen(false);
+  }, [chatStarted]);
 
-    function onMouseMove(event: MouseEvent) {
-      if (event.pageX < enterThreshold) {
-        setOpen(true);
+  // Close mobile sidebar on outside click
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
       }
-
-      if (menuRef.current && event.clientX > menuRef.current.getBoundingClientRect().right + exitThreshold) {
-        setOpen(false);
-      }
-    }
-
-    window.addEventListener('mousemove', onMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [mobileOpen]);
 
-  return (
-    <motion.div
-      ref={menuRef}
-      initial="closed"
-      animate={open ? 'open' : 'closed'}
-      variants={menuVariants}
-      className="flex flex-col side-menu fixed top-0 w-[350px] h-full bg-bolt-elements-background-depth-2 border-r rounded-r-3xl border-bolt-elements-borderColor z-sidebar shadow-xl shadow-bolt-elements-sidebar-dropdownShadow text-sm"
-    >
-      <div className="flex items-center h-[var(--header-height)]">{/* Placeholder */}</div>
-      <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        <div className="p-4">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              // Reset all state and clear everything for a fresh start
-              chatStore.set({ started: false, aborted: false, showChat: true });
-              workbenchStore.showWorkbench.set(false);
-              workbenchStore.currentView.set('code');
-              // Clear files cache with the correct key
-              localStorage.removeItem('omni-builder.files.cache');
-              localStorage.removeItem('bolt.files.cache');
-              // Clear snapshots for current project
-              const pid = activeProjectIdStore.get();
-              if (pid) {
-                localStorage.removeItem(`bolt.snapshots.${pid}`);
-              }
-              // Reset active project to default
-              activeProjectIdStore.set('default');
-              // Full page navigation to reset everything
-              window.location.href = '/';
-            }}
-            className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme w-full text-left"
-          >
-            <span className="inline-block i-bolt:chat scale-110" />
-            Start new chat
-          </button>
+  const handleNewChat = () => {
+    chatStore.set({ started: false, aborted: false, showChat: true });
+    workbenchStore.showWorkbench.set(false);
+    workbenchStore.currentView.set('code');
+    localStorage.removeItem('omni-builder.files.cache');
+    localStorage.removeItem('bolt.files.cache');
+    const pid = activeProjectIdStore.get();
+    if (pid) {
+      localStorage.removeItem(`bolt.snapshots.${pid}`);
+    }
+    activeProjectIdStore.set('default');
+    window.location.href = '/';
+  };
+
+  const userEmail = user?.email || '';
+  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+  const userAvatar = user?.user_metadata?.avatar_url || '';
+  const displayName = userName || userEmail || 'Guest';
+
+  const sidebar = (
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* User account section */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-bolt-elements-borderColor">
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText text-xs font-bold shrink-0 overflow-hidden">
+          {userAvatar ? (
+            <img src={userAvatar} alt={displayName} className="w-full h-full object-cover" />
+          ) : (
+            <span>{displayName.charAt(0).toUpperCase()}</span>
+          )}
         </div>
-        <div className="text-bolt-elements-textPrimary font-medium pl-6 pr-5 my-2">Your Chats</div>
-        <div className="flex-1 overflow-scroll pl-4 pr-5 pb-5">
-          {list.length === 0 && <div className="pl-2 text-bolt-elements-textTertiary">No previous conversations</div>}
-          <DialogRoot open={dialogContent !== null}>
-            {binDates(list).map(({ category, items }) => (
-              <div key={category} className="mt-4 first:mt-0 space-y-1">
-                <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-background-depth-2 pl-2 pt-2 pb-1">
-                  {category}
-                </div>
-                {items.map((item) => (
-                  <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
-                ))}
-              </div>
-            ))}
-            <Dialog onBackdrop={closeDialog} onClose={closeDialog}>
-              {dialogContent?.type === 'delete' && (
-                <>
-                  <DialogTitle>Delete Chat?</DialogTitle>
-                  <DialogDescription asChild>
-                    <div>
-                      <p>
-                        You are about to delete <strong>{dialogContent.item.description}</strong>.
-                      </p>
-                      <p className="mt-1">Are you sure you want to delete this chat?</p>
-                    </div>
-                  </DialogDescription>
-                  <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
-                    <DialogButton type="secondary" onClick={closeDialog}>
-                      Cancel
-                    </DialogButton>
-                    <DialogButton
-                      type="danger"
-                      onClick={(event) => {
-                        deleteItem(event, dialogContent.item);
-                        closeDialog();
-                      }}
-                    >
-                      Delete
-                    </DialogButton>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-bolt-elements-textPrimary truncate">{displayName}</div>
+          {userEmail && (
+            <div className="text-[11px] text-bolt-elements-textTertiary truncate">{userEmail}</div>
+          )}
+        </div>
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText">
+          Free
+        </span>
+      </div>
+
+      {/* Navigation items */}
+      {navSection === 'main' ? (
+        <div className="flex flex-col px-2 py-2">
+          {navItems.map((item) => {
+            const content = (
+              <>
+                <div className={`${item.icon} text-base`} />
+                <span className="text-sm">{item.label}</span>
+                {item.active && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-bolt-elements-item-contentAccent" />
+                )}
+                {item.external && (
+                  <div className="i-ph:arrow-square-out text-xs ml-auto text-bolt-elements-textTertiary" />
+                )}
+              </>
+            );
+
+            const cls = `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
+              item.active
+                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary font-medium'
+                : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
+            }`;
+
+            if (item.href && item.external) {
+              return (
+                <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                  {content}
+                </a>
+              );
+            }
+
+            if (item.href) {
+              return (
+                <a key={item.label} href={item.href} className={cls}>
+                  {content}
+                </a>
+              );
+            }
+
+            return (
+              <button key={item.label} type="button" onClick={item.onClick} className={`${cls} text-left w-full`}>
+                {content}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Back to main nav */}
+          <div className="px-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setNavSection('main')}
+              className="flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            >
+              <div className="i-ph:caret-left text-base" />
+              <span>Back</span>
+            </button>
+          </div>
+
+          {/* Start new chat */}
+          <div className="px-3 pt-2">
+            <button
+              onClick={handleNewChat}
+              className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-lg p-2.5 transition-theme w-full text-left text-sm font-medium"
+            >
+              <span className="inline-block i-bolt:chat scale-110" />
+              Start new chat
+            </button>
+          </div>
+
+          {/* Chat history */}
+          <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider">
+            Your Chats
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-3">
+            {list.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
+            <DialogRoot open={dialogContent !== null}>
+              {binDates(list).map(({ category, items }) => (
+                <div key={category} className="mt-3 first:mt-0 space-y-1">
+                  <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-sidebar-background pl-2 pt-2 pb-1 text-xs font-medium">
+                    {category}
                   </div>
-                </>
-              )}
-            </Dialog>
-          </DialogRoot>
+                  {items.map((item) => (
+                    <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
+                  ))}
+                </div>
+              ))}
+              <Dialog onBackdrop={closeDialog} onClose={closeDialog}>
+                {dialogContent?.type === 'delete' && (
+                  <>
+                    <DialogTitle>Delete Chat?</DialogTitle>
+                    <DialogDescription asChild>
+                      <div>
+                        <p>
+                          You are about to delete <strong>{dialogContent.item.description}</strong>.
+                        </p>
+                        <p className="mt-1">Are you sure you want to delete this chat?</p>
+                      </div>
+                    </DialogDescription>
+                    <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
+                      <DialogButton type="secondary" onClick={closeDialog}>
+                        Cancel
+                      </DialogButton>
+                      <DialogButton
+                        type="danger"
+                        onClick={(event) => {
+                          deleteItem(event, dialogContent.item);
+                          closeDialog();
+                        }}
+                      >
+                        Delete
+                      </DialogButton>
+                    </div>
+                  </>
+                )}
+              </Dialog>
+            </DialogRoot>
+          </div>
         </div>
-        <div className="flex items-center border-t border-bolt-elements-borderColor p-4">
-          <ThemeSwitch className="ml-auto" />
+      )}
+
+      {/* Bottom section: social links + theme switch */}
+      <div className="mt-auto border-t border-bolt-elements-borderColor">
+        {/* Social links */}
+        <div className="flex items-center gap-1 px-4 py-2.5">
+          <a
+            href="https://discord.gg/stackblitz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            title="Discord"
+          >
+            <div className="i-ph:discord-logo text-base" />
+          </a>
+          <a
+            href="https://linkedin.com/company/stackblitz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            title="LinkedIn"
+          >
+            <div className="i-ph:linkedin-logo text-base" />
+          </a>
+          <a
+            href="https://twitter.com/stackblitz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            title="Twitter"
+          >
+            <div className="i-ph:x-logo text-base" />
+          </a>
+          <a
+            href="https://reddit.com/r/stackblitz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            title="Reddit"
+          >
+            <div className="i-ph:reddit-logo text-base" />
+          </a>
+
+          <div className="ml-auto">
+            <ThemeSwitch />
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger toggle */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="lg:hidden fixed top-3 left-3 z-[1000] flex items-center justify-center w-9 h-9 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all"
+        aria-label="Toggle sidebar"
+      >
+        <div className={mobileOpen ? 'i-ph:x text-base' : 'i-ph:list text-base'} />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-[998]"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Desktop sidebar - always visible */}
+      <div className="hidden lg:flex w-[var(--sidebar-width)] h-full shrink-0 bg-bolt-elements-sidebar-background border-r border-bolt-elements-borderColor">
+        {sidebar}
+      </div>
+
+      {/* Mobile sidebar - slide in/out */}
+      <motion.div
+        ref={menuRef}
+        initial="closed"
+        animate={mobileOpen ? 'open' : 'closed'}
+        variants={sidebarVariants}
+        className="lg:hidden fixed top-0 left-0 w-[280px] h-full bg-bolt-elements-sidebar-background border-r border-bolt-elements-borderColor z-[999] shadow-xl"
+      >
+        {sidebar}
+      </motion.div>
+    </>
   );
 }
