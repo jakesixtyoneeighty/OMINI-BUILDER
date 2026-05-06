@@ -86,7 +86,7 @@ export function ModelPicker() {
       </button>
 
       {open && (
-        <div className="absolute left-0 bottom-full mb-2 w-[320px] z-[1001] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden">
+        <div className="absolute left-0 top-full mt-2 w-[320px] z-[1001] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden">
           <div className="p-2 border-b border-bolt-elements-borderColor">
             <input
               autoFocus

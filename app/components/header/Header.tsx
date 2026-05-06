@@ -14,6 +14,7 @@ import { SaveToDrive } from '~/components/chat/SaveToDrive.client';
 import { PublishToGalleryButton } from './PublishToGalleryButton.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { SearchDialog } from './SearchDialog.client';
+import { ModelPicker } from './ModelPicker.client';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -76,6 +77,12 @@ export function Header() {
           <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-5 w-5 omni-logo-themed" />
         </a>
       </div>
+
+      {/* Separator */}
+      <div className="w-px h-5 bg-bolt-elements-borderColor" />
+
+      {/* Model Picker */}
+      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
 
       {/* Separator */}
       <div className="w-px h-5 bg-bolt-elements-borderColor" />

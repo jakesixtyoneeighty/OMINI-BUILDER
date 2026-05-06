@@ -4,9 +4,6 @@ import { ClientOnly } from 'remix-utils/client-only';
 import { useStore } from '@nanostores/react';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
-import { GitHubImport } from './GitHubImport.client';
-import { Messages } from './Messages.client';
-import { ModelPicker } from '../header/ModelPicker.client';
 import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
@@ -550,7 +547,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           <ClientOnly>
                             {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                           </ClientOnly>
-                          <ClientOnly>{() => <ModelPicker />}</ClientOnly>
                           <ClientOnly>
                             {() => (
                               <BuildPlanDropdown
@@ -623,8 +619,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                   {/* Right side buttons */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-
                     <ClientOnly>
                       {() => (
                         <BuildPlanDropdown
