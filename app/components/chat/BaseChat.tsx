@@ -10,7 +10,6 @@ import { Messages } from './Messages.client';
 import { ModelPicker } from '../header/ModelPicker.client';
 import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
-import { VoiceRecordButton } from './VoiceRecordButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
 import type { DetectedError } from '~/lib/stores/errors';
 
@@ -178,7 +177,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     }, [sendMessage]);
 
-    const showSendButton = input.length > 0 || attachedFiles.length > 0 || isStreaming;
+    // Send button is always visible (Bolt.new style)
+    const showSendButton = true;
 
     return (
       <div
@@ -285,7 +285,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="Ask Omni..."
+                          placeholder="What do you want to build?"
                           translate="no"
                           rows={2}
                           style={{ maxHeight: 180 }}
@@ -303,29 +303,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           <ClientOnly>
                             {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                           </ClientOnly>
-
-                          {/* Enhance button */}
-                          <button
-                            type="button"
-                            title="Enhance prompt"
-                            disabled={input.length === 0 || enhancingPrompt}
-                            onClick={() => enhancePrompt?.()}
-                            className={classNames(
-                              'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
-                              enhancingPrompt
-                                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                                : promptEnhanced
-                                  ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                                  : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
-                            )}
-                          >
-                            {enhancingPrompt ? (
-                              <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
-                            ) : (
-                              <div className="i-bolt:stars text-[11px]" />
-                            )}
-                            {!enhancingPrompt && <span>Enhance</span>}
-                          </button>
 
                           {/* Model picker */}
                           <ClientOnly>{() => <ModelPicker />}</ClientOnly>
@@ -345,40 +322,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                         {/* Right group */}
                         <div className="flex items-center gap-2">
-                          {/* Microphone */}
-                          <ClientOnly>
-                            {() => <VoiceRecordButton onTranscript={(text) => {
-                              if (textareaRef?.current) {
-                                const textarea = textareaRef.current;
-                                const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
-                                const syntheticEvent = {
-                                  target: { value: newVal },
-                                } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                                handleInputChange?.(syntheticEvent);
-                                textarea.focus();
-                              }
-                            }} />}
-                          </ClientOnly>
-
-                          {/* Send / Stop button */}
-                          {showSendButton && (
-                            <button
-                              type="button"
-                              onClick={handleSendWithAttachments}
-                              className={classNames(
-                                'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
-                                isStreaming
-                                  ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                                  : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
-                              )}
-                            >
-                              {isStreaming ? (
-                                <div className="i-ph:stop-bold text-[13px]" />
-                              ) : (
-                                <div className="i-ph:arrow-up-bold text-[14px]" />
-                              )}
-                            </button>
-                          )}
+                          {/* Send / Stop button - always visible */}
+                          <button
+                            type="button"
+                            onClick={handleSendWithAttachments}
+                            disabled={!input && !isStreaming && attachedFiles.length === 0}
+                            className={classNames(
+                              'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
+                              isStreaming
+                                ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                                : input || attachedFiles.length > 0
+                                  ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
+                                  : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
+                            )}
+                          >
+                            {isStreaming ? (
+                              <div className="i-ph:stop-bold text-[13px]" />
+                            ) : (
+                              <div className="i-ph:arrow-up-bold text-[14px]" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -474,29 +437,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                     </ClientOnly>
 
-                    {/* Enhance button */}
-                    <button
-                      type="button"
-                      title="Enhance prompt"
-                      disabled={input.length === 0 || enhancingPrompt}
-                      onClick={() => enhancePrompt?.()}
-                      className={classNames(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
-                        enhancingPrompt
-                          ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                          : promptEnhanced
-                            ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                            : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
-                      )}
-                    >
-                      {enhancingPrompt ? (
-                        <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
-                      ) : (
-                        <div className="i-bolt:stars text-[11px]" />
-                      )}
-                      {!enhancingPrompt && <span>Enhance</span>}
-                    </button>
-
                     {/* Center: textarea */}
                     <textarea
                       ref={textareaRef}
@@ -509,7 +449,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         el.style.height = 'auto';
                         el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                       }}
-                      placeholder="Ask Omni..."
+                      placeholder="What do you want to build?"
                       translate="no"
                       rows={1}
                       style={{ maxHeight: 300 }}
@@ -530,38 +470,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         )}
                       </ClientOnly>
 
-                      <ClientOnly>
-                        {() => <VoiceRecordButton onTranscript={(text) => {
-                          if (textareaRef?.current) {
-                            const textarea = textareaRef.current;
-                            const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
-                            const syntheticEvent = {
-                              target: { value: newVal },
-                            } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                            handleInputChange?.(syntheticEvent);
-                            textarea.focus();
-                          }
-                        }} />}
-                      </ClientOnly>
-
-                      {showSendButton && (
-                        <button
-                          type="button"
-                          onClick={handleSendWithAttachments}
-                          className={classNames(
-                            'flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95',
-                            isStreaming
-                              ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                              : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
-                          )}
-                        >
-                          {isStreaming ? (
-                            <div className="i-ph:stop-bold text-[12px]" />
-                          ) : (
-                            <div className="i-ph:arrow-up-bold text-[13px]" />
-                          )}
-                        </button>
-                      )}
+                      {/* Send button - always visible */}
+                      <button
+                        type="button"
+                        onClick={handleSendWithAttachments}
+                        disabled={!input && !isStreaming && attachedFiles.length === 0}
+                        className={classNames(
+                          'flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95',
+                          isStreaming
+                            ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                            : input || attachedFiles.length > 0
+                              ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
+                              : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
+                        )}
+                      >
+                        {isStreaming ? (
+                          <div className="i-ph:stop-bold text-[12px]" />
+                        ) : (
+                          <div className="i-ph:arrow-up-bold text-[13px]" />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
@@ -582,27 +510,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                   </ClientOnly>
 
-                  {/* Enhance button */}
-                  <button
-                    type="button"
-                    title="Enhance prompt"
-                    disabled={input.length === 0 || enhancingPrompt}
-                    onClick={() => enhancePrompt?.()}
-                    className={classNames(
-                      'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 disabled:opacity-30',
-                      enhancingPrompt || promptEnhanced
-                        ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent'
-                        : 'text-bolt-elements-textSecondary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40',
-                    )}
-                  >
-                    {enhancingPrompt ? (
-                      <div className="i-svg-spinners:90-ring-with-bg text-[11px]" />
-                    ) : (
-                      <div className="i-bolt:stars text-[11px]" />
-                    )}
-                    {!enhancingPrompt && <span>Enhance</span>}
-                  </button>
-
                   {/* Center: textarea */}
                   <textarea
                     ref={textareaRef}
@@ -615,7 +522,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       el.style.height = 'auto';
                       el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                     }}
-                    placeholder="Ask Omni..."
+                    placeholder="What do you want to build?"
                     translate="no"
                     rows={1}
                     style={{ maxHeight: 300 }}
@@ -636,38 +543,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       )}
                     </ClientOnly>
 
-                    <ClientOnly>
-                      {() => <VoiceRecordButton onTranscript={(text) => {
-                        if (textareaRef?.current) {
-                          const textarea = textareaRef.current;
-                          const newVal = textarea.value + (textarea.value ? ' ' : '') + text;
-                          const syntheticEvent = {
-                            target: { value: newVal },
-                          } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                          handleInputChange?.(syntheticEvent);
-                          textarea.focus();
-                        }
-                      }} />}
-                    </ClientOnly>
-
-                    {showSendButton && (
-                      <button
-                        type="button"
-                        onClick={handleSendWithAttachments}
-                        className={classNames(
-                          'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
-                          isStreaming
-                            ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                            : 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110',
-                        )}
-                      >
-                        {isStreaming ? (
-                          <div className="i-ph:stop-bold text-[13px]" />
-                        ) : (
-                          <div className="i-ph:arrow-up-bold text-[14px]" />
-                        )}
-                      </button>
-                    )}
+                    {/* Send button - always visible */}
+                    <button
+                      type="button"
+                      onClick={handleSendWithAttachments}
+                      disabled={!input && !isStreaming && attachedFiles.length === 0}
+                      className={classNames(
+                        'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
+                        isStreaming
+                          ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
+                          : input || attachedFiles.length > 0
+                            ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
+                            : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
+                      )}
+                    >
+                      {isStreaming ? (
+                        <div className="i-ph:stop-bold text-[13px]" />
+                      ) : (
+                        <div className="i-ph:arrow-up-bold text-[14px]" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
