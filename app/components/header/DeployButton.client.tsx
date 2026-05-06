@@ -27,10 +27,10 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const hasCloudRun = !!(settings?.cloudRun?.serviceAccountKey && settings?.cloudRun?.projectId);
   const hasAnyProvider = hasNetlify || hasVercel || hasCloudRun;
 
-  const configuredProviders: { key: DeployProvider; label: string; icon: string; color: string }[] = [];
-  if (hasNetlify) configuredProviders.push({ key: 'netlify', label: 'Netlify', icon: 'i-ph:cloud-duotone', color: 'text-teal-400' });
-  if (hasVercel) configuredProviders.push({ key: 'vercel', label: 'Vercel', icon: 'i-ph:triangle-duotone', color: 'text-white' });
-  if (hasCloudRun) configuredProviders.push({ key: 'cloudrun', label: 'Cloud Run', icon: 'i-ph:google-logo-duotone', color: 'text-blue-400' });
+  const configuredProviders: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
+  if (hasNetlify) configuredProviders.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
+  if (hasVercel) configuredProviders.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
+  if (hasCloudRun) configuredProviders.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -282,8 +282,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   onClick={() => deployTo(p.key)}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0">
-                    <div className={`${p.icon} ${p.color} text-sm`} />
+                  <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0 overflow-hidden">
+                    <img src={p.logo} alt={p.label} className="w-5 h-5 object-contain" />
                   </div>
                   <span className="text-xs text-bolt-elements-textSecondary font-medium">{p.label}</span>
                 </button>

@@ -28,13 +28,6 @@ export function Header() {
           <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-12 omni-logo-themed" />
         </a>
         <a
-          href="/templates"
-          className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/35 transition-all"
-        >
-          <div className="i-ph:layout-grid-duotone text-sm" />
-          Templates
-        </a>
-        <a
           href="/gallery"
           className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/35 transition-all"
         >

@@ -570,8 +570,8 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {/* Netlify Section */}
                 <div>
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center shrink-0">
-                      <div className="i-ph:cloud-arrow-up text-teal-400 text-base" />
+                    <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center shrink-0 overflow-hidden">
+                      <img src="/logos/netlify.svg" alt="Netlify" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Netlify</h3>
@@ -599,8 +599,8 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {/* Vercel Section */}
                 <div className="border-t border-bolt-elements-borderColor pt-5">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                      <div className="i-ph:triangle text-white text-base" />
+                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      <img src="/logos/vercel.svg" alt="Vercel" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Vercel</h3>
@@ -635,8 +635,8 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {/* Cloud Run Section */}
                 <div className="border-t border-bolt-elements-borderColor pt-5">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
-                      <div className="i-ph:cloud-arrow-up text-blue-400 text-base" />
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0 overflow-hidden">
+                      <img src="/logos/google-cloud.svg" alt="Google Cloud" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Google Cloud Run</h3>
@@ -736,12 +736,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     </button>
                     <button onClick={() => { setDbType('firebase'); saveDatabaseSettings('firebase'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'firebase' ? 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
-                      <div className={`i-ph:fire text-xl mx-auto mb-1 ${dbType === 'firebase' ? 'text-amber-400' : 'text-bolt-elements-textTertiary'}`} />
+                      <img src="/logos/firebase.svg" alt="Firebase" className={`w-6 h-6 mx-auto mb-1 object-contain ${dbType === 'firebase' ? '' : 'opacity-40 grayscale'}`} />
                       <span className="text-xs font-medium text-bolt-elements-textPrimary block">Firebase</span>
                     </button>
                     <button onClick={() => { setDbType('supabase'); saveDatabaseSettings('supabase'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'supabase' ? 'border-emerald-500 bg-emerald-500/8 ring-1 ring-emerald-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
-                      <div className={`i-ph:lightning text-xl mx-auto mb-1 ${dbType === 'supabase' ? 'text-emerald-400' : 'text-bolt-elements-textTertiary'}`} />
+                      <img src="/logos/supabase.svg" alt="Supabase" className={`w-6 h-6 mx-auto mb-1 object-contain ${dbType === 'supabase' ? '' : 'opacity-40 grayscale'}`} />
                       <span className="text-xs font-medium text-bolt-elements-textPrimary block">Supabase</span>
                     </button>
                   </div>
