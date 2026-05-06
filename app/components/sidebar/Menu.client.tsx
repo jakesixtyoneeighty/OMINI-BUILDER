@@ -42,19 +42,41 @@ type NavItem = {
   onClick?: () => void;
 };
 
+const COLLAPSED_KEY = 'omni-builder.sidebar.collapsed';
+
 export function Menu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<ChatHistoryItem[]>([]);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [navSection, setNavSection] = useState<'main' | 'chats'>('main');
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const { user } = useStore(authStore);
   const chatStarted = useStore(chatStore).started;
+
+  const sidebarWidth = collapsed ? 60 : 240;
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSED_KEY, String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Navigation items
   const navItems: NavItem[] = [
     { icon: 'i-ph:house', label: 'Home', href: '/', active: !chatStarted },
-    { icon: 'i-ph:folder', label: 'Projects', onClick: () => setNavSection('chats') },
+    { icon: 'i-ph:folder-open', label: 'Projects', href: '/projects' },
     { icon: 'i-ph:star', label: 'Starred' },
     { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed' },
     { icon: 'i-ph:users-three', label: 'Shared with you' },
@@ -141,51 +163,62 @@ export function Menu() {
   const sidebar = (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* User account section */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-bolt-elements-borderColor">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText text-xs font-bold shrink-0 overflow-hidden">
+      <div className={`flex items-center gap-3 border-b border-bolt-elements-borderColor ${collapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'}`}>
+        <div
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText text-xs font-bold shrink-0 overflow-hidden"
+          title={collapsed ? displayName : undefined}
+        >
           {userAvatar ? (
             <img src={userAvatar} alt={displayName} className="w-full h-full object-cover" />
           ) : (
             <span>{displayName.charAt(0).toUpperCase()}</span>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-bolt-elements-textPrimary truncate">{displayName}</div>
-          {userEmail && (
-            <div className="text-[11px] text-bolt-elements-textTertiary truncate">{userEmail}</div>
-          )}
-        </div>
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText">
-          Free
-        </span>
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-bolt-elements-textPrimary truncate">{displayName}</div>
+            {userEmail && (
+              <div className="text-[11px] text-bolt-elements-textTertiary truncate">{userEmail}</div>
+            )}
+          </div>
+        )}
+        {!collapsed && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText">
+            Free
+          </span>
+        )}
       </div>
 
       {/* Navigation items */}
       {navSection === 'main' ? (
-        <div className="flex flex-col px-2 py-2">
+        <div className={`flex flex-col ${collapsed ? 'px-1.5 py-2' : 'px-2 py-2'}`}>
           {navItems.map((item) => {
             const content = (
               <>
-                <div className={`${item.icon} text-base`} />
-                <span className="text-sm">{item.label}</span>
-                {item.active && (
+                <div className={`${item.icon} ${collapsed ? 'text-lg' : 'text-base'} shrink-0`} />
+                {!collapsed && (
+                  <span className="text-sm truncate">{item.label}</span>
+                )}
+                {!collapsed && item.active && (
                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-bolt-elements-item-contentAccent" />
                 )}
-                {item.external && (
+                {!collapsed && item.external && (
                   <div className="i-ph:arrow-square-out text-xs ml-auto text-bolt-elements-textTertiary" />
                 )}
               </>
             );
 
-            const cls = `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
+            const cls = `flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'} rounded-lg transition-all duration-150 group relative ${
               item.active
-                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary font-medium'
+                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:rounded-r-full before:bg-bolt-elements-item-contentAccent'
                 : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
             }`;
 
+            const titleAttr = collapsed ? item.label : undefined;
+
             if (item.href && item.external) {
               return (
-                <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" className={cls} title={titleAttr}>
                   {content}
                 </a>
               );
@@ -193,14 +226,14 @@ export function Menu() {
 
             if (item.href) {
               return (
-                <a key={item.label} href={item.href} className={cls}>
+                <a key={item.label} href={item.href} className={cls} title={titleAttr}>
                   {content}
                 </a>
               );
             }
 
             return (
-              <button key={item.label} type="button" onClick={item.onClick} className={`${cls} text-left w-full`}>
+              <button key={item.label} type="button" onClick={item.onClick} className={`${cls} text-left w-full`} title={titleAttr}>
                 {content}
               </button>
             );
@@ -209,40 +242,63 @@ export function Menu() {
       ) : (
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* Back to main nav */}
-          <div className="px-2 pt-2">
+          <div className={collapsed ? 'px-1.5 pt-2' : 'px-2 pt-2'}>
             <button
               type="button"
               onClick={() => setNavSection('main')}
-              className="flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+              className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
+              title={collapsed ? 'Back' : undefined}
             >
-              <div className="i-ph:caret-left text-base" />
-              <span>Back</span>
+              <div className="i-ph:caret-left text-base shrink-0" />
+              {!collapsed && <span>Back</span>}
             </button>
           </div>
 
           {/* Start new chat */}
-          <div className="px-3 pt-2">
-            <button
-              onClick={handleNewChat}
-              className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-lg p-2.5 transition-theme w-full text-left text-sm font-medium"
-            >
-              <span className="inline-block i-bolt:chat scale-110" />
-              Start new chat
-            </button>
-          </div>
+          {!collapsed && (
+            <div className="px-3 pt-2">
+              <button
+                onClick={handleNewChat}
+                className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-lg p-2.5 transition-theme w-full text-left text-sm font-medium"
+              >
+                <span className="inline-block i-bolt:chat scale-110" />
+                Start new chat
+              </button>
+            </div>
+          )}
+          {collapsed && (
+            <div className="px-1.5 pt-2">
+              <button
+                onClick={handleNewChat}
+                className="flex items-center justify-center py-2.5 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover transition-all w-full"
+                title="Start new chat"
+              >
+                <span className="inline-block i-bolt:chat text-base" />
+              </button>
+            </div>
+          )}
 
           {/* Chat history */}
-          <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider">
-            Your Chats
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 pb-3">
-            {list.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
+          {!collapsed && (
+            <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider">
+              Your Chats
+            </div>
+          )}
+          <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
+            {!collapsed && list.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
+            {collapsed && list.length === 0 && (
+              <div className="flex items-center justify-center py-2" title="No previous conversations">
+                <div className="i-ph:chat-circle-dots text-base text-bolt-elements-textTertiary" />
+              </div>
+            )}
             <DialogRoot open={dialogContent !== null}>
               {binDates(list).map(({ category, items }) => (
                 <div key={category} className="mt-3 first:mt-0 space-y-1">
-                  <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-sidebar-background pl-2 pt-2 pb-1 text-xs font-medium">
-                    {category}
-                  </div>
+                  {!collapsed && (
+                    <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-sidebar-background pl-2 pt-2 pb-1 text-xs font-medium">
+                      {category}
+                    </div>
+                  )}
                   {items.map((item) => (
                     <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
                   ))}
@@ -282,50 +338,71 @@ export function Menu() {
         </div>
       )}
 
-      {/* Bottom section: social links + theme switch */}
+      {/* Bottom section: collapse toggle + social links + theme switch */}
       <div className="mt-auto border-t border-bolt-elements-borderColor">
-        {/* Social links */}
-        <div className="flex items-center gap-1 px-4 py-2.5">
-          <a
-            href="https://discord.gg/stackblitz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-            title="Discord"
-          >
-            <div className="i-ph:discord-logo text-base" />
-          </a>
-          <a
-            href="https://linkedin.com/company/stackblitz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-            title="LinkedIn"
-          >
-            <div className="i-ph:linkedin-logo text-base" />
-          </a>
-          <a
-            href="https://twitter.com/stackblitz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-            title="Twitter"
-          >
-            <div className="i-ph:x-logo text-base" />
-          </a>
-          <a
-            href="https://reddit.com/r/stackblitz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-            title="Reddit"
-          >
-            <div className="i-ph:reddit-logo text-base" />
-          </a>
+        {/* Social links + theme switch */}
+        <div className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-1 px-4'} py-2.5`}>
+          {!collapsed && (
+            <>
+              <a
+                href="https://discord.gg/stackblitz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title="Discord"
+              >
+                <div className="i-ph:discord-logo text-base" />
+              </a>
+              <a
+                href="https://linkedin.com/company/stackblitz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title="LinkedIn"
+              >
+                <div className="i-ph:linkedin-logo text-base" />
+              </a>
+              <a
+                href="https://twitter.com/stackblitz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title="Twitter"
+              >
+                <div className="i-ph:x-logo text-base" />
+              </a>
+              <a
+                href="https://reddit.com/r/stackblitz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title="Reddit"
+              >
+                <div className="i-ph:reddit-logo text-base" />
+              </a>
 
-          <div className="ml-auto">
-            <ThemeSwitch />
-          </div>
+              <div className="ml-auto">
+                <ThemeSwitch />
+              </div>
+            </>
+          )}
+          {collapsed && (
+            <div className="flex flex-col items-center gap-1">
+              <ThemeSwitch />
+            </div>
+          )}
+        </div>
+
+        {/* Collapse toggle button */}
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-end px-3'} pb-2.5`}>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <div className={`i-ph:caret-line-left text-base transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`} />
+          </button>
         </div>
       </div>
     </div>
@@ -351,8 +428,11 @@ export function Menu() {
         />
       )}
 
-      {/* Desktop sidebar - always visible */}
-      <div className="hidden lg:flex w-[var(--sidebar-width)] h-full shrink-0 bg-bolt-elements-sidebar-background border-r border-bolt-elements-borderColor">
+      {/* Desktop sidebar - collapsible */}
+      <div
+        className="hidden lg:flex h-full shrink-0 bg-bolt-elements-sidebar-background border-r border-bolt-elements-borderColor transition-[width] duration-200 ease-in-out"
+        style={{ width: `${sidebarWidth}px` }}
+      >
         {sidebar}
       </div>
 
