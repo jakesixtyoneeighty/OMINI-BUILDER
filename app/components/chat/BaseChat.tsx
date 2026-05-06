@@ -222,7 +222,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
           {/* Chat panel - resizable */}
           <div
-            className={classNames(styles.Chat, 'flex flex-col h-full shrink-0')}
+            className={classNames(styles.Chat, 'flex flex-col h-full', chatStarted ? 'shrink-0' : 'flex-1')}
             style={chatStarted ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
           >
 
