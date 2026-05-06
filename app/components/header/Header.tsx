@@ -51,10 +51,11 @@ export function Header() {
             <>
               {chat.started && (
                 <>
-                  <SaveProjectButton />
+                  {/* Save buttons: Cloud (Supabase) + Google Drive */}
+                  <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
+                  <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                   <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
                   <ClientOnly>{() => <DeployButton onOpenSettings={() => { setSettingsTab('deploy'); setAppSettingsOpen(true); }} />}</ClientOnly>
-                  <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                   <ClientOnly>{() => <ThemeSwitch />}</ClientOnly>
                   <GitHubPush />
                   <button onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); }} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
