@@ -9,7 +9,33 @@ import type { ChatHistoryItem } from './db';
 
 const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
 
-export const db = persistenceEnabled ? await openDatabase() : undefined;
+// Lazy-init the database to avoid top-level await which breaks Cloudflare Pages Functions
+let _db: IDBDatabase | undefined;
+let _dbPromise: Promise<IDBDatabase | undefined> | undefined;
+
+export function getDb(): Promise<IDBDatabase | undefined> {
+  if (_db !== undefined) {
+    return Promise.resolve(_db);
+  }
+  if (!_dbPromise) {
+    _dbPromise = persistenceEnabled
+      ? openDatabase().then((d) => {
+          _db = d;
+          return d;
+        })
+      : Promise.resolve(undefined);
+  }
+  return _dbPromise;
+}
+
+// Synchronous accessor — only valid after the DB has been initialized
+export function getDbSync(): IDBDatabase | undefined {
+  return _db;
+}
+
+// Keep backward-compatible `db` export as a getter-like pattern
+// Code that needs the DB should use getDb() for async or getDbSync() after init
+export const db = undefined as IDBDatabase | undefined;
 
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
@@ -23,48 +49,53 @@ export function useChatHistory() {
   const [urlId, setUrlId] = useState<string | undefined>();
 
   useEffect(() => {
-    if (!db) {
-      setReady(true);
+    getDb().then((database) => {
+      if (!database) {
+        setReady(true);
 
-      if (persistenceEnabled) {
-        toast.error(`Chat persistence is unavailable`);
+        if (persistenceEnabled) {
+          toast.error(`Chat persistence is unavailable`);
+        }
+
+        return;
       }
 
-      return;
-    }
+      if (mixedId) {
+        getMessages(database, mixedId)
+          .then((storedMessages) => {
+            if (storedMessages && storedMessages.messages.length > 0) {
+              setInitialMessages(storedMessages.messages);
+              setUrlId(storedMessages.urlId);
+              description.set(storedMessages.description);
+              chatId.set(storedMessages.id);
+            } else {
+              navigate(`/`, { replace: true });
+            }
 
-    if (mixedId) {
-      getMessages(db, mixedId)
-        .then((storedMessages) => {
-          if (storedMessages && storedMessages.messages.length > 0) {
-            setInitialMessages(storedMessages.messages);
-            setUrlId(storedMessages.urlId);
-            description.set(storedMessages.description);
-            chatId.set(storedMessages.id);
-          } else {
-            navigate(`/`, { replace: true });
-          }
-
-          setReady(true);
-        })
-        .catch((error) => {
-          toast.error(error.message);
-        });
-    }
+            setReady(true);
+          })
+          .catch((error) => {
+            toast.error(error.message);
+          });
+      } else {
+        setReady(true);
+      }
+    });
   }, []);
 
   return {
     ready: !mixedId || ready,
     initialMessages,
     storeMessageHistory: async (messages: Message[]) => {
-      if (!db || messages.length === 0) {
+      const database = await getDb();
+      if (!database || messages.length === 0) {
         return;
       }
 
       const { firstArtifact } = workbenchStore;
 
       if (!urlId && firstArtifact?.id) {
-        const urlId = await getUrlId(db, firstArtifact.id);
+        const urlId = await getUrlId(database, firstArtifact.id);
 
         navigateChat(urlId);
         setUrlId(urlId);
@@ -75,7 +106,7 @@ export function useChatHistory() {
       }
 
       if (initialMessages.length === 0 && !chatId.get()) {
-        const nextId = await getNextId(db);
+        const nextId = await getNextId(database);
 
         chatId.set(nextId);
 
@@ -84,7 +115,7 @@ export function useChatHistory() {
         }
       }
 
-      await setMessages(db, chatId.get() as string, messages, urlId, description.get());
+      await setMessages(database, chatId.get() as string, messages, urlId, description.get());
     },
   };
 }

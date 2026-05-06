@@ -4,7 +4,7 @@ import { ClientOnly } from 'remix-utils/client-only';
 import { toast } from 'react-toastify';
 import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
-import { db, getAll, type ChatHistoryItem } from '~/lib/persistence';
+import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'Projects — Omni-Builder' }, { name: 'description', content: 'View and manage your Omni-Builder projects' }];
@@ -62,15 +62,17 @@ function ProjectsContent() {
   const [search, setSearch] = useState('');
 
   const loadProjects = useCallback(() => {
-    if (db) {
-      getAll(db)
-        .then((list) => list.filter((item) => item.urlId && item.description))
-        .then(setProjects)
-        .catch((error) => toast.error(error.message))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    getDb().then((database) => {
+      if (database) {
+        getAll(database)
+          .then((list) => list.filter((item) => item.urlId && item.description))
+          .then(setProjects)
+          .catch((error) => toast.error(error.message))
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
   }, []);
 
   useEffect(() => {

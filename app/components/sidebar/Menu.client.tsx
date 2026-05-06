@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
-import { db, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
+import { getDb, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore } from '~/lib/stores/project';
@@ -89,31 +89,35 @@ export function Menu() {
   ];
 
   const loadEntries = useCallback(() => {
-    if (db) {
-      getAll(db)
-        .then((list) => list.filter((item) => item.urlId && item.description))
-        .then(setList)
-        .catch((error) => toast.error(error.message));
-    }
+    getDb().then((database) => {
+      if (database) {
+        getAll(database)
+          .then((list) => list.filter((item) => item.urlId && item.description))
+          .then(setList)
+          .catch((error) => toast.error(error.message));
+      }
+    });
   }, []);
 
   const deleteItem = useCallback((event: React.UIEvent, item: ChatHistoryItem) => {
     event.preventDefault();
 
-    if (db) {
-      deleteById(db, item.id)
-        .then(() => {
-          loadEntries();
+    getDb().then((database) => {
+      if (database) {
+        deleteById(database, item.id)
+          .then(() => {
+            loadEntries();
 
-          if (chatId.get() === item.id) {
-            window.location.pathname = '/';
-          }
-        })
-        .catch((error) => {
-          toast.error('Failed to delete conversation');
-          logger.error(error);
-        });
-    }
+            if (chatId.get() === item.id) {
+              window.location.pathname = '/';
+            }
+          })
+          .catch((error) => {
+            toast.error('Failed to delete conversation');
+            logger.error(error);
+          });
+      }
+    });
   }, []);
 
   const closeDialog = () => {
