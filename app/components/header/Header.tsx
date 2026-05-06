@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { useState, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { AuthButton } from './AuthButton.client';
@@ -18,7 +18,20 @@ export function Header() {
   const chat = useStore(chatStore);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
-  const appSettingsRef = useRef<{ setTab: (t: string) => void } | null>(null);
+
+  const openDeploySettings = useCallback(() => {
+    setSettingsTab('deploy');
+    setAppSettingsOpen(true);
+  }, []);
+
+  const openGeneralSettings = useCallback(() => {
+    setSettingsTab('general');
+    setAppSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setAppSettingsOpen(false);
+  }, []);
 
   return (
     <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 px-4 py-1.5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
@@ -47,13 +60,13 @@ export function Header() {
                   <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
                   <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                   <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
-                  <ClientOnly>{() => <DeployButton onOpenSettings={() => { setSettingsTab('deploy'); setAppSettingsOpen(true); }} />}</ClientOnly>
+                  <ClientOnly>{() => <DeployButton onOpenSettings={openDeploySettings} />}</ClientOnly>
                   <ClientOnly>{() => <ThemeSwitch />}</ClientOnly>
-                  <GitHubPush />
-                  <button onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); }} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
+                  <ClientOnly>{() => <GitHubPush />}</ClientOnly>
+                  <button onClick={openGeneralSettings} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
                     <div className="i-ph:sliders-horizontal text-base" />
                   </button>
-                  <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} defaultTab={settingsTab} />
+                  <AppSettingsDialog open={appSettingsOpen} onClose={closeSettings} defaultTab={settingsTab} />
                 </>
               )}
               <SettingsDialog />

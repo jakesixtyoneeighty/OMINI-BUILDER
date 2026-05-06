@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { projectsStore, activeProjectIdStore, getActiveProject } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
@@ -27,10 +27,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const hasCloudRun = !!(settings?.cloudRun?.serviceAccountKey && settings?.cloudRun?.projectId);
   const hasAnyProvider = hasNetlify || hasVercel || hasCloudRun;
 
-  const configuredProviders: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
-  if (hasNetlify) configuredProviders.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
-  if (hasVercel) configuredProviders.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
-  if (hasCloudRun) configuredProviders.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
+  const configuredProviders = useMemo(() => {
+    const list: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
+    if (hasNetlify) list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
+    if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
+    if (hasCloudRun) list.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
+    return list;
+  }, [hasNetlify, hasVercel, hasCloudRun]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -163,7 +166,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         },
       }),
     );
-  }, [configuredProviders, hasNetlify, hasVercel, hasCloudRun, settings]);
+  }, [configuredProviders, hasNetlify, hasVercel, hasCloudRun]);
 
   const quickDeploy = useCallback(() => {
     if (!hasAnyProvider) {
@@ -173,7 +176,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     }
     // Deploy to first configured provider
     deployTo(configuredProviders[0].key);
-  }, [hasAnyProvider, configuredProviders, deployTo, onOpenSettings]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAnyProvider, configuredProviders, onOpenSettings]);
 
   const isDeploying = deploying !== null;
 

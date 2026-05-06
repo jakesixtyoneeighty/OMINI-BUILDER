@@ -19,11 +19,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   const currentProject = projects[activeId];
-
-  // Don't show if no project active
-  if (!activeId || activeId === 'default') {
-    return null;
-  }
+  const isActive = !!(activeId && activeId !== 'default');
 
   // The actual save function used by both manual and auto save
   const doSave = useCallback(async () => {
@@ -95,6 +91,11 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
       setSaving(false);
     }
   }, [user, doSave]);
+
+  // Don't render if no project active — AFTER all hooks
+  if (!isActive) {
+    return null;
+  }
 
   return (
     <>
