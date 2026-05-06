@@ -1,5 +1,5 @@
 import type { Message } from 'ai';
-import React, { type RefCallback, useState, useCallback, useRef, useEffect } from 'react';
+import React, { type RefCallback, useState, useCallback, useRef } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { useStore } from '@nanostores/react';
 import { Workbench } from '~/components/workbench/Workbench.client';
@@ -8,6 +8,7 @@ import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { GitHubImport } from './GitHubImport.client';
+import { Messages } from './Messages.client';
 import { RecentlyViewed } from './RecentlyViewed';
 import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
