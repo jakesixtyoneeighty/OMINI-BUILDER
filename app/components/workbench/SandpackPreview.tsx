@@ -237,11 +237,11 @@ const SANDBOX_STYLES = `
  * and reports them to the error store.
  */
 function SandpackErrorListener() {
-  const { sandpack } = useSandpack();
+  const { listen } = useSandpack();
   const lastErrorRef = useRef<string>('');
 
   useEffect(() => {
-    const unsubscribe = sandpack.listen((message) => {
+    const unsubscribe = listen((message) => {
       if (message.type === 'compile') {
         if (message.compilatonError === true || message.compilationError === true) {
           const errMsg = (message as any).message || 'Compilation error in preview';
@@ -263,7 +263,7 @@ function SandpackErrorListener() {
         unsubscribe();
       }
     };
-  }, [sandpack]);
+  }, [listen]);
 
   return null;
 }
