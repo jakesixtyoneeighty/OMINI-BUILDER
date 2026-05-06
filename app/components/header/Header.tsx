@@ -13,6 +13,7 @@ import { SaveProjectButton } from './SaveProjectButton.client';
 import { SaveToDrive } from '~/components/chat/SaveToDrive.client';
 import { PublishToGalleryButton } from './PublishToGalleryButton.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
+import { SearchDialog } from './SearchDialog.client';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -21,7 +22,20 @@ export function Header() {
   const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  // Global Ctrl+K shortcut to open search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   const openDeploySettings = useCallback(() => {
     setSettingsTab('deploy');
@@ -46,7 +60,12 @@ export function Header() {
 
   // If chat hasn't started, show the homepage header
   if (!chat.started) {
-    return <HomepageHeader />;
+    return (
+      <>
+        <HomepageHeader onSearchOpen={() => setSearchOpen(true)} />
+        <ClientOnly>{() => <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />}</ClientOnly>
+      </>
+    );
   }
 
   return (
@@ -153,12 +172,13 @@ export function Header() {
           )}
         </ClientOnly>
       </div>
+      <ClientOnly>{() => <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />}</ClientOnly>
     </header>
   );
 }
 
 /* ===== Homepage Header ===== */
-function HomepageHeader() {
+function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const resourcesRef = useRef<HTMLDivElement>(null);
 
@@ -185,13 +205,16 @@ function HomepageHeader() {
 
       {/* CENTER: Search bar */}
       <div className="flex-1 flex items-center justify-center px-4 max-w-xl mx-auto">
-        <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-borderColorActive transition-all cursor-text">
+        <button
+          onClick={onSearchOpen}
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-borderColorActive transition-all cursor-text text-left"
+        >
           <div className="i-ph:magnifying-glass text-sm text-bolt-elements-textTertiary" />
-          <span className="text-sm text-bolt-elements-textTertiary">Search</span>
+          <span className="text-sm text-bolt-elements-textTertiary">Search projects...</span>
           <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
             Ctrl+K
           </kbd>
-        </div>
+        </button>
       </div>
 
       {/* RIGHT: Navigation links */}
