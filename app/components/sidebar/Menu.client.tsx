@@ -73,9 +73,27 @@ export function Menu() {
     });
   }, []);
 
+  const handleNewChat = useCallback(() => {
+    chatStore.set({ started: false, aborted: false, showChat: true, planMode: false });
+    workbenchStore.showWorkbench.set(false);
+    workbenchStore.currentView.set('code');
+    workbenchStore.clearWorkspace();
+    // Clear all artifacts
+    workbenchStore.artifacts.set({});
+    workbenchStore.artifactIdList = [];
+    localStorage.removeItem('omni-builder.files.cache');
+    localStorage.removeItem('bolt.files.cache');
+    const pid = activeProjectIdStore.get();
+    if (pid) {
+      localStorage.removeItem(`bolt.snapshots.${pid}`);
+    }
+    activeProjectIdStore.set('default');
+    window.location.href = '/';
+  }, []);
+
   // Navigation items
   const navItems: NavItem[] = [
-    { icon: 'i-ph:house', label: 'Home', href: '/', active: !chatStarted },
+    { icon: 'i-ph:house', label: 'Home', onClick: handleNewChat, active: !chatStarted },
     { icon: 'i-ph:folder-open', label: 'Projects', href: '/projects' },
     { icon: 'i-ph:star', label: 'Starred' },
     { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed' },
@@ -144,20 +162,6 @@ export function Menu() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [mobileOpen]);
-
-  const handleNewChat = () => {
-    chatStore.set({ started: false, aborted: false, showChat: true });
-    workbenchStore.showWorkbench.set(false);
-    workbenchStore.currentView.set('code');
-    localStorage.removeItem('omni-builder.files.cache');
-    localStorage.removeItem('bolt.files.cache');
-    const pid = activeProjectIdStore.get();
-    if (pid) {
-      localStorage.removeItem(`bolt.snapshots.${pid}`);
-    }
-    activeProjectIdStore.set('default');
-    window.location.href = '/';
-  };
 
   const userEmail = user?.email || '';
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';

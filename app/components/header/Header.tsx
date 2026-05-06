@@ -251,12 +251,7 @@ function HomepageHeader() {
             </div>
           )}
         </div>
-        <a
-          href="#"
-          className="flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-        >
-          Pricing
-        </a>
+
         <ClientOnly>{() => <AuthButton />}</ClientOnly>
       </div>
     </header>
