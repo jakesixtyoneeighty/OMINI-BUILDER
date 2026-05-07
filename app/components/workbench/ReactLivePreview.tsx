@@ -12,10 +12,18 @@ import type { FileMap, File as WFile } from '~/lib/stores/files';
  */
 function stripModuleSyntax(code: string): string {
   return code
-    // Remove import statements: import X from 'y', import { X } from 'y', import 'y'
-    .replace(/^import\s+[\s\S]*?from\s+['"].*?['"];?\s*$/gm, '')
+    // Remove multi-line import statements first: import { X, Y } from 'z'
+    .replace(/^import\s*\{[^}]*\}\s*from\s+['"].*?['"];?\s*$/gm, '')
+    // Remove default+named imports: import X, { Y } from 'z'
+    .replace(/^import\s+\w+\s*,\s*\{[^}]*\}\s*from\s+['"].*?['"];?\s*$/gm, '')
+    // Remove default imports: import X from 'z'
+    .replace(/^import\s+\w+\s+from\s+['"].*?['"];?\s*$/gm, '')
+    // Remove namespace imports: import * as X from 'z'
+    .replace(/^import\s+\*\s+as\s+\w+\s+from\s+['"].*?['"];?\s*$/gm, '')
     // Remove side-effect imports: import 'module'
     .replace(/^import\s+['"].*?['"];?\s*$/gm, '')
+    // Remove type-only imports: import type { X } from 'z'
+    .replace(/^import\s+type\s+[\s\S]*?from\s+['"].*?['"];?\s*$/gm, '')
     // Remove export default (must come before named export strip)
     .replace(/^export\s+default\s+/gm, '')
     // Remove named exports: export const, export function, export class, export let, export var
@@ -26,38 +34,76 @@ function stripModuleSyntax(code: string): string {
     .replace(/^export\s+type\s+[\s\S]*?;?\s*$/gm, '')
     // Remove export interface
     .replace(/^export\s+interface\s+/gm, 'interface ')
+    // Remove require() calls that may exist in user code
+    .replace(/(?:const|let|var)\s+\w+\s*=\s*require\([^)]*\);?\s*$/gm, '')
     // Clean up multiple blank lines
     .replace(/\n{3,}/g, '\n\n');
 }
 
 /**
- * Clean up CommonJS artifacts that Sucrase may generate from leftover
- * export/import references. Removes `exports.xxx = ...` and
- * `Object.defineProperty(exports, ...)` patterns.
+ * Aggressively clean up ALL CommonJS artifacts from Sucrase output.
+ * This handles: exports references, require calls, interop helpers,
+ * and any module-system related code that react-live can't execute.
  */
 function cleanSucraseOutput(code: string): string {
-  return code
-    // Remove: exports.xxx = yyy;
-    .replace(/^\s*exports\.\w+\s*=\s*[^;]+;\s*$/gm, '')
-    // Remove: Object.defineProperty(exports, "xxx", { ... })
-    .replace(/^\s*Object\.defineProperty\(exports,\s*['"][^'"]+['"],\s*\{[\s\S]*?\}\);?\s*$/gm, '')
-    // Remove: exports.default = ...
-    .replace(/^\s*exports\.default\s*=\s*[^;]+;\s*$/gm, '')
-    // Remove: module.exports = ...
-    .replace(/^\s*module\.exports\s*=\s*[^;]+;\s*$/gm, '')
-    // Remove: __export(...) helper calls
-    .replace(/^\s*__export\([^)]*\);?\s*$/gm, '')
-    // Remove: var __exportStar = ...
-    .replace(/^\s*var\s+__\w+\s*=\s*[^;]+;\s*$/gm, '')
-    // Remove require() calls that Sucrase might emit
-    .replace(/^\s*const\s+\w+\s*=\s*require\([^)]*\);\s*$/gm, '')
-    // Clean up multiple blank lines
-    .replace(/\n{3,}/g, '\n\n');
+  let result = code;
+
+  // 1. Remove _interopRequireDefault and _interopRequireWildcard helper functions
+  result = result.replace(/function\s+_interopRequire(?:Default|Wildcard)\s*\([\s\S]*?\}\s*$/gm, '');
+
+  // 2. Remove var _x = _interopRequireDefault(require("y"))
+  result = result.replace(/var\s+\w+\s*=\s*_interopRequire(?:Default|Wildcard)\s*\([^)]*\)\s*;?\s*$/gm, '');
+
+  // 3. Remove var _x2 = _interopRequireDefault(_x) (alias assignments)
+  result = result.replace(/var\s+\w+\s*=\s*_interopRequire(?:Default|Wildcard)\s*\(\s*\w+\s*\)\s*;?\s*$/gm, '');
+
+  // 4. Remove var _x = require("y") (both const and var)
+  result = result.replace(/(?:var|const|let)\s+\w+\s*=\s*require\([^)]*\)\s*;?\s*$/gm, '');
+
+  // 5. Remove exports.xxx = yyy
+  result = result.replace(/^\s*exports\.\w+\s*=\s*[^;]+;\s*$/gm, '');
+
+  // 6. Remove Object.defineProperty(exports, "xxx", { ... })
+  result = result.replace(/^\s*Object\.defineProperty\(exports,\s*['"][^'"]+['"],\s*\{[\s\S]*?\}\);?\s*$/gm, '');
+
+  // 7. Remove module.exports = ...
+  result = result.replace(/^\s*module\.exports\s*=\s*[^;]+;\s*$/gm, '');
+
+  // 8. Remove __export(...) helper calls
+  result = result.replace(/^\s*__export\([^)]*\);?\s*$/gm, '');
+
+  // 9. Remove __esModule flag: Object.defineProperty(..., "__esModule", { value: true })
+  result = result.replace(/^\s*Object\.defineProperty\([^,]+,\s*["']__esModule["'][^;]+;?\s*$/gm, '');
+
+  // 10. Remove var __xxx helper variable declarations
+  result = result.replace(/var\s+__\w+\s*=\s*[^;]+;\s*$/gm, '');
+
+  // 11. Replace _x2.default references with just the variable name
+  // e.g. _react2.default → React (if it was a react import)
+  // _SomeComponent2.default → _SomeComponent2
+  result = result.replace(/(\w+)\.default\b/g, (match, varName) => {
+    // If it looks like a React reference, return React
+    if (varName.startsWith('_react')) return 'React';
+    // Otherwise just use the variable name without .default
+    return varName;
+  });
+
+  // 12. Remove remaining standalone .default access patterns
+  result = result.replace(/\b\w+\.default\b/g, (match) => {
+    // Keep React.default if it exists, otherwise remove .default
+    if (match.startsWith('React')) return match;
+    return match.replace('.default', '');
+  });
+
+  // Clean up multiple blank lines
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  return result;
 }
 
 /**
  * Transpile TypeScript/JSX code to plain JavaScript using Sucrase.
- * Uses the classic JSX runtime and cleans up all module artifacts.
+ * Uses the classic JSX runtime and aggressively cleans all module artifacts.
  */
 function transpileCode(code: string, filePath: string): string {
   try {
@@ -79,7 +125,7 @@ function transpileCode(code: string, filePath: string): string {
 
     let output = result.code;
 
-    // Clean up any CommonJS artifacts Sucrase might have generated
+    // Aggressively clean up ALL CommonJS artifacts
     output = cleanSucraseOutput(output);
 
     // Remove React import that classic runtime generates
@@ -87,6 +133,7 @@ function transpileCode(code: string, filePath: string): string {
 
     // Remove _jsxFileName declarations (classic runtime generates these)
     output = output.replace(/var\s+_jsxFileName\s*=\s*[^;]+;/g, '');
+    output = output.replace(/const\s+_jsxFileName\s*=\s*[^;]+;/g, '');
 
     // Replace _jsx and _jsxs calls with React.createElement
     output = convertJsxRuntimeToCreateElement(output);
@@ -94,7 +141,7 @@ function transpileCode(code: string, filePath: string): string {
     return output;
   } catch (err) {
     console.warn(`[ReactLive] Transpilation failed for ${filePath}:`, err);
-    return code;
+    return stripModuleSyntax(code);
   }
 }
 
@@ -173,7 +220,7 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     return p.endsWith('.tsx') || p.endsWith('.jsx') || p.endsWith('.js') || p.endsWith('.mjs');
   });
 
-  // Build the scope with React essentials + safety nets for module system
+  // Build the scope with React essentials
   const scope: Record<string, unknown> = {
     React,
     useState: React.useState,
@@ -185,13 +232,6 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     useReducer: React.useReducer,
     Fragment: React.Fragment,
     createElement: React.createElement,
-    // Safety nets: Sucrase may emit these in CommonJS mode
-    exports: {},
-    module: { exports: {} },
-    require: (_name: string) => {
-      if (_name === 'react') return React;
-      return {};
-    },
   };
 
   // Build the code: component helpers + App component + render call
@@ -208,21 +248,15 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
   // Add component files (these are imports that react-live can't handle,
   // so we inline them after transpiling)
   for (const [path, file] of componentFiles) {
-    // transpileCode now handles import/export stripping internally via stripModuleSyntax
     let content = transpileCode(file.content, path);
-
-    // Additional cleanup for any remaining TypeScript syntax
     content = stripTypeScriptSyntax(content);
-
     code += `${content}\n\n`;
   }
 
   // Add the App component
   if (appFile) {
-    // transpileCode now handles import/export stripping internally via stripModuleSyntax
     let appContent = transpileCode(appFile[1].content, appFile[0]);
     appContent = stripTypeScriptSyntax(appContent);
-
     code += `${appContent}\n\n`;
   }
 
