@@ -31,6 +31,8 @@ export interface ProjectSettings {
   logo: string;
   envVars: EnvVar[];
   previewMode: PreviewMode;
+  provider: 'anthropic' | 'openrouter' | 'google';
+  model: string;
   netlify: {
     token: string;
     siteId: string;
@@ -78,6 +80,8 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   logo: '',
   envVars: [],
   previewMode: 'webcontainer',
+  provider: 'anthropic',
+  model: 'claude-3-5-sonnet-20240620',
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
   cloudRun: { projectId: '', region: 'us-central1', serviceAccountKey: '', serviceName: '', allowUnauthenticated: true },
@@ -176,6 +180,8 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       logo: updatedSettings.logo,
       custom_rules: updatedSettings.customRules,
       preview_mode: updatedSettings.previewMode,
+      provider: updatedSettings.provider,
+      model: updatedSettings.model,
       env_vars: updatedSettings.envVars,
       github_repo: updatedSettings.github.repo,
       github_branch: updatedSettings.github.branch,
@@ -243,6 +249,8 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
       logo: data.logo || '',
       customRules: data.custom_rules || '',
       previewMode: data.preview_mode || 'webcontainer',
+      provider: data.provider || 'anthropic',
+      model: data.model || 'claude-3-5-sonnet-20240620',
       envVars: Array.isArray(data.env_vars) ? data.env_vars : [],
       github: {
         token: data.github_token || '',

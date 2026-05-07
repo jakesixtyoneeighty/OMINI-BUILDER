@@ -18,8 +18,9 @@ import {
   writeEnvFile,
   type EnvVar,
 } from '~/lib/stores/project';
+import { SecurityTestTab } from '~/components/chat/SecurityTestTab';
 
-type Tab = 'keys' | 'project';
+type Tab = 'keys' | 'project' | 'security';
 
 const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpText: string }[] = [
   {
@@ -42,7 +43,12 @@ const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpTex
   },
 ];
 
-export function SettingsDialog() {
+interface SettingsDialogProps {
+  onSecurityTest?: (prompt: string) => void;
+  isStreaming?: boolean;
+}
+
+export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogProps) {
   const { keys } = useStore(llmStore);
   const models = useStore(modelsStore);
   const loading = useStore(modelsLoadingStore);
@@ -107,6 +113,18 @@ export function SettingsDialog() {
     }
   }
 
+  const handleSecurityTest = (prompt: string) => {
+    if (onSecurityTest) {
+      onSecurityTest(prompt);
+      setOpen(false);
+    } else {
+      // Dispatch a custom event that Chat.client.tsx listens for
+      window.dispatchEvent(new CustomEvent('security-test-requested', { detail: { prompt } }));
+      setOpen(false);
+      toast.info('Teste de segurança enviado para a IA.');
+    }
+  };
+
   return (
     <>
       <button
@@ -121,7 +139,7 @@ export function SettingsDialog() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-[560px] max-w-[92vw] max-h-[90vh] overflow-y-auto rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl"
+            className="w-[600px] max-w-[92vw] max-h-[90vh] overflow-y-auto rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl"
           >
             <div className="flex items-center justify-between px-5 pt-5">
               <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">Settings</h2>
@@ -133,7 +151,13 @@ export function SettingsDialog() {
             <div className="flex gap-1 px-5 mt-4 border-b border-bolt-elements-borderColor">
               <button onClick={() => setTab('keys')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'keys' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>API Keys</button>
               {isProjectActive && (
-                <button onClick={() => setTab('project')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'project' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>Project</button>
+                <button onClick={() => setTab('project')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'project' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>Projeto</button>
+              )}
+              {isProjectActive && (
+                <button onClick={() => setTab('security')} className={`px-3 py-2 text-sm border-b-2 flex items-center gap-1.5 ${tab === 'security' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>
+                  <div className="i-ph:shield-check text-sm" />
+                  Segurança
+                </button>
               )}
             </div>
 
@@ -152,6 +176,8 @@ export function SettingsDialog() {
                   </div>
                 ))}
               </div>
+            ) : tab === 'security' ? (
+              <SecurityTestTab onRunTest={handleSecurityTest} isStreaming={isStreaming} />
             ) : (
               <div className="p-5 space-y-4">
                 <input type="text" value={pName} onChange={(e) => setPName(e.target.value)} placeholder="Project Name" className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />

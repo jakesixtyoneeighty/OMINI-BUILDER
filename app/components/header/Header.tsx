@@ -21,7 +21,6 @@ export function Header() {
 
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -146,7 +145,7 @@ export function Header() {
                         <span>{themeStore.get() === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                       </button>
                       <button
-                        onClick={() => { setSettingsDialogOpen(true); setMoreMenuOpen(false); }}
+                        onClick={() => { setAppSettingsOpen(true); setMoreMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:gear-six text-base" />
@@ -172,7 +171,7 @@ export function Header() {
                 )}
               </div>
 
-              <SettingsDialog open={settingsDialogOpen} onClose={() => setSettingsDialogOpen(false)} />
+              <ClientOnly>{() => <SettingsDialog isStreaming={chat.started} />}</ClientOnly>
               <AppSettingsDialog open={appSettingsOpen} onClose={closeSettings} defaultTab={settingsTab} />
               <AuthButton />
             </>

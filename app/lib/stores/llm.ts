@@ -1,5 +1,6 @@
 import { atom, map } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
+import { activeProjectIdStore, projectsStore } from './project';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
@@ -68,7 +69,23 @@ if (typeof window !== 'undefined') {
       /* ignore */
     }
   });
-}
+
+  // Sync project-specific provider/model when switching projects
+  projectsStore.subscribe((projects) => {
+    const projectId = activeProjectIdStore.get();
+    const project = projects[projectId];
+    if (project?.settings?.provider || project?.settings?.model) {
+      const current = llmStore.get();
+      const newProvider = project.settings.provider || current.provider;
+      const newModel = project.settings.model || current.model;
+      // Only update if different to avoid infinite loops
+      if (current.provider !== newProvider || current.model !== newModel) {
+        llmStore.setKey('provider', newProvider);
+        llmStore.setKey('model', newModel);
+      }
+    }
+  });
+} 
 
 export async function syncKeysToSupabase() {
   const sb = getSupabase();
@@ -121,6 +138,14 @@ export function setModel(model: string) {
 export function selectProviderModel(provider: ProviderId, model: string) {
   llmStore.setKey('provider', provider);
   llmStore.setKey('model', model);
+
+  // Also save to active project settings so each project remembers its model
+  const projectId = activeProjectIdStore.get();
+  if (projectId && projectId !== 'default') {
+    import('./project').then(({ updateActiveProjectSettings }) => {
+      updateActiveProjectSettings({ provider, model });
+    });
+  }
 }
 
 export async function setApiKey(provider: ProviderId, key: string) {

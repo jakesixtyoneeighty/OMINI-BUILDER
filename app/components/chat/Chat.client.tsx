@@ -671,6 +671,25 @@ ${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy 
     return () => window.removeEventListener('deploy-requested', handleDeployRequest as EventListener);
   }, [append, chatStarted]);
 
+  // Listen for security test requests from SettingsDialog
+  useEffect(() => {
+    const handleSecurityTest = (event: CustomEvent) => {
+      const { prompt } = event.detail;
+      if (!prompt) return;
+
+      if (!chatStarted) {
+        runAnimation();
+      }
+
+      setTimeout(() => {
+        append({ role: 'user', content: prompt });
+      }, 300);
+    };
+
+    window.addEventListener('security-test-requested', handleSecurityTest as EventListener);
+    return () => window.removeEventListener('security-test-requested', handleSecurityTest as EventListener);
+  }, [append, chatStarted]);
+
   const handleEnvSave = async (vars: { key: string; value: string }[]) => {
     setEnvModalOpen(false);
 
