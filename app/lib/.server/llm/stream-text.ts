@@ -1,7 +1,8 @@
-import { streamText as _streamText, convertToCoreMessages } from 'ai';
+import { streamText as _streamText, convertToCoreMessages, type CoreMessage } from 'ai';
 import { getModel, type ProviderId } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt, type DatabaseContext } from './prompts';
+import { tools } from './tools';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -33,12 +34,16 @@ export function streamText(messages: Messages, selection: ModelSelection, option
     extra.headers = { 'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15' };
   }
 
+  // Convert messages to core messages, handling tool invocations
+  const coreMessages = convertToCoreMessages(messages as any);
+
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
     system: getSystemPrompt(undefined, dbContext, planMode, customRules),
     maxTokens: MAX_TOKENS,
+    tools,
     ...extra,
-    messages: convertToCoreMessages(messages),
+    messages: coreMessages,
     ...options,
   });
 }

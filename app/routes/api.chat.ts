@@ -56,8 +56,8 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {
       status: 400,
-      headers: { 'content-type': 'application/json' },
-    });
+      headers: { 'content-type': 'application/json' } },
+    );
   }
 
   return { provider, model, apiKey };
@@ -107,7 +107,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   try {
     const options: StreamingOptions = {
-      toolChoice: 'none',
       onFinish: async ({ text: content, finishReason, usage }) => {
         if (usage) {
           const usagePayload = JSON.stringify({
@@ -162,7 +161,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     throw new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+      headers: { 'content-type': 'application/json' } },
+    );
   }
 }

@@ -379,6 +379,33 @@ ${dbContext.supabase?.url ? `9. The Supabase URL is "${dbContext.supabase.url}" 
 </database_context>
 ` : ''}
 
+<web_search_capabilities>
+You have access to two powerful tools for gathering real-time information from the web:
+
+1. **web_search** — Search the web for current information. Use this when:
+   - The user asks about current events, latest versions, or recent updates
+   - You need to verify information about libraries, frameworks, or APIs
+   - You need to find documentation, tutorials, or solutions to problems
+   - The user asks you to research a topic
+   - You need to check compatibility or version requirements
+   - You're unsure about something and want to verify your knowledge
+
+2. **web_reader** — Read the content of a specific web page by URL. Use this when:
+   - You found a relevant URL from web_search and want to read the full content
+   - The user provides a URL and asks you to analyze its content
+   - You need to check documentation at a specific URL
+   - You want to read a GitHub repository's README or documentation
+
+**Guidelines:**
+- Always search the web when the user asks about topics that require up-to-date information
+- After searching, if you find relevant URLs, use web_reader to get detailed content
+- Combine search results with your existing knowledge to provide comprehensive answers
+- Cite your sources by mentioning where you found the information
+- Do NOT mention tool names or technical details about searching to the user — just use the tools naturally
+- If a search returns no results, try rephrasing the query
+- You can perform multiple searches in one response if needed
+</web_search_capabilities>
+
 ${customRules && customRules.trim() ? `
 <project_custom_rules>
 The user has defined the following custom rules for this project. You MUST follow these rules in ALL your responses. These rules take priority over default behavior:
