@@ -9,7 +9,7 @@ import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
-import { RecentlyViewed } from './RecentlyViewed';
+import { UserProjects } from './UserProjects.client';
 import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
@@ -89,7 +89,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     // Resizable layout state
     const chatWidthPct = useStore(chatWidthStore);
-    const showWorkbench = useStore(chatStore).started;
     const containerRef = useRef<HTMLDivElement>(null);
     const [isResizing, setIsResizing] = useState(false);
 
@@ -414,37 +413,21 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     </div>
                     {/* End input card */}
 
-                    {/* "or start from" row */}
+                    {/* "or start from" row - Figma removed, only GitHub/ZIP/Folder + Team template */}
                     <div className="mt-3 flex items-center justify-center gap-3">
                       <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-                        >
-                          <div className="i-ph:figma-logo text-sm" />
-                          Figma
-                        </button>
-
                         {importFromGithub && (
                           <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
                         )}
-
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-                        >
-                          <div className="i-ph:files text-sm" />
-                          Team template
-                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Recently viewed section */}
+                {/* User projects section */}
                 <div className="pb-8 pt-6 relative z-10">
-                  <RecentlyViewed />
+                  <ClientOnly>{() => <UserProjects />}</ClientOnly>
                 </div>
               </div>
             )}

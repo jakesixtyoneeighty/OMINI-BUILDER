@@ -1,5 +1,5 @@
-import { useStore } from '@nanostores/react';
 import { motion, type Variants } from 'framer-motion';
+import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
@@ -10,6 +10,7 @@ import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
+import { starredProjectsStore } from '~/lib/stores/starred';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -50,7 +51,7 @@ export function Menu() {
   const [list, setList] = useState<ChatHistoryItem[]>([]);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [navSection, setNavSection] = useState<'main' | 'chats'>('main');
+  const [navSection, setNavSection] = useState<'main' | 'chats' | 'starred'>('main');
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -62,6 +63,7 @@ export function Menu() {
   });
   const { user } = useStore(authStore);
   const chatStarted = useStore(chatStore).started;
+  const starred = useStore(starredProjectsStore);
 
   const sidebarWidth = collapsed ? 60 : 240;
 
@@ -80,7 +82,6 @@ export function Menu() {
     workbenchStore.showWorkbench.set(false);
     workbenchStore.currentView.set('code');
     workbenchStore.clearWorkspace();
-    // Clear all artifacts
     workbenchStore.artifacts.set({});
     workbenchStore.artifactIdList = [];
     localStorage.removeItem('omni-builder.files.cache');
@@ -93,13 +94,15 @@ export function Menu() {
     window.location.href = '/';
   }, []);
 
+  // Filter starred items
+  const starredItems = list.filter((item) => starred.has(item.urlId || item.id));
+
   // Navigation items
   const navItems: NavItem[] = [
     { icon: 'i-ph:house', label: 'Home', onClick: handleNewChat, active: !chatStarted },
     { icon: 'i-ph:folder-open', label: 'Projects', href: '/projects' },
-    { icon: 'i-ph:star', label: 'Starred' },
-    { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed' },
-    { icon: 'i-ph:users-three', label: 'Shared with you' },
+    { icon: 'i-ph:star', label: 'Starred', onClick: () => setNavSection('starred') },
+    { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed', onClick: () => setNavSection('chats') },
     {
       icon: 'i-ph:book-open-text',
       label: 'Docs & Help center',
@@ -170,6 +173,66 @@ export function Menu() {
   const userAvatar = user?.user_metadata?.avatar_url || '';
   const displayName = userName || userEmail || 'Guest';
 
+  const renderChatList = (items: ChatHistoryItem[], showDateBinning = true) => (
+    <>
+      {!collapsed && items.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
+      {collapsed && items.length === 0 && (
+        <div className="flex items-center justify-center py-2" title="No previous conversations">
+          <div className="i-ph:chat-circle-dots text-base text-bolt-elements-textTertiary" />
+        </div>
+      )}
+      <DialogRoot open={dialogContent !== null}>
+        {showDateBinning ? (
+          binDates(items).map(({ category, items: dateItems }) => (
+            <div key={category} className="mt-3 first:mt-0 space-y-1">
+              {!collapsed && (
+                <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-sidebar-background pl-2 pt-2 pb-1 text-xs font-medium">
+                  {category}
+                </div>
+              )}
+              {dateItems.map((item) => (
+                <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
+              ))}
+            </div>
+          ))
+        ) : (
+          items.map((item) => (
+            <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
+          ))
+        )}
+        <Dialog onBackdrop={closeDialog} onClose={closeDialog}>
+          {dialogContent?.type === 'delete' && (
+            <>
+              <DialogTitle>Delete Chat?</DialogTitle>
+              <DialogDescription asChild>
+                <div>
+                  <p>
+                    You are about to delete <strong>{dialogContent.item.description}</strong>.
+                  </p>
+                  <p className="mt-1">Are you sure you want to delete this chat?</p>
+                </div>
+              </DialogDescription>
+              <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
+                <DialogButton type="secondary" onClick={closeDialog}>
+                  Cancel
+                </DialogButton>
+                <DialogButton
+                  type="danger"
+                  onClick={(event) => {
+                    deleteItem(event, dialogContent.item);
+                    closeDialog();
+                  }}
+                >
+                  Delete
+                </DialogButton>
+              </div>
+            </>
+          )}
+        </Dialog>
+      </DialogRoot>
+    </>
+  );
+
   const sidebar = (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* User account section - clickable to open settings */}
@@ -216,6 +279,12 @@ export function Menu() {
                 {!collapsed && item.external && (
                   <div className="i-ph:arrow-square-out text-xs ml-auto text-bolt-elements-textTertiary" />
                 )}
+                {/* Starred badge */}
+                {!collapsed && item.label === 'Starred' && starredItems.length > 0 && (
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent text-[10px] font-bold leading-none">
+                    {starredItems.length}
+                  </span>
+                )}
               </>
             );
 
@@ -249,6 +318,46 @@ export function Menu() {
               </button>
             );
           })}
+        </div>
+      ) : navSection === 'starred' ? (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Back to main nav */}
+          <div className={collapsed ? 'px-1.5 pt-2' : 'px-2 pt-2'}>
+            <button
+              type="button"
+              onClick={() => setNavSection('main')}
+              className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
+              title={collapsed ? 'Back' : undefined}
+            >
+              <div className="i-ph:caret-left text-base shrink-0" />
+              {!collapsed && <span>Back</span>}
+            </button>
+          </div>
+
+          {/* Starred section header */}
+          {!collapsed && (
+            <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider flex items-center gap-2">
+              <div className="i-ph:star text-sm text-yellow-400" />
+              Favoritos
+            </div>
+          )}
+          <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
+            {starredItems.length === 0 ? (
+              collapsed ? (
+                <div className="flex items-center justify-center py-2" title="Nenhum favorito ainda">
+                  <div className="i-ph:star text-base text-bolt-elements-textTertiary" />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-bolt-elements-textTertiary">
+                  <div className="i-ph:star text-2xl mb-2 opacity-30" />
+                  <p className="text-sm">Nenhum favorito ainda</p>
+                  <p className="text-[11px] mt-1 opacity-70">Clique na estrela ao lado de um chat para favoritar</p>
+                </div>
+              )
+            ) : (
+              renderChatList(starredItems, false)
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col flex-1 overflow-hidden">
@@ -296,55 +405,7 @@ export function Menu() {
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
-            {!collapsed && list.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
-            {collapsed && list.length === 0 && (
-              <div className="flex items-center justify-center py-2" title="No previous conversations">
-                <div className="i-ph:chat-circle-dots text-base text-bolt-elements-textTertiary" />
-              </div>
-            )}
-            <DialogRoot open={dialogContent !== null}>
-              {binDates(list).map(({ category, items }) => (
-                <div key={category} className="mt-3 first:mt-0 space-y-1">
-                  {!collapsed && (
-                    <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-sidebar-background pl-2 pt-2 pb-1 text-xs font-medium">
-                      {category}
-                    </div>
-                  )}
-                  {items.map((item) => (
-                    <HistoryItem key={item.id} item={item} onDelete={() => setDialogContent({ type: 'delete', item })} />
-                  ))}
-                </div>
-              ))}
-              <Dialog onBackdrop={closeDialog} onClose={closeDialog}>
-                {dialogContent?.type === 'delete' && (
-                  <>
-                    <DialogTitle>Delete Chat?</DialogTitle>
-                    <DialogDescription asChild>
-                      <div>
-                        <p>
-                          You are about to delete <strong>{dialogContent.item.description}</strong>.
-                        </p>
-                        <p className="mt-1">Are you sure you want to delete this chat?</p>
-                      </div>
-                    </DialogDescription>
-                    <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
-                      <DialogButton type="secondary" onClick={closeDialog}>
-                        Cancel
-                      </DialogButton>
-                      <DialogButton
-                        type="danger"
-                        onClick={(event) => {
-                          deleteItem(event, dialogContent.item);
-                          closeDialog();
-                        }}
-                      >
-                        Delete
-                      </DialogButton>
-                    </div>
-                  </>
-                )}
-              </Dialog>
-            </DialogRoot>
+            {renderChatList(list)}
           </div>
         </div>
       )}
