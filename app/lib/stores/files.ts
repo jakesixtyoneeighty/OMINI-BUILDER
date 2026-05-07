@@ -206,24 +206,33 @@ export class FilesStore {
       const currentFiles = this.files.get();
       const serializable: Record<string, { type: string; content: string }> = {};
       let totalSize = 0;
-      const MAX_SIZE = 4 * 1024 * 1024;
+      const MAX_SIZE = 3 * 1024 * 1024; // 3MB limit (reduced from 4MB to leave room for snapshots)
 
       for (const [path, dirent] of Object.entries(currentFiles)) {
         if (!dirent || dirent.type !== 'file' || dirent.isBinary) continue;
         if (path.includes('node_modules')) continue;
+        if (path.includes('.git/')) continue;
+        if (path.endsWith('.lock') || path.endsWith('.map')) continue;
 
-        const entrySize = path.length + (dirent.content?.length || 0);
+        const entrySize = (path.length + (dirent.content?.length || 0)) * 2; // UTF-16 bytes
         if (totalSize + entrySize > MAX_SIZE) break;
 
         serializable[path] = { type: dirent.type, content: dirent.content };
         totalSize += entrySize;
       }
 
-      localStorage.setItem(FILES_CACHE_KEY, JSON.stringify({
-        files: serializable,
-        timestamp: Date.now(),
-      }));
-      logger.info(`Saved ${Object.keys(serializable).length} files to cache`);
+      try {
+        localStorage.setItem(FILES_CACHE_KEY, JSON.stringify({
+          files: serializable,
+          timestamp: Date.now(),
+        }));
+        logger.info(`Saved ${Object.keys(serializable).length} files to cache`);
+      } catch (err) {
+        if (err instanceof DOMException && (err.name === 'QuotaExceededError' || err.code === 22)) {
+          logger.warn('localStorage quota exceeded, clearing files cache');
+          try { localStorage.removeItem(FILES_CACHE_KEY); } catch {}
+        }
+      }
     } catch (error) {
       logger.warn('Failed to save files to cache', error);
     }
