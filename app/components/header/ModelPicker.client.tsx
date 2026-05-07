@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   llmStore,
   modelsStore,
@@ -28,7 +29,9 @@ export function ModelPicker() {
   const loading = useStore(modelsLoadingStore);
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const configuredCount = (Object.keys(keys) as ProviderId[]).filter((p) => keys[p]).length;
 
@@ -36,14 +39,52 @@ export function ModelPicker() {
     refreshAllConfiguredModels();
   }, [keys.anthropic, keys.openrouter, keys.google]);
 
+  // Calculate dropdown position based on button location
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + 8, // 8px gap below button
+      left: rect.left,
+    });
+  }, []);
+
+  // Update position when opening and on scroll/resize
   useEffect(() => {
     if (!open) return;
+    updatePosition();
+
+    const onScroll = () => updatePosition();
+    const onResize = () => updatePosition();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+
+    // Close on click outside (check both button and dropdown)
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        buttonRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+
+    // Close on Escape
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, updatePosition]);
 
   const flat: FlatOption[] = useMemo(() => {
     const out: FlatOption[] = [];
@@ -72,9 +113,85 @@ export function ModelPicker() {
   const isAnyLoading = Object.values(loading).some(Boolean);
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || 'Select model';
 
+  const dropdownContent = open ? (
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] w-[320px] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden"
+      style={{ top: dropdownPos.top, left: dropdownPos.left }}
+    >
+      <div className="p-2 border-b border-bolt-elements-borderColor">
+        <input
+          autoFocus
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Search models..."
+          className="w-full px-2 py-1.5 rounded text-xs bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+        />
+      </div>
+
+      <div className="max-h-[300px] overflow-y-auto">
+        {configuredCount === 0 ? (
+          <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
+            No API keys configured. Open Settings to add one.
+          </div>
+        ) : flat.length === 0 ? (
+          <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
+            {isAnyLoading ? 'Loading models…' : 'No models loaded yet.'}
+          </div>
+        ) : (
+          (Object.keys(grouped) as ProviderId[]).map((p) => {
+            const items = grouped[p];
+            if (items.length === 0) return null;
+            return (
+              <div key={p}>
+                <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src={PROVIDER_LOGOS[p]} alt={p} className="w-3 h-3 object-contain" />
+                    <span>{PROVIDER_LABELS[p]}</span>
+                  </div>
+                  <span>{items.length}</span>
+                </div>
+                {items.map((o) => {
+                  const active = o.provider === provider && o.id === model;
+                  return (
+                    <button
+                      key={`${o.provider}:${o.id}`}
+                      onClick={() => {
+                        selectProviderModel(o.provider, o.id);
+                        setOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-[11px] flex flex-col gap-0.5 hover:bg-bolt-elements-item-backgroundActive transition-theme ${
+                        active ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textPrimary'
+                      }`}
+                    >
+                      <span className="font-medium truncate">{o.label}</span>
+                      <span className="text-[9px] opacity-60 truncate">{o.id}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
+        <span>{flat.length} models</span>
+        <button
+          onClick={() => refreshAllConfiguredModels()}
+          disabled={isAnyLoading || configuredCount === 0}
+          className="hover:text-bolt-elements-textPrimary disabled:opacity-50"
+        >
+          {isAnyLoading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div ref={ref} className="relative z-[1000]">
+    <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
@@ -85,76 +202,7 @@ export function ModelPicker() {
         <div className={`i-ph:caret-up text-[10px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full mt-2 w-[320px] z-[1001] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-bolt-elements-borderColor">
-            <input
-              autoFocus
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search models..."
-              className="w-full px-2 py-1.5 rounded text-xs bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
-            />
-          </div>
-
-          <div className="max-h-[300px] overflow-y-auto">
-            {configuredCount === 0 ? (
-              <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-                No API keys configured. Open Settings to add one.
-              </div>
-            ) : flat.length === 0 ? (
-              <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-                {isAnyLoading ? 'Loading models…' : 'No models loaded yet.'}
-              </div>
-            ) : (
-              (Object.keys(grouped) as ProviderId[]).map((p) => {
-                const items = grouped[p];
-                if (items.length === 0) return null;
-                return (
-                  <div key={p}>
-                    <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <img src={PROVIDER_LOGOS[p]} alt={p} className="w-3 h-3 object-contain" />
-                        <span>{PROVIDER_LABELS[p]}</span>
-                      </div>
-                      <span>{items.length}</span>
-                    </div>
-                    {items.map((o) => {
-                      const active = o.provider === provider && o.id === model;
-                      return (
-                        <button
-                          key={`${o.provider}:${o.id}`}
-                          onClick={() => {
-                            selectProviderModel(o.provider, o.id);
-                            setOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-[11px] flex flex-col gap-0.5 hover:bg-bolt-elements-item-backgroundActive transition-theme ${
-                            active ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textPrimary'
-                          }`}
-                        >
-                          <span className="font-medium truncate">{o.label}</span>
-                          <span className="text-[9px] opacity-60 truncate">{o.id}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
-            <span>{flat.length} models</span>
-            <button
-              onClick={() => refreshAllConfiguredModels()}
-              disabled={isAnyLoading || configuredCount === 0}
-              className="hover:text-bolt-elements-textPrimary disabled:opacity-50"
-            >
-              {isAnyLoading ? 'Refreshing…' : 'Refresh'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      {dropdownContent && createPortal(dropdownContent, document.body)}
+    </>
   );
 }
