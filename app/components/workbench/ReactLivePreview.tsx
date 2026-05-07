@@ -6,8 +6,58 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
 /**
+ * Strip ALL import and export statements from code before transpilation.
+ * This prevents Sucrase from generating CommonJS `exports.xxx` references
+ * which cause "ReferenceError: exports is not defined" in react-live's scope.
+ */
+function stripModuleSyntax(code: string): string {
+  return code
+    // Remove import statements: import X from 'y', import { X } from 'y', import 'y'
+    .replace(/^import\s+[\s\S]*?from\s+['"].*?['"];?\s*$/gm, '')
+    // Remove side-effect imports: import 'module'
+    .replace(/^import\s+['"].*?['"];?\s*$/gm, '')
+    // Remove export default (must come before named export strip)
+    .replace(/^export\s+default\s+/gm, '')
+    // Remove named exports: export const, export function, export class, export let, export var
+    .replace(/^export\s+(const|let|var|function|class|async\s+function)\s+/gm, '$1 ')
+    // Remove re-exports: export { foo } from 'bar', export { foo, bar }
+    .replace(/^export\s+\{[^}]*\}(\s+from\s+['"].*?['"];?)?\s*$/gm, '')
+    // Remove export type statements
+    .replace(/^export\s+type\s+[\s\S]*?;?\s*$/gm, '')
+    // Remove export interface
+    .replace(/^export\s+interface\s+/gm, 'interface ')
+    // Clean up multiple blank lines
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Clean up CommonJS artifacts that Sucrase may generate from leftover
+ * export/import references. Removes `exports.xxx = ...` and
+ * `Object.defineProperty(exports, ...)` patterns.
+ */
+function cleanSucraseOutput(code: string): string {
+  return code
+    // Remove: exports.xxx = yyy;
+    .replace(/^\s*exports\.\w+\s*=\s*[^;]+;\s*$/gm, '')
+    // Remove: Object.defineProperty(exports, "xxx", { ... })
+    .replace(/^\s*Object\.defineProperty\(exports,\s*['"][^'"]+['"],\s*\{[\s\S]*?\}\);?\s*$/gm, '')
+    // Remove: exports.default = ...
+    .replace(/^\s*exports\.default\s*=\s*[^;]+;\s*$/gm, '')
+    // Remove: module.exports = ...
+    .replace(/^\s*module\.exports\s*=\s*[^;]+;\s*$/gm, '')
+    // Remove: __export(...) helper calls
+    .replace(/^\s*__export\([^)]*\);?\s*$/gm, '')
+    // Remove: var __exportStar = ...
+    .replace(/^\s*var\s+__\w+\s*=\s*[^;]+;\s*$/gm, '')
+    // Remove require() calls that Sucrase might emit
+    .replace(/^\s*const\s+\w+\s*=\s*require\([^)]*\);\s*$/gm, '')
+    // Clean up multiple blank lines
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
  * Transpile TypeScript/JSX code to plain JavaScript using Sucrase.
- * Uses the automatic JSX runtime to avoid _jsxFileName duplicate declarations.
+ * Uses the classic JSX runtime and cleans up all module artifacts.
  */
 function transpileCode(code: string, filePath: string): string {
   try {
@@ -17,22 +67,28 @@ function transpileCode(code: string, filePath: string): string {
 
     if (!isTSX && !isJSX && !isTS) return code;
 
-    const result = transform(code, {
+    // Strip all import/export BEFORE transpiling to prevent Sucrase
+    // from generating CommonJS exports references
+    let preprocessed = stripModuleSyntax(code);
+
+    const result = transform(preprocessed, {
       transforms: isTSX || isTS ? ['typescript', 'jsx'] : ['jsx'],
-      jsxRuntime: 'automatic',
+      jsxRuntime: 'classic',
       production: true,
     });
 
     let output = result.code;
 
-    // Remove automatic runtime imports since we provide React in scope
-    // react-live executes code in its own scope, not as ES modules
-    output = output
-      .replace(/import\s+\{[^}]*\}\s+from\s+['"]react\/jsx-runtime['"];?\s*/g, '')
-      .replace(/import\s+React\s+from\s+['"]react['"];?\s*/g, '');
+    // Clean up any CommonJS artifacts Sucrase might have generated
+    output = cleanSucraseOutput(output);
+
+    // Remove React import that classic runtime generates
+    output = output.replace(/var\s+React\s*=\s*require\(['"]react['"]\);?\s*/g, '');
+
+    // Remove _jsxFileName declarations (classic runtime generates these)
+    output = output.replace(/var\s+_jsxFileName\s*=\s*[^;]+;/g, '');
 
     // Replace _jsx and _jsxs calls with React.createElement
-    // The automatic runtime uses _jsx/_jsxs which we don't have
     output = convertJsxRuntimeToCreateElement(output);
 
     return output;
@@ -43,33 +99,16 @@ function transpileCode(code: string, filePath: string): string {
 }
 
 /**
- * Convert _jsx/_jsxs calls from the automatic runtime to React.createElement calls.
- * This is needed because react-live doesn't support ES module imports,
- * so we can't import from 'react/jsx-runtime'.
- *
- * _jsx(Component, {prop1: value1, children: [...]}, key)
- * → React.createElement(Component, {prop1: value1}, ...children)
- *
- * _jsxs(Component, {prop1: value1, children: [...]}, key)
- * → React.createElement(Component, {prop1: value1}, ...children)
+ * Convert _jsx/_jsxs calls to React.createElement calls.
+ * Sucrase classic runtime with production: true shouldn't emit these,
+ * but we keep this as a safety net for any edge cases.
  */
 function convertJsxRuntimeToCreateElement(code: string): string {
-  // Replace _jsxs(Component, { ...children... }, key) and _jsx(Component, { ... }, key)
-  // with React.createElement equivalents
   let result = code;
-
-  // Remove any remaining _jsxFileName declarations (shouldn't exist with automatic + production, but just in case)
+  // Remove any remaining _jsxFileName declarations
   result = result.replace(/const\s+_jsxFileName\s*=\s*[^;]+;/g, '');
-
-  // Simple replacement: _jsx( → React.createElement(
-  // and _jsxs( → React.createElement(
+  // Replace _jsx( and _jsxs( with React.createElement(
   result = result.replace(/\b_jsxs?\s*\(/g, 'React.createElement(');
-
-  // The automatic runtime passes children as a prop in the props object.
-  // React.createElement spreads children as additional arguments.
-  // For react-live, this simple conversion works well enough since
-  // React.createElement handles both patterns.
-
   return result;
 }
 
@@ -134,7 +173,7 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     return p.endsWith('.tsx') || p.endsWith('.jsx') || p.endsWith('.js') || p.endsWith('.mjs');
   });
 
-  // Build the scope with React essentials
+  // Build the scope with React essentials + safety nets for module system
   const scope: Record<string, unknown> = {
     React,
     useState: React.useState,
@@ -146,6 +185,13 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     useReducer: React.useReducer,
     Fragment: React.Fragment,
     createElement: React.createElement,
+    // Safety nets: Sucrase may emit these in CommonJS mode
+    exports: {},
+    module: { exports: {} },
+    require: (_name: string) => {
+      if (_name === 'react') return React;
+      return {};
+    },
   };
 
   // Build the code: component helpers + App component + render call
@@ -162,14 +208,8 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
   // Add component files (these are imports that react-live can't handle,
   // so we inline them after transpiling)
   for (const [path, file] of componentFiles) {
-    // First strip imports and exports, then transpile
-    let content = file.content
-      .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '') // Remove imports
-      .replace(/^export\s+default\s+/gm, '') // Remove default export
-      .replace(/^export\s+/gm, ''); // Remove named exports
-
-    // Transpile TypeScript/JSX to JavaScript
-    content = transpileCode(content, path);
+    // transpileCode now handles import/export stripping internally via stripModuleSyntax
+    let content = transpileCode(file.content, path);
 
     // Additional cleanup for any remaining TypeScript syntax
     content = stripTypeScriptSyntax(content);
@@ -179,12 +219,8 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
 
   // Add the App component
   if (appFile) {
-    let appContent = appFile[1].content
-      .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '') // Remove imports
-      .replace(/^export\s+default\s+/gm, ''); // Remove default export
-
-    // Transpile TypeScript/JSX
-    appContent = transpileCode(appContent, appFile[0]);
+    // transpileCode now handles import/export stripping internally via stripModuleSyntax
+    let appContent = transpileCode(appFile[1].content, appFile[0]);
     appContent = stripTypeScriptSyntax(appContent);
 
     code += `${appContent}\n\n`;
