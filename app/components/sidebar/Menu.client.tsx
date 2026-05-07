@@ -8,13 +8,15 @@ import { AccountSettingsDialog } from '~/components/header/AccountSettingsDialog
 import { getDb, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, type ProjectRecord } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
 import { starredProjectsStore } from '~/lib/stores/starred';
+import { recentlyViewedStore, addRecentlyViewed, type RecentlyViewedItem } from '~/lib/stores/recently-viewed';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
 import { binDates } from './date-binning';
+import { StorageBar } from './StorageBar.client';
 
 const sidebarVariants = {
   closed: {
@@ -64,6 +66,8 @@ export function Menu() {
   const { user } = useStore(authStore);
   const chatStarted = useStore(chatStore).started;
   const starred = useStore(starredProjectsStore);
+  const projects = useStore(projectsStore);
+  const recentlyViewed = useStore(recentlyViewedStore);
 
   const sidebarWidth = collapsed ? 60 : 240;
 
@@ -94,8 +98,26 @@ export function Menu() {
     window.location.href = '/';
   }, []);
 
-  // Filter starred items
-  const starredItems = list.filter((item) => starred.has(item.urlId || item.id));
+  // Get starred project details from projects store
+  const starredProjectEntries = Array.from(starred)
+    .map((id) => {
+      const proj = projects[id];
+      if (!proj || id === 'default') return null;
+      return {
+        id,
+        name: proj.name || 'Untitled',
+        description: proj.settings?.description || '',
+        logo: proj.settings?.logo || '',
+        source: 'local' as const,
+      };
+    })
+    .filter(Boolean) as { id: string; name: string; description: string; logo: string; source: 'local' }[];
+
+  // Filter starred items from chat history (for chats that aren't in projects store)
+  const starredChatItems = list.filter((item) => {
+    const id = item.urlId || item.id;
+    return starred.has(id) && !projects[id];
+  });
 
   // Navigation items
   const navItems: NavItem[] = [
@@ -173,6 +195,9 @@ export function Menu() {
   const userAvatar = user?.user_metadata?.avatar_url || '';
   const displayName = userName || userEmail || 'Guest';
 
+  // Total starred count (projects + chats)
+  const totalStarred = starredProjectEntries.length + starredChatItems.length;
+
   const renderChatList = (items: ChatHistoryItem[], showDateBinning = true) => (
     <>
       {!collapsed && items.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
@@ -233,6 +258,78 @@ export function Menu() {
     </>
   );
 
+  // Render a project card (compact sidebar version)
+  const renderProjectCard = (project: { id: string; name: string; description?: string; logo?: string; source?: string; timestamp?: string }) => (
+    <a
+      key={project.id}
+      href={`/chat/${project.id}`}
+      className="group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-all"
+    >
+      {/* Project icon */}
+      <div className="flex items-center justify-center w-7 h-7 rounded-md bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent shrink-0">
+        {project.logo ? (
+          <img src={project.logo} alt="" className="w-4 h-4 rounded" />
+        ) : (
+          <div className="i-ph:code text-xs" />
+        )}
+      </div>
+      {/* Project info */}
+      {!collapsed && (
+        <div className="flex-1 min-w-0">
+          <div className="text-sm truncate">{project.name || 'Untitled'}</div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {project.source === 'cloud' && (
+              <span className="text-[9px] px-1 py-0 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
+                Cloud
+              </span>
+            )}
+            {project.description && (
+              <span className="text-[10px] text-bolt-elements-textTertiary truncate">
+                {project.description}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </a>
+  );
+
+  // Render a recently viewed item
+  const renderRecentlyViewedItem = (item: RecentlyViewedItem) => (
+    <a
+      key={item.id}
+      href={`/chat/${item.id}`}
+      className="group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-all"
+    >
+      {/* Project icon */}
+      <div className="flex items-center justify-center w-7 h-7 rounded-md bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent shrink-0">
+        {item.logo ? (
+          <img src={item.logo} alt="" className="w-4 h-4 rounded" />
+        ) : (
+          <div className="i-ph:code text-xs" />
+        )}
+      </div>
+      {/* Project info */}
+      {!collapsed && (
+        <div className="flex-1 min-w-0">
+          <div className="text-sm truncate">{item.name || 'Untitled'}</div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {item.source === 'cloud' && (
+              <span className="text-[9px] px-1 py-0 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
+                Cloud
+              </span>
+            )}
+            {item.description && (
+              <span className="text-[10px] text-bolt-elements-textTertiary truncate">
+                {item.description}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </a>
+  );
+
   const sidebar = (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* User account section - clickable to open settings */}
@@ -280,9 +377,9 @@ export function Menu() {
                   <div className="i-ph:arrow-square-out text-xs ml-auto text-bolt-elements-textTertiary" />
                 )}
                 {/* Starred badge */}
-                {!collapsed && item.label === 'Starred' && starredItems.length > 0 && (
+                {!collapsed && item.label === 'Starred' && totalStarred > 0 && (
                   <span className="ml-auto px-1.5 py-0.5 rounded-full bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent text-[10px] font-bold leading-none">
-                    {starredItems.length}
+                    {totalStarred}
                   </span>
                 )}
               </>
@@ -342,7 +439,7 @@ export function Menu() {
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
-            {starredItems.length === 0 ? (
+            {totalStarred === 0 ? (
               collapsed ? (
                 <div className="flex items-center justify-center py-2" title="Nenhum favorito ainda">
                   <div className="i-ph:star text-base text-bolt-elements-textTertiary" />
@@ -351,11 +448,25 @@ export function Menu() {
                 <div className="flex flex-col items-center justify-center py-6 text-bolt-elements-textTertiary">
                   <div className="i-ph:star text-2xl mb-2 opacity-30" />
                   <p className="text-sm">Nenhum favorito ainda</p>
-                  <p className="text-[11px] mt-1 opacity-70">Clique na estrela ao lado de um chat para favoritar</p>
+                  <p className="text-[11px] mt-1 opacity-70">Clique na estrela ao lado de um projeto para favoritar</p>
                 </div>
               )
             ) : (
-              renderChatList(starredItems, false)
+              <>
+                {/* Starred projects */}
+                {starredProjectEntries.map((project) => renderProjectCard(project))}
+                {/* Starred chat items (that aren't in projects store) */}
+                {starredChatItems.length > 0 && (
+                  <>
+                    {!collapsed && starredProjectEntries.length > 0 && (
+                      <div className="text-[10px] text-bolt-elements-textTertiary px-2.5 pt-3 pb-1 uppercase tracking-wider">
+                        Chats favoritos
+                      </div>
+                    )}
+                    {renderChatList(starredChatItems, false)}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -398,20 +509,48 @@ export function Menu() {
             </div>
           )}
 
-          {/* Chat history */}
+          {/* Recently viewed section header */}
           {!collapsed && (
-            <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider">
-              Your Chats
+            <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider flex items-center gap-2">
+              <div className="i-ph:clock-counter-clockwise text-sm text-bolt-elements-item-contentAccent" />
+              Vistos recentemente
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
-            {renderChatList(list)}
+            {recentlyViewed.length === 0 ? (
+              collapsed ? (
+                <div className="flex items-center justify-center py-2" title="Nenhum projeto visto recentemente">
+                  <div className="i-ph:clock-counter-clockwise text-base text-bolt-elements-textTertiary" />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-bolt-elements-textTertiary">
+                  <div className="i-ph:clock-counter-clockwise text-2xl mb-2 opacity-30" />
+                  <p className="text-sm">Nenhum projeto visto recentemente</p>
+                  <p className="text-[11px] mt-1 opacity-70">Os projetos que voce abrir aparecerao aqui</p>
+                </div>
+              )
+            ) : (
+              recentlyViewed.map((item) => renderRecentlyViewedItem(item))
+            )}
           </div>
         </div>
       )}
 
-      {/* Bottom section: collapse toggle + social links + theme switch */}
+      {/* Bottom section: storage bar + collapse toggle + social links + theme switch */}
       <div className="mt-auto border-t border-bolt-elements-borderColor">
+        {/* Storage bar - only when not collapsed */}
+        {!collapsed && (
+          <div className="border-b border-bolt-elements-borderColor">
+            <StorageBar />
+          </div>
+        )}
+        {/* Collapsed storage indicator */}
+        {collapsed && (
+          <div className="flex justify-center py-1.5 border-b border-bolt-elements-borderColor">
+            <div className="i-ph:cloud text-xs text-bolt-elements-textTertiary" title="Cloud Storage" />
+          </div>
+        )}
+
         {/* Social links + theme switch */}
         <div className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-1 px-4'} py-2.5`}>
           {!collapsed && (

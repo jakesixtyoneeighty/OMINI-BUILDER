@@ -11,6 +11,8 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
+import { addRecentlyViewed } from '~/lib/stores/recently-viewed';
+import { getSupabase } from '~/lib/supabase';
 import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
 import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
@@ -235,6 +237,45 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       }
     }
   }, []);
+
+  // Track recently viewed projects (local + Supabase)
+  useEffect(() => {
+    if (!projectId || projectId === 'default') return;
+
+    const proj = projects[projectId];
+    if (proj) {
+      addRecentlyViewed({
+        id: projectId,
+        name: proj.name || 'Untitled',
+        description: proj.settings?.description || '',
+        logo: proj.settings?.logo || '',
+        source: 'local',
+      });
+    } else {
+      // Try to load from Supabase
+      const sb = getSupabase();
+      if (sb) {
+        sb.from('projects')
+          .select('id, name, description, logo')
+          .eq('id', projectId)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              addRecentlyViewed({
+                id: data.id,
+                name: data.name || 'Untitled',
+                description: data.description || '',
+                logo: data.logo || '',
+                source: 'cloud',
+              });
+            }
+          })
+          .catch(() => {
+            // ignore
+          });
+      }
+    }
+  }, [projectId]);
 
   // Parse token usage from AI SDK data stream parts (code "2")
   useEffect(() => {
