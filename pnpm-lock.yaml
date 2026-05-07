@@ -92,9 +92,15 @@ importers:
       '@remix-run/cloudflare-pages':
         specifier: ^2.10.2
         version: 2.10.2(@cloudflare/workers-types@4.20240620.0)(typescript@5.5.2)
+      '@remix-run/node':
+        specifier: ^2.10.2
+        version: 2.10.2(typescript@5.5.2)
       '@remix-run/react':
         specifier: ^2.10.2
         version: 2.10.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+      '@remix-run/server-runtime':
+        specifier: ^2.10.2
+        version: 2.10.2(typescript@5.5.2)
       '@supabase/supabase-js':
         specifier: ^2.104.0
         version: 2.104.0
@@ -7150,7 +7156,6 @@ snapshots:
       undici: 6.19.4
     optionalDependencies:
       typescript: 5.5.2
-    optional: true
 
   '@remix-run/react@2.10.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)':
     dependencies:
