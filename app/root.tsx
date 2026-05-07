@@ -6,6 +6,7 @@ import { themeStore } from './lib/stores/theme';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect, useState } from 'react';
+import { initPerformanceOptimizer, cleanupResources } from './lib/performance';
 
 import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
 import globalStyles from './styles/index.scss?url';
@@ -65,6 +66,11 @@ export const Head = createHead(() => (
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
+
+  useEffect(() => {
+    // Initialize performance optimizer on first mount
+    initPerformanceOptimizer();
+  }, []);
 
   useEffect(() => {
     document.querySelector('html')?.setAttribute('data-theme', theme);

@@ -25,6 +25,67 @@ export default defineConfig((config) => {
     },
     build: {
       target: 'esnext',
+      // CSS code splitting for smaller initial load
+      cssCodeSplit: true,
+      // Rollup options for chunk splitting
+      rollupOptions: {
+        output: {
+          // Manual chunks to split heavy dependencies
+          // Using function form to safely skip external modules (react, react-dom are externalized by Cloudflare)
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              // Terminal — heavy, only needed in workbench (~200KB)
+              if (id.includes('@xterm/xterm') || id.includes('@xterm/addon-fit') || id.includes('@xterm/addon-web-links')) {
+                return 'vendor-terminal';
+              }
+              // CodeMirror — heavy editor, only in workbench (~400KB)
+              if (id.includes('@codemirror/') || id.includes('@lezer/')) {
+                return 'vendor-codemirror';
+              }
+              // AI/SDK — only needed during chat
+              if (id.includes('@ai-sdk/') || id.includes('/ai/')) {
+                return 'vendor-ai';
+              }
+              // Markdown rendering — only in chat messages
+              if (id.includes('react-markdown') || id.includes('rehype-') || id.includes('remark-') || id.includes('unified') || id.includes('unist-') || id.includes('bail') || id.includes('is-plain-') || id.includes('trough') || id.includes('vfile')) {
+                return 'vendor-markdown';
+              }
+              // Animation — only in workbench transitions
+              if (id.includes('framer-motion')) {
+                return 'vendor-motion';
+              }
+              // Sandpack — only in sandpack preview mode
+              if (id.includes('@codesandbox/sandpack')) {
+                return 'vendor-sandpack';
+              }
+              // Supabase — auth + DB
+              if (id.includes('@supabase/')) {
+                return 'vendor-supabase';
+              }
+              // Sucrase — transpilation for react-live
+              if (id.includes('sucrase')) {
+                return 'vendor-sucrase';
+              }
+              // Shiki — syntax highlighting (heavy)
+              if (id.includes('shiki')) {
+                return 'vendor-shiki';
+              }
+              // Nanostores — state management
+              if (id.includes('nanostores') || id.includes('@nanostores/')) {
+                return 'vendor-state';
+              }
+              // Radix UI primitives
+              if (id.includes('@radix-ui/')) {
+                return 'vendor-radix';
+              }
+            }
+          },
+        },
+      },
+      // Minification settings
+      minify: 'esbuild',
+      // Reduce chunk size warnings threshold
+      chunkSizeWarningLimit: 600,
     },
     plugins: [
       nodePolyfills({

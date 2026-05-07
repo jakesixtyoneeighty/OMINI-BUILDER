@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
 import {
   CodeMirrorEditor,
@@ -42,6 +42,60 @@ const DEFAULT_TERMINAL_SIZE = 25;
 const DEFAULT_EDITOR_SIZE = 100 - DEFAULT_TERMINAL_SIZE;
 
 const editorSettings: EditorSettings = { tabSize: 2 };
+
+/**
+ * Lazy terminal wrapper — only mounts the xterm Terminal component
+ * when the terminal panel is actually visible. This saves ~10-20MB RAM
+ * per terminal that's not visible.
+ */
+function LazyTerminal({
+  isActive,
+  terminalIndex,
+  onTerminalReady,
+  onTerminalResize,
+  theme,
+  terminalRefs,
+}: {
+  isActive: boolean;
+  terminalIndex: number;
+  onTerminalReady: (terminal: any) => void;
+  onTerminalResize: (cols: number, rows: number) => void;
+  theme: string;
+  terminalRefs: React.MutableRefObject<Array<TerminalRef | null>>;
+}) {
+  // Only mount the actual Terminal component when this tab has been active at least once
+  const [hasBeenActive, setHasBeenActive] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive && !hasBeenActive) {
+      setHasBeenActive(true);
+    }
+  }, [isActive, hasBeenActive]);
+
+  if (!hasBeenActive) {
+    // Show a placeholder instead of mounting xterm
+    return (
+      <div className="h-full flex items-center justify-center text-bolt-elements-textTertiary text-xs">
+        Click to activate terminal
+      </div>
+    );
+  }
+
+  return (
+    <Terminal
+      id={terminalIndex}
+      className={classNames('h-full overflow-hidden', {
+        hidden: !isActive,
+      })}
+      ref={(ref) => {
+        terminalRefs.current[terminalIndex] = ref;
+      }}
+      onTerminalReady={onTerminalReady}
+      onTerminalResize={onTerminalResize}
+      theme={theme as any}
+    />
+  );
+}
 
 export const EditorPanel = memo(
   ({
@@ -229,24 +283,18 @@ export const EditorPanel = memo(
                   onClick={() => workbenchStore.toggleTerminal(false)}
                 />
               </div>
-              {Array.from({ length: terminalCount }, (_, index) => {
-                const isActive = activeTerminal === index;
-
-                return (
-                  <Terminal
-                    key={index}
-                    className={classNames('h-full overflow-hidden', {
-                      hidden: !isActive,
-                    })}
-                    ref={(ref) => {
-                      terminalRefs.current.push(ref);
-                    }}
-                    onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
-                    onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
-                    theme={theme}
-                  />
-                );
-              })}
+              {/* Use LazyTerminal — only mounts xterm when tab has been active */}
+              {Array.from({ length: terminalCount }, (_, index) => (
+                <LazyTerminal
+                  key={index}
+                  isActive={activeTerminal === index}
+                  terminalIndex={index}
+                  onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
+                  onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
+                  theme={theme}
+                  terminalRefs={terminalRefs}
+                />
+              ))}
             </div>
           </div>
         </Panel>
