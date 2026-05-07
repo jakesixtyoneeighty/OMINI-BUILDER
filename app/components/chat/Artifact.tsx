@@ -47,18 +47,61 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     }
   }, [actions]);
 
+  // Group file actions by type
+  const { createdFiles, editedFiles, shellActions, hasBuild } = useMemo(() => {
+    const created: ActionState[] = [];
+    const edited: ActionState[] = [];
+    const shell: ActionState[] = [];
+    let buildDetected = false;
+
+    for (const action of actions) {
+      if (action.type === 'file') {
+        const isCreated = action.isNewFile !== false;
+        if (isCreated) {
+          created.push(action);
+        } else {
+          edited.push(action);
+        }
+      } else if (action.type === 'shell') {
+        shell.push(action);
+        // Detect build commands
+        const content = action.content?.toLowerCase() || '';
+        if (
+          content.includes('npm run build') ||
+          content.includes('npm run dev') ||
+          content.includes('pnpm build') ||
+          content.includes('pnpm dev') ||
+          content.includes('yarn build') ||
+          content.includes('yarn dev') ||
+          content.includes('vite build') ||
+          content.includes('next build') ||
+          content.includes('npx vite build') ||
+          content.includes('remix vite:build')
+        ) {
+          buildDetected = true;
+        }
+      }
+    }
+
+    return { createdFiles: created, editedFiles: edited, shellActions: shell, hasBuild: buildDetected };
+  }, [actions]);
+
   // Extract a short command description for shell actions
   const getCommandLabel = (content: string): string => {
     const trimmed = content.trim();
     const firstLine = trimmed.split('\n')[0].trim();
 
-    // Detect common patterns
     const npmInstall = trimmed.match(/npm\s+install\s+(.+)/);
     const npxCmd = trimmed.match(/npx\s+(\S+)/);
     const pipInstall = trimmed.match(/pip\s+install\s+(.+)/);
+    const pnpmInstall = trimmed.match(/pnpm\s+(?:add|install)\s+(.+)/);
 
     if (npmInstall) {
       const packages = npmInstall[1].trim();
+      return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
+    }
+    if (pnpmInstall) {
+      const packages = pnpmInstall[1].trim();
       return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
     }
     if (npxCmd) {
@@ -69,9 +112,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
       return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
     }
 
-    // Return first line truncated
     return firstLine.length > 50 ? firstLine.substring(0, 47) + '...' : firstLine;
   };
+
+  const hasContent = createdFiles.length > 0 || editedFiles.length > 0 || shellActions.length > 0;
 
   return (
     <div
@@ -79,7 +123,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         'my-3 rounded-xl overflow-hidden transition-all duration-300',
         isProcessing
           ? 'artifact-processing border border-transparent'
-          : 'border border-bolt-elements-borderColor',
+          : 'border border-[#e0e0e0] dark:border-bolt-elements-borderColor',
       )}
       style={isProcessing ? {
         background: 'linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.15), rgba(168,85,247,0.15), rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
@@ -90,7 +134,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         background: 'var(--bolt-elements-artifacts-background, rgba(255,255,255,0.03))',
       }}
     >
-      {/* Header - artifact title */}
+      {/* Header - clickable to open workbench */}
       <div
         className="flex items-center gap-2.5 px-4 py-3 cursor-pointer hover:bg-bolt-elements-item-backgroundActive transition-colors"
         onClick={() => {
@@ -108,9 +152,9 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         <div className="i-ph:arrow-square-out text-xs text-bolt-elements-textTertiary" />
       </div>
 
-      {/* Action Timeline */}
+      {/* Action Timeline - grouped by type */}
       <AnimatePresence>
-        {showActions && actions.length > 0 && (
+        {showActions && hasContent && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -118,31 +162,107 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             transition={{ duration: 0.2, ease: cubicEasingFn }}
             className="overflow-hidden"
           >
-            <div className="border-t border-bolt-elements-borderColor">
-              <ul className="list-none">
-                {actions.map((action, index) => {
-                  const isLast = index === actions.length - 1;
+            <div className="border-t border-[#e0e0e0] dark:border-bolt-elements-borderColor">
+              {/* Created Files Section */}
+              {createdFiles.length > 0 && (
+                <div className="border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50">
+                  {/* Section header */}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
+                    <div className="i-ph:file-plus text-xs text-emerald-500" />
+                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
+                      Created {createdFiles.length} file{createdFiles.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {/* File list */}
+                  <ul className="list-none">
+                    {createdFiles.map((action, index) => (
+                      <motion.li
+                        key={`created-${index}`}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <FileActionItem action={action} isLast={index === createdFiles.length - 1} label="Created file" />
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-                  return (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: 0.2,
-                        delay: index * 0.03,
-                        ease: cubicEasingFn,
-                      }}
-                    >
-                      {action.type === 'file' ? (
-                        <FileActionItem action={action} isLast={isLast} />
-                      ) : action.type === 'shell' ? (
-                        <ShellActionItem action={action} isLast={isLast} getCommandLabel={getCommandLabel} />
-                      ) : null}
-                    </motion.li>
-                  );
-                })}
-              </ul>
+              {/* Edited Files Section */}
+              {editedFiles.length > 0 && (
+                <div className="border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50">
+                  {/* Section header */}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
+                    <div className="i-ph:pencil-simple text-xs text-amber-500" />
+                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
+                      Edited {editedFiles.length} file{editedFiles.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {/* File list */}
+                  <ul className="list-none">
+                    {editedFiles.map((action, index) => (
+                      <motion.li
+                        key={`edited-${index}`}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <FileActionItem action={action} isLast={index === editedFiles.length - 1} label="Edited file" />
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Shell Commands Section */}
+              {shellActions.length > 0 && !hasBuild && (
+                <div>
+                  <ul className="list-none">
+                    {shellActions.map((action, index) => (
+                      <motion.li
+                        key={`shell-${index}`}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <ShellActionItem action={action} isLast={index === shellActions.length - 1} getCommandLabel={getCommandLabel} />
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Built Section - shows when a build command was detected */}
+              {hasBuild && (
+                <div>
+                  {/* Built header */}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
+                    <div className="i-ph:wrench text-xs text-blue-500" />
+                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
+                      Built
+                    </span>
+                  </div>
+                  {/* Build commands */}
+                  <ul className="list-none">
+                    {shellActions.map((action, index) => (
+                      <motion.li
+                        key={`build-${index}`}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <ShellActionItem
+                          action={action}
+                          isLast={index === shellActions.length - 1}
+                          getCommandLabel={getCommandLabel}
+                          isBuildSection
+                        />
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -198,7 +318,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
 
 /* ===== File Action Item ===== */
 
-function FileActionItem({ action, isLast }: { action: ActionState; isLast: boolean }) {
+function FileActionItem({ action, isLast, label }: { action: ActionState; isLast: boolean; label: string }) {
   const [expanded, setExpanded] = useState(false);
   const fileName = action.filePath?.split('/').pop() || '';
   const dirPath = action.filePath?.substring(0, action.filePath.lastIndexOf('/')) || '';
@@ -207,59 +327,23 @@ function FileActionItem({ action, isLast }: { action: ActionState; isLast: boole
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
-  const isPartialEdit = !isCreated && (action as any).mode === 'edit';
 
   return (
-    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/50' : ''}>
+    <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
       {/* Action summary line - click to expand/collapse */}
       <div
-        className="flex items-center gap-2.5 px-4 py-2.5 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/50"
+        className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Status icon */}
-        <div className="shrink-0 w-5 h-5 flex items-center justify-center">
-          {isRunning ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-loader-progress" />
-          ) : isComplete ? (
-            <div className="i-ph:check-circle-fill text-sm text-emerald-400" />
-          ) : isFailed ? (
-            <div className="i-ph:x-circle-fill text-sm text-red-400" />
-          ) : action.status === 'pending' ? (
-            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-          ) : (
-            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-          )}
-        </div>
-
-        {/* Action type icon */}
-        <div className={classNames(
-          'shrink-0 w-5 h-5 flex items-center justify-center rounded',
-          isCreated ? 'bg-emerald-500/10' : isPartialEdit ? 'bg-violet-500/10' : 'bg-amber-500/10',
-        )}>
-          {isCreated ? (
-            <div className="i-ph:file-plus text-xs text-emerald-400" />
-          ) : isPartialEdit ? (
-            <div className="i-ph:code text-xs text-violet-400" />
-          ) : (
-            <div className="i-ph:pencil-simple text-xs text-amber-400" />
-          )}
-        </div>
-
-        {/* Text content */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className={classNames(
-            'text-xs font-medium shrink-0',
-            isCreated ? 'text-emerald-400' : isPartialEdit ? 'text-violet-400' : 'text-amber-400',
-          )}>
-            {isCreated ? 'Created' : isPartialEdit ? 'Edited (partial)' : 'Edited'}
-          </span>
-          <code className="text-xs text-bolt-elements-textPrimary bg-bolt-elements-background-depth-2/80 px-1.5 py-0.5 rounded truncate">
+        {/* File path */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="text-xs text-bolt-elements-textPrimary truncate font-mono">
             {action.filePath || fileName}
-          </code>
+          </span>
 
           {/* Diff stats for edits */}
           {!isCreated && isComplete && (action.additions !== undefined || action.deletions !== undefined) && (
-            <span className="text-[11px] font-mono shrink-0 flex items-center gap-1">
+            <span className="text-[10px] font-mono shrink-0 flex items-center gap-1">
               {action.additions !== undefined && action.additions > 0 && (
                 <span className="text-emerald-400">+{action.additions}</span>
               )}
@@ -271,9 +355,22 @@ function FileActionItem({ action, isLast }: { action: ActionState; isLast: boole
 
           {/* Line count for new files */}
           {isCreated && isComplete && action.additions !== undefined && action.additions > 0 && (
-            <span className="text-[11px] font-mono text-emerald-400 shrink-0">
+            <span className="text-[10px] font-mono text-emerald-400 shrink-0">
               +{action.additions}
             </span>
+          )}
+        </div>
+
+        {/* Status icon - right aligned */}
+        <div className="shrink-0 w-4 h-4 flex items-center justify-center">
+          {isRunning ? (
+            <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
+          ) : isComplete ? (
+            <div className="i-ph:check text-sm text-emerald-500" />
+          ) : isFailed ? (
+            <div className="i-ph:x text-sm text-red-400" />
+          ) : (
+            <div className="i-ph:circle-dashed text-xs text-bolt-elements-textTertiary" />
           )}
         </div>
 
@@ -282,7 +379,7 @@ function FileActionItem({ action, isLast }: { action: ActionState; isLast: boole
           'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
           expanded && 'rotate-180',
         )}>
-          <div className="i-ph:caret-down text-xs" />
+          <div className="i-ph:caret-down text-[10px]" />
         </div>
       </div>
 
@@ -316,10 +413,12 @@ function ShellActionItem({
   action,
   isLast,
   getCommandLabel,
+  isBuildSection = false,
 }: {
   action: ActionState;
   isLast: boolean;
   getCommandLabel: (content: string) => string;
+  isBuildSection?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -328,43 +427,36 @@ function ShellActionItem({
   const isFailed = action.status === 'failed';
 
   return (
-    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/50' : ''}>
+    <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
       {/* Command summary line */}
       <div
-        className="flex items-center gap-2.5 px-4 py-2.5 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/50"
+        className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Status icon */}
-        <div className="shrink-0 w-5 h-5 flex items-center justify-center">
-          {isRunning ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-loader-progress" />
-          ) : isComplete ? (
-            <div className="i-ph:check-circle-fill text-sm text-emerald-400" />
-          ) : isFailed ? (
-            <div className="i-ph:x-circle-fill text-sm text-red-400" />
-          ) : action.status === 'pending' ? (
-            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-          ) : (
-            <div className="i-ph:circle-dashed text-sm text-bolt-elements-textTertiary" />
-          )}
-        </div>
-
-        {/* Command type icon */}
-        <div className="shrink-0 w-5 h-5 flex items-center justify-center rounded bg-blue-500/10">
-          <div className="i-ph:terminal text-xs text-blue-400" />
-        </div>
-
         {/* Command label */}
         <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-medium">
-          {getCommandLabel(action.content)}
+          {isBuildSection ? action.content?.trim().split('\n')[0] || 'Build command' : getCommandLabel(action.content)}
         </span>
+
+        {/* Status icon */}
+        <div className="shrink-0 w-4 h-4 flex items-center justify-center">
+          {isRunning ? (
+            <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
+          ) : isComplete ? (
+            <div className="i-ph:check text-sm text-emerald-500" />
+          ) : isFailed ? (
+            <div className="i-ph:x text-sm text-red-400" />
+          ) : (
+            <div className="i-ph:circle-dashed text-xs text-bolt-elements-textTertiary" />
+          )}
+        </div>
 
         {/* Expand chevron */}
         <div className={classNames(
           'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
           expanded && 'rotate-180',
         )}>
-          <div className="i-ph:caret-down text-xs" />
+          <div className="i-ph:caret-down text-[10px]" />
         </div>
       </div>
 
