@@ -72,8 +72,8 @@ export function Header() {
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo */}
       <div className="flex items-center gap-2 px-3 shrink-0">
-        <a href="/" className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all" title="Home">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-5 w-5 omni-logo-themed" />
+        <a href="/" className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all" title="Home">
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-8 w-8 omni-logo-themed" />
         </a>
       </div>
 
@@ -204,8 +204,8 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       {/* LEFT: Logo */}
       <div className="flex items-center gap-2.5 px-4 shrink-0">
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-6 w-6 omni-logo-themed" />
-          <span className="text-sm font-bold text-bolt-elements-textPrimary">Omni Builder</span>
+          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-9 w-9 omni-logo-themed" />
+          <span className="text-base font-bold text-bolt-elements-textPrimary">Omni Builder</span>
         </a>
       </div>
 

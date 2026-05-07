@@ -1,5 +1,5 @@
 import { json, type MetaFunction } from '@remix-run/cloudflare';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, createPortal } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { toast } from 'react-toastify';
 import { Header } from '~/components/header/Header';
@@ -79,6 +79,8 @@ function ProjectsContent() {
   const [editName, setEditName] = useState('');
   const [dialogContent, setDialogContent] = useState<{ type: 'delete'; project: ProjectCard } | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const menuBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const loadProjects = useCallback(() => {
     async function load() {
@@ -337,24 +339,36 @@ function ProjectsContent() {
                     )}
                     {/* Menu button */}
                     <button
+                      ref={(el) => { if (el) menuBtnRefs.current.set(project.id, el); }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setMenuOpenId(menuOpenId === project.id ? null : project.id);
+                        if (menuOpenId === project.id) {
+                          setMenuOpenId(null);
+                          setMenuPos(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                          setMenuOpenId(project.id);
+                        }
                       }}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-[60]"
                     >
                       <div className="i-ph:dots-three text-base" />
                     </button>
                   </div>
                 </a>
 
-                {/* Dropdown menu */}
-                {menuOpenId === project.id && (
-                  <div className="absolute top-28 right-2 z-50 w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden">
+                {/* Dropdown menu - rendered via portal to avoid z-index/overflow issues */}
+                {menuOpenId === project.id && menuPos && createPortal(
+                  <div
+                    className="fixed w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden z-[9999]"
+                    style={{ top: menuPos.top, right: menuPos.right }}
+                  >
                     <button
                       onClick={() => {
                         setMenuOpenId(null);
+                        setMenuPos(null);
                         setEditingId(project.id);
                         setEditName(project.name);
                       }}
@@ -366,6 +380,7 @@ function ProjectsContent() {
                     <button
                       onClick={() => {
                         setMenuOpenId(null);
+                        setMenuPos(null);
                         navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
                         toast.success('Link copiado!');
                       }}
@@ -377,6 +392,7 @@ function ProjectsContent() {
                     <button
                       onClick={() => {
                         setMenuOpenId(null);
+                        setMenuPos(null);
                         setDialogContent({ type: 'delete', project });
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
@@ -384,7 +400,8 @@ function ProjectsContent() {
                       <div className="i-ph:trash text-base" />
                       Excluir
                     </button>
-                  </div>
+                  </div>,
+                  document.body
                 )}
 
                 {/* Card content */}
@@ -506,11 +523,12 @@ function ProjectsContent() {
       </DialogRoot>
 
       {/* Close dropdown on outside click */}
-      {menuOpenId && (
+      {menuOpenId && createPortal(
         <div
-          className="fixed inset-0 z-40"
-          onClick={() => setMenuOpenId(null)}
-        />
+          className="fixed inset-0 z-[9998]"
+          onClick={() => { setMenuOpenId(null); setMenuPos(null); }}
+        />,
+        document.body
       )}
     </div>
   );
