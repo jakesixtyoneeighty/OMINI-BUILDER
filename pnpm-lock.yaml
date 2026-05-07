@@ -185,6 +185,9 @@ importers:
       shiki:
         specifier: ^1.9.1
         version: 1.9.1
+      sucrase:
+        specifier: ^3.35.1
+        version: 3.35.1
       unist-util-visit:
         specifier: ^5.0.0
         version: 5.0.0
