@@ -16,6 +16,7 @@ import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
 import { binDates } from './date-binning';
+import { ClientOnly } from 'remix-utils/client-only';
 import { StorageBar } from './StorageBar.client';
 
 const sidebarVariants = {

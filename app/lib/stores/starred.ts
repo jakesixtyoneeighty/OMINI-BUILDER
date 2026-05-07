@@ -7,8 +7,11 @@ function loadStarred(): Set<string> {
   try {
     const raw = localStorage.getItem(STARRED_KEY);
     if (!raw) return new Set();
-    const arr = JSON.parse(raw) as string[];
-    return new Set(arr);
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    // Filter to ensure all items are strings
+    const validStrings = arr.filter((item: any) => typeof item === 'string');
+    return new Set(validStrings);
   } catch {
     return new Set();
   }
@@ -27,6 +30,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function toggleStar(projectId: string) {
+  if (typeof projectId !== 'string') return;
   const current = starredProjectsStore.get();
   const next = new Set(current);
   if (next.has(projectId)) {
@@ -38,5 +42,5 @@ export function toggleStar(projectId: string) {
 }
 
 export function isStarred(projectId: string): boolean {
-  return starredProjectsStore.get().has(projectId);
+  return typeof projectId === 'string' && starredProjectsStore.get().has(projectId);
 }

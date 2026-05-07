@@ -17,7 +17,16 @@ function loadRecentlyViewed(): RecentlyViewedItem[] {
   try {
     const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as RecentlyViewedItem[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Validate each item has the required fields
+    return parsed.filter(
+      (item: any) =>
+        item &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        typeof item.timestamp === 'string'
+    ) as RecentlyViewedItem[];
   } catch {
     return [];
   }
@@ -37,12 +46,18 @@ if (typeof window !== 'undefined') {
 
 export function addRecentlyViewed(item: Omit<RecentlyViewedItem, 'timestamp'>) {
   const current = recentlyViewedStore.get();
+  // Validate item
+  if (!item.id || typeof item.id !== 'string') return;
   // Remove if already exists (to move to top)
   const filtered = current.filter((i) => i.id !== item.id);
   // Add to front with current timestamp
   const newItem: RecentlyViewedItem = {
-    ...item,
+    id: item.id,
+    name: String(item.name || 'Untitled'),
+    description: String(item.description || ''),
+    logo: String(item.logo || ''),
     timestamp: new Date().toISOString(),
+    source: item.source || 'local',
   };
   const updated = [newItem, ...filtered].slice(0, MAX_ITEMS);
   recentlyViewedStore.set(updated);

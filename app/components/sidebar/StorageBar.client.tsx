@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   storageUsageStore,
   refreshStorageUsage,
@@ -13,26 +13,37 @@ export function StorageBar() {
   const usage = useStore(storageUsageStore);
   const auth = useStore(authStore);
   const [showWarning, setShowWarning] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const loadUsage = useCallback(() => {
     if (auth.user) {
-      refreshStorageUsage();
+      refreshStorageUsage().catch(() => {
+        setError(true);
+      });
     }
   }, [auth.user]);
+
+  useEffect(() => {
+    loadUsage();
+  }, [loadUsage]);
 
   // Refresh every 60 seconds
   useEffect(() => {
     if (!auth.user) return;
     const interval = setInterval(() => {
-      refreshStorageUsage();
+      refreshStorageUsage().catch(() => {
+        // ignore
+      });
     }, 60000);
     return () => clearInterval(interval);
   }, [auth.user]);
 
   if (!auth.user) return null;
 
-  const barColor = getStorageBarColor(usage.percentage);
-  const isFull = usage.percentage >= 100;
+  const safePercentage = typeof usage.percentage === 'number' && !isNaN(usage.percentage) ? usage.percentage : 0;
+  const safeUsedBytes = typeof usage.usedBytes === 'number' && !isNaN(usage.usedBytes) ? usage.usedBytes : 0;
+  const barColor = getStorageBarColor(safePercentage);
+  const isFull = safePercentage >= 100;
 
   return (
     <div className="px-3 py-2">
@@ -45,7 +56,7 @@ export function StorageBar() {
               Armazenamento na nuvem
             </span>
             <span className="text-[11px] text-bolt-elements-textTertiary">
-              {usage.loaded ? formatStorageSize(usage.usedBytes) : '...'} / {STORAGE_LIMIT_MB} MB
+              {error ? '--' : usage.loaded ? formatStorageSize(safeUsedBytes) : '...'} / {STORAGE_LIMIT_MB} MB
             </span>
           </div>
           {/* Progress bar */}
@@ -53,7 +64,7 @@ export function StorageBar() {
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, usage.percentage)}%`,
+                width: `${Math.min(100, safePercentage)}%`,
                 backgroundColor: barColor,
               }}
             />
@@ -86,7 +97,7 @@ export function StorageBar() {
       )}
 
       {/* Almost full warning (>90%) */}
-      {!isFull && usage.percentage >= 90 && (
+      {!isFull && safePercentage >= 90 && (
         <div className="flex items-start gap-2 mt-1 p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <div className="i-ph:warning text-[10px] text-amber-400 shrink-0 mt-0.5" />
           <p className="text-[10px] text-amber-400/80">

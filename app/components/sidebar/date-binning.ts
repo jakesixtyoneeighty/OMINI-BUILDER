@@ -4,25 +4,32 @@ import type { ChatHistoryItem } from '~/lib/persistence';
 type Bin = { category: string; items: ChatHistoryItem[] };
 
 export function binDates(_list: ChatHistoryItem[]) {
-  const list = _list.toSorted((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  // Filter out items with invalid timestamps
+  const list = _list
+    .filter((item) => item.timestamp && typeof item.timestamp === 'string')
+    .toSorted((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
   const binLookup: Record<string, Bin> = {};
   const bins: Array<Bin> = [];
 
   list.forEach((item) => {
-    const category = dateCategory(new Date(item.timestamp));
+    try {
+      const category = dateCategory(new Date(item.timestamp));
 
-    if (!(category in binLookup)) {
-      const bin = {
-        category,
-        items: [item],
-      };
+      if (!(category in binLookup)) {
+        const bin = {
+          category,
+          items: [item],
+        };
 
-      binLookup[category] = bin;
+        binLookup[category] = bin;
 
-      bins.push(bin);
-    } else {
-      binLookup[category].items.push(item);
+        bins.push(bin);
+      } else {
+        binLookup[category].items.push(item);
+      }
+    } catch {
+      // Skip items with invalid dates
     }
   });
 
@@ -30,6 +37,10 @@ export function binDates(_list: ChatHistoryItem[]) {
 }
 
 function dateCategory(date: Date) {
+  if (isNaN(date.getTime())) {
+    return 'Other';
+  }
+
   if (isToday(date)) {
     return 'Today';
   }
