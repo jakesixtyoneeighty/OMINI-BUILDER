@@ -103,7 +103,7 @@ export class ActionRunner {
     let isNewFile = true;
     let prevContent = '';
     try {
-      const existing = await wc.fs.readFile(action.filePath);
+      const existing = await wc.fs.readFile(action.filePath, 'utf8');
       prevContent = existing;
       isNewFile = false;
     } catch {
@@ -121,7 +121,12 @@ export class ActionRunner {
       if (result.error) {
         // If search/replace fails, fall back to full file write instead of throwing
         logger.warn(`Search/replace failed for ${action.filePath}: ${result.error}. Falling back to full file write.`);
-        finalContent = action.content;
+        // Strip search/replace markers and use content between markers as full file content
+        const strippedContent = action.content
+          .replace(/<<<<<<< SEARCH\n?/g, '')
+          .replace(/=======\n?/g, '')
+          .replace(/>>>>>>> REPLACE\n?/g, '');
+        finalContent = strippedContent;
         const oldLines = prevContent.split('\n');
         const newLines = finalContent.split('\n');
         const oldSet = new Set(oldLines);
