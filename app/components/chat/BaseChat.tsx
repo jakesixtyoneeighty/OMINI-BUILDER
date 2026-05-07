@@ -10,6 +10,8 @@ import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
 import { UserProjects } from './UserProjects.client';
+import { AuthDialog } from '~/components/header/AuthDialog.client';
+import { authStore } from '~/lib/stores/auth';
 import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
@@ -86,6 +88,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   ) => {
     const [attachedFiles, setAttachedFiles] = useState<{ id: string; name: string; type: string; size: number; preview: string; content: string }[]>([]);
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
+    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { user } = useStore(authStore);
 
     // Resizable layout state
     const chatWidthPct = useStore(chatWidthStore);
@@ -186,6 +190,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         handleStop?.();
         return;
       }
+      // Require login to create apps
+      if (!user) {
+        setAuthModalOpen(true);
+        return;
+      }
       // Prepend attachment content to message
       const prefix = buildAttachmentPrefix();
       if (prefix && textareaRef?.current) {
@@ -200,7 +209,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setAttachedFiles([]);
       }
       sendMessage?.(event);
-    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef]);
+    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef, user]);
 
     const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -660,6 +669,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           {/* Workbench panel - takes remaining space */}
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
+        <ClientOnly>{() => <AuthDialog open={authModalOpen} onClose={() => setAuthModalOpen(false)} />}</ClientOnly>
       </div>
     );
   },

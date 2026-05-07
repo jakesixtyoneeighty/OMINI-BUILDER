@@ -5,6 +5,10 @@ import { toast } from 'react-toastify';
 import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
+import { deleteProject, renameProject, projectsStore, type ProjectRecord } from '~/lib/stores/project';
+import { authStore } from '~/lib/stores/auth';
+import { getSupabase } from '~/lib/supabase';
+import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'Projects — Omni-Builder' }, { name: 'description', content: 'View and manage your Omni-Builder projects' }];
@@ -55,24 +59,106 @@ function ProjectsSkeleton() {
   );
 }
 
+/* ===== Project card type for merged projects ===== */
+interface ProjectCard {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  timestamp: string;
+  messageCount: number;
+  source: 'local' | 'cloud';
+}
+
 /* ===== Main client content ===== */
 function ProjectsContent() {
-  const [projects, setProjects] = useState<ChatHistoryItem[]>([]);
+  const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [dialogContent, setDialogContent] = useState<{ type: 'delete'; project: ProjectCard } | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const loadProjects = useCallback(() => {
-    getDb().then((database) => {
-      if (database) {
-        getAll(database)
-          .then((list) => list.filter((item) => item.urlId && item.description))
-          .then(setProjects)
-          .catch((error) => toast.error(error.message))
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+    async function load() {
+      setLoading(true);
+      const cardMap = new Map<string, ProjectCard>();
+
+      // Load from IndexedDB (chat history)
+      try {
+        const database = await getDb();
+        if (database) {
+          const list = await getAll(database);
+          const filtered = list.filter((item) => item.urlId && item.description);
+          for (const item of filtered) {
+            cardMap.set(item.urlId || item.id, {
+              id: item.urlId || item.id,
+              name: item.description || 'Untitled',
+              description: '',
+              logo: '',
+              timestamp: item.timestamp,
+              messageCount: item.messages?.length || 0,
+              source: 'local',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load from IndexedDB:', error);
       }
-    });
+
+      // Load from Supabase (cloud projects)
+      const sb = getSupabase();
+      const { user } = authStore.get();
+      if (sb && user) {
+        try {
+          const { data, error } = await sb
+            .from('projects')
+            .select('id, name, description, logo, updated_at, created_at')
+            .eq('owner_id', user.id)
+            .order('updated_at', { ascending: false });
+          if (!error && data) {
+            for (const p of data) {
+              const existing = cardMap.get(p.id);
+              if (existing) {
+                // Merge: Supabase data takes precedence for name/logo/description
+                cardMap.set(p.id, {
+                  ...existing,
+                  name: p.name || existing.name,
+                  description: p.description || existing.description,
+                  logo: p.logo || existing.logo,
+                  timestamp: p.updated_at || existing.timestamp,
+                  source: 'cloud',
+                });
+              } else {
+                cardMap.set(p.id, {
+                  id: p.id,
+                  name: p.name || 'Untitled',
+                  description: p.description || '',
+                  logo: p.logo || '',
+                  timestamp: p.updated_at || p.created_at || '',
+                  messageCount: 0,
+                  source: 'cloud',
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load from Supabase:', error);
+        }
+      }
+
+      // Sort by timestamp descending
+      const sorted = Array.from(cardMap.values()).sort((a, b) => {
+        const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tb - ta;
+      });
+
+      setProjects(sorted);
+      setLoading(false);
+    }
+    load();
   }, []);
 
   useEffect(() => {
@@ -80,24 +166,51 @@ function ProjectsContent() {
   }, [loadProjects]);
 
   const filtered = search
-    ? projects.filter((p) => p.description?.toLowerCase().includes(search.toLowerCase()))
+    ? projects.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))
     : projects;
 
   const formatDate = (timestamp: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return date.toLocaleDateString();
+    if (diffDays === 0) return 'Hoje';
+    if (diffDays === 1) return 'Ontem';
+    if (diffDays < 7) return `${diffDays} dias atras`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} semanas atras`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} meses atras`;
+    return date.toLocaleDateString('pt-BR');
   };
 
   const handleNewProject = () => {
     window.location.href = '/';
+  };
+
+  const handleDeleteProject = async (project: ProjectCard) => {
+    try {
+      await deleteProject(project.id);
+      toast.success('Projeto excluido com sucesso!');
+      loadProjects();
+    } catch (error) {
+      toast.error('Falha ao excluir projeto');
+    }
+    setDialogContent(null);
+  };
+
+  const handleRenameProject = async (projectId: string, newName: string) => {
+    if (!newName.trim()) {
+      toast.error('Nome nao pode ficar vazio');
+      return;
+    }
+    try {
+      await renameProject(projectId, newName.trim());
+      toast.success('Projeto renomeado com sucesso!');
+      loadProjects();
+    } catch (error) {
+      toast.error('Falha ao renomear projeto');
+    }
+    setEditingId(null);
   };
 
   // Color gradients for cards
@@ -139,9 +252,9 @@ function ProjectsContent() {
         {/* Page header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">Projects</h1>
+            <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">Projetos</h1>
             <p className="text-sm text-bolt-elements-textTertiary mt-1">
-              {projects.length} project{projects.length !== 1 ? 's' : ''}
+              {projects.length} projeto{projects.length !== 1 ? 's' : ''}
             </p>
           </div>
           <button
@@ -149,7 +262,7 @@ function ProjectsContent() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
           >
             <div className="i-ph:plus text-base" />
-            New Project
+            Novo Projeto
           </button>
         </div>
 
@@ -160,7 +273,7 @@ function ProjectsContent() {
               <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-sm text-bolt-elements-textTertiary" />
               <input
                 type="text"
-                placeholder="Search projects..."
+                placeholder="Buscar projetos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive transition-all"
@@ -196,39 +309,138 @@ function ProjectsContent() {
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((project) => (
-              <a
+              <div
                 key={project.id}
-                href={`/chat/${project.urlId}`}
-                className="group rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden hover:border-bolt-elements-borderColorActive hover:shadow-lg transition-all duration-200"
+                className="group rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden hover:border-bolt-elements-borderColorActive hover:shadow-lg transition-all duration-200 relative"
               >
                 {/* Card visual header */}
-                <div className={`relative w-full h-28 bg-gradient-to-br ${getAccent(project.id)} overflow-hidden`}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className={`${getIcon(project.id)} text-4xl text-bolt-elements-textTertiary/20 group-hover:scale-110 transition-transform duration-300`} />
-                  </div>
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-bolt-elements-item-backgroundAccent/0 group-hover:bg-bolt-elements-item-backgroundAccent/30 flex items-center justify-center transition-all duration-200">
-                    <div className="w-10 h-10 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                      <div className="i-ph:arrow-right text-lg" />
+                <a href={`/chat/${project.id}`} className="block">
+                  <div className={`relative w-full h-28 bg-gradient-to-br ${getAccent(project.id)} overflow-hidden`}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {project.logo ? (
+                        <img src={project.logo} alt="" className="w-12 h-12 rounded-lg shadow-lg" />
+                      ) : (
+                        <div className={`${getIcon(project.id)} text-4xl text-bolt-elements-textTertiary/20 group-hover:scale-110 transition-transform duration-300`} />
+                      )}
                     </div>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-bolt-elements-item-backgroundAccent/0 group-hover:bg-bolt-elements-item-backgroundAccent/30 flex items-center justify-center transition-all duration-200">
+                      <div className="w-10 h-10 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
+                        <div className="i-ph:arrow-right text-lg" />
+                      </div>
+                    </div>
+                    {/* Source badge */}
+                    {project.source === 'cloud' && (
+                      <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-md bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent font-medium backdrop-blur-sm">
+                        Cloud
+                      </span>
+                    )}
+                    {/* Menu button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === project.id ? null : project.id);
+                      }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <div className="i-ph:dots-three text-base" />
+                    </button>
                   </div>
-                </div>
+                </a>
+
+                {/* Dropdown menu */}
+                {menuOpenId === project.id && (
+                  <div className="absolute top-28 right-2 z-50 w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setMenuOpenId(null);
+                        setEditingId(project.id);
+                        setEditName(project.name);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                    >
+                      <div className="i-ph:pencil-simple text-base" />
+                      Renomear
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpenId(null);
+                        navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
+                        toast.success('Link copiado!');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                    >
+                      <div className="i-ph:link text-base" />
+                      Copiar link
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpenId(null);
+                        setDialogContent({ type: 'delete', project });
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
+                    >
+                      <div className="i-ph:trash text-base" />
+                      Excluir
+                    </button>
+                  </div>
+                )}
 
                 {/* Card content */}
                 <div className="p-4">
-                  <h3 className="text-sm font-semibold text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
-                    {project.description || 'Untitled'}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-2 text-[11px] text-bolt-elements-textTertiary">
-                    <div className="i-ph:clock text-xs" />
-                    <span>{formatDate(project.timestamp)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5 text-[11px] text-bolt-elements-textTertiary">
-                    <div className="i-ph:chat-circle-dots text-xs" />
-                    <span>{project.messages?.length || 0} messages</span>
+                  {editingId === project.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameProject(project.id, editName);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                        autoFocus
+                        className="flex-1 px-2 py-1 bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColorActive rounded text-sm text-bolt-elements-textPrimary focus:outline-none"
+                      />
+                      <button
+                        onClick={() => handleRenameProject(project.id, editName)}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+                      >
+                        <div className="i-ph:check text-sm" />
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-all"
+                      >
+                        <div className="i-ph:x text-sm" />
+                      </button>
+                    </div>
+                  ) : (
+                    <a href={`/chat/${project.id}`} className="block">
+                      <h3 className="text-sm font-semibold text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
+                        {project.name || 'Untitled'}
+                      </h3>
+                    </a>
+                  )}
+                  {project.description && (
+                    <p className="text-xs text-bolt-elements-textTertiary truncate mt-1">{project.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-bolt-elements-textTertiary">
+                    {project.timestamp && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="i-ph:clock text-xs" />
+                        <span>{formatDate(project.timestamp)}</span>
+                      </div>
+                    )}
+                    {project.messageCount > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="i-ph:chat-circle-dots text-xs" />
+                        <span>{project.messageCount} mensagens</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}
@@ -239,14 +451,14 @@ function ProjectsContent() {
             <div className="w-20 h-20 rounded-2xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-5">
               <div className="i-ph:folder-open text-4xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-2">No projects yet</p>
-            <p className="text-sm text-bolt-elements-textTertiary mb-6">Start a new chat to create your first project</p>
+            <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-2">Nenhum projeto ainda</p>
+            <p className="text-sm text-bolt-elements-textTertiary mb-6">Comece um novo chat para criar seu primeiro projeto</p>
             <button
               onClick={handleNewProject}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
             >
               <div className="i-ph:plus text-base" />
-              New Project
+              Novo Projeto
             </button>
           </div>
         )}
@@ -257,11 +469,49 @@ function ProjectsContent() {
             <div className="w-16 h-16 rounded-xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-4">
               <div className="i-ph:magnifying-glass text-2xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-sm font-medium text-bolt-elements-textPrimary mb-1">No results found</p>
-            <p className="text-sm text-bolt-elements-textTertiary">Try adjusting your search terms</p>
+            <p className="text-sm font-medium text-bolt-elements-textPrimary mb-1">Nenhum resultado encontrado</p>
+            <p className="text-sm text-bolt-elements-textTertiary">Tente ajustar os termos de busca</p>
           </div>
         )}
       </div>
+
+      {/* Delete dialog */}
+      <DialogRoot open={dialogContent !== null}>
+        <Dialog onBackdrop={() => setDialogContent(null)} onClose={() => setDialogContent(null)}>
+          {dialogContent?.type === 'delete' && (
+            <>
+              <DialogTitle>Excluir Projeto?</DialogTitle>
+              <DialogDescription asChild>
+                <div>
+                  <p>
+                    Voce esta prestes a excluir <strong>{dialogContent.project.name}</strong>.
+                  </p>
+                  <p className="mt-1">Esta acao nao pode ser desfeita. Todos os dados do projeto serao perdidos.</p>
+                </div>
+              </DialogDescription>
+              <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
+                <DialogButton type="secondary" onClick={() => setDialogContent(null)}>
+                  Cancelar
+                </DialogButton>
+                <DialogButton
+                  type="danger"
+                  onClick={() => handleDeleteProject(dialogContent.project)}
+                >
+                  Excluir
+                </DialogButton>
+              </div>
+            </>
+          )}
+        </Dialog>
+      </DialogRoot>
+
+      {/* Close dropdown on outside click */}
+      {menuOpenId && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setMenuOpenId(null)}
+        />
+      )}
     </div>
   );
 }

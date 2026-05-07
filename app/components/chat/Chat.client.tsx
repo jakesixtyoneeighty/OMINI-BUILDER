@@ -11,7 +11,8 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
-import { addRecentlyViewed } from '~/lib/stores/recently-viewed';
+import { addRecentlyViewed, loadRecentlyViewedFromSupabase } from '~/lib/stores/recently-viewed';
+import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
 import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
@@ -23,6 +24,7 @@ import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
 import { DbRequestModal, type DbFieldRequest } from './DbRequestModal';
 import { UserQuestionCard, type UserQuestionData } from './UserQuestionCard';
 import { ErrorBanner } from './ErrorBanner';
+import { AuthDialog } from '~/components/header/AuthDialog.client';
 import type { DetectedError } from '~/lib/stores/errors';
 
 const toastAnimation = cssTransition({
@@ -36,10 +38,12 @@ export function Chat() {
   renderLogger.trace('Chat');
 
   const { ready, initialMessages, storeMessageHistory } = useChatHistory();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <>
-      {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} />}
+      {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} onAuthRequired={() => setAuthModalOpen(true)} />}
+      <AuthDialog open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <ToastContainer
         closeButton={({ closeToast }) => {
           return (
@@ -71,9 +75,10 @@ export function Chat() {
 interface ChatProps {
   initialMessages: Message[];
   storeMessageHistory: (messages: Message[]) => Promise<void>;
+  onAuthRequired?: () => void;
 }
 
-export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProps) => {
+export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequired }: ChatProps) => {
   useShortcuts();
   useErrorDetector();
   usePreviewErrorDetector();
@@ -277,6 +282,14 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
   }, [projectId]);
 
+  // Load recently viewed from Supabase when user logs in
+  useEffect(() => {
+    const { user } = authStore.get();
+    if (user) {
+      loadRecentlyViewedFromSupabase();
+    }
+  }, [authStore.get().user]);
+
   // Parse token usage from AI SDK data stream parts (code "2")
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -354,6 +367,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
     const _input = messageInput || input;
     if (_input.length === 0 || isLoading) return;
+
+    // Require login to create apps
+    const { user } = authStore.get();
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
 
     await workbenchStore.saveAllFiles();
     const fileModifications = workbenchStore.getFileModifcations();

@@ -1,6 +1,6 @@
 import { motion, type Variants } from 'framer-motion';
 import { useStore } from '@nanostores/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
@@ -11,7 +11,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, type ProjectRecord } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
 import { starredProjectsStore } from '~/lib/stores/starred';
-import { recentlyViewedStore, addRecentlyViewed, type RecentlyViewedItem } from '~/lib/stores/recently-viewed';
+import { recentlyViewedStore, addRecentlyViewed, loadRecentlyViewedFromSupabase, type RecentlyViewedItem } from '~/lib/stores/recently-viewed';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -69,6 +69,14 @@ export function Menu() {
   const starred = useStore(starredProjectsStore);
   const projects = useStore(projectsStore);
   const recentlyViewed = useStore(recentlyViewedStore);
+
+  // Sort recently viewed so user's own projects (cloud source) appear first
+  const sortedRecentlyViewed = useMemo(() => {
+    if (!user) return recentlyViewed;
+    const cloud = recentlyViewed.filter((i) => i.source === 'cloud');
+    const local = recentlyViewed.filter((i) => i.source !== 'cloud');
+    return [...cloud, ...local];
+  }, [recentlyViewed, user]);
 
   const sidebarWidth = collapsed ? 60 : 240;
 
@@ -173,6 +181,13 @@ export function Menu() {
   useEffect(() => {
     loadEntries();
   }, [loadEntries]);
+
+  // Load recently viewed from Supabase when user logs in
+  useEffect(() => {
+    if (user) {
+      loadRecentlyViewedFromSupabase();
+    }
+  }, [user]);
 
   // Close mobile sidebar on route change or chat start
   useEffect(() => {
@@ -518,7 +533,7 @@ export function Menu() {
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
-            {recentlyViewed.length === 0 ? (
+            {sortedRecentlyViewed.length === 0 ? (
               collapsed ? (
                 <div className="flex items-center justify-center py-2" title="Nenhum projeto visto recentemente">
                   <div className="i-ph:clock-counter-clockwise text-base text-bolt-elements-textTertiary" />
@@ -531,7 +546,7 @@ export function Menu() {
                 </div>
               )
             ) : (
-              recentlyViewed.map((item) => renderRecentlyViewedItem(item))
+              sortedRecentlyViewed.map((item) => renderRecentlyViewedItem(item))
             )}
           </div>
         </div>

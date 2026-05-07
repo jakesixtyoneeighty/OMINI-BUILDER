@@ -4,6 +4,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   full_name text,
+  display_name text,
   avatar_url text,
   provider text,
   github_token text,
@@ -17,10 +18,17 @@ create table if not exists public.projects (
   name text not null default '',
   description text not null default '',
   logo text not null default '',
+  custom_rules text not null default '',
+  preview_mode text not null default 'webcontainer',
+  env_vars jsonb not null default '[]'::jsonb,
   github_repo text not null default '',
   github_branch text not null default 'main',
   github_token text not null default '',
-  env_vars jsonb not null default '[]'::jsonb,
+  netlify_config jsonb not null default '{}'::jsonb,
+  vercel_config jsonb not null default '{}'::jsonb,
+  cloudrun_config jsonb not null default '{}'::jsonb,
+  database_config jsonb not null default '{}'::jsonb,
+  google_drive_config jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -36,9 +44,18 @@ create table if not exists public.project_files (
   unique (project_id, path)
 );
 
+create table if not exists public.recently_viewed (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  viewed_at timestamptz not null default now(),
+  unique (user_id, project_id)
+);
+
 alter table public.profiles enable row level security;
 alter table public.projects enable row level security;
 alter table public.project_files enable row level security;
+alter table public.recently_viewed enable row level security;
 
 create policy "profiles_select_own" on public.profiles
 for select using (auth.uid() = id);
@@ -92,6 +109,15 @@ for delete using (
     where p.id = project_id and p.owner_id = auth.uid()
   )
 );
+
+create policy "recently_viewed_select_own" on public.recently_viewed
+for select using (auth.uid() = user_id);
+
+create policy "recently_viewed_insert_own" on public.recently_viewed
+for insert with check (auth.uid() = user_id);
+
+create policy "recently_viewed_delete_own" on public.recently_viewed
+for delete using (auth.uid() = user_id);
 
 create or replace function public.set_updated_at()
 returns trigger
