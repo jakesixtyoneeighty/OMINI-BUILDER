@@ -225,22 +225,44 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
-    if (projectId && projectId !== 'default') {
-      workbenchStore.loadProjectFiles(projectId);
-    }
 
-    // Restore files from localStorage cache on page load
-    const hasCachedFiles = workbenchStore.filesStore.loadFilesFromCache();
-    if (hasCachedFiles) {
-      const currentFiles = workbenchStore.files.get();
-      workbenchStore.setDocuments(currentFiles);
-      if (Object.keys(currentFiles).length > 0) {
-        workbenchStore.showWorkbench.set(true);
-        if (!chatStarted) {
-          runAnimation();
+    // Load project settings from Supabase if available, then restore files
+    const loadProject = async () => {
+      if (projectId && projectId !== 'default') {
+        // Load project settings from Supabase first
+        const { loadProjectFromSupabase } = await import('~/lib/stores/project');
+        await loadProjectFromSupabase(projectId);
+
+        // Load project files from Supabase
+        await workbenchStore.loadProjectFiles(projectId);
+
+        // Re-write .env file from saved project settings
+        const current = projects[projectId];
+        if (current?.settings?.envVars && current.settings.envVars.length > 0) {
+          const { writeEnvFile } = await import('~/lib/stores/project');
+          try {
+            await writeEnvFile(current.settings.envVars);
+          } catch (err) {
+            console.warn('Failed to restore .env file:', err);
+          }
         }
       }
-    }
+
+      // Restore files from localStorage cache on page load
+      const hasCachedFiles = workbenchStore.filesStore.loadFilesFromCache();
+      if (hasCachedFiles) {
+        const currentFiles = workbenchStore.files.get();
+        workbenchStore.setDocuments(currentFiles);
+        if (Object.keys(currentFiles).length > 0) {
+          workbenchStore.showWorkbench.set(true);
+          if (!chatStarted) {
+            runAnimation();
+          }
+        }
+      }
+    };
+
+    loadProject();
   }, []);
 
   // Track recently viewed projects (local + Supabase)
@@ -349,6 +371,19 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
           autosaveToDrive().then((ok) => {
             if (ok) console.log('[autosave] Project saved to Google Drive');
           });
+
+          // Auto-save files to Supabase after AI finishes
+          const currentProjectId = activeProjectIdStore.get();
+          if (currentProjectId && currentProjectId !== 'default') {
+            workbenchStore.saveEntireProject().then(() => {
+              console.log('[autosave] Files saved to Supabase');
+            }).catch((err) => {
+              console.warn('[autosave] Failed to save files to Supabase:', err);
+            });
+          }
+
+          // Also save files to localStorage cache
+          workbenchStore.filesStore.saveFilesToCache();
         }, 3000);
       }
     }
@@ -412,6 +447,38 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
   const [userQuestions, setUserQuestions] = useState<Record<number, UserQuestionData>>({});
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const processedQuestionMessages = useRef<Set<number>>(new Set());
+
+  // Pre-populate processed refs from loaded chat history so env requests, db requests,
+  // and questions are not re-triggered on page reload
+  useEffect(() => {
+    if (initialMessages.length === 0) return;
+    const answered = new Set<number>();
+    for (let i = 0; i < initialMessages.length; i++) {
+      const msg = initialMessages[i];
+      if (msg.role !== 'assistant') continue;
+      const content = msg.content || '';
+      if (content.match(/<env_request\s*>[\s\S]*?<\/env_request\s*>/i)) {
+        processedEnvMessages.current.add(i);
+      }
+      if (content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>[\s\S]*?<\/db_request\s*>/i)) {
+        processedDbMessages.current.add(i);
+      }
+      if (content.match(/<user_question\s+question=["'][^"']*["][\s\S]*?<\/user_question\s*>/i)) {
+        processedQuestionMessages.current.add(i);
+        // Also mark as answered since there's a follow-up user message after questions
+        // Check if the next message is a user message with a question answer
+        if (i + 1 < initialMessages.length && initialMessages[i + 1]?.role === 'user') {
+          const nextContent = initialMessages[i + 1].content || '';
+          if (nextContent.startsWith('[Question Answer]')) {
+            answered.add(i);
+          }
+        }
+      }
+    }
+    if (answered.size > 0) {
+      setAnsweredQuestions(answered);
+    }
+  }, []);
 
   // Detect <env_request> tags in assistant messages
   useEffect(() => {
