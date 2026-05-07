@@ -1,5 +1,5 @@
 import type { Message } from 'ai';
-import React, { type RefCallback, useState, useCallback, useRef } from 'react';
+import React, { type RefCallback, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { useStore } from '@nanostores/react';
 import { Workbench } from '~/components/workbench/Workbench.client';
@@ -15,6 +15,7 @@ import { authStore } from '~/lib/stores/auth';
 import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
+import { ModelPicker } from '~/components/header/ModelPicker.client';
 
 import styles from './BaseChat.module.scss';
 
@@ -260,9 +261,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   </h1>
 
                   {/* Subtitle */}
-                  <p className="text-base text-bolt-elements-textTertiary mb-10 max-w-md mx-auto leading-relaxed">
+                  <p className="text-base text-bolt-elements-textTertiary mb-6 max-w-md mx-auto leading-relaxed">
                     Create stunning apps & websites by chatting with AI.
                   </p>
+
+                  {/* Model picker */}
+                  <div className="flex justify-center mb-8">
+                    <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+                  </div>
                 </div>
 
                 {/* "Let's build" Input Card */}

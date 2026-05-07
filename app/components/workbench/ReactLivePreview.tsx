@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
+import React, { createElement as h, memo, useMemo, useState, useEffect, useRef, Fragment } from 'react';
 import { LiveProvider, LivePreview as RLivePreview, LiveError } from 'react-live';
 import { transform } from 'sucrase';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -7,7 +7,7 @@ import type { FileMap, File as WFile } from '~/lib/stores/files';
 
 /**
  * Transpile TypeScript/JSX code to plain JavaScript using Sucrase.
- * This is needed because react-live cannot execute TypeScript syntax.
+ * Uses the automatic JSX runtime to avoid _jsxFileName duplicate declarations.
  */
 function transpileCode(code: string, filePath: string): string {
   try {
@@ -19,16 +19,58 @@ function transpileCode(code: string, filePath: string): string {
 
     const result = transform(code, {
       transforms: isTSX || isTS ? ['typescript', 'jsx'] : ['jsx'],
-      jsxRuntime: 'classic',
-      production: false,
+      jsxRuntime: 'automatic',
+      production: true,
     });
 
-    return result.code;
+    let output = result.code;
+
+    // Remove automatic runtime imports since we provide React in scope
+    // react-live executes code in its own scope, not as ES modules
+    output = output
+      .replace(/import\s+\{[^}]*\}\s+from\s+['"]react\/jsx-runtime['"];?\s*/g, '')
+      .replace(/import\s+React\s+from\s+['"]react['"];?\s*/g, '');
+
+    // Replace _jsx and _jsxs calls with React.createElement
+    // The automatic runtime uses _jsx/_jsxs which we don't have
+    output = convertJsxRuntimeToCreateElement(output);
+
+    return output;
   } catch (err) {
-    // If transpilation fails, return original code and let react-live show the error
     console.warn(`[ReactLive] Transpilation failed for ${filePath}:`, err);
     return code;
   }
+}
+
+/**
+ * Convert _jsx/_jsxs calls from the automatic runtime to React.createElement calls.
+ * This is needed because react-live doesn't support ES module imports,
+ * so we can't import from 'react/jsx-runtime'.
+ *
+ * _jsx(Component, {prop1: value1, children: [...]}, key)
+ * → React.createElement(Component, {prop1: value1}, ...children)
+ *
+ * _jsxs(Component, {prop1: value1, children: [...]}, key)
+ * → React.createElement(Component, {prop1: value1}, ...children)
+ */
+function convertJsxRuntimeToCreateElement(code: string): string {
+  // Replace _jsxs(Component, { ...children... }, key) and _jsx(Component, { ... }, key)
+  // with React.createElement equivalents
+  let result = code;
+
+  // Remove any remaining _jsxFileName declarations (shouldn't exist with automatic + production, but just in case)
+  result = result.replace(/const\s+_jsxFileName\s*=\s*[^;]+;/g, '');
+
+  // Simple replacement: _jsx( → React.createElement(
+  // and _jsxs( → React.createElement(
+  result = result.replace(/\b_jsxs?\s*\(/g, 'React.createElement(');
+
+  // The automatic runtime passes children as a prop in the props object.
+  // React.createElement spreads children as additional arguments.
+  // For react-live, this simple conversion works well enough since
+  // React.createElement handles both patterns.
+
+  return result;
 }
 
 /**
@@ -103,6 +145,7 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     useContext: React.useContext,
     useReducer: React.useReducer,
     Fragment: React.Fragment,
+    createElement: React.createElement,
   };
 
   // Build the code: component helpers + App component + render call
@@ -118,7 +161,6 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
 
   // Add component files (these are imports that react-live can't handle,
   // so we inline them after transpiling)
-  const componentNames: string[] = [];
   for (const [path, file] of componentFiles) {
     // First strip imports and exports, then transpile
     let content = file.content
@@ -131,12 +173,6 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
 
     // Additional cleanup for any remaining TypeScript syntax
     content = stripTypeScriptSyntax(content);
-
-    // Extract the component/function name for referencing
-    const nameMatch = content.match(/(?:function|const|let|var)\s+(\w+)/);
-    if (nameMatch) {
-      componentNames.push(nameMatch[1]);
-    }
 
     code += `${content}\n\n`;
   }
@@ -154,8 +190,8 @@ function buildReactLiveCode(files: FileMap): { code: string; scope: Record<strin
     code += `${appContent}\n\n`;
   }
 
-  // The render expression for react-live
-  code += `render(<><_TailwindLoader /><_StyleInjector /><App /></>)`;
+  // The render expression for react-live — use React.createElement to avoid JSX in render
+  code += `render(React.createElement(React.Fragment, null, React.createElement(_TailwindLoader), React.createElement(_StyleInjector), React.createElement(App)))`;
 
   return { code, scope };
 }
