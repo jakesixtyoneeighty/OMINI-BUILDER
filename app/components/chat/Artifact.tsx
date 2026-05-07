@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { computed } from 'nanostores';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { createHighlighter, type BundledLanguage, type BundledTheme, type HighlighterGeneric } from 'shiki';
 import type { ActionState } from '~/lib/runtime/action-runner';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -22,6 +22,40 @@ if (import.meta.hot) {
 
 interface ArtifactProps {
   messageId: string;
+}
+
+/**
+ * Determines if a shell action is a build command.
+ */
+function isBuildCommand(content: string): boolean {
+  const lower = content?.toLowerCase() || '';
+  return (
+    lower.includes('npm run build') ||
+    lower.includes('pnpm build') ||
+    lower.includes('yarn build') ||
+    lower.includes('vite build') ||
+    lower.includes('next build') ||
+    lower.includes('npx vite build') ||
+    lower.includes('remix vite:build') ||
+    lower.includes('npm run dev') ||
+    lower.includes('pnpm dev') ||
+    lower.includes('yarn dev')
+  );
+}
+
+/**
+ * Determines if a shell action is an install command.
+ */
+function isInstallCommand(content: string): boolean {
+  const lower = content?.toLowerCase() || '';
+  return (
+    lower.includes('npm install') ||
+    lower.includes('npm i ') ||
+    lower.includes('pnpm add') ||
+    lower.includes('pnpm install') ||
+    lower.includes('yarn add') ||
+    lower.includes('pip install')
+  );
 }
 
 export const Artifact = memo(({ messageId }: ArtifactProps) => {
@@ -47,12 +81,13 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     }
   }, [actions]);
 
-  // Group file actions by type
-  const { createdFiles, editedFiles, shellActions, hasBuild } = useMemo(() => {
+  // Group actions: files by created/edited, shells by type (install, build, other)
+  const { createdFiles, editedFiles, installActions, buildActions, otherShellActions } = useMemo(() => {
     const created: ActionState[] = [];
     const edited: ActionState[] = [];
-    const shell: ActionState[] = [];
-    let buildDetected = false;
+    const installs: ActionState[] = [];
+    const builds: ActionState[] = [];
+    const otherShell: ActionState[] = [];
 
     for (const action of actions) {
       if (action.type === 'file') {
@@ -63,59 +98,77 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
           edited.push(action);
         }
       } else if (action.type === 'shell') {
-        shell.push(action);
-        // Detect build commands
-        const content = action.content?.toLowerCase() || '';
-        if (
-          content.includes('npm run build') ||
-          content.includes('npm run dev') ||
-          content.includes('pnpm build') ||
-          content.includes('pnpm dev') ||
-          content.includes('yarn build') ||
-          content.includes('yarn dev') ||
-          content.includes('vite build') ||
-          content.includes('next build') ||
-          content.includes('npx vite build') ||
-          content.includes('remix vite:build')
-        ) {
-          buildDetected = true;
+        if (isBuildCommand(action.content)) {
+          builds.push(action);
+        } else if (isInstallCommand(action.content)) {
+          installs.push(action);
+        } else {
+          otherShell.push(action);
         }
       }
     }
 
-    return { createdFiles: created, editedFiles: edited, shellActions: shell, hasBuild: buildDetected };
+    return { createdFiles: created, editedFiles: edited, installActions: installs, buildActions: builds, otherShellActions: otherShell };
   }, [actions]);
 
-  // Extract a short command description for shell actions
-  const getCommandLabel = (content: string): string => {
-    const trimmed = content.trim();
-    const firstLine = trimmed.split('\n')[0].trim();
+  const hasContent = actions.length > 0;
 
-    const npmInstall = trimmed.match(/npm\s+install\s+(.+)/);
-    const npxCmd = trimmed.match(/npx\s+(\S+)/);
-    const pipInstall = trimmed.match(/pip\s+install\s+(.+)/);
-    const pnpmInstall = trimmed.match(/pnpm\s+(?:add|install)\s+(.+)/);
+  // Section definitions in display order
+  const sections = useMemo(() => {
+    const result: { key: string; label: string; icon: string; iconColor: string; actions: ActionState[] }[] = [];
 
-    if (npmInstall) {
-      const packages = npmInstall[1].trim();
-      return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
-    }
-    if (pnpmInstall) {
-      const packages = pnpmInstall[1].trim();
-      return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
-    }
-    if (npxCmd) {
-      return `Ran ${npxCmd[1]}`;
-    }
-    if (pipInstall) {
-      const packages = pipInstall[1].trim();
-      return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}`;
+    if (createdFiles.length > 0) {
+      result.push({
+        key: 'created',
+        label: `Created ${createdFiles.length} file${createdFiles.length > 1 ? 's' : ''}`,
+        icon: 'i-ph:file-plus',
+        iconColor: 'text-emerald-500',
+        actions: createdFiles,
+      });
     }
 
-    return firstLine.length > 50 ? firstLine.substring(0, 47) + '...' : firstLine;
-  };
+    if (editedFiles.length > 0) {
+      result.push({
+        key: 'edited',
+        label: `Edited ${editedFiles.length} file${editedFiles.length > 1 ? 's' : ''}`,
+        icon: 'i-ph:pencil-simple',
+        iconColor: 'text-amber-500',
+        actions: editedFiles,
+      });
+    }
 
-  const hasContent = createdFiles.length > 0 || editedFiles.length > 0 || shellActions.length > 0;
+    if (installActions.length > 0) {
+      result.push({
+        key: 'install',
+        label: `Installed packages`,
+        icon: 'i-ph:package',
+        iconColor: 'text-violet-500',
+        actions: installActions,
+      });
+    }
+
+    if (otherShellActions.length > 0) {
+      result.push({
+        key: 'shell',
+        label: `Ran ${otherShellActions.length} command${otherShellActions.length > 1 ? 's' : ''}`,
+        icon: 'i-ph:terminal',
+        iconColor: 'text-blue-500',
+        actions: otherShellActions,
+      });
+    }
+
+    if (buildActions.length > 0) {
+      result.push({
+        key: 'built',
+        label: 'Built',
+        icon: 'i-ph:wrench',
+        iconColor: 'text-blue-500',
+        actions: buildActions,
+      });
+    }
+
+    return result;
+  }, [createdFiles, editedFiles, installActions, buildActions, otherShellActions]);
 
   return (
     <div
@@ -152,7 +205,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         <div className="i-ph:arrow-square-out text-xs text-bolt-elements-textTertiary" />
       </div>
 
-      {/* Action Timeline - grouped by type */}
+      {/* Action Timeline - all actions grouped together */}
       <AnimatePresence>
         {showActions && hasContent && (
           <motion.div
@@ -163,106 +216,46 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             className="overflow-hidden"
           >
             <div className="border-t border-[#e0e0e0] dark:border-bolt-elements-borderColor">
-              {/* Created Files Section */}
-              {createdFiles.length > 0 && (
-                <div className="border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50">
+              {sections.map((section, sIdx) => (
+                <div
+                  key={section.key}
+                  className={sIdx < sections.length - 1 ? 'border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50' : ''}
+                >
                   {/* Section header */}
                   <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
-                    <div className="i-ph:file-plus text-xs text-emerald-500" />
+                    <div className={`${section.icon} text-xs ${section.iconColor}`} />
                     <span className="text-xs font-medium text-bolt-elements-textSecondary">
-                      Created {createdFiles.length} file{createdFiles.length > 1 ? 's' : ''}
+                      {section.label}
                     </span>
                   </div>
-                  {/* File list */}
+                  {/* Action items */}
                   <ul className="list-none">
-                    {createdFiles.map((action, index) => (
+                    {section.actions.map((action, index) => (
                       <motion.li
-                        key={`created-${index}`}
+                        key={`${section.key}-${index}`}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.03 }}
                       >
-                        <FileActionItem action={action} isLast={index === createdFiles.length - 1} label="Created file" />
+                        {action.type === 'file' ? (
+                          <FileActionItem
+                            action={action}
+                            isLast={index === section.actions.length - 1}
+                            sectionKey={section.key}
+                          />
+                        ) : (
+                          <ShellActionItem
+                            action={action}
+                            isLast={index === section.actions.length - 1}
+                            isBuildSection={section.key === 'built'}
+                            isInstallSection={section.key === 'install'}
+                          />
+                        )}
                       </motion.li>
                     ))}
                   </ul>
                 </div>
-              )}
-
-              {/* Edited Files Section */}
-              {editedFiles.length > 0 && (
-                <div className="border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50">
-                  {/* Section header */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
-                    <div className="i-ph:pencil-simple text-xs text-amber-500" />
-                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
-                      Edited {editedFiles.length} file{editedFiles.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {/* File list */}
-                  <ul className="list-none">
-                    {editedFiles.map((action, index) => (
-                      <motion.li
-                        key={`edited-${index}`}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                      >
-                        <FileActionItem action={action} isLast={index === editedFiles.length - 1} label="Edited file" />
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Shell Commands Section */}
-              {shellActions.length > 0 && !hasBuild && (
-                <div>
-                  <ul className="list-none">
-                    {shellActions.map((action, index) => (
-                      <motion.li
-                        key={`shell-${index}`}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                      >
-                        <ShellActionItem action={action} isLast={index === shellActions.length - 1} getCommandLabel={getCommandLabel} />
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Built Section - shows when a build command was detected */}
-              {hasBuild && (
-                <div>
-                  {/* Built header */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
-                    <div className="i-ph:wrench text-xs text-blue-500" />
-                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
-                      Built
-                    </span>
-                  </div>
-                  {/* Build commands */}
-                  <ul className="list-none">
-                    {shellActions.map((action, index) => (
-                      <motion.li
-                        key={`build-${index}`}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                      >
-                        <ShellActionItem
-                          action={action}
-                          isLast={index === shellActions.length - 1}
-                          getCommandLabel={getCommandLabel}
-                          isBuildSection
-                        />
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              ))}
             </div>
           </motion.div>
         )}
@@ -318,19 +311,18 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
 
 /* ===== File Action Item ===== */
 
-function FileActionItem({ action, isLast, label }: { action: ActionState; isLast: boolean; label: string }) {
+function FileActionItem({ action, isLast, sectionKey }: { action: ActionState; isLast: boolean; sectionKey: string }) {
   const [expanded, setExpanded] = useState(false);
   const fileName = action.filePath?.split('/').pop() || '';
-  const dirPath = action.filePath?.substring(0, action.filePath.lastIndexOf('/')) || '';
 
-  const isCreated = action.isNewFile !== false;
+  const isCreated = sectionKey === 'created';
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
 
   return (
     <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
-      {/* Action summary line - click to expand/collapse */}
+      {/* Action summary line */}
       <div
         className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
         onClick={() => setExpanded(!expanded)}
@@ -361,7 +353,7 @@ function FileActionItem({ action, isLast, label }: { action: ActionState; isLast
           )}
         </div>
 
-        {/* Status icon - right aligned */}
+        {/* Status icon */}
         <div className="shrink-0 w-4 h-4 flex items-center justify-center">
           {isRunning ? (
             <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
@@ -412,19 +404,46 @@ function FileActionItem({ action, isLast, label }: { action: ActionState; isLast
 function ShellActionItem({
   action,
   isLast,
-  getCommandLabel,
   isBuildSection = false,
+  isInstallSection = false,
 }: {
   action: ActionState;
   isLast: boolean;
-  getCommandLabel: (content: string) => string;
   isBuildSection?: boolean;
+  isInstallSection?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
+
+  // Get a friendly label for the command
+  const getLabel = () => {
+    const content = action.content?.trim() || '';
+    const firstLine = content.split('\n')[0].trim();
+
+    if (isBuildSection) return firstLine;
+    if (isInstallSection) {
+      const npmMatch = content.match(/npm\s+(?:install|i)\s+(.+)/);
+      const pnpmMatch = content.match(/pnpm\s+(?:add|install)\s+(.+)/);
+      const yarnMatch = content.match(/yarn\s+add\s+(.+)/);
+      const pipMatch = content.match(/pip\s+install\s+(.+)/);
+
+      const match = npmMatch || pnpmMatch || yarnMatch || pipMatch;
+      if (match) {
+        const packages = match[1].trim();
+        return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}: ${firstLine}`;
+      }
+      return firstLine;
+    }
+
+    // Detect common patterns
+    const npxMatch = content.match(/npx\s+(\S+)/);
+    if (npxMatch) return `Ran ${npxMatch[1]}`;
+
+    return firstLine.length > 60 ? firstLine.substring(0, 57) + '...' : firstLine;
+  };
 
   return (
     <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
@@ -433,9 +452,9 @@ function ShellActionItem({
         className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Command label */}
-        <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-medium">
-          {isBuildSection ? action.content?.trim().split('\n')[0] || 'Build command' : getCommandLabel(action.content)}
+        {/* Command text */}
+        <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-mono">
+          {getLabel()}
         </span>
 
         {/* Status icon */}

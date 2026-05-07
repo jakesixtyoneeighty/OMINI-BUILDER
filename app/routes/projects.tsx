@@ -351,7 +351,7 @@ function ProjectsContent() {
 
                 {/* Dropdown menu */}
                 {menuOpenId === project.id && (
-                  <div className="absolute top-0 right-2 z-[100] w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden">
+                  <div className="absolute top-0 right-2 z-[9999] w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden">
                     <button
                       onClick={() => {
                         setMenuOpenId(null);
