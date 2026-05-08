@@ -15,6 +15,8 @@ import { PublishToGalleryButton } from './PublishToGalleryButton.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { SearchDialog } from './SearchDialog.client';
 import { ModelPicker } from './ModelPicker.client';
+import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
+import { classNames } from '~/utils/classNames';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -186,7 +188,10 @@ export function Header() {
 /* ===== Homepage Header ===== */
 function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const currentLang = useStore(languageStore);
   const resourcesRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!resourcesOpen) return;
@@ -198,6 +203,17 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [resourcesOpen]);
+
+  useEffect(() => {
+    if (!langOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [langOpen]);
 
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
@@ -233,6 +249,46 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
         >
           Community
         </a>
+
+        {/* Language selector */}
+        <div ref={langRef} className="relative hidden md:block">
+          <button
+            type="button"
+            onClick={() => setLangOpen(!langOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+          >
+            <span>{LANGUAGE_FLAGS[currentLang]}</span>
+            <span className="hidden lg:inline">{LANGUAGE_NAMES[currentLang]}</span>
+            <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">
+              {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => {
+                    languageStore.set(lang);
+                    setLangOpen(false);
+                  }}
+                  className={classNames(
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left',
+                    currentLang === lang
+                      ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentAccent'
+                      : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary',
+                  )}
+                >
+                  <span className="text-base">{LANGUAGE_FLAGS[lang]}</span>
+                  <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
+                  {currentLang === lang && (
+                    <div className="i-ph:check-bold text-xs ml-auto text-bolt-elements-item-contentAccent" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <a
           href="#"
           className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"

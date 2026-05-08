@@ -335,12 +335,31 @@ export const Preview = memo(function Preview() {
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
   const [inspectorActive, setInspectorActive] = useState(false);
   const [inspectorAnnotations, setInspectorAnnotations] = useState<any[]>([]);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
+  const [showNoPreview, setShowNoPreview] = useState(true);
   const previews = useStore(workbenchStore.previews);
   const activePreview = previews[activePreviewIndex];
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
   const previewMode: PreviewMode = project?.settings?.previewMode || 'webcontainer';
+
+  // Track preview loading state
+  useEffect(() => {
+    if (activePreview?.baseUrl) {
+      setPreviewLoaded(false);
+      // Give the iframe time to load, then mark as loaded
+      const timer = setTimeout(() => {
+        setPreviewLoaded(true);
+        // Fade out the no-preview message
+        setTimeout(() => setShowNoPreview(false), 300);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setPreviewLoaded(false);
+      setShowNoPreview(true);
+    }
+  }, [activePreview?.baseUrl]);
 
   const refresh = useCallback(() => {
     if (iframeRef.current) {
@@ -422,31 +441,80 @@ export const Preview = memo(function Preview() {
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           {activePreview ? (
-            <PreviewErrorCatcher>
-              <iframe
-                ref={iframeRef}
-                className="webcontainer-preview-frame"
-                src={activePreview.baseUrl}
-                title="Preview"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  background: 'white',
-                  margin: 0,
-                  padding: 0,
-                }}
-              />
-            </PreviewErrorCatcher>
+            <>
+              <PreviewErrorCatcher>
+                <iframe
+                  ref={iframeRef}
+                  className="webcontainer-preview-frame"
+                  src={activePreview.baseUrl}
+                  title="Preview"
+                  onLoad={() => {
+                    setPreviewLoaded(true);
+                    setTimeout(() => setShowNoPreview(false), 300);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    background: 'white',
+                    margin: 0,
+                    padding: 0,
+                  }}
+                />
+              </PreviewErrorCatcher>
+              {/* Loading overlay - fades out when preview loads */}
+              {!previewLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-bolt-elements-background-depth-1 z-10 transition-opacity duration-500">
+                  <div className="text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
+                      {/* Spinning ring */}
+                      <div className="absolute inset-0 rounded-full border-2 border-bolt-elements-borderColor" />
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 animate-spin" />
+                      {/* Center icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="i-ph:eye text-xl text-bolt-elements-textTertiary" />
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium text-bolt-elements-textSecondary">Carregando preview...</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1">Aguarde enquanto o app e compilado</p>
+                    {/* Animated dots */}
+                    <div className="flex items-center justify-center gap-1 mt-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="flex items-center justify-center h-full text-bolt-elements-textTertiary">
+            <div className={`flex items-center justify-center h-full text-bolt-elements-textTertiary transition-opacity duration-500 ${showNoPreview ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <div className="text-center">
-                <div className="i-ph:globe-simple text-3xl mb-2 mx-auto" />
-                <p className="text-sm">No preview available</p>
-                <p className="text-xs text-bolt-elements-textTertiary mt-1">Start a chat to generate a preview</p>
+                <div className="relative w-20 h-20 mx-auto mb-4">
+                  {/* Pulsing rings */}
+                  <div className="absolute inset-0 rounded-full border border-bolt-elements-borderColor/50 animate-ping opacity-20" style={{ animationDuration: '2s' }} />
+                  <div className="absolute inset-2 rounded-full border border-bolt-elements-borderColor/40 animate-ping opacity-15" style={{ animationDuration: '2.5s', animationDelay: '0.3s' }} />
+                  <div className="absolute inset-4 rounded-full border border-bolt-elements-borderColor/30 animate-ping opacity-10" style={{ animationDuration: '3s', animationDelay: '0.6s' }} />
+                  {/* Center icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor flex items-center justify-center">
+                      <div className="i-ph:browser text-2xl text-bolt-elements-textTertiary" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-bolt-elements-textSecondary">Nenhum preview disponivel</p>
+                <p className="text-xs text-bolt-elements-textTertiary mt-1">Comece um chat para gerar o preview do app</p>
+                {/* Subtle floating particles */}
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <div className="w-2 h-2 rounded-full bg-blue-500/20 animate-pulse" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500/20 animate-pulse" style={{ animationDelay: '200ms' }} />
+                  <div className="w-2 h-2 rounded-full bg-cyan-500/20 animate-pulse" style={{ animationDelay: '400ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/20 animate-pulse" style={{ animationDelay: '600ms' }} />
+                  <div className="w-2 h-2 rounded-full bg-purple-500/20 animate-pulse" style={{ animationDelay: '800ms' }} />
+                </div>
               </div>
             </div>
           )}

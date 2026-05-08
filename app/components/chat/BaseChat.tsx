@@ -11,6 +11,7 @@ import { GitHubImport } from './GitHubImport.client';
 import { CloneSite } from './CloneSite.client';
 import { Messages } from './Messages.client';
 import { UserProjects } from './UserProjects.client';
+import { RecentlyViewed } from './RecentlyViewed';
 import { FileMentionDropdown } from './FileMentionDropdown.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
 import { authStore } from '~/lib/stores/auth';
@@ -18,7 +19,6 @@ import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
-import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
 import { workbenchStore } from '~/lib/stores/workbench';
 
 import styles from './BaseChat.module.scss';
@@ -97,8 +97,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user } = useStore(authStore);
-    const [langOpen, setLangOpen] = useState(false);
-    const currentLang = useStore(languageStore);
 
     // @ file mention state
     const [mentionState, setMentionState] = useState<{
@@ -390,49 +388,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     Create stunning apps & websites by chatting with AI.
                   </p>
 
-                  {/* Model picker + Language selector */}
+                  {/* Model picker */}
                   <div className="flex justify-center items-center gap-3 mb-8">
                     <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setLangOpen(!langOpen)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bolt-elements-background-depth-2/80 border border-bolt-elements-borderColor hover:border-bolt-elements-item-contentAccent/40 transition-all text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary backdrop-blur-sm"
-                      >
-                        <span className="text-base">{LANGUAGE_FLAGS[currentLang]}</span>
-                        <span>{LANGUAGE_NAMES[currentLang]}</span>
-                        <div className={`i-ph:caret-down text-xs transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {langOpen && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 min-w-[180px] rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-xl overflow-hidden">
-                            {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
-                              <button
-                                key={lang}
-                                type="button"
-                                onClick={() => {
-                                  languageStore.set(lang);
-                                  setLangOpen(false);
-                                }}
-                                className={classNames(
-                                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all',
-                                  currentLang === lang
-                                    ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentAccent'
-                                    : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary',
-                                )}
-                              >
-                                <span className="text-base">{LANGUAGE_FLAGS[lang]}</span>
-                                <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
-                                {currentLang === lang && (
-                                  <div className="i-ph:check-bold text-xs ml-auto text-bolt-elements-item-contentAccent" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
                   </div>
                 </div>
 
@@ -608,8 +566,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   </div>
                 </div>
 
+                {/* Recently viewed section */}
+                <div className="pb-4 pt-6 relative z-10">
+                  <ClientOnly>{() => <RecentlyViewed />}</ClientOnly>
+                </div>
+
                 {/* User projects section */}
-                <div className="pb-8 pt-6 relative z-10">
+                <div className="pb-8 relative z-10">
                   <ClientOnly>{() => <UserProjects />}</ClientOnly>
                 </div>
               </div>
