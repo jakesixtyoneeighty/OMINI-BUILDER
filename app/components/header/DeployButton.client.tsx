@@ -5,7 +5,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
 
-type DeployProvider = 'netlify' | 'vercel' | 'cloudrun';
+type DeployProvider = 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
 
 interface DeployButtonProps {
   onOpenSettings: () => void;
@@ -63,6 +63,67 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     return Object.entries(files)
       .filter(([, f]) => f?.type === 'file' && !f.isBinary)
       .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
+  };
+
+  // Deploy via Omni Builder (self-hosted preview)
+  const deployToOmniBuilder = async () => {
+    setDeploying('omnibuilder');
+    setDeployResult(null);
+    setOpen(false);
+
+    try {
+      const fileList = await getProjectFiles();
+      const projectName = settings?.name || project?.name || 'My Project';
+      const projectDesc = settings?.description || '';
+
+      const res = await fetch('/api/deploy-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          name: projectName,
+          description: projectDesc,
+          files: fileList,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.migrationNeeded) {
+          toast.error(
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">Database migration needed</span>
+              <span className="text-xs">Run the SQL in supabase_deploy_migration.sql to create the deployed_projects table</span>
+            </div>,
+            { autoClose: 12000 },
+          );
+          return;
+        }
+        throw new Error(data.error || 'Deploy failed');
+      }
+
+      setDeployResult({ url: data.viewUrl, provider: 'Omni Builder' });
+
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">Deploy realizado pelo Omni Builder!</span>
+          <a
+            href={data.viewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline text-xs hover:text-blue-300"
+          >
+            {data.viewUrl}
+          </a>
+        </div>,
+        { autoClose: 10000 },
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha no deploy', { autoClose: 8000 });
+    } finally {
+      setDeploying(null);
+    }
   };
 
   const deployTo = async (provider: DeployProvider) => {
@@ -151,7 +212,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
     const providerInfo = configuredProviders.map((p) => p.label).join(', ') || 'nenhum provedor configurado';
 
-    // Dispatch event for Chat.client.tsx to listen and send message to AI
     window.dispatchEvent(
       new CustomEvent('deploy-requested', {
         detail: {
@@ -174,7 +234,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.info('Configure um provedor de deploy primeiro!', { autoClose: 4000 });
       return;
     }
-    // Deploy to first configured provider
     deployTo(configuredProviders[0].key);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAnyProvider, configuredProviders, onOpenSettings]);
@@ -198,7 +257,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           {isDeploying ? (
             <>
               <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-              Deploying...
+              {deploying === 'omnibuilder' ? 'Deploying to Omni...' : 'Deploying...'}
             </>
           ) : deployResult ? (
             <>
@@ -226,16 +285,31 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div>
                   <p className="text-sm font-semibold text-bolt-elements-textPrimary">Deploy do Projeto</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    {hasAnyProvider
-                      ? `${configuredProviders.length} provedor${configuredProviders.length > 1 ? 'es' : ''} configurado${configuredProviders.length > 1 ? 's' : ''}`
-                      : 'Nenhum provedor configurado'}
+                    Escolha como publicar seu projeto
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="p-2 space-y-1">
-              {/* Deploy com IA — highlighted option */}
+              {/* Deploy pelo Omni Builder — PRIMARY option */}
+              <button
+                onClick={deployToOmniBuilder}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-teal-500/20 bg-teal-500/5"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center shrink-0 group-hover:from-teal-500/30 group-hover:to-emerald-500/30 transition-colors">
+                  <div className="i-ph:cube-duotone text-teal-400 text-base" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">Deploy pelo Omni Builder</p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">Preview ao vivo com WebContainer — link instantâneo</p>
+                </div>
+                <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-500/20 text-teal-400 uppercase tracking-wider">
+                  Novo
+                </div>
+              </button>
+
+              {/* Deploy com IA */}
               <button
                 onClick={deployWithAI}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group"
@@ -250,11 +324,11 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div className="i-ph:sparkle text-purple-400/50 text-xs" />
               </button>
 
-              {/* Separator */}
+              {/* Separator — External providers */}
               {hasAnyProvider && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
-                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">Deploy Direto</span>
+                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">Deploy Externo</span>
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                 </div>
               )}
