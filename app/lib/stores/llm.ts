@@ -91,7 +91,7 @@ export async function syncKeysToSupabase() {
   const sb = getSupabase();
   const { authStore } = await import('./auth');
   const { user } = authStore.get();
-  const { keys } = llmStore.get();
+  const { keys, provider, model } = llmStore.get();
 
   if (sb && user) {
     await sb.from('profiles').upsert({
@@ -99,6 +99,8 @@ export async function syncKeysToSupabase() {
       anthropic_key: keys.anthropic,
       openrouter_key: keys.openrouter,
       google_key: keys.google,
+      last_provider: provider,
+      last_model: model,
       updated_at: new Date().toISOString(),
     });
   }
@@ -112,16 +114,20 @@ export async function loadKeysFromSupabase() {
   if (sb && user) {
     const { data, error } = await sb
       .from('profiles')
-      .select('anthropic_key, openrouter_key, google_key')
+      .select('anthropic_key, openrouter_key, google_key, last_provider, last_model')
       .eq('id', user.id)
       .single();
 
     if (!error && data) {
       const current = llmStore.get();
-      llmStore.setKey('keys', {
-        anthropic: data.anthropic_key || current.keys.anthropic,
-        openrouter: data.openrouter_key || current.keys.openrouter,
-        google: data.google_key || current.keys.google,
+      llmStore.set({
+        provider: (data.last_provider as ProviderId) || current.provider,
+        model: data.last_model || current.model,
+        keys: {
+          anthropic: data.anthropic_key || current.keys.anthropic,
+          openrouter: data.openrouter_key || current.keys.openrouter,
+          google: data.google_key || current.keys.google,
+        },
       });
     }
   }
@@ -139,13 +145,16 @@ export function selectProviderModel(provider: ProviderId, model: string) {
   llmStore.setKey('provider', provider);
   llmStore.setKey('model', model);
 
-  // Also save to active project settings so each project remembers its model
+  // Save to active project settings so each project remembers its model
   const projectId = activeProjectIdStore.get();
   if (projectId && projectId !== 'default') {
     import('./project').then(({ updateActiveProjectSettings }) => {
       updateActiveProjectSettings({ provider, model });
     });
   }
+
+  // Persist last used model to Supabase so the user gets it back on any device
+  syncKeysToSupabase().catch(() => {});
 }
 
 export async function setApiKey(provider: ProviderId, key: string) {
