@@ -14,12 +14,15 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
       const openrouter = createOpenAI({
         apiKey,
         baseURL: 'https://openrouter.ai/api/v1',
+        compatibility: 'compatible',
         headers: {
           'HTTP-Referer': 'https://bolt.new',
-          'X-Title': 'Bolt',
+          'X-Title': 'Omni-Builder',
         },
       });
-      return openrouter(modelId);
+      return openrouter(modelId, {
+        structuredOutputs: false,
+      });
     }
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey });

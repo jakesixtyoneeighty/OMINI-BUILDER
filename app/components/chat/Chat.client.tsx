@@ -43,7 +43,11 @@ export function Chat() {
 
   return (
     <>
-      {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} onAuthRequired={() => setAuthModalOpen(true)} />}
+      {ready ? (
+        <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} onAuthRequired={() => setAuthModalOpen(true)} />
+      ) : (
+        <ProjectLoadingScreen />
+      )}
       <AuthDialog open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <ToastContainer
         closeButton={({ closeToast }) => {
@@ -938,3 +942,36 @@ ${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy 
     </>
   );
 });
+
+function ProjectLoadingScreen() {
+  return (
+    <div className="flex items-center justify-center h-full w-full bg-bolt-elements-background-depth-1">
+      <div className="text-center">
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          {/* Spinning ring */}
+          <div className="absolute inset-0 rounded-full border-2 border-bolt-elements-borderColor" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 animate-spin" />
+          {/* Center icon */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="i-ph:folder-open text-2xl text-blue-400" />
+          </div>
+        </div>
+        <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-1">Carregando Projeto</p>
+        <p className="text-sm text-bolt-elements-textTertiary mb-4">Restaurando arquivos e configuracoes...</p>
+        {/* Animated progress bar */}
+        <div className="w-48 mx-auto h-1 bg-bolt-elements-background-depth-2 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-loading-bar" style={{
+            animation: 'loading-bar 1.5s ease-in-out infinite',
+          }} />
+        </div>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes loading-bar {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 0%; margin-left: 100%; }
+          }
+        `}} />
+      </div>
+    </div>
+  );
+}

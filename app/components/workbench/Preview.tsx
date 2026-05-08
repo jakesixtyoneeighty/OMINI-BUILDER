@@ -537,6 +537,25 @@ export const Preview = memo(function Preview() {
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
             React, Vue, HTML Preview
           </div>
+          {/* Inspector toggle */}
+          <div className="relative">
+            <AppInspector
+              isActive={inspectorActive}
+              onToggle={() => setInspectorActive(!inspectorActive)}
+              onAddAnnotation={handleAddAnnotation}
+            />
+            {inspectorActive && inspectorAnnotations.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSendAnnotations}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
+                title="Enviar anotacoes para o chat"
+              >
+                <div className="i-ph:paper-plane-tilt text-sm" />
+                Enviar ({inspectorAnnotations.length})
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <SandpackPreview />
@@ -558,6 +577,25 @@ export const Preview = memo(function Preview() {
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
             Iframe preview (React supported)
+          </div>
+          {/* Inspector toggle */}
+          <div className="relative">
+            <AppInspector
+              isActive={inspectorActive}
+              onToggle={() => setInspectorActive(!inspectorActive)}
+              onAddAnnotation={handleAddAnnotation}
+            />
+            {inspectorActive && inspectorAnnotations.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSendAnnotations}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
+                title="Enviar anotacoes para o chat"
+              >
+                <div className="i-ph:paper-plane-tilt text-sm" />
+                Enviar ({inspectorAnnotations.length})
+              </button>
+            )}
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>

@@ -1,5 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { workbenchStore } from '~/lib/stores/workbench';
+import { useState, useCallback, useEffect } from 'react';
 import { classNames } from '~/utils/classNames';
 
 interface InspectorAnnotation {
@@ -25,20 +24,25 @@ const INSPECTOR_SCRIPT = `
   if (window.__inspectorActive) return;
   window.__inspectorActive = true;
 
-  let hoveredElement = null;
   let overlay = null;
+  let label = null;
+  let tooltip = null;
 
-  function createOverlay() {
+  function createUI() {
     overlay = document.createElement('div');
     overlay.id = '__inspector-overlay';
-    overlay.style.cssText = 'position:fixed;pointer-events:none;z-index:999999;border:2px solid #3b82f6;background:rgba(59,130,246,0.1);transition:all 0.1s ease;border-radius:4px;';
+    overlay.style.cssText = 'position:fixed;pointer-events:none;z-index:999999;border:2px solid #3b82f6;background:rgba(59,130,246,0.12);transition:all 0.08s ease;border-radius:3px;box-shadow:0 0 0 1px rgba(59,130,246,0.3);';
     document.body.appendChild(overlay);
 
-    // Label
-    const label = document.createElement('div');
+    label = document.createElement('div');
     label.id = '__inspector-label';
-    label.style.cssText = 'position:fixed;z-index:1000000;pointer-events:none;font-family:monospace;font-size:11px;padding:2px 6px;background:#1e293b;color:#60a5fa;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    label.style.cssText = 'position:fixed;z-index:1000000;pointer-events:none;font-family:monospace;font-size:11px;padding:3px 8px;background:#1e293b;color:#60a5fa;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4);border:1px solid rgba(96,165,250,0.3);';
     document.body.appendChild(label);
+
+    tooltip = document.createElement('div');
+    tooltip.id = '__inspector-tooltip';
+    tooltip.style.cssText = 'position:fixed;z-index:1000001;pointer-events:none;font-family:system-ui;font-size:12px;padding:8px 12px;background:#0f172a;color:#e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.5);border:1px solid rgba(59,130,246,0.4);max-width:250px;display:none;';
+    document.body.appendChild(tooltip);
   }
 
   function updateOverlay(el) {
@@ -48,14 +52,22 @@ const INSPECTOR_SCRIPT = `
     overlay.style.left = rect.left + 'px';
     overlay.style.width = rect.width + 'px';
     overlay.style.height = rect.height + 'px';
+    overlay.style.display = 'block';
 
-    const label = document.getElementById('__inspector-label');
     if (label) {
       const tag = el.tagName.toLowerCase();
-      const cls = el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').filter(Boolean).join('.') : '';
       const id = el.id ? '#' + el.id : '';
+      const cls = el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').filter(c => c && !c.startsWith('__')).slice(0, 2).join('.') : '';
       label.textContent = tag + id + (cls ? cls.substring(0, 30) : '');
-      label.style.top = (rect.top - 22) + 'px';
+      label.style.display = 'block';
+
+      // Position label above or below element
+      const labelH = 22;
+      if (rect.top > labelH + 4) {
+        label.style.top = (rect.top - labelH - 4) + 'px';
+      } else {
+        label.style.top = (rect.bottom + 4) + 'px';
+      }
       label.style.left = rect.left + 'px';
     }
   }
@@ -80,47 +92,71 @@ const INSPECTOR_SCRIPT = `
     return parts.slice(-3).join(' > ');
   }
 
-  document.addEventListener('mouseover', function(e) {
-    if (!window.__inspectorActive) return;
-    if (e.target === overlay || e.target?.id?.startsWith('__inspector')) return;
-    hoveredElement = e.target;
-    if (!overlay) createOverlay();
-    updateOverlay(hoveredElement);
-  }, true);
-
-  document.addEventListener('click', function(e) {
-    if (!window.__inspectorActive) return;
-    if (e.target === overlay || e.target?.id?.startsWith('__inspector')) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const el = e.target;
+  function getElementInfo(el) {
     const selector = getSelector(el);
-    const info = {
+    return {
       selector: selector,
       tagName: el.tagName.toLowerCase(),
       className: el.className && typeof el.className === 'string' ? el.className : '',
       textContent: (el.textContent || '').substring(0, 100).trim(),
+      dimensions: {
+        width: Math.round(el.getBoundingClientRect().width),
+        height: Math.round(el.getBoundingClientRect().height),
+      }
     };
+  }
 
+  document.addEventListener('mouseover', function(e) {
+    if (!window.__inspectorActive) return;
+    if (e.target?.id?.startsWith('__inspector')) return;
+    if (!overlay) createUI();
+    updateOverlay(e.target);
+  }, true);
+
+  document.addEventListener('click', function(e) {
+    if (!window.__inspectorActive) return;
+    if (e.target?.id?.startsWith('__inspector')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const info = getElementInfo(e.target);
     window.parent.postMessage({ type: '__inspector-click', data: info }, '*');
+
+    // Flash effect on click
+    if (overlay) {
+      overlay.style.borderColor = '#f97316';
+      overlay.style.background = 'rgba(249,115,22,0.15)';
+      setTimeout(() => {
+        overlay.style.borderColor = '#3b82f6';
+        overlay.style.background = 'rgba(59,130,246,0.12)';
+      }, 300);
+    }
   }, true);
 
   document.addEventListener('mouseout', function(e) {
     if (!window.__inspectorActive) return;
-    if (overlay) {
-      overlay.style.display = 'none';
-      const label = document.getElementById('__inspector-label');
-      if (label) label.style.display = 'none';
-    }
+    if (overlay) overlay.style.display = 'none';
+    if (label) label.style.display = 'none';
+    if (tooltip) tooltip.style.display = 'none';
   }, true);
 
-  window.addEventListener('__inspector-deactivate', function() {
-    window.__inspectorActive = false;
-    if (overlay) { overlay.remove(); overlay = null; }
-    const label = document.getElementById('__inspector-label');
-    if (label) label.remove();
+  // Listen for activate/deactivate messages from parent
+  window.addEventListener('message', function(e) {
+    if (e.data?.type === '__inspector-activate') {
+      window.__inspectorActive = true;
+      if (!overlay) createUI();
+    }
+    if (e.data?.type === '__inspector-deactivate') {
+      window.__inspectorActive = false;
+      if (overlay) { overlay.remove(); overlay = null; }
+      if (label) { label.remove(); label = null; }
+      if (tooltip) { tooltip.remove(); tooltip = null; }
+    }
   });
+
+  // Signal to parent that inspector script is loaded
+  window.parent.postMessage({ type: '__inspector-ready' }, '*');
 })();
 `;
 
@@ -135,67 +171,92 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     tagName: string;
     className: string;
     textContent: string;
+    dimensions?: { width: number; height: number };
   } | null>(null);
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [inspectorReady, setInspectorReady] = useState(false);
 
-  // Inject inspector script into preview iframe
-  useEffect(() => {
-    if (!isActive) return;
-
-    const findIframe = () => {
-      // Try to find the preview iframe
-      const iframes = document.querySelectorAll('iframe');
-      for (const iframe of iframes) {
-        if (iframe.src?.includes('localhost') || iframe.srcdoc || iframe.id?.includes('preview')) {
-          return iframe;
-        }
+  // Find the preview iframe (works for any preview mode)
+  const findIframe = useCallback(() => {
+    const iframes = document.querySelectorAll('iframe');
+    for (const iframe of iframes) {
+      if (
+        iframe.src?.includes('localhost') ||
+        iframe.srcdoc ||
+        iframe.id?.includes('preview') ||
+        iframe.className?.includes('preview') ||
+        iframe.closest('[data-preview-content]')
+      ) {
+        return iframe;
       }
-      return null;
-    };
+    }
+    return null;
+  }, []);
 
-    const injectScript = () => {
+  // Inject inspector script into preview iframe and manage activation
+  useEffect(() => {
+    if (!isActive) {
+      // Deactivate in iframe
+      const iframe = findIframe();
+      if (iframe) {
+        try {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: '__inspector-deactivate' }, '*');
+          }
+        } catch {}
+      }
+      setInspectorReady(false);
+      return;
+    }
+
+    const injectAndActivate = () => {
       const iframe = findIframe();
       if (!iframe) return;
 
       try {
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (doc && doc.readyState === 'complete') {
-          const script = doc.createElement('script');
-          script.textContent = INSPECTOR_SCRIPT;
-          doc.head.appendChild(script);
+          // Check if inspector is already loaded
+          const existingScript = doc.getElementById('__inspector-script');
+          if (!existingScript) {
+            const script = doc.createElement('script');
+            script.id = '__inspector-script';
+            script.textContent = INSPECTOR_SCRIPT;
+            doc.head.appendChild(script);
+          } else {
+            // Re-activate existing inspector
+            iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*');
+          }
         }
       } catch (err) {
-        // Cross-origin iframe — can't inject directly
-        console.warn('[Inspector] Cannot inject into cross-origin iframe. For WebContainer, use srcdoc injection.');
+        // Cross-origin iframe — try postMessage activation
+        try {
+          iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*');
+        } catch {}
       }
     };
 
-    // Try injecting periodically
-    injectScript();
-    const interval = setInterval(injectScript, 3000);
+    injectAndActivate();
+    const interval = setInterval(injectAndActivate, 2000);
 
     return () => {
       clearInterval(interval);
-      // Deactivate inspector in iframe
-      try {
-        const iframe = findIframe();
-        if (iframe?.contentWindow) {
-          iframe.contentWindow.dispatchEvent(new Event('__inspector-deactivate'));
-        }
-      } catch {}
     };
-  }, [isActive]);
+  }, [isActive, findIframe]);
 
-  // Listen for inspector click events from iframe
+  // Listen for inspector events from iframe
   useEffect(() => {
     if (!isActive) return;
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type === '__inspector-click') {
-        const { selector, tagName, className, textContent } = event.data.data;
-        setSelectedElement({ selector, tagName, className, textContent });
+        const { selector, tagName, className, textContent, dimensions } = event.data.data;
+        setSelectedElement({ selector, tagName, className, textContent, dimensions });
         setShowCommentForm(true);
         setCommentInput('');
+      }
+      if (event.data?.type === '__inspector-ready') {
+        setInspectorReady(true);
       }
     };
 
@@ -227,19 +288,6 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     setAnnotations(prev => prev.filter(a => a.id !== id));
   }, []);
 
-  const buildAnnotationMessage = useCallback(() => {
-    if (annotations.length === 0) return '';
-    return annotations.map(a => {
-      const elDesc = `<${a.tagName}${a.className ? ' class="' + a.className.split(' ').slice(0, 2).join(' ') + '"' : ''}>`;
-      return `[Inspector: ${a.selector} (${elDesc})] — ${a.comment}`;
-    }).join('\n');
-  }, [annotations]);
-
-  // Expose a method to get annotation text for the chat
-  useEffect(() => {
-    (window as any).__inspectorAnnotations = buildAnnotationMessage();
-  }, [buildAnnotationMessage]);
-
   return (
     <>
       {/* Inspector toggle button */}
@@ -249,12 +297,12 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
         className={classNames(
           'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all',
           isActive
-            ? 'bg-orange-500/15 text-orange-400 border border-orange-500/25'
+            ? 'bg-orange-500/15 text-orange-400 border border-orange-500/25 shadow-sm shadow-orange-500/10'
             : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
         )}
         title={isActive ? 'Desativar Inspetor' : 'Ativar Inspetor'}
       >
-        <div className="i-ph:magnifying-glass-plus text-sm" />
+        <div className={classNames('text-sm', isActive ? 'i-ph:magnifying-glass-plus' : 'i-ph:magnifying-glass')} />
         {isActive && <span>Inspetor</span>}
       </button>
 
@@ -266,7 +314,7 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
               <div className="flex items-center gap-2">
                 <div className="i-ph:magnifying-glass-plus text-orange-400 text-sm" />
                 <span className="text-xs font-semibold text-bolt-elements-textPrimary">
-                  Anotacoes do Inspetor ({annotations.length})
+                  Anotacoes ({annotations.length})
                 </span>
               </div>
               <button
@@ -312,22 +360,23 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
 
       {/* Comment form modal (when an element is clicked) */}
       {showCommentForm && selectedElement && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="w-96 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => { setShowCommentForm(false); setSelectedElement(null); }}>
+          <div className="w-96 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-orange-500/5">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
-                  <div className="i-ph:magnifying-glass-plus text-orange-400 text-base" />
+                  <div className="i-ph:cursor-click text-orange-400 text-base" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-bolt-elements-textPrimary">Adicionar Comentario</p>
+                  <p className="text-sm font-semibold text-bolt-elements-textPrimary">Elemento Selecionado</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    Elemento: <code className="text-orange-400">{selectedElement.tagName}</code>
+                    <code className="text-orange-400">{selectedElement.tagName}</code>
                     {selectedElement.className && (
-                      <span className="text-bolt-elements-textTertiary">
-                        {' '}.{selectedElement.className.split(' ').slice(0, 2).join('.')}
-                      </span>
+                      <span>.{selectedElement.className.split(' ').slice(0, 2).join('.')}</span>
+                    )}
+                    {selectedElement.dimensions && (
+                      <span className="text-bolt-elements-textTertiary"> ({selectedElement.dimensions.width}x{selectedElement.dimensions.height})</span>
                     )}
                   </p>
                 </div>
@@ -338,7 +387,7 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
             <div className="p-4 space-y-3">
               {/* Element info */}
               <div className="px-3 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                <p className="text-[10px] text-bolt-elements-textTertiary mb-1">Seletor</p>
+                <p className="text-[10px] text-bolt-elements-textTertiary mb-1">Seletor CSS</p>
                 <code className="text-xs text-orange-400 font-mono break-all">{selectedElement.selector}</code>
                 {selectedElement.textContent && (
                   <>
@@ -351,12 +400,12 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
               {/* Comment input */}
               <div>
                 <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
-                  Seu comentario *
+                  O que deseja alterar? *
                 </label>
                 <textarea
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder="Ex: Esse botao esta com cor errada, mudar para azul..."
+                  placeholder="Ex: Mudar cor do botao para azul, aumentar fonte..."
                   className="w-full px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all resize-none"
                   rows={3}
                   autoFocus
