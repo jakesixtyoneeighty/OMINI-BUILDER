@@ -23,6 +23,8 @@ import { isMobile } from '~/utils/mobile';
 import { FileBreadcrumb } from './FileBreadcrumb';
 import { FileTree } from './FileTree';
 import { Terminal, type TerminalRef } from './terminal/Terminal';
+import { PistonTerminal } from './PistonTerminal';
+import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 
 interface EditorPanelProps {
   files?: FileMap;
@@ -114,6 +116,10 @@ export const EditorPanel = memo(
 
     const theme = useStore(themeStore);
     const showTerminal = useStore(workbenchStore.showTerminal);
+    const activeId = useStore(activeProjectIdStore);
+    const projects = useStore(projectsStore);
+    const previewMode = projects[activeId]?.settings?.previewMode || 'webcontainer';
+    const isPistonMode = previewMode === 'piston';
 
     const terminalRefs = useRef<Array<TerminalRef | null>>([]);
     const terminalPanelRef = useRef<ImperativePanelHandle>(null);
@@ -284,17 +290,22 @@ export const EditorPanel = memo(
                 />
               </div>
               {/* Use LazyTerminal — only mounts xterm when tab has been active */}
-              {Array.from({ length: terminalCount }, (_, index) => (
-                <LazyTerminal
-                  key={index}
-                  isActive={activeTerminal === index}
-                  terminalIndex={index}
-                  onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
-                  onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
-                  theme={theme}
-                  terminalRefs={terminalRefs}
-                />
-              ))}
+              {/* Use LazyTerminal for WebContainer, PistonTerminal for Piston mode */}
+              {isPistonMode ? (
+                <PistonTerminal previewMode={previewMode} />
+              ) : (
+                Array.from({ length: terminalCount }, (_, index) => (
+                  <LazyTerminal
+                    key={index}
+                    isActive={activeTerminal === index}
+                    terminalIndex={index}
+                    onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
+                    onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
+                    theme={theme}
+                    terminalRefs={terminalRefs}
+                  />
+                ))
+              )}
             </div>
           </div>
         </Panel>

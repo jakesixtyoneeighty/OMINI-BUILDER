@@ -7,7 +7,7 @@ export interface EnvVar {
   value: string;
 }
 
-export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab' | 'reactlive' | 'playcode';
+export type PreviewMode = 'webcontainer' | 'sandpack' | 'iframe' | 'newtab' | 'reactlive' | 'playcode' | 'piston';
 
 export interface FirebaseConfig {
   apiKey: string;

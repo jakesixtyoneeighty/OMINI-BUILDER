@@ -13,6 +13,7 @@ import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 import { SandpackPreview, detectProjectType, type ProjectType } from './SandpackPreview';
 import { ReactLivePreview } from './ReactLivePreview';
 import { PlayCodePreview } from './PlayCodePreview';
+import { PistonPreview } from './PistonPreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 
@@ -51,6 +52,7 @@ const PREVIEW_OPTIONS: { mode: PreviewMode; label: string; icon: string; desc: s
   { mode: 'iframe', label: 'Iframe SrcDoc', icon: 'i-ph:code-duotone', desc: 'Lightweight iframe preview with React/JSX support' },
   { mode: 'reactlive', label: 'React Live', icon: 'i-ph:atom-duotone', desc: 'Live React editing with instant preview powered by react-live' },
   { mode: 'playcode', label: 'PlayCode', icon: 'i-ph:code-block-duotone', desc: 'CodeSandbox API embed for full build and preview' },
+  { mode: 'piston', label: 'Piston', icon: 'i-ph:rocket-duotone', desc: 'Run Python, C++, Java, Go, Rust and 25+ languages via Piston API' },
   { mode: 'newtab', label: 'New Tab', icon: 'i-ph:arrow-square-out-duotone', desc: 'Open preview in a new browser tab' },
 ];
 
@@ -467,6 +469,27 @@ export const Preview = memo(function Preview() {
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <PlayCodePreview />
+        </div>
+      </div>
+    );
+  }
+
+  // Piston mode — code execution engine
+  if (previewMode === 'piston') {
+    return (
+      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
+        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium">
+            <div className="i-ph:rocket-duotone text-sm" />
+            Piston
+          </div>
+          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+            Remote code execution engine (25+ languages)
+          </div>
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+        </div>
+        <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
+          <PistonPreview />
         </div>
       </div>
     );
