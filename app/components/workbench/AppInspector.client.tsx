@@ -221,7 +221,7 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     setShowCommentForm(false);
     setCommentInput('');
     setSelectedElement(null);
-  }, [selectedElement, commentInput, onAddComment]);
+  }, [selectedElement, commentInput, onAddAnnotation]);
 
   const removeAnnotation = useCallback((id: string) => {
     setAnnotations(prev => prev.filter(a => a.id !== id));
