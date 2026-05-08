@@ -116,7 +116,7 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
     return (
       <div
         className="fixed z-[9999] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden"
-        style={{ top: position.top, left: position.left }}
+        style={{ bottom: `calc(100vh - ${position.top}px)`, left: position.left }}
       >
         <div className="px-3 py-2.5 text-xs text-bolt-elements-textTertiary">
           No files found matching "{search}"
@@ -128,7 +128,7 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
   return (
     <div
       className="fixed z-[9999] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden w-72 max-h-64"
-      style={{ top: position.top, left: position.left }}
+      style={{ bottom: `calc(100vh - ${position.top}px)`, left: position.left }}
     >
       {/* Header */}
       <div className="px-3 py-1.5 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">

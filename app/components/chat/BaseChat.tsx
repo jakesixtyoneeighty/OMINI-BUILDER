@@ -10,7 +10,6 @@ import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { GitHubImport } from './GitHubImport.client';
 import { CloneSite } from './CloneSite.client';
 import { Messages } from './Messages.client';
-import { UserProjects } from './UserProjects.client';
 import { RecentlyViewed } from './RecentlyViewed';
 import { FileMentionDropdown } from './FileMentionDropdown.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
@@ -302,17 +301,19 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         const mentionStart = cursorPos - atMatch[0].length;
         const search = atMatch[1];
 
-        // Get textarea position for dropdown
+        // Get textarea position for dropdown — position ABOVE the input
         const rect = textarea.getBoundingClientRect();
-        const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 20;
-        const lines = value.slice(0, cursorPos).split('\n');
+        // Find the input card parent to position relative to it
+        const inputCard = textarea.closest('[data-input-card]') || textarea.parentElement;
+        const cardRect = inputCard?.getBoundingClientRect() || rect;
 
         setMentionState({
           active: true,
           search,
           position: {
-            top: rect.bottom - (lines.length - 1) * lineHeight + 4,
-            left: rect.left + Math.min(lines[lines.length - 1].length * 8, rect.width - 288),
+            // Position above the textarea
+            top: rect.top - 4,
+            left: Math.min(rect.left + 16, window.innerWidth - 304),
           },
           mentionStart,
         });
@@ -408,6 +409,30 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       <div className="flex items-center gap-2 px-4 pt-3 pb-1">
                         <span className="text-sm font-semibold text-bolt-elements-textPrimary">Let&apos;s build</span>
                       </div>
+
+                      {/* Mentioned files chips */}
+                      {mentionedFiles.length > 0 && (
+                        <div className="px-3 pt-1 pb-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {mentionedFiles.map((f, i) => (
+                              <div
+                                key={`mention-${i}`}
+                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
+                              >
+                                <div className="i-ph:file-js text-xs text-blue-400" />
+                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">{f.path}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                  className="text-blue-400/50 hover:text-red-400 transition-colors"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Attached files preview */}
                       {attachedFiles.length > 0 && (
@@ -567,13 +592,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 </div>
 
                 {/* Recently viewed section */}
-                <div className="pb-4 pt-6 relative z-10">
+                <div className="pb-8 pt-6 relative z-10">
                   <ClientOnly>{() => <RecentlyViewed />}</ClientOnly>
-                </div>
-
-                {/* User projects section */}
-                <div className="pb-8 relative z-10">
-                  <ClientOnly>{() => <UserProjects />}</ClientOnly>
                 </div>
               </div>
             )}
@@ -611,6 +631,30 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         planMode ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
+                      {/* Mentioned files chips */}
+                      {mentionedFiles.length > 0 && (
+                        <div className="px-3 pt-3 pb-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {mentionedFiles.map((f, i) => (
+                              <div
+                                key={`mention-${i}`}
+                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
+                              >
+                                <div className="i-ph:file-js text-xs text-blue-400" />
+                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">{f.path}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                  className="text-blue-400/50 hover:text-red-400 transition-colors"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Attached files preview */}
                       {attachedFiles.length > 0 && (
                         <div className="px-3 pt-3 pb-1">
@@ -807,7 +851,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
         {/* @ File Mention Dropdown */}
-        {mentionState?.active && chatStarted && (
+        {mentionState?.active && (
           <ClientOnly>
             {() => (
               <FileMentionDropdown
@@ -820,27 +864,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           </ClientOnly>
         )}
 
-        {/* Mentioned files indicators */}
-        {mentionedFiles.length > 0 && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9998] flex items-center gap-1.5">
-            {mentionedFiles.map((f, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400"
-              >
-                <div className="i-ph:file-js text-xs" />
-                <span className="font-medium truncate max-w-[120px]">{f.path}</span>
-                <button
-                  type="button"
-                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                  className="hover:text-red-400 transition-colors ml-0.5"
-                >
-                  <div className="i-ph:x-bold text-[8px]" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Mentioned files indicators — removed, now shown inside input card */}
 
         <ClientOnly>{() => <AuthDialog open={authModalOpen} onClose={() => setAuthModalOpen(false)} />}</ClientOnly>
       </div>
