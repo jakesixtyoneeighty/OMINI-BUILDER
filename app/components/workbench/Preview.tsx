@@ -16,6 +16,7 @@ import { PlayCodePreview } from './PlayCodePreview';
 import { PistonPreview } from './PistonPreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
+import { AppInspector, type InspectorAnnotation } from './AppInspector.client';
 
 /**
  * Wrapper that catches errors from preview iframes and reports them.
@@ -332,6 +333,8 @@ export const Preview = memo(function Preview() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
+  const [inspectorActive, setInspectorActive] = useState(false);
+  const [inspectorAnnotations, setInspectorAnnotations] = useState<any[]>([]);
   const previews = useStore(workbenchStore.previews);
   const activePreview = previews[activePreviewIndex];
   const activeId = useStore(activeProjectIdStore);
@@ -356,6 +359,22 @@ export const Preview = memo(function Preview() {
     if (el) el.requestFullscreen();
   };
 
+  const handleAddAnnotation = useCallback((annotation: any) => {
+    setInspectorAnnotations(prev => [...prev, annotation]);
+  }, []);
+
+  const handleSendAnnotations = useCallback(() => {
+    if (inspectorAnnotations.length === 0) return;
+    const msg = inspectorAnnotations.map(a => {
+      const elDesc = `<${a.tagName}${a.className ? ' class="' + a.className.split(' ').slice(0, 2).join(' ') + '"' : ''}>`;
+      return `[Inspector: ${a.selector} (${elDesc})] — ${a.comment}`;
+    }).join('\n');
+    // Dispatch event for Chat.client.tsx to pick up
+    window.dispatchEvent(new CustomEvent('inspector-annotations', { detail: { message: msg } }));
+    setInspectorAnnotations([]);
+    setInspectorActive(false);
+  }, [inspectorAnnotations]);
+
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
     return (
@@ -369,6 +388,26 @@ export const Preview = memo(function Preview() {
           </div>
           <div className="flex-1 flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate">
             {activePreview?.baseUrl || 'No preview available'}
+          </div>
+          {/* Inspector toggle */}
+          <div className="relative">
+            <AppInspector
+              isActive={inspectorActive}
+              onToggle={() => setInspectorActive(!inspectorActive)}
+              onAddAnnotation={handleAddAnnotation}
+              iframeRef={iframeRef}
+            />
+            {inspectorActive && inspectorAnnotations.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSendAnnotations}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
+                title="Enviar anotacoes para o chat"
+              >
+                <div className="i-ph:paper-plane-tilt text-sm" />
+                Enviar ({inspectorAnnotations.length})
+              </button>
+            )}
           </div>
           {previews.length > 0 && (
             <PortDropdown

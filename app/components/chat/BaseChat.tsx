@@ -11,6 +11,7 @@ import { GitHubImport } from './GitHubImport.client';
 import { CloneSite } from './CloneSite.client';
 import { Messages } from './Messages.client';
 import { UserProjects } from './UserProjects.client';
+import { FileMentionDropdown } from './FileMentionDropdown.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
 import { authStore } from '~/lib/stores/auth';
 import type { DetectedError } from '~/lib/stores/errors';
@@ -18,6 +19,7 @@ import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
+import { workbenchStore } from '~/lib/stores/workbench';
 
 import styles from './BaseChat.module.scss';
 
@@ -97,6 +99,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const { user } = useStore(authStore);
     const [langOpen, setLangOpen] = useState(false);
     const currentLang = useStore(languageStore);
+
+    // @ file mention state
+    const [mentionState, setMentionState] = useState<{
+      active: boolean;
+      search: string;
+      position: { top: number; left: number };
+      mentionStart: number;  // index of @ in the input
+    } | null>(null);
+    const [mentionedFiles, setMentionedFiles] = useState<{ path: string; content: string }[]>([]);
 
     // Resizable layout state
     const chatWidthPct = useStore(chatWidthStore);
@@ -202,28 +213,136 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setAuthModalOpen(true);
         return;
       }
-      // Prepend attachment content to message
+      // Build prefix from attached files
       const prefix = buildAttachmentPrefix();
-      if (prefix && textareaRef?.current) {
+      // Build content from @-mentioned files
+      const mentionPrefix = mentionedFiles.length > 0
+        ? mentionedFiles.map(f => `[Referenced file: ${f.path}]\n\`\`\`\n${f.content}\n\`\`\`\n\n`).join('')
+        : '';
+
+      const fullPrefix = mentionPrefix + prefix;
+      if (fullPrefix && textareaRef?.current) {
         const textarea = textareaRef.current;
         const currentVal = textarea.value;
-        const newVal = prefix + currentVal;
+        const newVal = fullPrefix + currentVal;
         const syntheticEvent = {
           target: { value: newVal },
         } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
         handleInputChange?.(syntheticEvent);
-        // Clear attachments after sending
+        // Clear attachments and mentions after sending
         setAttachedFiles([]);
+        setMentionedFiles([]);
+      } else if (mentionedFiles.length > 0) {
+        // Only mentions, no attachments
+        const textarea = textareaRef?.current;
+        if (textarea) {
+          const currentVal = textarea.value;
+          const newVal = mentionPrefix + currentVal;
+          const syntheticEvent = {
+            target: { value: newVal },
+          } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+          handleInputChange?.(syntheticEvent);
+        }
+        setMentionedFiles([]);
       }
+      setMentionState(null);
       sendMessage?.(event);
-    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef, user]);
+    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef, user, mentionedFiles]);
+
+    // Handle @ file mention selection
+    const handleMentionSelect = useCallback((filePath: string) => {
+      if (!mentionState || !textareaRef?.current) return;
+
+      const textarea = textareaRef.current;
+      const currentVal = textarea.value;
+
+      // Get file content and add to mentioned files
+      const files = workbenchStore.files.get();
+      const file = files[filePath];
+      const displayPath = filePath.replace(/^\/home\/project\//, '');
+
+      if (file && file.type === 'file' && !file.isBinary) {
+        setMentionedFiles(prev => {
+          if (prev.some(f => f.path === filePath)) return prev;
+          return [...prev, { path: displayPath, content: file.content }];
+        });
+      }
+
+      // Replace @search with @displayPath in the input
+      const before = currentVal.slice(0, mentionState.mentionStart);
+      const after = currentVal.slice(textarea.selectionStart);
+      const newVal = `${before}@${displayPath} ${after}`;
+
+      const syntheticEvent = {
+        target: { value: newVal },
+      } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+      handleInputChange?.(syntheticEvent);
+
+      setMentionState(null);
+
+      // Focus back on textarea
+      setTimeout(() => {
+        textarea.focus();
+        const cursorPos = before.length + displayPath.length + 2; // +2 for @ and space
+        textarea.setSelectionRange(cursorPos, cursorPos);
+      }, 0);
+    }, [mentionState, handleInputChange]);
+
+    // Detect @ in textarea input
+    const handleInputChangeWithMention = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      handleInputChange?.(event);
+
+      const textarea = event.target;
+      const value = textarea.value;
+      const cursorPos = textarea.selectionStart;
+
+      // Find if cursor is after an @ that starts a mention
+      const textBeforeCursor = value.slice(0, cursorPos);
+      const atMatch = textBeforeCursor.match(/@([\w./_-]*)$/);
+
+      if (atMatch) {
+        const mentionStart = cursorPos - atMatch[0].length;
+        const search = atMatch[1];
+
+        // Get textarea position for dropdown
+        const rect = textarea.getBoundingClientRect();
+        const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 20;
+        const lines = value.slice(0, cursorPos).split('\n');
+
+        setMentionState({
+          active: true,
+          search,
+          position: {
+            top: rect.bottom - (lines.length - 1) * lineHeight + 4,
+            left: rect.left + Math.min(lines[lines.length - 1].length * 8, rect.width - 288),
+          },
+          mentionStart,
+        });
+      } else {
+        setMentionState(null);
+      }
+    }, [handleInputChange]);
 
     const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+      // If mention dropdown is open, let it handle navigation keys
+      if (mentionState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Escape' && mentionState?.active) {
+        setMentionState(null);
+        event.preventDefault();
+        return;
+      }
       if (event.key === 'Enter' && !event.shiftKey) {
+        if (mentionState?.active) {
+          // Let the dropdown handle Enter
+          return;
+        }
         event.preventDefault();
         handleSendWithAttachments(event);
       }
-    }, [sendMessage]);
+    }, [sendMessage, mentionState]);
 
     return (
       <div
@@ -377,12 +496,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           onKeyDown={handleKeyDown}
                           value={input}
                           onChange={(event) => {
-                            handleInputChange?.(event);
+                            handleInputChangeWithMention(event);
                             const el = event.target;
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="How can Omni-Builder help you today?"
+                          placeholder="How can Omni-Builder help you today? (type @ to mention a file)"
                           translate="no"
                           rows={2}
                           style={{ maxHeight: 180 }}
@@ -574,12 +693,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           onKeyDown={handleKeyDown}
                           value={input}
                           onChange={(event) => {
-                            handleInputChange?.(event);
+                            handleInputChangeWithMention(event);
                             const el = event.target;
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="How can Omni-Builder help you today? (or /command)"
+                          placeholder="How can Omni-Builder help? (type @ to mention a file)"
                           translate="no"
                           rows={1}
                           style={{ maxHeight: 180 }}
@@ -655,12 +774,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     onKeyDown={handleKeyDown}
                     value={input}
                     onChange={(event) => {
-                      handleInputChange?.(event);
+                      handleInputChangeWithMention(event);
                       const el = event.target;
                       el.style.height = 'auto';
                       el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                     }}
-                    placeholder="How can Omni-Builder help you today? (or /command)"
+                    placeholder="How can Omni-Builder help? (type @ to mention a file)"
                     translate="no"
                     rows={1}
                     style={{ maxHeight: 300 }}
@@ -724,6 +843,42 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           {/* Workbench panel - takes remaining space */}
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
+        {/* @ File Mention Dropdown */}
+        {mentionState?.active && chatStarted && (
+          <ClientOnly>
+            {() => (
+              <FileMentionDropdown
+                search={mentionState.search}
+                position={mentionState.position}
+                onSelect={handleMentionSelect}
+                onClose={() => setMentionState(null)}
+              />
+            )}
+          </ClientOnly>
+        )}
+
+        {/* Mentioned files indicators */}
+        {mentionedFiles.length > 0 && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9998] flex items-center gap-1.5">
+            {mentionedFiles.map((f, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400"
+              >
+                <div className="i-ph:file-js text-xs" />
+                <span className="font-medium truncate max-w-[120px]">{f.path}</span>
+                <button
+                  type="button"
+                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                  className="hover:text-red-400 transition-colors ml-0.5"
+                >
+                  <div className="i-ph:x-bold text-[8px]" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <ClientOnly>{() => <AuthDialog open={authModalOpen} onClose={() => setAuthModalOpen(false)} />}</ClientOnly>
       </div>
     );

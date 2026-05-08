@@ -693,6 +693,27 @@ ${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy 
     return () => window.removeEventListener('security-test-requested', handleSecurityTest as EventListener);
   }, [append, chatStarted]);
 
+  // Listen for inspector annotations from the preview
+  useEffect(() => {
+    const handleInspectorAnnotations = (event: CustomEvent) => {
+      const { message } = event.detail;
+      if (!message) return;
+
+      if (!chatStarted) {
+        runAnimation();
+      }
+
+      const inspectorPrompt = `Anotacoes do Inspetor de Elementos:\n\n${message}\n\nPor favor, revise os elementos indicados acima e faca as alteracoes solicitadas nos comentarios.`;
+
+      setTimeout(() => {
+        append({ role: 'user', content: inspectorPrompt });
+      }, 300);
+    };
+
+    window.addEventListener('inspector-annotations', handleInspectorAnnotations as EventListener);
+    return () => window.removeEventListener('inspector-annotations', handleInspectorAnnotations as EventListener);
+  }, [append, chatStarted]);
+
   const handleEnvSave = async (vars: { key: string; value: string }[]) => {
     setEnvModalOpen(false);
 
