@@ -91,29 +91,55 @@ function buildStaticHtml(files: FileMap): string {
 
 /**
  * Map workspace files to Sandpack format
+ * For Vite-React templates, files are mapped to root level (/App.tsx, /index.tsx)
  */
 function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
   const sandpackFiles: Record<string, { code: string; hidden?: boolean }> = {};
   const isReactLike = projectType === 'react' || projectType === 'react-ts';
+  const isTS = projectType === 'react-ts';
 
   for (const [path, file] of entries) {
     if (path.includes('node_modules') || path.endsWith('.lock')) continue;
     if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.ico')) continue;
     let spath = path.startsWith('/') ? path : `/${path}`;
+
     if (isReactLike) {
-      if (!spath.startsWith('/src/') && !spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
-        const parts = spath.split('/');
-        spath = `/src/${parts[parts.length - 1]}`;
+      // For Vite-React templates: map files to root level
+      if (!spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
+        const filename = spath.split('/').pop() || '';
+        if (filename === 'main.tsx' || filename === 'main.jsx') {
+          spath = isTS ? '/index.tsx' : '/index.jsx';
+        } else if (filename === 'index.tsx' || filename === 'index.jsx') {
+          spath = isTS ? '/index.tsx' : '/index.jsx';
+        } else {
+          spath = `/${filename}`;
+        }
       }
     }
+
     sandpackFiles[spath] = { code: file.content };
   }
 
-  if (isReactLike && !sandpackFiles['/index.html']) {
-    sandpackFiles['/index.html'] = {
-      code: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>`,
-    };
+  // Ensure entry files exist for React/Vite
+  if (isReactLike) {
+    const indexFile = isTS ? '/index.tsx' : '/index.jsx';
+    const scriptSrc = indexFile;
+
+    if (!sandpackFiles[indexFile]) {
+      sandpackFiles[indexFile] = {
+        code: isTS
+          ? `import { StrictMode } from "react";\nimport { createRoot } from "react-dom/client";\nimport App from "./App";\n\nconst root = createRoot(document.getElementById("root") as HTMLElement);\nroot.render(\n  <StrictMode>\n    <App />\n  </StrictMode>\n);`
+          : `import { StrictMode } from "react";\nimport { createRoot } from "react-dom/client";\nimport App from "./App";\n\nconst root = createRoot(document.getElementById("root"));\nroot.render(\n  <StrictMode>\n    <App />\n  </StrictMode>\n);`,
+        hidden: true,
+      };
+    }
+
+    if (!sandpackFiles['/index.html']) {
+      sandpackFiles['/index.html'] = {
+        code: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title></head><body><div id="root"></div><script type="module" src="${scriptSrc}"></script></body></html>`,
+      };
+    }
   }
 
   if (projectType === 'vanilla') {
@@ -136,10 +162,13 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
 
   switch (projectType) {
-    case 'react-ts':
+    case 'react-ts': {
+      // Use vite-react-ts template (much faster than CRA, no timeout)
+      return { template: 'vite-react-ts' as const, customSetup: { entry: '/index.tsx' } };
+    }
     case 'react': {
-      // Use Vite-based react template (faster, no timeout)
-      return { template: 'react' as const, customSetup: { entry: '/src/main.tsx' } };
+      // Use vite-react template (much faster than CRA, no timeout)
+      return { template: 'vite-react' as const, customSetup: { entry: '/index.jsx' } };
     }
     case 'vue':
       return { template: 'vue' as const, customSetup: { entry: '/src/main.js' } };

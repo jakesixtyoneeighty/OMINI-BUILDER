@@ -47,7 +47,8 @@ function detectProjectType(files: FileMap): ProjectType {
 
 /**
  * Map workspace files to Sandpack format: { '/path': { code: '...' } }
- * For React/Vite template, files need to be under /src/
+ * For Vite-React templates, files are mapped to root level (/App.tsx, /index.tsx)
+ * For Vue template, files are mapped to /src/ structure
  */
 function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
@@ -55,21 +56,38 @@ function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
 
   const isReactLike = projectType === 'react' || projectType === 'react-ts';
   const isVue = projectType === 'vue';
+  const isTS = projectType === 'react-ts';
 
   for (const [path, file] of entries) {
     // Skip common non-essential files
     if (path.includes('node_modules') || path.endsWith('.lock')) continue;
     if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.ico')) continue;
 
-    // For React/Vite template, map paths to /src/ structure
+    // Map paths: Vite templates use root-level structure (/App.tsx, /index.tsx)
     let spath = path.startsWith('/') ? path : `/${path}`;
 
-    if (isReactLike || isVue) {
-      // If path doesn't start with /src/, put it under /src/
+    if (isReactLike) {
+      // For Vite-React templates: map files to root level
+      // Keep /public/ and /package.json paths as-is
+      if (!spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
+        // Convert paths like /src/App.tsx -> /App.tsx, /src/main.tsx -> /index.tsx
+        const filename = spath.split('/').pop() || '';
+
+        // Map entry files to Vite's expected names
+        if (filename === 'main.tsx' || filename === 'main.jsx') {
+          spath = isTS ? '/index.tsx' : '/index.jsx';
+        } else if (filename === 'index.tsx' || filename === 'index.jsx') {
+          // If it's already an index entry, keep as-is but at root level
+          spath = isTS ? '/index.tsx' : '/index.jsx';
+        } else {
+          // Other files: put at root level
+          spath = `/${filename}`;
+        }
+      }
+    } else if (isVue) {
+      // Vue template uses /src/ structure
       if (!spath.startsWith('/src/') && !spath.startsWith('/public/') && !spath.endsWith('/package.json')) {
-        // Convert paths like /App.tsx -> /src/App.tsx
-        const parts = spath.split('/');
-        const filename = parts[parts.length - 1];
+        const filename = spath.split('/').pop() || '';
         spath = `/src/${filename}`;
       }
     }
@@ -79,29 +97,42 @@ function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
 
   // For React/Vite: ensure essential entry files exist
   if (isReactLike) {
-    if (!sandpackFiles['/src/main.tsx'] && !sandpackFiles['/src/main.jsx'] && !sandpackFiles['/src/index.tsx'] && !sandpackFiles['/src/index.jsx']) {
-      // Find the main entry file
+    const indexFile = isTS ? '/index.tsx' : '/index.jsx';
+    const appFile = isTS ? '/App.tsx' : '/App.jsx';
+    const scriptSrc = indexFile;
+
+    // Ensure /index.tsx or /index.jsx exists (the Vite entry point)
+    if (!sandpackFiles[indexFile]) {
+      // Try to find any entry file and create the index file
       const mainFile = entries.find(([p]) =>
-        p.endsWith('/main.tsx') || p.endsWith('/main.jsx') || p.endsWith('/index.tsx') || p.endsWith('/index.jsx') || p.endsWith('/App.tsx') || p.endsWith('/App.jsx')
+        p.endsWith('/main.tsx') || p.endsWith('/main.jsx') ||
+        p.endsWith('/index.tsx') || p.endsWith('/index.jsx')
       );
       if (mainFile) {
-        const content = mainFile[1].content
-          .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '')
-          .replace(/^export\s+default\s+/gm, '');
-        sandpackFiles['/src/main.tsx'] = {
-          code: `import React from 'react';\nimport { createRoot } from 'react-dom/client';\n\n${content}\n\nconst root = createRoot(document.getElementById('root')!);\nroot.render(<App />);`,
+        // Use the original content but ensure it properly renders the App
+        sandpackFiles[indexFile] = {
+          code: mainFile[1].content,
+          hidden: true,
+        };
+      } else {
+        // Create a basic entry point
+        const appImport = isTS ? 'App' : 'App';
+        sandpackFiles[indexFile] = {
+          code: isTS
+            ? `import { StrictMode } from "react";\nimport { createRoot } from "react-dom/client";\nimport ${appImport} from "./App";\n\nconst root = createRoot(document.getElementById("root") as HTMLElement);\nroot.render(\n  <StrictMode>\n    <${appImport} />\n  </StrictMode>\n);`
+            : `import { StrictMode } from "react";\nimport { createRoot } from "react-dom/client";\nimport ${appImport} from "./App";\n\nconst root = createRoot(document.getElementById("root"));\nroot.render(\n  <StrictMode>\n    <${appImport} />\n  </StrictMode>\n);`,
           hidden: true,
         };
       }
     }
 
-    // Ensure /src/App.tsx exists
+    // Ensure /App.tsx or /App.jsx exists
     const appEntry = entries.find(([p]) =>
       p.endsWith('/App.tsx') || p.endsWith('/App.jsx') || p.endsWith('/app.tsx') || p.endsWith('/app.jsx')
     );
-    if (appEntry && !sandpackFiles['/src/App.tsx']) {
-      sandpackFiles['/src/App.tsx'] = {
-        code: appEntry[1].content.replace(/^export\s+default\s+/gm, ''),
+    if (appEntry && !sandpackFiles[appFile]) {
+      sandpackFiles[appFile] = {
+        code: appEntry[1].content,
         hidden: false,
       };
     }
@@ -118,7 +149,7 @@ function mapToSandpackFiles(files: FileMap, projectType: ProjectType) {
 </head>
 <body>
   <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+  <script type="module" src="${scriptSrc}"></script>
 </body>
 </html>`,
         hidden: true,
@@ -163,13 +194,21 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
   const entries = Object.entries(files).filter(([, f]): f is WFile => f?.type === 'file' && !f.isBinary);
 
   switch (projectType) {
-    case 'react-ts':
-    case 'react': {
-      // Use Vite-based react template (much faster than create-react-app)
+    case 'react-ts': {
+      // Use vite-react-ts template (much faster than CRA, no timeout)
       return {
-        template: 'react' as const,
+        template: 'vite-react-ts' as const,
         customSetup: {
-          entry: '/src/main.tsx',
+          entry: '/index.tsx',
+        },
+      };
+    }
+    case 'react': {
+      // Use vite-react template (much faster than CRA, no timeout)
+      return {
+        template: 'vite-react' as const,
+        customSetup: {
+          entry: '/index.jsx',
         },
       };
     }
