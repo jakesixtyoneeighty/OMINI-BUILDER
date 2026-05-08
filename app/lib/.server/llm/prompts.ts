@@ -18,7 +18,14 @@ export interface DatabaseContext {
   };
 }
 
-export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string) => `
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  pt: 'RESPOND IN PORTUGUESE (Portugus). All your explanations, comments, descriptions, and any natural language text MUST be in Portuguese. Code variable names and standard programming terms can remain in English, but all explanations, descriptions, and conversational text must be in Portuguese.',
+  en: 'Respond in English.',
+  es: 'RESPONDE EN ESPAOL. Todas tus explicaciones, comentarios, descripciones y cualquier texto en lenguaje natural DEBEN estar en espaol. Los nombres de variables de cdigo y trminos estndar de programacin pueden permanecer en ingls, pero todas las explicaciones, descripciones y texto conversacional deben estar en espaol.',
+  zh: 'RESPOND IN CHINESE (). All your explanations, comments, descriptions, and any natural language text MUST be in Chinese. Code variable names and standard programming terms can remain in English, but all explanations, descriptions, and conversational text must be in Chinese.',
+};
+
+export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string, language?: string) => `
 You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
 
 <system_constraints>
@@ -292,6 +299,10 @@ After the user selects an option, you will receive their choice as a message and
 </user_question_instructions>
 
 ULTRA IMPORTANT: Do NOT be verbose and DO NOT explain anything unless the user is asking for more information. That is VERY important.
+
+<language_instruction>
+${LANGUAGE_INSTRUCTIONS[language || 'pt'] || LANGUAGE_INSTRUCTIONS['pt']}
+</language_instruction>
 
 <file_creation_rules>
 IMPORTANT RULES to prevent file creation errors:

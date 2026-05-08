@@ -14,6 +14,7 @@ import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/sto
 import { addRecentlyViewed, loadRecentlyViewedFromSupabase } from '~/lib/stores/recently-viewed';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
+import { languageStore } from '~/lib/stores/language';
 import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
 import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
@@ -97,6 +98,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
   const llm = useStore(llmStore);
   const projectId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
+  const currentLang = useStore(languageStore);
 
   const [animationScope, animate] = useAnimate();
 
@@ -122,7 +124,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     databaseConfig,
     planMode,
     customRules: (projects[projectId]?.settings?.customRules || '').trim() || undefined,
-  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, projects, projectId]);
+    language: currentLang,
+  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, projects, projectId, currentLang]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',

@@ -34,6 +34,7 @@ interface ChatRequest {
   databaseConfig?: ClientDatabaseConfig;
   planMode?: boolean;
   customRules?: string;
+  language?: string;
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
@@ -102,6 +103,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const dbContext = resolveDbContext(body.databaseConfig);
   const planMode = body.planMode ?? false;
   const customRules = body.customRules;
+  const language = body.language || 'pt';
 
   const stream = new SwitchableStream();
 
@@ -134,13 +136,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options, dbContext, planMode, customRules);
+        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options, dbContext, planMode, customRules);
+    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language);
 
     stream.switchSource(result.toAIStream());
 

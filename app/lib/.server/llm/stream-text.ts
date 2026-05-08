@@ -27,7 +27,7 @@ export interface ModelSelection {
   apiKey: string;
 }
 
-export function streamText(messages: Messages, selection: ModelSelection, options?: StreamingOptions, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string) {
+export function streamText(messages: Messages, selection: ModelSelection, options?: StreamingOptions, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string, language?: string) {
   const extra: { headers?: Record<string, string> } = {};
 
   if (selection.provider === 'anthropic') {
@@ -39,7 +39,7 @@ export function streamText(messages: Messages, selection: ModelSelection, option
 
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
-    system: getSystemPrompt(undefined, dbContext, planMode, customRules),
+    system: getSystemPrompt(undefined, dbContext, planMode, customRules, language),
     maxTokens: MAX_TOKENS,
     tools,
     ...extra,
