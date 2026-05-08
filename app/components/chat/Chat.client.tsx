@@ -833,6 +833,18 @@ ${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy 
     chatStore.setKey('planMode', !planMode);
   }, [planMode]);
 
+  const handleCloneSite = useCallback(async (url: string) => {
+    if (!chatStarted) {
+      runAnimation();
+    }
+
+    const prompt = `Clone this website: ${url}\n\nPlease analyze the website at this URL and recreate it as closely as possible. Use the web_reader tool to read the website content first, then:\n1. Create all necessary files (HTML, CSS, JS/React components)\n2. Match the layout, colors, typography, and design as closely as possible\n3. Implement the same functionality and interactions\n4. Make it responsive\n5. Use modern web technologies (React, Tailwind CSS)\n\nStart by using the web_reader tool to fetch the website content, then build the complete project.`;
+
+    setTimeout(() => {
+      append({ role: 'user', content: prompt });
+    }, 300);
+  }, [append, chatStarted]);
+
   const handleFixError = useCallback(
     (error: DetectedError) => {
       const errorContext = [
@@ -860,6 +872,7 @@ ${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy 
     <>
       <BaseChat
         importFromGithub={importFromGithub}
+        onCloneSite={handleCloneSite}
         ref={animationScope}
         textareaRef={textareaRef}
         input={input}

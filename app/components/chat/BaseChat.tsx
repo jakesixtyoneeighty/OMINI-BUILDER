@@ -8,6 +8,7 @@ import { ErrorBanner } from './ErrorBanner';
 import { FileUploadButton } from './FileUploadButton';
 import { BuildPlanDropdown } from './BuildPlanDropdown';
 import { GitHubImport } from './GitHubImport.client';
+import { CloneSite } from './CloneSite.client';
 import { Messages } from './Messages.client';
 import { UserProjects } from './UserProjects.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
@@ -48,6 +49,7 @@ interface BaseChatProps {
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
   importFromGithub?: (result: ImportResult) => void | Promise<void>;
+  onCloneSite?: (url: string) => void | Promise<void>;
   planMode?: boolean;
   onTogglePlanMode?: () => void;
   tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
@@ -77,6 +79,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       enhancePrompt,
       handleStop,
       importFromGithub,
+      onCloneSite,
       planMode = false,
       onTogglePlanMode,
       tokenUsage,
@@ -428,12 +431,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     </div>
                     {/* End input card */}
 
-                    {/* "or start from" row - Figma removed, only GitHub/ZIP/Folder + Team template */}
+                    {/* "or start from" row - GitHub/ZIP/Folder + Clone Site */}
                     <div className="mt-3 flex items-center justify-center gap-3">
                       <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
                       <div className="flex items-center gap-2">
                         {importFromGithub && (
                           <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
+                        )}
+                        {onCloneSite && (
+                          <ClientOnly>{() => <CloneSite onClone={onCloneSite} />}</ClientOnly>
                         )}
                       </div>
                     </div>
