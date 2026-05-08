@@ -1,5 +1,4 @@
 import { useStore } from '@nanostores/react';
-import { motion, type HTMLMotionProps, type Variants } from 'framer-motion';
 import { computed } from 'nanostores';
 import { memo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
@@ -9,32 +8,25 @@ import {
 } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
-import { Slider, type SliderOptions } from '~/components/ui/Slider';
 import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 import { classNames } from '~/utils/classNames';
-import { cubicEasingFn } from '~/utils/easings';
 import { renderLogger } from '~/utils/logger';
 import { EditorPanel } from './EditorPanel';
 import { Preview } from './Preview';
+import { DatabasePanel } from './DatabasePanel';
+import { WorkbenchTabs, type TabOption } from './WorkbenchTabs';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
   isStreaming?: boolean;
 }
 
-const viewTransition = { ease: cubicEasingFn };
-
-const sliderOptions: SliderOptions<WorkbenchViewType> = {
-  left: {
-    value: 'code',
-    text: 'Code',
-  },
-  right: {
-    value: 'preview',
-    text: 'Preview',
-  },
-};
+const tabOptions: TabOption<WorkbenchViewType>[] = [
+  { value: 'preview', icon: 'i-ph:eye', label: 'Preview' },
+  { value: 'code', icon: 'i-ph:code', label: 'Code' },
+  { value: 'database', icon: 'i-ph:database', label: 'Database' },
+];
 
 export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => {
   renderLogger.trace('Workbench');
@@ -110,7 +102,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     >
       <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden m-0.5">
         <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
-          <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
+          <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
           <div className="ml-auto" />
           {selectedView === 'code' && (
             <PanelHeaderButton
@@ -133,10 +125,10 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
           />
         </div>
         <div className="relative flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-          <View
-            initial={{ x: selectedView === 'code' ? 0 : '-100%' }}
-            animate={{ x: selectedView === 'code' ? 0 : '-100%' }}
-          >
+          <View visible={selectedView === 'preview'}>
+            <Preview key={previewMode} />
+          </View>
+          <View visible={selectedView === 'code'}>
             <EditorPanel
               editorDocument={currentDocument}
               isStreaming={isStreaming}
@@ -150,11 +142,8 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
               onFileReset={onFileReset}
             />
           </View>
-          <View
-            initial={{ x: selectedView === 'preview' ? 0 : '100%' }}
-            animate={{ x: selectedView === 'preview' ? 0 : '100%' }}
-          >
-            <Preview key={previewMode} />
+          <View visible={selectedView === 'database'}>
+            <DatabasePanel />
           </View>
         </div>
       </div>
@@ -162,14 +151,22 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   );
 });
 
-interface ViewProps extends HTMLMotionProps<'div'> {
+interface ViewProps {
   children: JSX.Element;
+  visible: boolean;
 }
 
-const View = memo(({ children, ...props }: ViewProps) => {
+const View = memo(({ children, visible }: ViewProps) => {
   return (
-    <motion.div className="absolute inset-0" transition={viewTransition} {...props}>
+    <div
+      className="absolute inset-0 transition-opacity duration-200"
+      style={{
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        zIndex: visible ? 1 : 0,
+      }}
+    >
       {children}
-    </motion.div>
+    </div>
   );
 });
