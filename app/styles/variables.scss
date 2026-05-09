@@ -5,6 +5,7 @@
   --bolt-elements-borderColorActive: theme('colors.accent.600');
 
   --bolt-elements-bg-depth-1: theme('colors.white');
+  --bolt-elements-background: var(--bolt-elements-bg-depth-1);
   --bolt-elements-bg-depth-2: theme('colors.gray.50');
   --bolt-elements-bg-depth-3: theme('colors.gray.200');
   --bolt-elements-bg-depth-4: theme('colors.alpha.gray.5');
@@ -117,6 +118,7 @@
   --bolt-elements-borderColorActive: theme('colors.accent.500');
 
   --bolt-elements-bg-depth-1: #09090b;
+  --bolt-elements-background: var(--bolt-elements-bg-depth-1);
   --bolt-elements-bg-depth-2: #111114;
   --bolt-elements-bg-depth-3: #1a1a1f;
   --bolt-elements-bg-depth-4: rgba(255, 255, 255, 0.04);

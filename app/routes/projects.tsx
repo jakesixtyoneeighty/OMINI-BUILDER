@@ -34,7 +34,7 @@ export default function ProjectsPage() {
 /* ===== Skeleton for server render ===== */
 function ProjectsSkeleton() {
   return (
-    <div className="flex-1 overflow-auto bg-bolt-elements-background p-6">
+    <div className="flex-1 overflow-auto bg-bolt-elements-bg-depth-1 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -249,7 +249,7 @@ function ProjectsContent() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-bolt-elements-background">
+    <div className="flex-1 overflow-auto bg-bolt-elements-bg-depth-1">
       <div className="max-w-6xl mx-auto p-6">
         {/* Page header */}
         <div className="flex items-center justify-between mb-8">

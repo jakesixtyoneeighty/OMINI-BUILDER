@@ -226,11 +226,11 @@ server.listen(3000, () => {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border-b border-gray-800 shrink-0">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor shrink-0">
         {/* Logo + Name */}
         <div className="flex items-center gap-2 shrink-0">
           <img src="/omni-builder-logo.svg" alt="Omni" className="h-5 w-5" />
-          <span className="text-xs font-semibold text-gray-300">
+          <span className="text-xs font-semibold text-bolt-elements-textSecondary">
             {deployData?.deploy?.name || t('common.loading')}
           </span>
         </div>
@@ -276,14 +276,14 @@ server.listen(3000, () => {
           <>
             <button
               onClick={refresh}
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-2 transition-all"
               title={t('workbench.refresh')}
             >
               <div className="i-ph:arrow-clockwise text-sm" />
             </button>
             <button
               onClick={openInNewTab}
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-2 transition-all"
               title={t('workbench.newTab')}
             >
               <div className="i-ph:arrow-square-out text-sm" />
@@ -321,17 +321,17 @@ server.listen(3000, () => {
                   </div>
                 )}
               </div>
-              <p className="text-sm font-medium text-gray-300 mb-1">
+              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">
                 {state === 'loading' && t('deployViewer.loadingProjectFiles')}
                 {state === 'booting' && t('deployViewer.startingWebContainer')}
                 {state === 'installing' && t('deployViewer.installingDependencies')}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-bolt-elements-textTertiary">
                 {state === 'loading' && t('deployViewer.fetchingProject')}
                 {state === 'booting' && t('deployViewer.bootingRuntime')}
                 {state === 'installing' && t('deployViewer.mayTakeAMoment')}
               </p>
-              <div className="mt-4 w-48 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
+              <div className="mt-4 w-48 h-1 bg-bolt-elements-bg-depth-2 rounded-full mx-auto overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full animate-progress" />
               </div>
             </div>
@@ -345,11 +345,11 @@ server.listen(3000, () => {
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                 <div className="i-ph:warning-circle-duotone text-3xl text-red-400" />
               </div>
-              <p className="text-sm font-medium text-gray-300 mb-2">{t('deployViewer.failedToLoadProject')}</p>
-              <p className="text-xs text-gray-500 mb-4">{error}</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-2">{t('deployViewer.failedToLoadProject')}</p>
+              <p className="text-xs text-bolt-elements-textTertiary mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-bolt-elements-bg-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-bg-depth-3 transition-all"
               >
                 <div className="i-ph:arrow-clockwise text-sm" />
                 {t('deployViewer.tryAgain')}

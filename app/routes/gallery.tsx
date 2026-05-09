@@ -189,19 +189,19 @@ function GalleryContent() {
   const currentSortKey = SORT_OPTIONS.find((o) => o.id === sort)?.labelKey || 'gallery.newest';
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100">
+    <div className="min-h-screen bg-bolt-elements-bg-depth-1 text-bolt-elements-textPrimary">
       {/* Top Nav */}
-      <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-[#09090b]/70 border-b border-white/[0.06]">
+      <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-bolt-elements-bg-depth-1/70 border-b border-bolt-elements-borderColor">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+            <a href="/" className="flex items-center gap-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors">
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
               <img src="/omni-builder-logo.svg" alt="Omni" className="h-7 omni-logo-themed" />
             </a>
-            <div className="hidden sm:block w-px h-5 bg-white/10" />
-            <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-white">
+            <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
+            <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">
               <div className="i-ph:storefront-duotone text-indigo-400" />
               {t('gallery.gallery')}
             </span>
@@ -209,18 +209,18 @@ function GalleryContent() {
 
           {/* Search */}
           <div className="relative flex-1 max-w-md">
-            <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
+            <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-bolt-elements-textTertiary text-sm" />
             <input
               type="text"
               placeholder={t('gallery.searchPlaceholder')}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); debouncedSearch(e.target.value); }}
-              className="w-full pl-9 pr-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor rounded-xl text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all"
             />
             {searchInput && (
               <button
                 onClick={() => { setSearchInput(''); setSearch(''); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary transition-colors"
               >
                 <div className="i-ph:x text-sm" />
               </button>
@@ -229,17 +229,17 @@ function GalleryContent() {
 
           <div className="flex items-center gap-2">
             {/* View mode toggle */}
-            <div className="hidden md:flex items-center bg-white/[0.04] rounded-lg border border-white/[0.06] p-0.5">
+            <div className="hidden md:flex items-center bg-bolt-elements-bg-depth-3 rounded-lg border border-bolt-elements-borderColor p-0.5">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white/[0.1] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary'}`}
                 title={t('gallery.grid')}
               >
                 <div className="i-ph:squares-four text-sm" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white/[0.1] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary'}`}
                 title={t('gallery.list')}
               >
                 <div className="i-ph:list text-sm" />
@@ -261,7 +261,7 @@ function GalleryContent() {
         {/* Hero Banner */}
         {tab === 'explore' && !loading && projects.length > 0 && category === 'all' && !search && sort === 'newest' && (
           <section className="mb-8">
-            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.06]">
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-bolt-elements-borderColor">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/[0.08] via-purple-600/[0.12] via-40% to-fuchsia-600/[0.08]" />
               <div className="absolute top-0 right-[20%] w-[400px] h-[400px] bg-indigo-500/[0.07] rounded-full blur-[100px] -translate-y-1/2" />
               <div className="absolute bottom-0 left-[10%] w-[300px] h-[300px] bg-purple-500/[0.07] rounded-full blur-[80px] translate-y-1/2" />
@@ -277,24 +277,24 @@ function GalleryContent() {
                   <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                   <span className="text-xs font-medium text-indigo-300/80 uppercase tracking-widest">{t('gallery.community')}</span>
                 </div>
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-bolt-elements-textPrimary mb-3 tracking-tight">
                   {t('gallery.galleryTitle')}{' '}
                   <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
                     Omni Builder
                   </span>
                 </h1>
-                <p className="text-sm sm:text-lg text-zinc-400 max-w-xl mb-6 leading-relaxed">
+                <p className="text-sm sm:text-lg text-bolt-elements-textSecondary max-w-xl mb-6 leading-relaxed">
                   {t('gallery.heroSubtitle')}
                 </p>
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <a
                     href="/"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-zinc-900 hover:bg-zinc-200 shadow-lg shadow-white/[0.05] transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-bolt-elements-button-primary-background text-bolt-elements-button-primary-text hover:bg-bolt-elements-button-primary-backgroundHover shadow-lg shadow-bolt-elements-item-contentAccent/20 transition-all"
                   >
                     <div className="i-ph:plus-circle text-base" />
                     {t('gallery.createProject')}
                   </a>
-                  <div className="flex items-center gap-4 sm:gap-5 text-sm text-zinc-500">
+                  <div className="flex items-center gap-4 sm:gap-5 text-sm text-bolt-elements-textTertiary">
                     <span className="flex items-center gap-1.5">
                       <div className="i-ph:cube-duotone text-base text-indigo-400/60" />
                       {total} {t('gallery.projectsCount')}
@@ -312,13 +312,13 @@ function GalleryContent() {
 
         {/* Tabs: Explore / My Projects */}
         {user && (
-          <div className="flex items-center gap-1 mb-6 p-1 bg-white/[0.03] rounded-xl border border-white/[0.06] w-fit">
+          <div className="flex items-center gap-1 mb-6 p-1 bg-bolt-elements-bg-depth-2 rounded-xl border border-bolt-elements-borderColor w-fit">
             <button
               onClick={() => setTab('explore')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === 'explore'
-                  ? 'bg-white/[0.08] text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary shadow-sm'
+                  : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary'
               }`}
             >
               <div className="i-ph:compass-duotone text-sm" />
@@ -328,8 +328,8 @@ function GalleryContent() {
               onClick={() => setTab('my')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === 'my'
-                  ? 'bg-white/[0.08] text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary shadow-sm'
+                  : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary'
               }`}
             >
               <div className="i-ph:user-circle-duotone text-sm" />
@@ -354,8 +354,8 @@ function GalleryContent() {
                   onClick={() => setCategory(cat.id)}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                     category === cat.id
-                      ? 'bg-white text-zinc-900 shadow-md shadow-white/[0.05]'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.06]'
+                      ? 'bg-bolt-elements-button-primary-background text-bolt-elements-button-primary-text shadow-md shadow-bolt-elements-item-contentAccent/20'
+                      : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor'
                   }`}
                 >
                   <div className={`${cat.icon} text-sm`} />
@@ -366,7 +366,7 @@ function GalleryContent() {
 
             {/* Sort + results count row */}
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-zinc-600">
+              <span className="text-xs text-bolt-elements-textTertiary">
                 {loading ? t('gallery.loading') : `${total} ${t('gallery.projectsCount')} ${t('gallery.found')}`}
               </span>
 
@@ -374,7 +374,7 @@ function GalleryContent() {
               <div ref={sortRef} className="relative">
                 <button
                   onClick={() => setSortOpen(!sortOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:border-white/[0.12] transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-borderColorActive transition-all"
                 >
                   <div className={`${SORT_OPTIONS.find((o) => o.id === sort)?.icon || 'i-ph:sort-ascending'} text-sm`} />
                   {t(currentSortKey)}
@@ -382,7 +382,7 @@ function GalleryContent() {
                 </button>
 
                 {sortOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-900 border border-white/[0.08] rounded-xl shadow-2xl z-50 overflow-hidden p-1">
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-50 overflow-hidden p-1">
                     {SORT_OPTIONS.map((opt) => (
                       <button
                         key={opt.id}
@@ -390,7 +390,7 @@ function GalleryContent() {
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left ${
                           sort === opt.id
                             ? 'bg-indigo-500/20 text-indigo-300 font-medium'
-                            : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                            : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
                         }`}
                       >
                         <div className={`${opt.icon} text-sm`} />
@@ -412,8 +412,8 @@ function GalleryContent() {
           <section className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="i-ph:sparkle-fill text-amber-400 text-base" />
-              <h2 className="text-lg font-semibold text-white">{t('gallery.featured')}</h2>
-              <span className="text-xs text-zinc-600 ml-1">({featuredProjects.length})</span>
+              <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">{t('gallery.featured')}</h2>
+              <span className="text-xs text-bolt-elements-textTertiary ml-1">({featuredProjects.length})</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {featuredProjects.map((project, i) => (
@@ -429,7 +429,7 @@ function GalleryContent() {
         {tab === 'explore' && featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' && regularProjects.length > 0 && (
           <div className="flex items-center gap-2 mb-4 mt-8">
             <div className="i-ph:clock-duotone text-blue-400 text-base" />
-            <h2 className="text-lg font-semibold text-white">{t('gallery.recent')}</h2>
+            <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">{t('gallery.recent')}</h2>
           </div>
         )}
 
@@ -441,23 +441,23 @@ function GalleryContent() {
           }>
             {Array.from({ length: 8 }).map((_, i) => (
               viewMode === 'grid' ? (
-                <div key={i} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden animate-pulse">
-                  <div className="w-full aspect-[16/10] bg-white/[0.04]" />
+                <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
+                  <div className="w-full aspect-[16/10] bg-bolt-elements-bg-depth-3" />
                   <div className="p-4 space-y-3">
-                    <div className="h-4 w-3/4 bg-white/[0.06] rounded-lg" />
-                    <div className="h-3 w-full bg-white/[0.04] rounded-lg" />
+                    <div className="h-4 w-3/4 bg-bolt-elements-bg-depth-4 rounded-lg" />
+                    <div className="h-3 w-full bg-bolt-elements-bg-depth-3 rounded-lg" />
                     <div className="flex justify-between pt-2">
-                      <div className="h-3 w-20 bg-white/[0.04] rounded-lg" />
-                      <div className="h-3 w-16 bg-white/[0.04] rounded-lg" />
+                      <div className="h-3 w-20 bg-bolt-elements-bg-depth-3 rounded-lg" />
+                      <div className="h-3 w-16 bg-bolt-elements-bg-depth-3 rounded-lg" />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div key={i} className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 animate-pulse">
-                  <div className="w-16 h-12 rounded-lg bg-white/[0.04] shrink-0" />
+                <div key={i} className="flex items-center gap-4 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 p-4 animate-pulse">
+                  <div className="w-16 h-12 rounded-lg bg-bolt-elements-bg-depth-3 shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-1/3 bg-white/[0.06] rounded-lg" />
-                    <div className="h-3 w-2/3 bg-white/[0.04] rounded-lg" />
+                    <div className="h-4 w-1/3 bg-bolt-elements-bg-depth-4 rounded-lg" />
+                    <div className="h-3 w-2/3 bg-bolt-elements-bg-depth-3 rounded-lg" />
                   </div>
                 </div>
               )
@@ -491,7 +491,7 @@ function GalleryContent() {
               <div className="flex justify-center mt-8">
                 <button
                   onClick={() => fetchProjects(true)}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-white/[0.04] border border-white/[0.08] text-zinc-300 hover:bg-white/[0.08] hover:border-white/[0.12] transition-all"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-bolt-elements-bg-depth-4 hover:border-bolt-elements-borderColorActive transition-all"
                 >
                   <div className="i-ph:arrow-clockwise text-sm" />
                   {t('gallery.loadMore')}
@@ -505,21 +505,21 @@ function GalleryContent() {
         {!loading && displayProjects.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="relative mb-6">
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/[0.06] flex items-center justify-center">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-bolt-elements-borderColor flex items-center justify-center">
                 {tab === 'my' ? (
-                  <div className="i-ph:folder-open text-4xl text-zinc-600" />
+                  <div className="i-ph:folder-open text-4xl text-bolt-elements-textTertiary" />
                 ) : (
-                  <div className="i-ph:storefront text-4xl text-zinc-600" />
+                  <div className="i-ph:storefront text-4xl text-bolt-elements-textTertiary" />
                 )}
               </div>
               <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                 <div className="i-ph:plus text-sm text-indigo-400" />
               </div>
             </div>
-            <p className="text-xl font-semibold text-zinc-300 mb-2">
+            <p className="text-xl font-semibold text-bolt-elements-textSecondary mb-2">
               {tab === 'my' ? t('gallery.noProjectsPublished') : t('gallery.noProjectsFound')}
             </p>
-            <p className="text-sm text-zinc-600 mb-6 max-w-md text-center">
+            <p className="text-sm text-bolt-elements-textTertiary mb-6 max-w-md text-center">
               {search
                 ? t('gallery.tryAdjusting')
                 : tab === 'my'
@@ -537,7 +537,7 @@ function GalleryContent() {
               {search && (
                 <button
                   onClick={() => { setSearch(''); setSearchInput(''); setCategory('all'); }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-zinc-200 hover:bg-white/[0.1] border border-white/[0.08] transition-all"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-bolt-elements-bg-depth-3 text-bolt-elements-textSecondary hover:bg-bolt-elements-bg-depth-4 border border-bolt-elements-borderColor transition-all"
                 >
                   <div className="i-ph:arrow-counter-clockwise text-base" />
                   {t('gallery.clearFilters')}
@@ -550,11 +550,11 @@ function GalleryContent() {
         {/* My Projects empty state - not published yet */}
         {tab === 'my' && !loading && myProjects.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-20 h-20 rounded-3xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-5">
-              <div className="i-ph:rocket-launch text-4xl text-zinc-600" />
+            <div className="w-20 h-20 rounded-3xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-5">
+              <div className="i-ph:rocket-launch text-4xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-lg font-semibold text-zinc-300 mb-2">{t('gallery.publishYourFirst')}</p>
-            <p className="text-sm text-zinc-600 mb-6 max-w-sm text-center">
+            <p className="text-lg font-semibold text-bolt-elements-textSecondary mb-2">{t('gallery.publishYourFirst')}</p>
+            <p className="text-sm text-bolt-elements-textTertiary mb-6 max-w-sm text-center">
               {t('gallery.createIncredible')}
             </p>
             <a
@@ -584,16 +584,16 @@ function GalleryContent() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.04] mt-16">
-        <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-600">
+      <footer className="border-t border-bolt-elements-borderColor mt-16">
+        <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-bolt-elements-textTertiary">
           <div className="flex items-center gap-3">
             <span>{t('gallery.galleryFooter')}</span>
-            <span className="text-zinc-800">·</span>
+            <span className="text-bolt-elements-textTertiary">·</span>
             <span>{t('gallery.madeWithAIFooter')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/gallery" className="hover:text-zinc-400 transition-colors">{t('gallery.gallery')}</a>
-            <a href="/" className="hover:text-zinc-400 transition-colors">{t('gallery.editor')}</a>
+            <a href="/gallery" className="hover:text-bolt-elements-textSecondary transition-colors">{t('gallery.gallery')}</a>
+            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">{t('gallery.editor')}</a>
           </div>
         </div>
       </footer>
@@ -656,13 +656,13 @@ function ProjectDetailModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative bg-[#111114] border border-white/[0.08] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="relative bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-black/40 backdrop-blur-sm border border-white/[0.08] flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/[0.2] transition-all"
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-black/40 backdrop-blur-sm border border-bolt-elements-borderColor flex items-center justify-center text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-borderColorActive transition-all"
         >
           <div className="i-ph:x text-sm" />
         </button>
@@ -682,7 +682,7 @@ function ProjectDetailModal({
               className="absolute inset-0 w-full h-full object-cover"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111114] via-[#111114]/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bolt-elements-bg-depth-2 via-bolt-elements-bg-depth-2/30 to-transparent" />
         </div>
 
         {/* Content */}
@@ -692,36 +692,36 @@ function ProjectDetailModal({
             {project.logo ? (
               <img src={project.logo} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 shadow-xl bg-white" />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center shrink-0">
                 <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-2xl text-white/50`} />
               </div>
             )}
 
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-white truncate">{project.name}</h2>
+              <h2 className="text-xl font-bold text-bolt-elements-textPrimary truncate">{project.name}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm text-zinc-400">{t('gallery.by')} {project.author_name}</span>
-                <span className="text-zinc-700">·</span>
-                <span className="text-sm text-zinc-500">{formatDate(project.published_at)}</span>
+                <span className="text-sm text-bolt-elements-textSecondary">{t('gallery.by')} {project.author_name}</span>
+                <span className="text-bolt-elements-textTertiary">·</span>
+                <span className="text-sm text-bolt-elements-textTertiary">{formatDate(project.published_at)}</span>
               </div>
             </div>
           </div>
 
           {/* Stats row */}
           <div className="flex items-center gap-4 mb-4">
-            <span className="flex items-center gap-1.5 text-sm text-zinc-400">
+            <span className="flex items-center gap-1.5 text-sm text-bolt-elements-textSecondary">
               <div className="i-ph:eye text-base" /> {formatNumber(project.views)} views
             </span>
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1.5 text-sm transition-colors ${liked ? 'text-red-400' : 'text-zinc-400 hover:text-red-400'}`}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${liked ? 'text-red-400' : 'text-bolt-elements-textSecondary hover:text-red-400'}`}
             >
               <div className={`${liked ? 'i-ph:heart-fill' : 'i-ph:heart'} text-base`} />
               {formatNumber(likeCount)}
             </button>
             <button
               onClick={(e) => onShare(e, project)}
-              className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-bolt-elements-textSecondary hover:text-indigo-400 transition-colors"
             >
               <div className="i-ph:share-network text-base" /> {t('gallery.share')}
             </button>
@@ -736,14 +736,14 @@ function ProjectDetailModal({
               </span>
             )}
             {project.tags?.map((tag: string) => (
-              <span key={tag} className="px-2 py-0.5 rounded-md bg-white/[0.04] text-[11px] text-zinc-400 border border-white/[0.06]">
+              <span key={tag} className="px-2 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[11px] text-bolt-elements-textSecondary border border-bolt-elements-borderColor">
                 {tag}
               </span>
             ))}
           </div>
 
           {/* Description */}
-          <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+          <p className="text-sm text-bolt-elements-textSecondary leading-relaxed mb-6">
             {project.description || t('gallery.noDescription')}
           </p>
 
@@ -758,7 +758,7 @@ function ProjectDetailModal({
             </button>
             <button
               onClick={(e) => onShare(e, project)}
-              className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all"
+              className="flex items-center justify-center w-11 h-11 rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-4 transition-all"
               title={t('gallery.share')}
             >
               <div className="i-ph:share-network text-base" />
@@ -815,7 +815,7 @@ function FeaturedCard({
   return (
     <div
       onClick={() => onSelect(project)}
-      className="group relative cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden transition-all duration-300 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/[0.06] hover:scale-[1.01]"
+      className="group relative cursor-pointer rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden transition-all duration-300 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/[0.06] hover:scale-[1.01]"
     >
       <div className="relative w-full aspect-[16/9] overflow-hidden">
         {!hasImage ? (
@@ -832,7 +832,7 @@ function FeaturedCard({
             loading="lazy"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bolt-elements-bg-depth-1 via-bolt-elements-bg-depth-1/40 to-transparent" />
 
         {/* Featured badge */}
         <div className="absolute top-3 left-3">
@@ -844,14 +844,14 @@ function FeaturedCard({
         {/* Share button */}
         <button
           onClick={(e) => onShare(e, project)}
-          className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-black/40 backdrop-blur-sm border border-white/[0.08] flex items-center justify-center text-white/60 hover:text-white hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100"
+          className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-black/40 backdrop-blur-sm border border-bolt-elements-borderColor flex items-center justify-center text-white/60 hover:text-white hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100"
         >
           <div className="i-ph:share-network text-xs" />
         </button>
 
         {/* Hover action */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.95] text-black text-sm font-semibold shadow-2xl backdrop-blur-sm">
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary text-sm font-semibold shadow-2xl backdrop-blur-sm">
             <div className="i-ph:play-fill text-base" />
             {t('gallery.openProject')}
           </div>
@@ -864,11 +864,10 @@ function FeaturedCard({
               <img src={project.logo} alt="" className="w-11 h-11 rounded-xl object-cover border-2 border-white/20 shadow-xl flex-shrink-0 bg-white" />
             ) : (
               <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center flex-shrink-0">
-                <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-xl text-white/70`} />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-white drop-shadow-lg truncate">{project.name}</h3>
+              <h3 className="text-base font-bold text-bolt-elements-textPrimary drop-shadow-lg truncate">{project.name}</h3>
               <p className="text-[11px] text-white/50 truncate mt-0.5">{project.description}</p>
             </div>
           </div>
@@ -878,19 +877,19 @@ function FeaturedCard({
       {/* Bottom bar */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1 text-[11px] text-zinc-500">
+          <span className="flex items-center gap-1 text-[11px] text-bolt-elements-textTertiary">
             <div className="i-ph:user text-xs" /> {project.author_name}
           </span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-[11px] text-zinc-600">{formatDate(project.published_at)}</span>
+          <span className="text-bolt-elements-textTertiary">·</span>
+          <span className="text-[11px] text-bolt-elements-textTertiary">{formatDate(project.published_at)}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1 text-[11px] text-zinc-500">
+          <span className="flex items-center gap-1 text-[11px] text-bolt-elements-textTertiary">
             <div className="i-ph:eye text-xs" /> {formatNumber(project.views)}
           </span>
           <button
             onClick={handleLike}
-            className={`flex items-center gap-1 text-[11px] transition-colors ${liked ? 'text-red-400' : 'text-zinc-500 hover:text-red-400'}`}
+            className={`flex items-center gap-1 text-[11px] transition-colors ${liked ? 'text-red-400' : 'text-bolt-elements-textTertiary hover:text-red-400'}`}
           >
             <div className={`${liked ? 'i-ph:heart-fill' : 'i-ph:heart'} text-xs`} />
             {formatNumber(likeCount)}
@@ -946,10 +945,10 @@ function ProjectCard({
   return (
     <div
       onClick={() => onSelect(project)}
-      className="group relative cursor-pointer flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:shadow-2xl hover:shadow-indigo-500/[0.04]"
+      className="group relative cursor-pointer flex flex-col rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden transition-all duration-300 hover:border-bolt-elements-borderColorActive hover:shadow-2xl hover:shadow-indigo-500/[0.04]"
     >
       {/* Cover image */}
-      <div className="relative w-full aspect-[16/10] overflow-hidden bg-white/[0.02]">
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-bolt-elements-bg-depth-2">
         {!hasImage ? (
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`}>
             <div className="absolute inset-0 flex items-center justify-center">
@@ -964,11 +963,11 @@ function ProjectCard({
             loading="lazy"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bolt-elements-bg-depth-1/80 via-transparent to-transparent" />
 
         {/* Category badge */}
         <div className="absolute top-2.5 left-2.5">
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/40 text-white/70 backdrop-blur-sm border border-white/[0.06]">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/40 text-white/70 backdrop-blur-sm border border-bolt-elements-borderColor">
             {catInfo ? t(catInfo.nameKey) : project.category}
           </span>
         </div>
@@ -976,14 +975,14 @@ function ProjectCard({
         {/* Share button */}
         <button
           onClick={(e) => onShare(e, project)}
-          className="absolute top-2.5 right-2.5 w-6 h-6 rounded-md bg-black/40 backdrop-blur-sm border border-white/[0.06] flex items-center justify-center text-white/50 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+          className="absolute top-2.5 right-2.5 w-6 h-6 rounded-md bg-black/40 backdrop-blur-sm border border-bolt-elements-borderColor flex items-center justify-center text-white/50 hover:text-white transition-all opacity-0 group-hover:opacity-100"
         >
           <div className="i-ph:share-network text-[10px]" />
         </button>
 
         {/* Hover play button */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div className="w-12 h-12 rounded-2xl bg-white/[0.95] text-black flex items-center justify-center shadow-2xl backdrop-blur-sm transform scale-75 group-hover:scale-100 transition-transform duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary flex items-center justify-center shadow-2xl backdrop-blur-sm transform scale-75 group-hover:scale-100 transition-transform duration-300">
             <div className="i-ph:play-fill text-xl ml-0.5" />
           </div>
         </div>
@@ -998,19 +997,19 @@ function ProjectCard({
                 <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-sm text-white/60`} />
               </div>
             )}
-            <h3 className="text-sm font-semibold text-white drop-shadow-md truncate">{project.name}</h3>
+            <h3 className="text-sm font-semibold text-bolt-elements-textPrimary drop-shadow-md truncate">{project.name}</h3>
           </div>
         </div>
       </div>
 
       {/* Content area */}
       <div className="p-3.5 flex flex-col gap-2 flex-1">
-        <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2 min-h-[28px]">{project.description}</p>
+        <p className="text-[11px] text-bolt-elements-textTertiary leading-relaxed line-clamp-2 min-h-[28px]">{project.description}</p>
 
         {project.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {project.tags.slice(0, 3).map((tag: string) => (
-              <span key={tag} className="px-1.5 py-0.5 rounded-md bg-white/[0.04] text-[9px] text-zinc-500 border border-white/[0.04]">
+              <span key={tag} className="px-1.5 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[9px] text-bolt-elements-textTertiary border border-bolt-elements-borderColor">
                 {tag}
               </span>
             ))}
@@ -1019,17 +1018,17 @@ function ProjectCard({
 
         <div className="mt-auto pt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-zinc-600 truncate max-w-[70px]">{project.author_name}</span>
-            <span className="text-zinc-800">·</span>
-            <span className="text-[10px] text-zinc-700">{formatDate(project.published_at)}</span>
+            <span className="text-[10px] text-bolt-elements-textTertiary truncate max-w-[70px]">{project.author_name}</span>
+            <span className="text-bolt-elements-textTertiary">·</span>
+            <span className="text-[10px] text-bolt-elements-textTertiary">{formatDate(project.published_at)}</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
+            <span className="flex items-center gap-0.5 text-[10px] text-bolt-elements-textTertiary">
               <div className="i-ph:eye text-[10px]" /> {formatNumber(project.views)}
             </span>
             <button
               onClick={handleLike}
-              className={`flex items-center gap-0.5 text-[10px] transition-colors ${liked ? 'text-red-400' : 'text-zinc-600 hover:text-red-400'}`}
+              className={`flex items-center gap-0.5 text-[10px] transition-colors ${liked ? 'text-red-400' : 'text-bolt-elements-textTertiary hover:text-red-400'}`}
             >
               <div className={`${liked ? 'i-ph:heart-fill' : 'i-ph:heart'} text-[10px]`} />
               {formatNumber(likeCount)}
@@ -1084,10 +1083,10 @@ function ListCard({
   return (
     <div
       onClick={() => onSelect(project)}
-      className="group cursor-pointer flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 hover:border-white/[0.12] hover:bg-white/[0.04] transition-all duration-200"
+      className="group cursor-pointer flex items-center gap-4 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 p-3 hover:border-bolt-elements-borderColorActive hover:bg-bolt-elements-bg-depth-3 transition-all duration-200"
     >
       {/* Thumbnail */}
-      <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-white/[0.02] shrink-0">
+      <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-bolt-elements-bg-depth-2 shrink-0">
         {mainImage ? (
           <img src={mainImage} alt={project.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
         ) : (
@@ -1103,40 +1102,40 @@ function ListCard({
           {project.logo ? (
             <img src={project.logo} alt="" className="w-5 h-5 rounded object-cover bg-white shrink-0" />
           ) : (
-            <div className="w-5 h-5 rounded bg-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="w-5 h-5 rounded bg-bolt-elements-bg-depth-3 flex items-center justify-center shrink-0">
               <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-[10px] text-white/40`} />
             </div>
           )}
-          <h3 className="text-sm font-semibold text-white truncate">{project.name}</h3>
+          <h3 className="text-sm font-semibold text-bolt-elements-textPrimary truncate">{project.name}</h3>
           {catInfo && (
-            <span className="px-1.5 py-0.5 rounded text-[9px] bg-white/[0.04] text-zinc-500 border border-white/[0.04] hidden sm:inline">
+            <span className="px-1.5 py-0.5 rounded text-[9px] bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary border border-bolt-elements-borderColor hidden sm:inline">
               {t(catInfo.nameKey)}
             </span>
           )}
         </div>
-        <p className="text-[11px] text-zinc-500 truncate mt-0.5">{project.description}</p>
+        <p className="text-[11px] text-bolt-elements-textTertiary truncate mt-0.5">{project.description}</p>
       </div>
 
       {/* Stats */}
       <div className="flex items-center gap-3 shrink-0">
-        <span className="flex items-center gap-1 text-[10px] text-zinc-600">
+        <span className="flex items-center gap-1 text-[10px] text-bolt-elements-textTertiary">
           <div className="i-ph:eye text-[10px]" /> {formatNumber(project.views)}
         </span>
         <button
           onClick={handleLike}
-          className={`flex items-center gap-1 text-[10px] transition-colors ${liked ? 'text-red-400' : 'text-zinc-600 hover:text-red-400'}`}
+          className={`flex items-center gap-1 text-[10px] transition-colors ${liked ? 'text-red-400' : 'text-bolt-elements-textTertiary hover:text-red-400'}`}
         >
           <div className={`${liked ? 'i-ph:heart-fill' : 'i-ph:heart'} text-[10px]`} />
           {formatNumber(likeCount)}
         </button>
         <button
           onClick={(e) => onShare(e, project)}
-          className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-600 hover:text-white hover:bg-white/[0.06] transition-all"
+          className="w-6 h-6 rounded-md flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-3 transition-all"
           title={t('gallery.share')}
         >
           <div className="i-ph:share-network text-xs" />
         </button>
-        <span className="text-[10px] text-zinc-700 hidden sm:block">{formatDate(project.published_at)}</span>
+        <span className="text-[10px] text-bolt-elements-textTertiary hidden sm:block">{formatDate(project.published_at)}</span>
       </div>
     </div>
   );
@@ -1152,18 +1151,18 @@ export default function GalleryPage() {
 
 function GallerySkeleton() {
   return (
-    <div className="min-h-screen bg-[#09090b]">
-      <nav className="h-16 border-b border-white/[0.06]" />
+    <div className="min-h-screen bg-bolt-elements-bg-depth-1">
+      <nav className="h-16 border-b border-bolt-elements-borderColor" />
       <div className="max-w-[1400px] mx-auto px-6 py-8">
-        <div className="h-48 rounded-3xl bg-white/[0.02] border border-white/[0.04] mb-10 animate-pulse" />
+        <div className="h-48 rounded-3xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor mb-10 animate-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden animate-pulse">
-              <div className="w-full aspect-[16/10] bg-white/[0.03]" />
+            <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
+              <div className="w-full aspect-[16/10] bg-bolt-elements-bg-depth-3" />
               <div className="p-5 space-y-3">
-                <div className="h-4 w-3/4 bg-white/[0.04] rounded-lg" />
-                <div className="h-3 w-full bg-white/[0.03] rounded-lg" />
-                <div className="h-3 w-2/3 bg-white/[0.03] rounded-lg" />
+                <div className="h-4 w-3/4 bg-bolt-elements-bg-depth-3 rounded-lg" />
+                <div className="h-3 w-full bg-bolt-elements-bg-depth-3 rounded-lg" />
+                <div className="h-3 w-2/3 bg-bolt-elements-bg-depth-3 rounded-lg" />
               </div>
             </div>
           ))}
