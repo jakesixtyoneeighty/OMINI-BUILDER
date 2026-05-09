@@ -118,7 +118,15 @@ export default defineConfig({
         elements: {
           borderColor: 'var(--bolt-elements-borderColor)',
           borderColorActive: 'var(--bolt-elements-borderColorActive)',
-          background: 'var(--bolt-elements-background)',
+          background: {
+            DEFAULT: 'var(--bolt-elements-background)',
+            depth: {
+              1: 'var(--bolt-elements-bg-depth-1)',
+              2: 'var(--bolt-elements-bg-depth-2)',
+              3: 'var(--bolt-elements-bg-depth-3)',
+              4: 'var(--bolt-elements-bg-depth-4)',
+            },
+          },
           bg: {
             depth: {
               1: 'var(--bolt-elements-bg-depth-1)',
