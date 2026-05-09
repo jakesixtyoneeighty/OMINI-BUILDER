@@ -59,37 +59,59 @@ function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: num
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-bolt-elements-background-depth-1 rounded-lg border-2 border-purple-500/50 group">
-        <div className="i-ph:pencil-simple text-purple-400 text-sm shrink-0" />
-        <input value={editKey} onChange={(e) => { setEditKey(e.target.value); setHasChanges(true); }}
-          onKeyDown={(e) => e.key === 'Escape' && cancel()}
-          className="flex-1 px-2 py-1 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-purple-500/50" />
-        <span className="text-bolt-elements-textTertiary text-sm">=</span>
-        <input value={editValue} onChange={(e) => { setEditValue(e.target.value); setHasChanges(true); }}
-          onKeyDown={(e) => e.key === 'Escape' && cancel()}
-          className="flex-1 px-2 py-1 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary focus:outline-none focus:border-purple-500/50" />
-        <button onClick={save} disabled={!hasChanges} className="text-green-400 hover:text-green-300 disabled:opacity-30 transition-all p-1">
-          <div className="i-ph:check text-sm" />
-        </button>
-        <button onClick={cancel} className="text-bolt-elements-textTertiary hover:text-red-400 transition-all p-1">
-          <div className="i-ph:x text-sm" />
-        </button>
+      <div className="px-3 py-2 bg-bolt-elements-background-depth-1 rounded-lg border-2 border-purple-500/50 group">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="i-ph:pencil-simple text-purple-400 text-sm shrink-0" />
+          <span className="text-xs text-bolt-elements-textTertiary font-medium">{t('appSettings.editing')}</span>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase w-8 shrink-0">Key</label>
+            <input value={editKey} onChange={(e) => { setEditKey(e.target.value); setHasChanges(true); }}
+              onKeyDown={(e) => e.key === 'Escape' && cancel()}
+              className="flex-[1] min-w-0 px-2 py-1.5 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-purple-500/50" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase w-8 shrink-0">Val</label>
+            <input value={editValue} onChange={(e) => { setEditValue(e.target.value); setHasChanges(true); }}
+              onKeyDown={(e) => e.key === 'Escape' && cancel()}
+              className="flex-[3] min-w-0 px-2 py-1.5 rounded text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary focus:outline-none focus:border-purple-500/50 break-all" />
+          </div>
+          <div className="flex justify-end gap-1.5">
+            <button onClick={cancel} className="text-bolt-elements-textTertiary hover:text-red-400 transition-all p-1.5 rounded-md hover:bg-red-500/10">
+              <div className="i-ph:x text-sm" />
+            </button>
+            <button onClick={save} disabled={!hasChanges} className="text-green-400 hover:text-green-300 disabled:opacity-30 transition-all p-1.5 rounded-md hover:bg-green-500/10">
+              <div className="i-ph:check text-sm" />
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const [expanded, setExpanded] = useState(false);
+  const isLongValue = env.value.length > 60;
+
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 bg-bolt-elements-background-depth-1 rounded-lg border border-bolt-elements-borderColor group hover:border-purple-500/30 transition-colors">
-      <div className="i-ph:key text-bolt-elements-textTertiary text-sm shrink-0" />
-      <span className="font-mono text-sm text-bolt-elements-textPrimary font-medium">{env.key}</span>
-      <span className="text-bolt-elements-textTertiary text-sm">=</span>
-      <span className="font-mono text-sm text-bolt-elements-textSecondary truncate flex-1">{env.value}</span>
-      <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1" title={t('appSettings.edit')}>
-        <div className="i-ph:pencil-simple text-sm" />
-      </button>
-      <button onClick={() => onRemove(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1" title={t('appSettings.remove')}>
-        <div className="i-ph:trash text-sm" />
-      </button>
+    <div className="px-3 py-2.5 bg-bolt-elements-background-depth-1 rounded-lg border border-bolt-elements-borderColor group hover:border-purple-500/30 transition-colors">
+      <div className="flex items-center gap-2">
+        <div className="i-ph:key text-bolt-elements-textTertiary text-sm shrink-0" />
+        <span className="font-mono text-sm text-bolt-elements-textPrimary font-medium shrink-0">{env.key}</span>
+        <span className="text-bolt-elements-textTertiary text-sm shrink-0">=</span>
+        <span className={`font-mono text-sm text-bolt-elements-textSecondary flex-1 min-w-0 ${!expanded && isLongValue ? 'truncate' : 'break-all'}`}>{env.value}</span>
+        {isLongValue && (
+          <button onClick={() => setExpanded(!expanded)} className="text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1 shrink-0" title={expanded ? t('appSettings.collapse') : t('appSettings.expand')}>
+            <div className={`i-ph:text-nowrap text-sm transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+        <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1 shrink-0" title={t('appSettings.edit')}>
+          <div className="i-ph:pencil-simple text-sm" />
+        </button>
+        <button onClick={() => onRemove(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1 shrink-0" title={t('appSettings.remove')}>
+          <div className="i-ph:trash text-sm" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -854,15 +876,18 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     <p className="text-sm text-bolt-elements-textTertiary">{t('appSettings.noEnvVars')}</p>
                   </div>
                 )}
-                <div className="flex gap-2 p-3 bg-bolt-elements-background-depth-1 rounded-lg border border-dashed border-bolt-elements-borderColor">
-                  <input value={newEnvKey} onChange={(e) => setNewEnvKey(e.target.value)} placeholder="KEY" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
-                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
-                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder={t('appSettings.value')} onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
-                    className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
-                  <button onClick={addEnvVar} disabled={!newEnvKey.trim() || !newEnvValue.trim()}
-                    className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                    <div className="i-ph:plus text-lg" />
-                  </button>
+                <div className="p-3 bg-bolt-elements-background-depth-1 rounded-lg border border-dashed border-bolt-elements-borderColor space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input value={newEnvKey} onChange={(e) => setNewEnvKey(e.target.value)} placeholder="KEY" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                      className="flex-[1] min-w-0 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
+                    <span className="text-bolt-elements-textTertiary text-sm shrink-0">=</span>
+                    <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder={t('appSettings.value')} onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                      className="flex-[3] min-w-0 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
+                    <button onClick={addEnvVar} disabled={!newEnvKey.trim() || !newEnvValue.trim()}
+                      className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0">
+                      <div className="i-ph:plus text-lg" />
+                    </button>
+                  </div>
                 </div>
  </div>
             )}
