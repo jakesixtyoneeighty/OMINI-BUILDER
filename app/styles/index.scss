@@ -64,6 +64,122 @@ body {
   box-shadow: 0 0 15px -5px rgba(129, 140, 248, 0.15);
 }
 
+/* ===== FORCE ALL BUTTONS DARK IN DARK THEME ===== */
+
+/* Every button must have a dark background in dark mode */
+[data-theme="dark"] button {
+  background-color: var(--bolt-elements-button-secondary-background);
+  color: var(--bolt-elements-button-secondary-text);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Buttons with explicit classes that already look correct - exclude them */
+[data-theme="dark"] button[class*="bg-gradient"],
+[data-theme="dark"] button[class*="bg-blue-500"],
+[data-theme="dark"] button[class*="bg-purple-6"],
+[data-theme="dark"] button[class*="bg-indigo-6"],
+[data-theme="dark"] button[class*="bg-emerald-6"],
+[data-theme="dark"] button[class*="bg-teal-6"],
+[data-theme="dark"] button[class*="bg-bolt-elements-button-"],
+[data-theme="dark"] button[class*="bg-bolt-elements-item-contentAccent"],
+[data-theme="dark"] button[class*="bg-bolt-elements-sidebar-button"],
+[data-theme="dark"] button[style*="background"] {
+  background-color: unset;
+}
+
+/* Transparent/icon buttons should stay transparent */
+[data-theme="dark"] button[class*="bg-transparent"],
+[data-theme="dark"] button[class*="bg-bolt-elements-item-background"],
+[data-theme="dark"] button[class*="bg-bolt-elements-bg-depth"] {
+  background-color: unset;
+}
+
+/* Restore proper text colors for special button types */
+[data-theme="dark"] button[class*="text-red"],
+[data-theme="dark"] button[class*="text-bolt-elements-button-danger"] {
+  color: var(--bolt-elements-button-danger-text);
+}
+[data-theme="dark"] button[class*="text-bolt-elements-button-primary"] {
+  color: var(--bolt-elements-button-primary-text);
+}
+[data-theme="dark"] button[class*="text-bolt-elements-item-contentAccent"] {
+  color: var(--bolt-elements-item-contentAccent);
+}
+[data-theme="dark"] button[class*="text-bolt-elements-textPrimary"] {
+  color: var(--bolt-elements-textPrimary);
+}
+[data-theme="dark"] button[class*="text-bolt-elements-textSecondary"] {
+  color: var(--bolt-elements-textSecondary);
+}
+[data-theme="dark"] button[class*="text-bolt-elements-textTertiary"] {
+  color: var(--bolt-elements-textTertiary);
+}
+
+/* Buttons inside prompt card should not be overridden */
+[data-theme="dark"] .z-prompt button {
+  background-color: unset;
+}
+
+/* Dialog overlay buttons keep their own styling */
+[data-theme="dark"] [role="dialog"] button {
+  background-color: unset;
+}
+
+/* ===== Force dark backgrounds on interactive elements ===== */
+
+/* All inputs must be dark */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Inputs inside prompt card should stay transparent */
+[data-theme="dark"] .z-prompt input,
+[data-theme="dark"] .z-prompt textarea {
+  background-color: transparent;
+}
+
+/* Inputs with explicit bg classes should keep them */
+[data-theme="dark"] input[class*="bg-bolt-elements"],
+[data-theme="dark"] textarea[class*="bg-bolt-elements"],
+[data-theme="dark"] select[class*="bg-bolt-elements"],
+[data-theme="dark"] input[class*="bg-transparent"],
+[data-theme="dark"] textarea[class*="bg-transparent"] {
+  background-color: unset;
+}
+
+/* Force dark on all cards/containers */
+[data-theme="dark"] .rounded-xl,
+[data-theme="dark"] .rounded-2xl,
+[data-theme="dark"] .rounded-lg {
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Force dark on dropdown menus */
+[data-theme="dark"] select option {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Force dark background on images that use bg-white as placeholder */
+[data-theme="dark"] img[class*="bg-white"] {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+}
+
+/* Force dark on nav and header */
+[data-theme="dark"] header,
+[data-theme="dark"] nav {
+  background-color: var(--bolt-elements-bg-depth-1) !important;
+}
+
+/* Force dark on body */
+[data-theme="dark"] body {
+  background-color: var(--bolt-elements-bg-depth-1);
+}
+
 /* ===== Targeted overrides for hardcoded elements in dark mode ===== */
 
 /* CodeBlock copy button - dark background */

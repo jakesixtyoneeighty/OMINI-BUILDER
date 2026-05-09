@@ -130,26 +130,26 @@
   --bolt-elements-code-background: #16161a;
   --bolt-elements-code-text: #e4e4e7;
 
-  --bolt-elements-button-primary-background: rgba(99, 102, 241, 0.12);
-  --bolt-elements-button-primary-backgroundHover: rgba(99, 102, 241, 0.22);
-  --bolt-elements-button-primary-text: #818cf8;
+  --bolt-elements-button-primary-background: #252530;
+  --bolt-elements-button-primary-backgroundHover: #2d2d3d;
+  --bolt-elements-button-primary-text: #a5b4fc;
 
-  --bolt-elements-button-secondary-background: rgba(255, 255, 255, 0.06);
-  --bolt-elements-button-secondary-backgroundHover: rgba(255, 255, 255, 0.10);
+  --bolt-elements-button-secondary-background: #1e1e24;
+  --bolt-elements-button-secondary-backgroundHover: #28282f;
   --bolt-elements-button-secondary-text: #e4e4e7;
 
-  --bolt-elements-button-danger-background: rgba(239, 68, 68, 0.12);
-  --bolt-elements-button-danger-backgroundHover: rgba(239, 68, 68, 0.22);
+  --bolt-elements-button-danger-background: #2a1a1a;
+  --bolt-elements-button-danger-backgroundHover: #352020;
   --bolt-elements-button-danger-text: #f87171;
 
   --bolt-elements-item-contentDefault: rgba(255, 255, 255, 0.5);
   --bolt-elements-item-contentActive: #f0f0f3;
   --bolt-elements-item-contentAccent: #818cf8;
   --bolt-elements-item-contentDanger: #f87171;
-  --bolt-elements-item-backgroundDefault: rgba(255, 255, 255, 0);
-  --bolt-elements-item-backgroundActive: rgba(255, 255, 255, 0.06);
-  --bolt-elements-item-backgroundAccent: rgba(99, 102, 241, 0.1);
-  --bolt-elements-item-backgroundDanger: rgba(239, 68, 68, 0.1);
+  --bolt-elements-item-backgroundDefault: transparent;
+  --bolt-elements-item-backgroundActive: #1e1e24;
+  --bolt-elements-item-backgroundAccent: #1e1a30;
+  --bolt-elements-item-backgroundDanger: #2a1a1a;
 
   --bolt-elements-loader-background: rgba(255, 255, 255, 0.06);
   --bolt-elements-loader-progress: #818cf8;
@@ -180,9 +180,9 @@
   --bolt-elements-prompt-background: rgba(17, 17, 20, 0.85);
 
   --bolt-elements-sidebar-dropdownShadow: rgba(0, 0, 0, 0.5);
-  --bolt-elements-sidebar-buttonBackgroundDefault: rgba(99, 102, 241, 0.1);
-  --bolt-elements-sidebar-buttonBackgroundHover: rgba(99, 102, 241, 0.2);
-  --bolt-elements-sidebar-buttonText: #818cf8;
+  --bolt-elements-sidebar-buttonBackgroundDefault: #252530;
+  --bolt-elements-sidebar-buttonBackgroundHover: #2d2d3d;
+  --bolt-elements-sidebar-buttonText: #a5b4fc;
   --bolt-elements-sidebar-background: #111114;
 
   --bolt-elements-homepage-gradient-from: rgba(30, 58, 138, 0.35);
