@@ -16,7 +16,7 @@ import { PlayCodePreview } from './PlayCodePreview';
 import { PistonPreview } from './PistonPreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
-import { AppInspector, type InspectorAnnotation } from './AppInspector.client';
+import { AppInspector } from './AppInspector.client';
 
 /**
  * Wrapper that catches errors from preview iframes and reports them.
@@ -377,13 +377,6 @@ export const Preview = memo(function Preview() {
     if (el) el.requestFullscreen();
   };
 
-  const handleAddAnnotation = useCallback((annotation: any) => {
-    // When AppInspector sends annotations, dispatch to chat immediately
-    const elDesc = `<${annotation.tagName}${annotation.className ? ' class="' + annotation.className.split(' ').slice(0, 2).join(' ') + '"' : ''}>`;
-    const msg = `[Inspector: ${annotation.selector} (${elDesc})] — ${annotation.comment}`;
-    window.dispatchEvent(new CustomEvent('inspector-annotations', { detail: { message: msg } }));
-  }, []);
-
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
     return (
@@ -414,8 +407,6 @@ export const Preview = memo(function Preview() {
             <AppInspector
               isActive={inspectorActive}
               onToggle={() => setInspectorActive(!inspectorActive)}
-              onAddAnnotation={handleAddAnnotation}
-              iframeRef={iframeRef}
             />
           </div>
           {previews.length > 0 && (
@@ -532,7 +523,6 @@ export const Preview = memo(function Preview() {
             <AppInspector
               isActive={inspectorActive}
               onToggle={() => setInspectorActive(!inspectorActive)}
-              onAddAnnotation={handleAddAnnotation}
             />
           </div>
         </div>
@@ -562,7 +552,6 @@ export const Preview = memo(function Preview() {
             <AppInspector
               isActive={inspectorActive}
               onToggle={() => setInspectorActive(!inspectorActive)}
-              onAddAnnotation={handleAddAnnotation}
             />
           </div>
         </div>

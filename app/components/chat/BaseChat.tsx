@@ -19,6 +19,7 @@ import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { inspectorStore, clearInspectorElements, removeInspectorElement, type InspectorElement } from '~/lib/stores/inspector';
 
 import styles from './BaseChat.module.scss';
 
@@ -96,6 +97,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user } = useStore(authStore);
+    const inspectorElements = useStore(inspectorStore).selectedElements;
 
     // @ file mention state
     const [mentionState, setMentionState] = useState<{
@@ -200,6 +202,75 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }).join('');
     }, [attachedFiles]);
 
+    // Build inspector element text to prepend when sending
+    const buildInspectorPrefix = useCallback(() => {
+      if (inspectorElements.length === 0) return '';
+      return inspectorElements.map((el) => {
+        const parts = [`[Inspector Element: <${el.tagName}>`];
+        if (el.selector) parts.push(`Selector: ${el.selector}`);
+        if (el.attributes?.id) parts.push(`ID: ${el.attributes.id}`);
+        if (el.className) parts.push(`Class: ${el.className.split(' ').filter((c: string) => c && !c.startsWith('__') && !c.startsWith('css-')).join(' ')}`);
+        if (el.textContent) parts.push(`Text: "${el.textContent.substring(0, 80)}"`);
+        if (el.attributes?.href) parts.push(`Href: ${el.attributes.href}`);
+        if (el.attributes?.src) parts.push(`Src: ${el.attributes.src}`);
+        if (el.attributes?.placeholder) parts.push(`Placeholder: "${el.attributes.placeholder}"`);
+        if (el.attributes?.type) parts.push(`Type: ${el.attributes.type}`);
+        if (el.attributes?.role) parts.push(`Role: ${el.attributes.role}`);
+        if (el.dimensions) parts.push(`Dimensions: ${el.dimensions.width}x${el.dimensions.height}px`);
+        if (el.styles) {
+          const styleParts: string[] = [];
+          if (el.styles.display) styleParts.push(`display: ${el.styles.display}`);
+          if (el.styles.position) styleParts.push(`position: ${el.styles.position}`);
+          if (el.styles.color) styleParts.push(`color: ${el.styles.color}`);
+          if (el.styles.backgroundColor) styleParts.push(`background: ${el.styles.backgroundColor}`);
+          if (el.styles.fontSize) styleParts.push(`font-size: ${el.styles.fontSize}`);
+          if (styleParts.length > 0) parts.push(`Styles: { ${styleParts.join(', ')} }`);
+        }
+        if (el.isInShadowDom) parts.push('[Shadow DOM]');
+        parts.push(']');
+        return parts.join(', ');
+      }).join('\n') + '\n\n';
+    }, [inspectorElements]);
+
+    /** Tag icon map for inspector element types */
+    const getElementIcon = (tagName: string): string => {
+      const map: Record<string, string> = {
+        button: 'i-ph:cursor-click',
+        input: 'i-ph:text-cursor',
+        textarea: 'i-ph:text-aa',
+        a: 'i-ph:link',
+        img: 'i-ph:image',
+        video: 'i-ph:video-camera',
+        h1: 'i-ph:text-h', h2: 'i-ph:text-h', h3: 'i-ph:text-h', h4: 'i-ph:text-h', h5: 'i-ph:text-h', h6: 'i-ph:text-h',
+        p: 'i-ph:text-paragraph',
+        span: 'i-ph:text-aa',
+        div: 'i-ph:square-dashed',
+        section: 'i-ph:squares-four',
+        nav: 'i-ph:navigation-arrow',
+        header: 'i-ph:caret-line-up',
+        footer: 'i-ph:caret-line-down',
+        form: 'i-ph:note-pencil',
+        select: 'i-ph:list',
+        table: 'i-ph:table',
+        ul: 'i-ph:list-bullets',
+        ol: 'i-ph:list-numbers',
+        li: 'i-ph:minus',
+        svg: 'i-ph:path',
+        iframe: 'i-ph:browser',
+        label: 'i-ph:tag',
+      };
+      return map[tagName] || 'i-ph:code';
+    };
+
+    const formatInspectorChipLabel = (el: InspectorElement) => {
+      const tag = el.tagName;
+      const mainClass = el.className ? el.className.split(' ').filter((c: string) => c && !c.startsWith('__') && !c.startsWith('css-')).slice(0, 1)[0] : '';
+      const id = el.attributes?.id ? '#' + el.attributes.id : '';
+      if (mainClass) return `${tag}.${mainClass}`;
+      if (id) return `${tag}${id}`;
+      return tag;
+    };
+
     const handleSendWithAttachments = useCallback((event: React.UIEvent) => {
       if (isStreaming) {
         handleStop?.();
@@ -216,8 +287,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       const mentionPrefix = mentionedFiles.length > 0
         ? mentionedFiles.map(f => `[Referenced file: ${f.path}]\n\`\`\`\n${f.content}\n\`\`\`\n\n`).join('')
         : '';
+      // Build content from inspector elements
+      const inspectorPrefix = buildInspectorPrefix();
 
-      const fullPrefix = mentionPrefix + prefix;
+      const fullPrefix = inspectorPrefix + mentionPrefix + prefix;
       if (fullPrefix && textareaRef?.current) {
         const textarea = textareaRef.current;
         const currentVal = textarea.value;
@@ -226,9 +299,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           target: { value: newVal },
         } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
         handleInputChange?.(syntheticEvent);
-        // Clear attachments and mentions after sending
+        // Clear attachments, mentions, and inspector elements after sending
         setAttachedFiles([]);
         setMentionedFiles([]);
+        clearInspectorElements();
       } else if (mentionedFiles.length > 0) {
         // Only mentions, no attachments
         const textarea = textareaRef?.current;
@@ -241,10 +315,23 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           handleInputChange?.(syntheticEvent);
         }
         setMentionedFiles([]);
+        clearInspectorElements();
+      } else if (inspectorElements.length > 0) {
+        // Only inspector elements, no other attachments
+        const textarea = textareaRef?.current;
+        if (textarea) {
+          const currentVal = textarea.value;
+          const newVal = inspectorPrefix + currentVal;
+          const syntheticEvent = {
+            target: { value: newVal },
+          } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+          handleInputChange?.(syntheticEvent);
+        }
+        clearInspectorElements();
       }
       setMentionState(null);
       sendMessage?.(event);
-    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, handleInputChange, textareaRef, user, mentionedFiles]);
+    }, [isStreaming, handleStop, sendMessage, buildAttachmentPrefix, buildInspectorPrefix, handleInputChange, textareaRef, user, mentionedFiles, inspectorElements.length]);
 
     // Handle @ file mention selection
     const handleMentionSelect = useCallback((filePath: string) => {
@@ -471,6 +558,37 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       )}
 
+                      {/* Inspector elements (like attached files from the preview inspector) */}
+                      {inspectorElements.length > 0 && (
+                        <div className="px-3 pt-1 pb-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {inspectorElements.map((el) => (
+                              <div
+                                key={el.id}
+                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
+                              >
+                                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
+                                <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
+                                  {formatInspectorChipLabel(el)}
+                                </code>
+                                {el.textContent && (
+                                  <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
+                                    {el.textContent.substring(0, 20)}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => removeInspectorElement(el.id)}
+                                  className="text-orange-400/50 hover:text-red-400 transition-colors"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Textarea area */}
                       <div className="px-4 pt-1 pb-1">
                         <textarea
@@ -559,12 +677,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         <button
                           type="button"
                           onClick={handleSendWithAttachments}
-                          disabled={!input && !isStreaming && attachedFiles.length === 0}
+                          disabled={!input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0}
                           className={classNames(
                             'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
                             isStreaming
                               ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent'
-                              : input || attachedFiles.length > 0
+                              : input || attachedFiles.length > 0 || inspectorElements.length > 0
                                 ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110 shadow-sm'
                                 : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
                           )}
@@ -692,6 +810,37 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
                       )}
 
+                      {/* Inspector elements (like attached files from the preview inspector) */}
+                      {inspectorElements.length > 0 && (
+                        <div className="px-3 pt-3 pb-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {inspectorElements.map((el) => (
+                              <div
+                                key={el.id}
+                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
+                              >
+                                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
+                                <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
+                                  {formatInspectorChipLabel(el)}
+                                </code>
+                                {el.textContent && (
+                                  <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
+                                    {el.textContent.substring(0, 20)}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => removeInspectorElement(el.id)}
+                                  className="text-orange-400/50 hover:text-red-400 transition-colors"
+                                >
+                                  <div className="i-ph:x-bold text-[8px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Textarea area */}
                       <div className="px-4 pt-3 pb-1">
                         <textarea
@@ -738,12 +887,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         <button
                           type="button"
                           onClick={handleSendWithAttachments}
-                          disabled={!input && !isStreaming && attachedFiles.length === 0}
+                          disabled={!input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0}
                           className={classNames(
                             'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
                             isStreaming
                               ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                              : input || attachedFiles.length > 0
+                              : input || attachedFiles.length > 0 || inspectorElements.length > 0
                                 ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
                                 : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
                           )}
@@ -809,12 +958,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <button
                       type="button"
                       onClick={handleSendWithAttachments}
-                      disabled={!input && !isStreaming && attachedFiles.length === 0}
+                      disabled={!input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0}
                       className={classNames(
                         'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
                         isStreaming
                           ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent hover:text-bolt-elements-item-contentAccent'
-                          : input || attachedFiles.length > 0
+                          : input || attachedFiles.length > 0 || inspectorElements.length > 0
                             ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110'
                             : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textSecondary',
                       )}

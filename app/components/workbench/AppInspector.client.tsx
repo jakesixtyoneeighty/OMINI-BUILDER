@@ -1,36 +1,16 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useStore } from '@nanostores/react';
 import { classNames } from '~/utils/classNames';
-
-interface InspectorAnnotation {
-  id: string;
-  selector: string;
-  tagName: string;
-  className: string;
-  textContent: string;
-  comment: string;
-  timestamp: number;
-  attributes?: Record<string, string>;
-  dimensions?: { width: number; height: number };
-  isInShadowDom?: boolean;
-}
-
-interface SelectedElement {
-  id: string;
-  selector: string;
-  tagName: string;
-  className: string;
-  textContent: string;
-  dimensions?: { width: number; height: number };
-  attributes?: Record<string, string>;
-  styles?: Record<string, string>;
-  isInShadowDom?: boolean;
-}
+import {
+  inspectorStore,
+  addInspectorElement,
+  setInspectorActive,
+  type InspectorElement,
+} from '~/lib/stores/inspector';
 
 interface AppInspectorProps {
   isActive: boolean;
   onToggle: () => void;
-  onAddAnnotation: (annotation: InspectorAnnotation) => void;
-  iframeRef?: React.RefObject<HTMLIFrameElement>;
 }
 
 /**
@@ -321,18 +301,18 @@ const INSPECTOR_SCRIPT = `
     try { window.parent.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
     try { if (window.opener) window.opener.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
 
-    /* Flash effect */
+    /* Flash effect — green to indicate "added" */
     if (overlay) {
-      overlay.style.borderColor = '#f97316';
-      overlay.style.background = 'rgba(249,115,22,0.15)';
-      overlay.style.boxShadow = '0 0 0 2px rgba(249,115,22,0.4),0 0 20px rgba(249,115,22,0.12)';
+      overlay.style.borderColor = '#22c55e';
+      overlay.style.background = 'rgba(34,197,94,0.15)';
+      overlay.style.boxShadow = '0 0 0 2px rgba(34,197,94,0.4),0 0 20px rgba(34,197,94,0.12)';
       setTimeout(function() {
         if (overlay) {
           overlay.style.borderColor = '#3b82f6';
           overlay.style.background = 'rgba(59,130,246,0.10)';
           overlay.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.3),0 0 12px rgba(59,130,246,0.08)';
         }
-      }, 400);
+      }, 600);
     }
   }, true);
 
@@ -389,9 +369,6 @@ const INSPECTOR_SCRIPT = `
   try { if (window.opener) window.opener.postMessage({ type: '__inspector-ready' }, '*'); } catch(e) {}
 })();
 `;
-
-export type { InspectorAnnotation, SelectedElement };
-export { AppInspector };
 
 async function getWebContainer() {
   try {
@@ -474,47 +451,12 @@ async function injectInspectorIntoWebContainer(inspectorScriptContent: string): 
   };
 }
 
-/** Tag icon map for element types */
-function getElementIcon(tagName: string): string {
-  const map: Record<string, string> = {
-    button: 'i-ph:cursor-click',
-    input: 'i-ph:text-cursor',
-    textarea: 'i-ph:text-aa',
-    a: 'i-ph:link',
-    img: 'i-ph:image',
-    video: 'i-ph:video-camera',
-    h1: 'i-ph:text-h',
-    h2: 'i-ph:text-h',
-    h3: 'i-ph:text-h',
-    h4: 'i-ph:text-h',
-    h5: 'i-ph:text-h',
-    h6: 'i-ph:text-h',
-    p: 'i-ph:text-paragraph',
-    span: 'i-ph:text-aa',
-    div: 'i-ph:square-dashed',
-    section: 'i-ph:squares-four',
-    nav: 'i-ph:navigation-arrow',
-    header: 'i-ph:caret-line-up',
-    footer: 'i-ph:caret-line-down',
-    form: 'i-ph:note-pencil',
-    select: 'i-ph:list',
-    table: 'i-ph:table',
-    ul: 'i-ph:list-bullets',
-    ol: 'i-ph:list-numbers',
-    li: 'i-ph:minus',
-    svg: 'i-ph:path',
-    iframe: 'i-ph:browser',
-    label: 'i-ph:tag',
-  };
-  return map[tagName] || 'i-ph:code';
-}
-
-function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps) {
-  const [selectedElements, setSelectedElements] = useState<SelectedElement[]>([]);
-  const [commentInput, setCommentInput] = useState('');
-  const [inspectorReady, setInspectorReady] = useState(false);
+function AppInspector({ isActive, onToggle }: AppInspectorProps) {
   const [injecting, setInjecting] = useState(false);
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Read selected elements from the global store
+  const selectedElements = useStore(inspectorStore).selectedElements;
 
   const findIframe = useCallback(() => {
     const iframes = document.querySelectorAll('iframe');
@@ -562,6 +504,11 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     return false;
   }, []);
 
+  // Sync isActive to global store
+  useEffect(() => {
+    setInspectorActive(isActive);
+  }, [isActive]);
+
   // Main injection effect
   useEffect(() => {
     if (!isActive) {
@@ -574,9 +521,6 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
         cleanupRef.current();
         cleanupRef.current = null;
       }
-      setInspectorReady(false);
-      setSelectedElements([]);
-      setCommentInput('');
       return;
     }
 
@@ -620,14 +564,14 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     return () => { cancelled = true; clearInterval(interval); };
   }, [isActive, findIframe, isCrossOriginIframe, injectDirectly]);
 
-  // Listen for inspector click events — add element as chip (no modal!)
+  // Listen for inspector click events — push to global store
   useEffect(() => {
     if (!isActive) return;
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type === '__inspector-click') {
         const data = event.data.data;
-        const el: SelectedElement = {
+        const el: InspectorElement = {
           id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           selector: data.selector || '',
           tagName: data.tagName || '',
@@ -635,64 +579,16 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
           textContent: data.textContent || '',
           dimensions: data.dimensions,
           attributes: data.attributes,
+          styles: data.styles,
           isInShadowDom: data.isInShadowDom,
         };
-        // Add as a chip (like a file attachment)
-        setSelectedElements(prev => [...prev, el]);
-      }
-      if (event.data?.type === '__inspector-ready') {
-        setInspectorReady(true);
+        addInspectorElement(el);
       }
     };
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, [isActive]);
-
-  const removeElement = useCallback((id: string) => {
-    setSelectedElements(prev => prev.filter(el => el.id !== id));
-  }, []);
-
-  const clearAll = useCallback(() => {
-    setSelectedElements([]);
-    setCommentInput('');
-  }, []);
-
-  // Send all selected elements + comment as annotations to the chat
-  const handleSend = useCallback(() => {
-    if (selectedElements.length === 0) return;
-
-    // Create one annotation per element, all sharing the same comment
-    for (const el of selectedElements) {
-      const annotation: InspectorAnnotation = {
-        id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        selector: el.selector,
-        tagName: el.tagName,
-        className: el.className,
-        textContent: el.textContent,
-        comment: commentInput.trim() || '(sem comentario)',
-        timestamp: Date.now(),
-        attributes: el.attributes,
-        dimensions: el.dimensions,
-        isInShadowDom: el.isInShadowDom,
-      };
-      onAddAnnotation(annotation);
-    }
-
-    // Clear after sending
-    setSelectedElements([]);
-    setCommentInput('');
-  }, [selectedElements, commentInput, onAddAnnotation]);
-
-  // Format element chip label
-  const formatChipLabel = (el: SelectedElement) => {
-    const tag = el.tagName;
-    const mainClass = el.className ? el.className.split(' ').filter(c => c && !c.startsWith('__') && !c.startsWith('css-')).slice(0, 1)[0] : '';
-    const id = el.attributes?.id ? '#' + el.attributes.id : '';
-    if (mainClass) return `${tag}.${mainClass}`;
-    if (id) return `${tag}${id}`;
-    return tag;
-  };
 
   return (
     <>
@@ -716,95 +612,8 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
           </span>
         )}
       </button>
-
-      {/* Selected elements bar (appears below toolbar when elements are selected) */}
-      {isActive && selectedElements.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden z-[100]">
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-bolt-elements-borderColor bg-orange-500/5">
-            <div className="flex items-center gap-2">
-              <div className="i-ph:cursor-click text-orange-400 text-sm" />
-              <span className="text-[11px] font-semibold text-bolt-elements-textPrimary">
-                {selectedElements.length} elemento{selectedElements.length > 1 ? 's' : ''} selecionado{selectedElements.length > 1 ? 's' : ''}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={clearAll}
-              className="text-[10px] text-bolt-elements-textTertiary hover:text-red-400 transition-colors"
-            >
-              Limpar tudo
-            </button>
-          </div>
-
-          {/* Element chips (like attached files) */}
-          <div className="px-2.5 py-2 flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
-            {selectedElements.map((el) => (
-              <div
-                key={el.id}
-                className="group inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg bg-bolt-elements-background-depth-1 border border-orange-500/20 hover:border-orange-500/40 transition-all"
-              >
-                {/* Element icon */}
-                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
-                {/* Element label */}
-                <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
-                  {formatChipLabel(el)}
-                </code>
-                {/* Preview text (if any) */}
-                {el.textContent && (
-                  <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
-                    {el.textContent.substring(0, 20)}
-                  </span>
-                )}
-                {/* Remove button */}
-                <button
-                  type="button"
-                  onClick={() => removeElement(el.id)}
-                  className="flex items-center justify-center w-4 h-4 rounded text-bolt-elements-textTertiary hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0 opacity-60 group-hover:opacity-100"
-                >
-                  <div className="i-ph:x text-[10px]" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Comment + Send */}
-          <div className="flex items-center gap-1.5 px-2.5 py-2 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
-            <input
-              type="text"
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              placeholder="Comentario (opcional)..."
-              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-1 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all shrink-0"
-              title="Enviar para o chat (Enter)"
-            >
-              <div className="i-ph:paper-plane-tilt text-xs" />
-              Enviar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Hint when inspector is active but no elements selected yet */}
-      {isActive && selectedElements.length === 0 && (
-        <div className="absolute top-full left-0 mt-1 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-lg shadow-lg overflow-hidden z-[100] px-3 py-1.5">
-          <p className="text-[11px] text-bolt-elements-textTertiary flex items-center gap-1.5">
-            <div className="i-ph:hand-pointing text-orange-400 text-sm" />
-            Clique nos elementos do preview para selecionar
-          </p>
-        </div>
-      )}
     </>
   );
 }
+
+export { AppInspector };
