@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 interface AccountSettingsDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'avatar'>('profile');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   // Initialize form from user metadata
   useEffect(() => {
@@ -32,7 +34,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
     try {
       const sb = getSupabase();
       if (!sb) {
-        toast.error('Supabase is not configured');
+        toast.error(t('accountSettings.supabaseNotConfigured'));
         return;
       }
 
@@ -63,10 +65,10 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
         authStore.setKey('user', sessionData.session.user);
       }
 
-      toast.success('Profile updated!');
+      toast.success(t('accountSettings.profileUpdated'));
       onClose();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save profile');
+      toast.error(err.message || t('accountSettings.failedToSaveProfile'));
     } finally {
       setSaving(false);
     }
@@ -78,11 +80,11 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
 
     // Validate file
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('accountSettings.selectImageFile'));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
+      toast.error(t('accountSettings.imageUnder2MB'));
       return;
     }
 
@@ -110,7 +112,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
       <div className="relative w-full max-w-md mx-4 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-bolt-elements-borderColor">
-          <h2 className="text-base font-semibold text-bolt-elements-textPrimary">Account Settings</h2>
+          <h2 className="text-base font-semibold text-bolt-elements-textPrimary">{t('accountSettings.title')}</h2>
           <button
             onClick={onClose}
             className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
@@ -132,7 +134,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
             <button
               onClick={() => fileInputRef.current?.click()}
               className="absolute inset-0 w-24 h-24 rounded-full bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all"
-              title="Change photo"
+              title={t('accountSettings.changePhoto')}
             >
               <div className="i-ph:camera text-xl text-white opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
@@ -158,7 +160,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
                 : 'text-bolt-elements-textTertiary border-transparent hover:text-bolt-elements-textPrimary'
             }`}
           >
-            Profile
+            {t('accountSettings.profile')}
           </button>
           <button
             onClick={() => setActiveTab('avatar')}
@@ -168,7 +170,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
                 : 'text-bolt-elements-textTertiary border-transparent hover:text-bolt-elements-textPrimary'
             }`}
           >
-            Avatar
+            {t('accountSettings.avatar')}
           </button>
         </div>
 
@@ -178,32 +180,32 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
             <>
               {/* Display name */}
               <div>
-                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">Display Name</label>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">{t('accountSettings.displayName')}</label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder={t('accountSettings.yourName')}
                   className="w-full px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive transition-all"
                 />
               </div>
 
               {/* Email (read-only) */}
               <div>
-                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">Email</label>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">{t('accountSettings.email')}</label>
                 <input
                   type="email"
                   value={user.email || ''}
                   readOnly
                   className="w-full px-3 py-2 bg-bolt-elements-background-depth-3 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textTertiary cursor-not-allowed"
                 />
-                <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Email cannot be changed here</p>
+                <p className="text-[11px] text-bolt-elements-textTertiary mt-1">{t('accountSettings.emailCannotBeChanged')}</p>
               </div>
 
               {/* Provider info */}
               {user.app_metadata?.provider && (
                 <div>
-                  <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">Connected via</label>
+                  <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">{t('accountSettings.connectedVia')}</label>
                   <div className="flex items-center gap-2 px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg">
                     <div className={`text-sm ${user.app_metadata.provider === 'github' ? 'i-ph:github-logo' : user.app_metadata.provider === 'google' ? 'i-ph:google-logo' : 'i-ph:envelope'}`} />
                     <span className="text-sm text-bolt-elements-textPrimary capitalize">{user.app_metadata.provider}</span>
@@ -217,27 +219,27 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
             <>
               {/* Upload from file */}
               <div>
-                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">Upload Photo</label>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">{t('accountSettings.uploadPhoto')}</label>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-borderColorActive transition-all"
                 >
                   <div className="i-ph:upload-simple text-base" />
-                  Choose image
+                  {t('accountSettings.chooseImage')}
                 </button>
-                <p className="text-[11px] text-bolt-elements-textTertiary mt-1">PNG, JPG, or GIF. Max 2MB.</p>
+                <p className="text-[11px] text-bolt-elements-textTertiary mt-1">{t('accountSettings.imageHint')}</p>
               </div>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 border-t border-bolt-elements-borderColor" />
-                <span className="text-xs text-bolt-elements-textTertiary">or paste URL</span>
+                <span className="text-xs text-bolt-elements-textTertiary">{t('accountSettings.orPasteUrl')}</span>
                 <div className="flex-1 border-t border-bolt-elements-borderColor" />
               </div>
 
               {/* Avatar URL */}
               <div>
-                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">Image URL</label>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1.5">{t('accountSettings.imageUrl')}</label>
                 <input
                   type="url"
                   value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
@@ -252,7 +254,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
                     onClick={() => setAvatarUrl('')}
                     className="text-[11px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary mt-1 transition-colors"
                   >
-                    Clear URL
+                    {t('accountSettings.clearUrl')}
                   </button>
                 )}
               </div>
@@ -271,15 +273,15 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-bolt-elements-textPrimary">Preview</p>
+                    <p className="text-xs font-medium text-bolt-elements-textPrimary">{t('accountSettings.preview')}</p>
                     <p className="text-[11px] text-bolt-elements-textTertiary truncate">
-                      {avatarUrl.startsWith('data:') ? 'Uploaded image' : avatarUrl}
+                      {avatarUrl.startsWith('data:') ? t('accountSettings.uploadedImage') : avatarUrl}
                     </p>
                   </div>
                   <button
                     onClick={() => setAvatarUrl('')}
                     className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-red-400 hover:bg-red-400/10 transition-all"
-                    title="Remove"
+                    title={t('common.remove')}
                   >
                     <div className="i-ph:trash text-sm" />
                   </button>
@@ -295,7 +297,7 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -305,12 +307,12 @@ export function AccountSettingsDialog({ open, onClose }: AccountSettingsDialogPr
             {saving ? (
               <>
                 <div className="i-ph:spinner-gap text-base animate-spin" />
-                Saving...
+                {t('accountSettings.saving')}
               </>
             ) : (
               <>
                 <div className="i-ph:check text-base" />
-                Save
+                {t('common.save')}
               </>
             )}
           </button>

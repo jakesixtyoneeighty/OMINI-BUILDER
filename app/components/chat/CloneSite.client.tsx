@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 interface CloneSiteProps {
   onClone: (url: string) => void | Promise<void>;
@@ -10,6 +11,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
+  const t = useT();
 
   function isValidUrl(str: string): boolean {
     try {
@@ -46,7 +48,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
     if (!trimmed) return;
 
     if (!isValidUrl(trimmed)) {
-      toast.error('URL invalida. Use um formato como: example.com ou https://example.com');
+      toast.error(t('clone.invalidUrl'));
       return;
     }
 
@@ -62,7 +64,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
       setUrl('');
       setScreenshot(null);
     } catch (err) {
-      toast.error(`Erro ao clonar site: ${err instanceof Error ? err.message : err}`);
+      toast.error(`${t('clone.errorCloning')} ${err instanceof Error ? err.message : err}`);
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
       >
         <div className="i-ph:globe text-lg" />
-        Clonar Site
+        {t('clone.cloneSite')}
       </button>
 
       {open && (
@@ -94,8 +96,8 @@ export function CloneSite({ onClone }: CloneSiteProps) {
                   <div className="i-ph:globe text-xl text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Clonar Site</h2>
-                  <p className="text-xs text-bolt-elements-textTertiary">Cole a URL do site que deseja clonar</p>
+                  <h2 className="text-lg font-bold text-bolt-elements-textPrimary">{t('clone.title')}</h2>
+                  <p className="text-xs text-bolt-elements-textTertiary">{t('clone.subtitle')}</p>
                 </div>
               </div>
               <button
@@ -112,7 +114,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
                 <div className="rounded-lg overflow-hidden border border-bolt-elements-borderColor/50">
                   <img
                     src={screenshot}
-                    alt="Site preview"
+                    alt={t('clone.sitePreview')}
                     className="w-full h-auto max-h-[200px] object-cover"
                   />
                 </div>
@@ -136,7 +138,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
                 />
               </div>
               <p className="text-[11px] text-bolt-elements-textTertiary mt-2 ml-1">
-                A IA vai analisar o site e recriar o design e funcionalidades
+                {t('clone.aiWillAnalyze')}
               </p>
             </div>
 
@@ -147,7 +149,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
                 disabled={loading}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
               >
-                Cancelar
+                {t('clone.cancel')}
               </button>
               <button
                 onClick={handleSubmit}
@@ -157,12 +159,12 @@ export function CloneSite({ onClone }: CloneSiteProps) {
                 {loading ? (
                   <>
                     <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                    Analisando...
+                    {t('clone.analyzing')}
                   </>
                 ) : (
                   <>
                     <div className="i-ph:copy text-sm" />
-                    Clonar Site
+                    {t('clone.cloneSite')}
                   </>
                 )}
               </button>

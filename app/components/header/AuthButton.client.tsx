@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { useEffect, useState } from 'react';
 import { authStore, githubProviderTokenStore, initAuth, signOut, supabaseEnabled } from '~/lib/stores/auth';
+import { useT } from '~/lib/i18n/useT';
 import { AuthDialog } from './AuthDialog.client';
 import { AccountSettingsDialog } from './AccountSettingsDialog.client';
 
@@ -9,6 +10,7 @@ let initialized = false;
 export function AuthButton() {
   const { user, initialized: authInit } = useStore(authStore);
   const ghToken = useStore(githubProviderTokenStore);
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
@@ -23,7 +25,7 @@ export function AuthButton() {
   const userAvatar = user?.user_metadata?.avatar_url || '';
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
   const userEmail = user?.email || '';
-  const displayName = userName || userEmail || 'Account';
+  const displayName = userName || userEmail || t('auth.account');
 
   return (
     <div className="relative">
@@ -45,7 +47,7 @@ export function AuthButton() {
             {displayName.charAt(0).toUpperCase()}
           </div>
         ) : null}
-        <span>{user ? displayName : 'Sign in'}</span>
+        <span>{user ? displayName : t('auth.signIn')}</span>
       </button>
       <AuthDialog open={open} onClose={() => setOpen(false)} />
       {user && menu && (
@@ -64,9 +66,9 @@ export function AuthButton() {
               {user.app_metadata?.provider && (
                 <div className="text-[11px] text-bolt-elements-textTertiary mt-0.5 flex items-center gap-1">
                   <div className={`text-xs ${user.app_metadata.provider === 'github' ? 'i-ph:github-logo' : 'i-ph:google-logo'}`} />
-                  via {user.app_metadata.provider}
+                  {t('auth.via')} {user.app_metadata.provider}
                   {user.app_metadata.provider === 'github' && ghToken && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">repo access</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('auth.repoAccess')}</span>
                   )}
                 </div>
               )}
@@ -80,7 +82,7 @@ export function AuthButton() {
             className="w-full text-left px-4 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive flex items-center gap-2 transition-all"
           >
             <div className="i-ph:user-circle text-base" />
-            Account Settings
+            {t('sidebar.accountSettings')}
           </button>
           <button
             onClick={async () => {
@@ -90,7 +92,7 @@ export function AuthButton() {
             className="w-full text-left px-4 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive flex items-center gap-2 transition-all"
           >
             <div className="i-ph:sign-out text-base" />
-            Sign out
+            {t('auth.signOut')}
           </button>
         </div>
       )}

@@ -19,6 +19,7 @@ import {
   type EnvVar,
 } from '~/lib/stores/project';
 import { SecurityTestTab } from '~/components/chat/SecurityTestTab';
+import { useT } from '~/lib/i18n/useT';
 
 type Tab = 'keys' | 'project' | 'security';
 
@@ -50,6 +51,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogProps) {
   const { keys } = useStore(llmStore);
+  const t = useT();
   const models = useStore(modelsStore);
   const loading = useStore(modelsLoadingStore);
   const projectId = useStore(activeProjectIdStore);
@@ -82,14 +84,14 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
     const value = drafts[provider].trim();
     setApiKey(provider, value);
     if (!value) {
-      toast.info(`${PROVIDER_LABELS[provider]} key cleared.`);
+      toast.info(`${PROVIDER_LABELS[provider]} ${t('settings.keyCleared')}`);
       return;
     }
     const list = await fetchModelsFor(provider);
     if (list.length > 0) {
-      toast.success(`${PROVIDER_LABELS[provider]}: ${list.length} models available.`);
+      toast.success(`${PROVIDER_LABELS[provider]}: ${list.length} ${t('settings.modelsAvailable')}`);
     } else {
-      toast.error(`${PROVIDER_LABELS[provider]}: could not load models. Check the key.`);
+      toast.error(`${PROVIDER_LABELS[provider]}: ${t('settings.couldNotLoadModels')}`);
     }
   }
 
@@ -104,12 +106,12 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
     if (cleanedEnv.length > 0) {
       try {
         await writeEnvFile(cleanedEnv);
-        toast.success(`Project saved. .env written.`);
+        toast.success(t('settings.projectSaved'));
       } catch (err) {
-        toast.error(`Failed to write .env: ${err instanceof Error ? err.message : err}`);
+        toast.error(`${t('settings.failedWriteEnv')} ${err instanceof Error ? err.message : err}`);
       }
     } else {
-      toast.success('Project settings saved.');
+      toast.success(t('settings.projectSettingsSaved'));
     }
   }
 
@@ -121,7 +123,7 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
       // Dispatch a custom event that Chat.client.tsx listens for
       window.dispatchEvent(new CustomEvent('security-test-requested', { detail: { prompt } }));
       setOpen(false);
-      toast.info('Teste de segurança enviado para a IA.');
+      toast.info(t('settings.securityTestSent'));
     }
   };
 
@@ -130,7 +132,7 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
       <button
         onClick={() => setOpen(true)}
         className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
-        title="Settings"
+        title={t('settings.title')}
       >
         <div className="i-ph:gear text-base" />
       </button>
@@ -142,21 +144,21 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
             className="w-[600px] max-w-[92vw] max-h-[90vh] overflow-y-auto rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl"
           >
             <div className="flex items-center justify-between px-5 pt-5">
-              <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">Settings</h2>
+              <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">{t('settings.title')}</h2>
               <button onClick={() => setOpen(false)} className="text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary">
                 <div className="i-ph:x text-lg" />
               </button>
             </div>
 
             <div className="flex gap-1 px-5 mt-4 border-b border-bolt-elements-borderColor">
-              <button onClick={() => setTab('keys')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'keys' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>API Keys</button>
+              <button onClick={() => setTab('keys')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'keys' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>{t('settings.apiKeys')}</button>
               {isProjectActive && (
-                <button onClick={() => setTab('project')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'project' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>Projeto</button>
+                <button onClick={() => setTab('project')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'project' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>{t('settings.project')}</button>
               )}
               {isProjectActive && (
                 <button onClick={() => setTab('security')} className={`px-3 py-2 text-sm border-b-2 flex items-center gap-1.5 ${tab === 'security' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>
                   <div className="i-ph:shield-check text-sm" />
-                  Segurança
+                  {t('settings.security')}
                 </button>
               )}
             </div>
@@ -167,11 +169,11 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
                   <div key={p.id} className="border border-bolt-elements-borderColor rounded-md p-3 bg-bolt-elements-background-depth-1">
                     <div className="flex justify-between mb-2">
                       <span className="font-medium text-sm">{PROVIDER_LABELS[p.id]}</span>
-                      <a href={p.helpUrl} target="_blank" className="text-xs underline">Get key</a>
+                      <a href={p.helpUrl} target="_blank" className="text-xs underline">{t('settings.getKey')}</a>
                     </div>
                     <div className="flex gap-2">
                       <input type="password" value={drafts[p.id]} onChange={(e) => setDrafts({...drafts, [p.id]: e.target.value})} className="flex-1 px-2 py-1 rounded text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor" />
-                      <button onClick={() => saveAndTest(p.id)} className="px-3 py-1 rounded text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">Save</button>
+                      <button onClick={() => saveAndTest(p.id)} className="px-3 py-1 rounded text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.save')}</button>
                     </div>
                   </div>
                 ))}
@@ -180,9 +182,9 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
               <SecurityTestTab onRunTest={handleSecurityTest} isStreaming={isStreaming} />
             ) : (
               <div className="p-5 space-y-4">
-                <input type="text" value={pName} onChange={(e) => setPName(e.target.value)} placeholder="Project Name" className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
-                <textarea value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder="Description" className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
-                <button onClick={saveProject} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">Save Project</button>
+                <input type="text" value={pName} onChange={(e) => setPName(e.target.value)} placeholder={t('settings.projectName')} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
+                <textarea value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder={t('settings.description')} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
+                <button onClick={saveProject} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.saveProject')}</button>
               </div>
             )}
           </div>

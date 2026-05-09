@@ -3,6 +3,7 @@ import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 interface FileMentionDropdownProps {
   search: string;          // the text after @ (e.g. "App" if user typed "@App")
@@ -38,6 +39,7 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
   const files = useStore(workbenchStore.files);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   // Build file list filtered by search
   const fileList = useMemo(() => {
@@ -119,7 +121,7 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
         style={{ bottom: `calc(100vh - ${position.top}px)`, left: position.left }}
       >
         <div className="px-3 py-2.5 text-xs text-bolt-elements-textTertiary">
-          No files found matching "{search}"
+          {t('fileMention.noFilesFound')} "{search}"
         </div>
       </div>
     );
@@ -133,7 +135,7 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
       {/* Header */}
       <div className="px-3 py-1.5 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
         <span className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider">
-          Files — {fileList.length} result{fileList.length !== 1 ? 's' : ''}
+          {t('fileMention.files')} — {fileList.length} {t('fileMention.results')}
         </span>
       </div>
 
@@ -166,15 +168,15 @@ export function FileMentionDropdown({ search, position, onSelect, onClose }: Fil
         <div className="flex items-center gap-3 text-[9px] text-bolt-elements-textTertiary">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[8px]">↑↓</kbd>
-            Navigate
+            {t('fileMention.navigate')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[8px]">↵</kbd>
-            Select
+            {t('fileMention.select')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[8px]">Esc</kbd>
-            Close
+            {t('common.close')}
           </span>
         </div>
       </div>

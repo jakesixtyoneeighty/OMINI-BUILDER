@@ -4,6 +4,7 @@ import { useNavigate } from '@remix-run/react';
 import { useStore } from '@nanostores/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { authStore } from '~/lib/stores/auth';
+import { useT } from '~/lib/i18n/useT';
 
 export const meta: MetaFunction = () => {
   return [
@@ -30,22 +31,22 @@ interface GalleryProject {
 }
 
 const CATEGORIES = [
-  { id: 'all', name: 'Todos', icon: 'i-ph:squares-four' },
-  { id: 'web-apps', name: 'Web Apps', icon: 'i-ph:globe-duotone' },
-  { id: 'games', name: 'Jogos', icon: 'i-ph:game-controller-duotone' },
-  { id: 'business', name: 'Negocios', icon: 'i-ph:briefcase-duotone' },
-  { id: 'education', name: 'Educacao', icon: 'i-ph:graduation-cap-duotone' },
-  { id: 'tools', name: 'Ferramentas', icon: 'i-ph:wrench-duotone' },
-  { id: 'dashboard', name: 'Dashboards', icon: 'i-ph:chart-bar-duotone' },
-  { id: 'social', name: 'Social', icon: 'i-ph:chat-circle-dots-duotone' },
-  { id: 'ecommerce', name: 'E-Commerce', icon: 'i-ph:shopping-cart-duotone' },
+  { id: 'all', nameKey: 'gallery.all', icon: 'i-ph:squares-four' },
+  { id: 'web-apps', nameKey: 'gallery.webApps', icon: 'i-ph:globe-duotone' },
+  { id: 'games', nameKey: 'gallery.games', icon: 'i-ph:game-controller-duotone' },
+  { id: 'business', nameKey: 'gallery.business', icon: 'i-ph:briefcase-duotone' },
+  { id: 'education', nameKey: 'gallery.education', icon: 'i-ph:graduation-cap-duotone' },
+  { id: 'tools', nameKey: 'gallery.tools', icon: 'i-ph:wrench-duotone' },
+  { id: 'dashboard', nameKey: 'gallery.dashboards', icon: 'i-ph:chart-bar-duotone' },
+  { id: 'social', nameKey: 'gallery.social', icon: 'i-ph:chat-circle-dots-duotone' },
+  { id: 'ecommerce', nameKey: 'gallery.ecommerce', icon: 'i-ph:shopping-cart-duotone' },
 ];
 
 const SORT_OPTIONS = [
-  { id: 'newest', label: 'Mais recentes', icon: 'i-ph:clock-counter-clockwise' },
-  { id: 'popular', label: 'Mais populares', icon: 'i-ph:heart' },
-  { id: 'most-viewed', label: 'Mais vistos', icon: 'i-ph:eye' },
-  { id: 'featured', label: 'Destaques', icon: 'i-ph:star' },
+  { id: 'newest', labelKey: 'gallery.newest', icon: 'i-ph:clock-counter-clockwise' },
+  { id: 'popular', labelKey: 'gallery.popular', icon: 'i-ph:heart' },
+  { id: 'most-viewed', labelKey: 'gallery.mostViewed', icon: 'i-ph:eye' },
+  { id: 'featured', labelKey: 'gallery.featured', icon: 'i-ph:star' },
 ];
 
 const CARD_GRADIENTS = [
@@ -68,6 +69,7 @@ type ViewMode = 'grid' | 'list';
 type GalleryTab = 'explore' | 'my';
 
 function GalleryContent() {
+  const t = useT();
   const [projects, setProjects] = useState<GalleryProject[]>([]);
   const [myProjects, setMyProjects] = useState<GalleryProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,12 +160,12 @@ function GalleryContent() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hoje';
-    if (diffDays === 1) return 'Ontem';
-    if (diffDays < 7) return `${diffDays}d atras`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)}mes`;
-    return date.toLocaleDateString('pt-BR');
+    if (diffDays === 0) return t('gallery.today');
+    if (diffDays === 1) return t('gallery.yesterday');
+    if (diffDays < 7) return t('gallery.daysAgo', { count: diffDays });
+    if (diffDays < 30) return t('gallery.weeksAgo', { count: Math.floor(diffDays / 7) });
+    if (diffDays < 365) return t('gallery.monthsAgo', { count: Math.floor(diffDays / 30) });
+    return date.toLocaleDateString();
   };
 
   const formatNumber = (num: number) => {
@@ -184,7 +186,7 @@ function GalleryContent() {
 
   const displayProjects = tab === 'my' ? myProjects : (featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' ? regularProjects : projects);
 
-  const currentSortLabel = SORT_OPTIONS.find((o) => o.id === sort)?.label || 'Mais recentes';
+  const currentSortKey = SORT_OPTIONS.find((o) => o.id === sort)?.labelKey || 'gallery.newest';
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100">
@@ -201,7 +203,7 @@ function GalleryContent() {
             <div className="hidden sm:block w-px h-5 bg-white/10" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-white">
               <div className="i-ph:storefront-duotone text-indigo-400" />
-              Galeria
+              {t('gallery.gallery')}
             </span>
           </div>
 
@@ -210,7 +212,7 @@ function GalleryContent() {
             <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
             <input
               type="text"
-              placeholder="Buscar projetos, tags, categorias..."
+              placeholder={t('gallery.searchPlaceholder')}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); debouncedSearch(e.target.value); }}
               className="w-full pl-9 pr-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all"
@@ -231,14 +233,14 @@ function GalleryContent() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white/[0.1] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                title="Grid"
+                title={t('gallery.grid')}
               >
                 <div className="i-ph:squares-four text-sm" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white/[0.1] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                title="Lista"
+                title={t('gallery.list')}
               >
                 <div className="i-ph:list text-sm" />
               </button>
@@ -249,7 +251,7 @@ function GalleryContent() {
               className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/20 transition-all"
             >
               <div className="i-ph:plus-circle text-base" />
-              Criar Projeto
+              {t('gallery.createProject')}
             </a>
           </div>
         </div>
@@ -273,16 +275,16 @@ function GalleryContent() {
               <div className="relative z-10 px-6 py-8 sm:px-12 sm:py-12">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                  <span className="text-xs font-medium text-indigo-300/80 uppercase tracking-widest">Comunidade</span>
+                  <span className="text-xs font-medium text-indigo-300/80 uppercase tracking-widest">{t('gallery.community')}</span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
-                  Galeria do{' '}
+                  {t('gallery.galleryTitle')}{' '}
                   <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
                     Omni Builder
                   </span>
                 </h1>
                 <p className="text-sm sm:text-lg text-zinc-400 max-w-xl mb-6 leading-relaxed">
-                  Explore projetos criados pela comunidade com IA. Se inspire, copie e construa seus proprios apps incriveis.
+                  {t('gallery.heroSubtitle')}
                 </p>
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <a
@@ -290,16 +292,16 @@ function GalleryContent() {
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-zinc-900 hover:bg-zinc-200 shadow-lg shadow-white/[0.05] transition-all"
                   >
                     <div className="i-ph:plus-circle text-base" />
-                    Criar Projeto
+                    {t('gallery.createProject')}
                   </a>
                   <div className="flex items-center gap-4 sm:gap-5 text-sm text-zinc-500">
                     <span className="flex items-center gap-1.5">
                       <div className="i-ph:cube-duotone text-base text-indigo-400/60" />
-                      {total} projetos
+                      {total} {t('gallery.projectsCount')}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <div className="i-ph:sparkle text-base text-purple-400/60" />
-                      Feito com IA
+                      {t('gallery.madeWithAI')}
                     </span>
                   </div>
                 </div>
@@ -320,7 +322,7 @@ function GalleryContent() {
               }`}
             >
               <div className="i-ph:compass-duotone text-sm" />
-              Explorar
+              {t('gallery.explore')}
             </button>
             <button
               onClick={() => setTab('my')}
@@ -331,7 +333,7 @@ function GalleryContent() {
               }`}
             >
               <div className="i-ph:user-circle-duotone text-sm" />
-              Meus Projetos
+              {t('gallery.myProjects')}
               {myProjects.length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
                   {myProjects.length}
@@ -357,7 +359,7 @@ function GalleryContent() {
                   }`}
                 >
                   <div className={`${cat.icon} text-sm`} />
-                  {cat.name}
+                  {t(cat.nameKey)}
                 </button>
               ))}
             </div>
@@ -365,7 +367,7 @@ function GalleryContent() {
             {/* Sort + results count row */}
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs text-zinc-600">
-                {loading ? 'Carregando...' : `${total} projeto${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
+                {loading ? t('gallery.loading') : `${total} ${t('gallery.projectsCount')} ${t('gallery.found')}`}
               </span>
 
               {/* Sort dropdown */}
@@ -375,7 +377,7 @@ function GalleryContent() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:border-white/[0.12] transition-all"
                 >
                   <div className={`${SORT_OPTIONS.find((o) => o.id === sort)?.icon || 'i-ph:sort-ascending'} text-sm`} />
-                  {currentSortLabel}
+                  {t(currentSortKey)}
                   <div className={`i-ph:caret-down text-[10px] transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -392,7 +394,7 @@ function GalleryContent() {
                         }`}
                       >
                         <div className={`${opt.icon} text-sm`} />
-                        {opt.label}
+                        {t(opt.labelKey)}
                         {sort === opt.id && (
                           <div className="i-ph:check text-xs ml-auto text-indigo-400" />
                         )}
@@ -410,7 +412,7 @@ function GalleryContent() {
           <section className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="i-ph:sparkle-fill text-amber-400 text-base" />
-              <h2 className="text-lg font-semibold text-white">Destaques</h2>
+              <h2 className="text-lg font-semibold text-white">{t('gallery.featured')}</h2>
               <span className="text-xs text-zinc-600 ml-1">({featuredProjects.length})</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -427,7 +429,7 @@ function GalleryContent() {
         {tab === 'explore' && featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' && regularProjects.length > 0 && (
           <div className="flex items-center gap-2 mb-4 mt-8">
             <div className="i-ph:clock-duotone text-blue-400 text-base" />
-            <h2 className="text-lg font-semibold text-white">Recentes</h2>
+            <h2 className="text-lg font-semibold text-white">{t('gallery.recent')}</h2>
           </div>
         )}
 
@@ -492,7 +494,7 @@ function GalleryContent() {
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-white/[0.04] border border-white/[0.08] text-zinc-300 hover:bg-white/[0.08] hover:border-white/[0.12] transition-all"
                 >
                   <div className="i-ph:arrow-clockwise text-sm" />
-                  Carregar mais
+                  {t('gallery.loadMore')}
                 </button>
               </div>
             )}
@@ -515,14 +517,14 @@ function GalleryContent() {
               </div>
             </div>
             <p className="text-xl font-semibold text-zinc-300 mb-2">
-              {tab === 'my' ? 'Nenhum projeto publicado' : 'Nenhum projeto encontrado'}
+              {tab === 'my' ? t('gallery.noProjectsPublished') : t('gallery.noProjectsFound')}
             </p>
             <p className="text-sm text-zinc-600 mb-6 max-w-md text-center">
               {search
-                ? 'Tente ajustar os termos de busca ou filtros'
+                ? t('gallery.tryAdjusting')
                 : tab === 'my'
-                  ? 'Publique seu primeiro projeto na galeria para que todos vejam!'
-                  : 'Seja o primeiro a publicar um projeto na comunidade!'}
+                  ? t('gallery.publishFirst')
+                  : t('gallery.beFirst')}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -530,7 +532,7 @@ function GalleryContent() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/20 transition-all"
               >
                 <div className="i-ph:plus-circle text-base" />
-                Criar Projeto
+                {t('gallery.createProject')}
               </a>
               {search && (
                 <button
@@ -538,7 +540,7 @@ function GalleryContent() {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-zinc-200 hover:bg-white/[0.1] border border-white/[0.08] transition-all"
                 >
                   <div className="i-ph:arrow-counter-clockwise text-base" />
-                  Limpar filtros
+                  {t('gallery.clearFilters')}
                 </button>
               )}
             </div>
@@ -551,16 +553,16 @@ function GalleryContent() {
             <div className="w-20 h-20 rounded-3xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-5">
               <div className="i-ph:rocket-launch text-4xl text-zinc-600" />
             </div>
-            <p className="text-lg font-semibold text-zinc-300 mb-2">Publique seu primeiro projeto!</p>
+            <p className="text-lg font-semibold text-zinc-300 mb-2">{t('gallery.publishYourFirst')}</p>
             <p className="text-sm text-zinc-600 mb-6 max-w-sm text-center">
-              Crie um projeto incrivel com IA e publique na galeria para compartilhar com a comunidade.
+              {t('gallery.createIncredible')}
             </p>
             <a
               href="/"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/20 transition-all"
             >
               <div className="i-ph:plus-circle text-base" />
-              Criar e Publicar
+              {t('gallery.createAndPublish')}
             </a>
           </div>
         )}
@@ -585,13 +587,13 @@ function GalleryContent() {
       <footer className="border-t border-white/[0.04] mt-16">
         <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-600">
           <div className="flex items-center gap-3">
-            <span>Omni-Builder Gallery</span>
+            <span>{t('gallery.galleryFooter')}</span>
             <span className="text-zinc-800">·</span>
-            <span>Projetos feitos com IA</span>
+            <span>{t('gallery.madeWithAIFooter')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/gallery" className="hover:text-zinc-400 transition-colors">Galeria</a>
-            <a href="/" className="hover:text-zinc-400 transition-colors">Editor</a>
+            <a href="/gallery" className="hover:text-zinc-400 transition-colors">{t('gallery.gallery')}</a>
+            <a href="/" className="hover:text-zinc-400 transition-colors">{t('gallery.editor')}</a>
           </div>
         </div>
       </footer>
@@ -625,6 +627,7 @@ function ProjectDetailModal({
   onOpen: () => void;
   onShare: (e: React.MouseEvent, p: GalleryProject) => void;
 }) {
+  const t = useT();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(project.likes);
   const mainImage = project.cover_image || project.thumbnail;
@@ -697,7 +700,7 @@ function ProjectDetailModal({
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold text-white truncate">{project.name}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm text-zinc-400">por {project.author_name}</span>
+                <span className="text-sm text-zinc-400">{t('gallery.by')} {project.author_name}</span>
                 <span className="text-zinc-700">·</span>
                 <span className="text-sm text-zinc-500">{formatDate(project.published_at)}</span>
               </div>
@@ -720,7 +723,7 @@ function ProjectDetailModal({
               onClick={(e) => onShare(e, project)}
               className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-indigo-400 transition-colors"
             >
-              <div className="i-ph:share-network text-base" /> Compartilhar
+              <div className="i-ph:share-network text-base" /> {t('gallery.share')}
             </button>
           </div>
 
@@ -729,7 +732,7 @@ function ProjectDetailModal({
             {catInfo && (
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 text-xs font-medium border border-indigo-500/20">
                 <div className={`${catInfo.icon} text-xs`} />
-                {catInfo.name}
+                {t(catInfo.nameKey)}
               </span>
             )}
             {project.tags?.map((tag: string) => (
@@ -741,7 +744,7 @@ function ProjectDetailModal({
 
           {/* Description */}
           <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-            {project.description || 'Sem descricao disponivel.'}
+            {project.description || t('gallery.noDescription')}
           </p>
 
           {/* Action buttons */}
@@ -751,12 +754,12 @@ function ProjectDetailModal({
               className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/20 transition-all"
             >
               <div className="i-ph:play-fill text-base" />
-              Abrir Projeto
+              {t('gallery.openProject')}
             </button>
             <button
               onClick={(e) => onShare(e, project)}
               className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all"
-              title="Compartilhar"
+              title={t('gallery.share')}
             >
               <div className="i-ph:share-network text-base" />
             </button>
@@ -783,6 +786,7 @@ function FeaturedCard({
   onShare: (e: React.MouseEvent, p: GalleryProject) => void;
   onSelect: (p: GalleryProject) => void;
 }) {
+  const t = useT();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(project.likes);
 
@@ -833,7 +837,7 @@ function FeaturedCard({
         {/* Featured badge */}
         <div className="absolute top-3 left-3">
           <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/90 text-[10px] font-bold text-black backdrop-blur-sm shadow-sm">
-            <div className="i-ph:star-fill text-[9px]" /> Destaque
+            <div className="i-ph:star-fill text-[9px]" /> {t('gallery.featuredBadge')}
           </span>
         </div>
 
@@ -849,7 +853,7 @@ function FeaturedCard({
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.95] text-black text-sm font-semibold shadow-2xl backdrop-blur-sm">
             <div className="i-ph:play-fill text-base" />
-            Abrir Projeto
+            {t('gallery.openProject')}
           </div>
         </div>
 
@@ -913,6 +917,7 @@ function ProjectCard({
   onShare: (e: React.MouseEvent, p: GalleryProject) => void;
   onSelect: (p: GalleryProject) => void;
 }) {
+  const t = useT();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(project.likes);
 
@@ -964,7 +969,7 @@ function ProjectCard({
         {/* Category badge */}
         <div className="absolute top-2.5 left-2.5">
           <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/40 text-white/70 backdrop-blur-sm border border-white/[0.06]">
-            {catInfo?.name || project.category}
+            {catInfo ? t(catInfo.nameKey) : project.category}
           </span>
         </div>
 
@@ -1052,6 +1057,7 @@ function ListCard({
   onShare: (e: React.MouseEvent, p: GalleryProject) => void;
   onSelect: (p: GalleryProject) => void;
 }) {
+  const t = useT();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(project.likes);
   const catInfo = CATEGORIES.find((c) => c.id === project.category);
@@ -1104,7 +1110,7 @@ function ListCard({
           <h3 className="text-sm font-semibold text-white truncate">{project.name}</h3>
           {catInfo && (
             <span className="px-1.5 py-0.5 rounded text-[9px] bg-white/[0.04] text-zinc-500 border border-white/[0.04] hidden sm:inline">
-              {catInfo.name}
+              {t(catInfo.nameKey)}
             </span>
           )}
         </div>
@@ -1126,7 +1132,7 @@ function ListCard({
         <button
           onClick={(e) => onShare(e, project)}
           className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-600 hover:text-white hover:bg-white/[0.06] transition-all"
-          title="Compartilhar"
+          title={t('gallery.share')}
         >
           <div className="i-ph:share-network text-xs" />
         </button>

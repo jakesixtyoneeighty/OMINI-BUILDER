@@ -6,8 +6,10 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { authStore, supabaseEnabled } from '~/lib/stores/auth';
 import { autosaveDbEnabled, toggleAutosaveDb } from '~/lib/stores/auto-save';
 import { AuthDialog } from './AuthDialog.client';
+import { useT } from '~/lib/i18n/useT';
 
 export const SaveProjectButton = memo(function SaveProjectButton() {
+  const t = useT();
   const projects = useStore(projectsStore);
   const activeId = useStore(activeProjectIdStore);
   const { user } = useStore(authStore);
@@ -30,7 +32,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
 
     const settings = {
       ...proj.settings,
-      name: proj.name || 'Untitled Project',
+      name: proj.name || t('projectName.untitledProject'),
       description: proj.settings?.description || '',
       envVars: proj.settings?.envVars || [],
       github: {
@@ -77,16 +79,16 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
     }
 
     if (!user) {
-      toast.error('Faca login para salvar seu projeto na nuvem.');
+      toast.error(t('saveProject.loginToSave'));
       return;
     }
 
     setSaving(true);
     try {
       await doSave();
-      toast.success('Projeto salvo na nuvem!');
+      toast.success(t('saveProject.savedToCloud'));
     } catch (error) {
-      toast.error(`Erro ao salvar: ${error instanceof Error ? error.message : error}`);
+      toast.error(`${t('saveProject.errorSaving')} ${error instanceof Error ? error.message : error}`);
     } finally {
       setSaving(false);
     }
@@ -108,14 +110,14 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
               return;
             }
             toggleAutosaveDb();
-            toast.info(autosaveDbEnabled.get() ? 'Auto-save desligado' : 'Auto-save ligado (30s)');
+            toast.info(autosaveDbEnabled.get() ? t('saveProject.autoSaveOff') : t('saveProject.autoSaveOn'));
           }}
           className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
             autoSaveOn && user
               ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25 hover:bg-emerald-500/20'
               : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundAccent'
           }`}
-          title={autoSaveOn && user ? 'Auto-save ligado (30s)' : 'Auto-save desligado'}
+          title={autoSaveOn && user ? t('saveProject.autoSaveOn') : t('saveProject.autoSaveOff')}
         >
           <div className={autoSaveOn && user ? 'i-ph:cloud-arrow-up-fill text-base' : 'i-ph:cloud-arrow-up text-base'} />
         </button>
@@ -125,7 +127,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
           onClick={handleSave}
           disabled={saving || autoSaving}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-all text-xs font-medium shadow-sm"
-          title={lastSaved ? `Salvo ${lastSaved.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : user ? 'Salvar na nuvem' : 'Login para salvar'}
+          title={lastSaved ? `Salvo ${lastSaved.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : user ? t('saveProject.saveToCloud') : t('saveProject.loginToSaveShort')}
         >
           {saving || autoSaving ? (
             <div className="i-svg-spinners:90-ring-with-bg text-sm" />
@@ -134,7 +136,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
           ) : (
             <div className="i-ph:cloud-arrow-up-duotone text-sm" />
           )}
-          <span className="hidden sm:inline">{saving ? 'Salvando...' : autoSaving ? 'Auto-saving...' : 'Salvar'}</span>
+          <span className="hidden sm:inline">{saving ? t('saveProject.saving') : autoSaving ? t('saveProject.autoSaving') : t('saveProject.save')}</span>
         </button>
       </div>
 

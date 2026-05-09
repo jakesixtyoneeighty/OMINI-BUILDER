@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WebContainer } from '@webcontainer/api';
+import { useT } from '~/lib/i18n/useT';
 
 interface DeployData {
   deploy: {
@@ -14,6 +15,7 @@ interface DeployData {
 type ViewerState = 'loading' | 'booting' | 'installing' | 'running' | 'error';
 
 export function DeployViewer({ deployId }: { deployId: string }) {
+  const t = useT();
   const [state, setState] = useState<ViewerState>('loading');
   const [deployData, setDeployData] = useState<DeployData | null>(null);
   const [error, setError] = useState<string>('');
@@ -28,13 +30,13 @@ export function DeployViewer({ deployId }: { deployId: string }) {
         const res = await fetch(`/api/deploy-view?id=${deployId}`);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error((data as any).error || 'Failed to load deploy');
+          throw new Error((data as any).error || t('deployViewer.failedToLoadDeploy'));
         }
         const data: DeployData = await res.json();
         setDeployData(data);
         setState('booting');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setError(err instanceof Error ? err.message : t('deployViewer.unknownError'));
         setState('error');
       }
     })();
@@ -137,7 +139,7 @@ export function DeployViewer({ deployId }: { deployId: string }) {
             }
           } catch (err) {
             console.error('Failed to run Node.js project:', err);
-            setError('Failed to start the project. It may require a server-side runtime.');
+            setError(t('deployViewer.failedToStartProject'));
             setState('error');
           }
         } else {
@@ -191,14 +193,14 @@ server.listen(3000, () => {
               write(data) { console.log('[wc]', data); },
             }));
           } else {
-            setError('No index.html or package.json found in the project.');
+            setError(t('deployViewer.noIndexOrPackageJson'));
             setState('error');
           }
         }
       } catch (err) {
         if (!cancelled) {
           console.error('WebContainer boot failed:', err);
-          setError(err instanceof Error ? err.message : 'Failed to start WebContainer');
+          setError(err instanceof Error ? err.message : t('deployViewer.failedToStartWebContainer'));
           setState('error');
         }
       }
@@ -229,7 +231,7 @@ server.listen(3000, () => {
         <div className="flex items-center gap-2 shrink-0">
           <img src="/omni-builder-logo.svg" alt="Omni" className="h-5 w-5" />
           <span className="text-xs font-semibold text-gray-300">
-            {deployData?.deploy?.name || 'Loading...'}
+            {deployData?.deploy?.name || t('common.loading')}
           </span>
         </div>
 
@@ -238,31 +240,31 @@ server.listen(3000, () => {
           {state === 'loading' && (
             <>
               <div className="i-svg-spinners:90-ring-with-bg text-xs text-blue-400" />
-              <span className="text-blue-400">Loading files...</span>
+              <span className="text-blue-400">{t('deployViewer.loadingFiles')}</span>
             </>
           )}
           {state === 'booting' && (
             <>
               <div className="i-svg-spinners:90-ring-with-bg text-xs text-amber-400" />
-              <span className="text-amber-400">Starting container...</span>
+              <span className="text-amber-400">{t('deployViewer.startingContainer')}</span>
             </>
           )}
           {state === 'installing' && (
             <>
               <div className="i-svg-spinners:90-ring-with-bg text-xs text-orange-400" />
-              <span className="text-orange-400">Installing dependencies...</span>
+              <span className="text-orange-400">{t('deployViewer.installingDependencies')}</span>
             </>
           )}
           {state === 'running' && (
             <>
               <div className="i-ph:circle-fill text-[8px] text-emerald-400" />
-              <span className="text-emerald-400">Live</span>
+              <span className="text-emerald-400">{t('deployViewer.live')}</span>
             </>
           )}
           {state === 'error' && (
             <>
               <div className="i-ph:circle-fill text-[8px] text-red-400" />
-              <span className="text-red-400">Error</span>
+              <span className="text-red-400">{t('common.error')}</span>
             </>
           )}
         </div>
@@ -275,14 +277,14 @@ server.listen(3000, () => {
             <button
               onClick={refresh}
               className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
-              title="Refresh"
+              title={t('workbench.refresh')}
             >
               <div className="i-ph:arrow-clockwise text-sm" />
             </button>
             <button
               onClick={openInNewTab}
               className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
-              title="Open in new tab"
+              title={t('workbench.newTab')}
             >
               <div className="i-ph:arrow-square-out text-sm" />
             </button>
@@ -292,7 +294,7 @@ server.listen(3000, () => {
         {/* Powered by Omni Builder */}
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-400 text-[10px] font-medium shrink-0">
           <div className="i-ph:cube-duotone text-xs" />
-          Omni Builder
+          {t('deployViewer.omniBuilder')}
         </div>
       </div>
 
@@ -320,14 +322,14 @@ server.listen(3000, () => {
                 )}
               </div>
               <p className="text-sm font-medium text-gray-300 mb-1">
-                {state === 'loading' && 'Loading project files...'}
-                {state === 'booting' && 'Starting WebContainer...'}
-                {state === 'installing' && 'Installing dependencies...'}
+                {state === 'loading' && t('deployViewer.loadingProjectFiles')}
+                {state === 'booting' && t('deployViewer.startingWebContainer')}
+                {state === 'installing' && t('deployViewer.installingDependencies')}
               </p>
               <p className="text-xs text-gray-500">
-                {state === 'loading' && 'Fetching your project from the cloud'}
-                {state === 'booting' && 'Booting up the in-browser runtime'}
-                {state === 'installing' && 'This may take a moment on first load'}
+                {state === 'loading' && t('deployViewer.fetchingProject')}
+                {state === 'booting' && t('deployViewer.bootingRuntime')}
+                {state === 'installing' && t('deployViewer.mayTakeAMoment')}
               </p>
               <div className="mt-4 w-48 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full animate-progress" />
@@ -343,14 +345,14 @@ server.listen(3000, () => {
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                 <div className="i-ph:warning-circle-duotone text-3xl text-red-400" />
               </div>
-              <p className="text-sm font-medium text-gray-300 mb-2">Failed to load project</p>
+              <p className="text-sm font-medium text-gray-300 mb-2">{t('deployViewer.failedToLoadProject')}</p>
               <p className="text-xs text-gray-500 mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition-all"
               >
                 <div className="i-ph:arrow-clockwise text-sm" />
-                Try Again
+                {t('deployViewer.tryAgain')}
               </button>
             </div>
           </div>
@@ -362,7 +364,7 @@ server.listen(3000, () => {
             ref={iframeRef}
             src={previewUrl}
             className="absolute inset-0 w-full h-full border-0 bg-bolt-elements-bg-depth-1"
-            title="Deployed Project Preview"
+            title={t('deployViewer.deployedProjectPreview')}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             allow="cross-origin-isolated"
           />

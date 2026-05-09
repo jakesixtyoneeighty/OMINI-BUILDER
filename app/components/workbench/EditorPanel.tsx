@@ -13,6 +13,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeader } from '~/components/ui/PanelHeader';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
 import { shortcutEventEmitter } from '~/lib/hooks';
+import { useT } from '~/lib/i18n/useT';
 import type { FileMap } from '~/lib/stores/files';
 import { themeStore } from '~/lib/stores/theme';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -74,11 +75,13 @@ function LazyTerminal({
     }
   }, [isActive, hasBeenActive]);
 
+  const t = useT();
+
   if (!hasBeenActive) {
     // Show a placeholder instead of mounting xterm
     return (
       <div className="h-full flex items-center justify-center text-bolt-elements-textTertiary text-xs">
-        Click to activate terminal
+        {t('editorPanel.clickToActivateTerminal')}
       </div>
     );
   }
@@ -114,6 +117,7 @@ export const EditorPanel = memo(
   }: EditorPanelProps) => {
     renderLogger.trace('EditorPanel');
 
+    const t = useT();
     const theme = useStore(themeStore);
     const showTerminal = useStore(workbenchStore.showTerminal);
     const activeId = useStore(activeProjectIdStore);
@@ -190,7 +194,7 @@ export const EditorPanel = memo(
               <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
                 <PanelHeader>
                   <div className="i-ph:tree-structure-duotone shrink-0" />
-                  Files
+                  {t('editorPanel.files')}
                 </PanelHeader>
                 <FileTree
                   className="h-full"
@@ -213,11 +217,11 @@ export const EditorPanel = memo(
                       <div className="flex gap-1 ml-auto -mr-1.5">
                         <PanelHeaderButton onClick={onFileSave}>
                           <div className="i-ph:floppy-disk-duotone" />
-                          Save
+                          {t('common.save')}
                         </PanelHeaderButton>
                         <PanelHeaderButton onClick={onFileReset}>
                           <div className="i-ph:clock-counter-clockwise-duotone" />
-                          Reset
+                          {t('editorPanel.reset')}
                         </PanelHeaderButton>
                       </div>
                     )}
@@ -276,7 +280,7 @@ export const EditorPanel = memo(
                       onClick={() => setActiveTerminal(index)}
                     >
                       <div className="i-ph:terminal-window-duotone text-lg" />
-                      Terminal {terminalCount > 1 && index + 1}
+                      {t('workbench.terminal')} {terminalCount > 1 && index + 1}
                     </button>
                   );
                 })}
@@ -284,7 +288,7 @@ export const EditorPanel = memo(
                 <IconButton
                   className="ml-auto"
                   icon="i-ph:caret-down"
-                  title="Close"
+                  title={t('common.close')}
                   size="md"
                   onClick={() => workbenchStore.toggleTerminal(false)}
                 />

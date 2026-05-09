@@ -6,6 +6,7 @@ import { getActiveProject } from '~/lib/stores/project';
 import { supabaseEnabled, googleProviderTokenStore, authStore, signInWithGoogleDrive } from '~/lib/stores/auth';
 import { chatId } from '~/lib/persistence/useChatHistory';
 import { autosaveDriveEnabled, toggleAutosaveDrive } from '~/lib/stores/drive';
+import { useT } from '~/lib/i18n/useT';
 
 const DRIVE_SAVE_PENDING_KEY = 'bolt.drive.save_pending';
 const OMINI_FOLDER_NAME = 'omini';
@@ -24,6 +25,7 @@ export function SaveToDrive() {
   const [driveUrl, setDriveUrl] = useState('');
   const [error, setError] = useState('');
   const [accessToken, setAccessToken] = useState('');
+  const t = useT();
 
   // Auto-abre o dialog apos redirect OAuth (detecta ?drive_save=1 na URL)
   useEffect(() => {
@@ -51,7 +53,7 @@ export function SaveToDrive() {
   // Se o usuario ja esta logado com Google via Supabase e abre o dialog, usar o token direto
   const handleSaveClick = useCallback(() => {
     if (!isSupabase) {
-      toast.error('Supabase nao configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      toast.error(t('saveToDrive.supabaseNotConfigured'));
       return;
     }
 
@@ -71,8 +73,8 @@ export function SaveToDrive() {
       await signInWithGoogleDrive();
     } catch (err) {
       setStep('error');
-      setError(err instanceof Error ? err.message : 'Falha na autenticacao');
-      toast.error(err instanceof Error ? err.message : 'Falha na autenticacao');
+      setError(err instanceof Error ? err.message : t('saveToDrive.authFailed'));
+      toast.error(err instanceof Error ? err.message : t('saveToDrive.authFailed'));
     }
   };
 
@@ -308,9 +310,9 @@ export function SaveToDrive() {
       );
 
       if (fileEntries.length === 0) {
-        toast.error('Nenhum arquivo para salvar. Crie alguns arquivos primeiro!');
+        toast.error(t('saveToDrive.noFilesToSave'));
         setStep('error');
-        setError('Nenhum arquivo encontrado no projeto.');
+        setError(t('saveToDrive.noFilesFound'));
         return;
       }
 
@@ -318,17 +320,17 @@ export function SaveToDrive() {
 
       // Ensure the "omini" parent folder exists
       const ominiFolderId = await ensureOminiFolder(token);
-      toast.info('Verificando pasta omini...');
+      toast.info(t('saveToDrive.checkingFolder'));
 
       // Verifica se pasta do projeto ja existe dentro de omini
       let folderId = await searchExistingFolder(token, safeName, ominiFolderId);
 
       if (folderId) {
         await deleteFolderContents(token, folderId);
-        toast.info('Atualizando pasta do projeto...');
+        toast.info(t('saveToDrive.updatingFolder'));
       } else {
         folderId = await createFolder(token, safeName, ominiFolderId);
-        toast.info('Pasta criada no Google Drive');
+        toast.info(t('saveToDrive.folderCreated'));
       }
 
       setStep('uploading');
@@ -377,12 +379,12 @@ export function SaveToDrive() {
       setDriveUrl(folderUrl);
 
       setStep('done');
-      toast.success(`${fileEntries.length} arquivos salvos no Google Drive!`);
+      toast.success(`${fileEntries.length} ${t('saveToDrive.filesSaved')}`);
     } catch (err) {
       console.error('Google Drive save failed:', err);
       setStep('error');
-      setError(err instanceof Error ? err.message : 'Erro inesperado');
-      toast.error(`Falha ao salvar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      setError(err instanceof Error ? err.message : t('saveToDrive.unexpectedError'));
+      toast.error(`${t('saveToDrive.saveFailed')} ${err instanceof Error ? err.message : t('saveToDrive.unknownError')}`);
     }
   };
 
@@ -410,7 +412,7 @@ export function SaveToDrive() {
             ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20'
             : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundAccent'
         }`}
-        title={autosaveOn ? 'Auto-save ligado (clique para desligar)' : 'Auto-save desligado (clique para ligar)'}
+        title={autosaveOn ? t('saveToDrive.autoSaveOn') : t('saveToDrive.autoSaveOff')}
       >
         <div className={autosaveOn ? 'i-ph:cloud-arrow-up-fill text-base' : 'i-ph:cloud-arrow-up text-base'} />
       </button>
@@ -419,7 +421,7 @@ export function SaveToDrive() {
       <button
         onClick={() => setOpen(true)}
         className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
-        title="Salvar no Google Drive"
+        title={t('saveToDrive.saveToGoogleDrive')}
       >
         <div className="i-ph:google-drive-logo text-base" />
       </button>
@@ -438,9 +440,9 @@ export function SaveToDrive() {
                   <div className="i-ph:google-drive-logo text-blue-400 text-xl" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-bolt-elements-textPrimary">Save to Google Drive</h2>
+                  <h2 className="text-base font-bold text-bolt-elements-textPrimary">{t('saveToDrive.title')}</h2>
                   <p className="text-xs text-bolt-elements-textTertiary">
-                    {step === 'done' ? 'Projeto salvo com sucesso!' : step === 'error' ? 'Algo deu errado' : 'Salve seus arquivos no Google Drive'}
+                    {step === 'done' ? t('saveToDrive.projectSavedSuccess') : step === 'error' ? t('saveToDrive.somethingWentWrong') : t('saveToDrive.saveFilesToDrive')}
                   </p>
                 </div>
               </div>
@@ -457,14 +459,14 @@ export function SaveToDrive() {
                   {/* Status da autenticacao */}
                   <div>
                     <label className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider block mb-2">
-                      Autenticacao
+                      {t('saveToDrive.authentication')}
                     </label>
 
                     {isLoggedInGoogle ? (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
                         <div className="i-ph:check-circle-fill text-green-400 text-sm shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs text-green-400 font-medium">Logado via Supabase (Google)</span>
+                          <span className="text-xs text-green-400 font-medium">{t('saveToDrive.loggedInViaGoogle')}</span>
                           <span className="text-[10px] text-green-400/60 block truncate">{user?.email}</span>
                         </div>
                         <span className="text-[9px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">OK</span>
@@ -474,8 +476,8 @@ export function SaveToDrive() {
                         <div className="i-ph:warning-circle text-amber-400 text-sm shrink-0" />
                         <span className="text-xs text-amber-400">
                           {user
-                            ? 'Voce esta logado, mas nao via Google. Faca login com Google para salvar no Drive.'
-                            : 'Faca login com Google via Supabase para salvar no Drive.'}
+                            ? t('saveToDrive.loginNotViaGoogle')
+                            : t('saveToDrive.loginWithGoogle')}
                         </span>
                       </div>
                     )}
@@ -486,20 +488,19 @@ export function SaveToDrive() {
                     <div className="flex items-start gap-3">
                       <div className="i-ph:folder-open text-amber-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        Uma pasta com o nome do seu projeto sera criada (ou atualizada) dentro da pasta <strong className="text-bolt-elements-textPrimary">omini</strong> no seu Google Drive. A estrutura de diretorios e preservada.
+                        {t('saveToDrive.folderInfo')}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="i-ph:chat-circle-text text-purple-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        O historico do chat tambem sera salvo como <code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">chat-history.json</code> dentro da pasta do projeto.
+                        {t('saveToDrive.chatHistoryInfo')}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="i-ph:shield-check text-green-400 text-lg mt-0.5 shrink-0" />
                       <div className="text-sm text-bolt-elements-textSecondary leading-relaxed">
-                        Usa a autenticacao do Supabase com Google OAuth. O acesso ao Drive usa o escopo minimo (
-                        <code className="text-xs bg-bolt-elements-background-depth-2 px-1 py-0.5 rounded">drive.file</code>).
+                        {t('saveToDrive.securityInfo')}
                       </div>
                     </div>
                   </div>
@@ -512,7 +513,7 @@ export function SaveToDrive() {
                     {isLoggedInGoogle ? (
                       <>
                         <div className="i-ph:cloud-arrow-up text-base" />
-                        Salvar no Google Drive
+                        {t('saveToDrive.saveToGoogleDrive')}
                       </>
                     ) : (
                       <>
@@ -522,7 +523,7 @@ export function SaveToDrive() {
                           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
-                        Sign in with Google & Save
+                        {t('saveToDrive.signInWithGoogleAndSave')}
                       </>
                     )}
                   </button>
@@ -533,8 +534,8 @@ export function SaveToDrive() {
               {step === 'auth' && (
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
-                  <p className="text-sm text-bolt-elements-textSecondary">Autenticando com Google via Supabase...</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">Complete o login na janela que abriu</p>
+                  <p className="text-sm text-bolt-elements-textSecondary">{t('saveToDrive.authenticatingWithGoogle')}</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">{t('saveToDrive.completeLoginInWindow')}</p>
                 </div>
               )}
 
@@ -542,8 +543,8 @@ export function SaveToDrive() {
               {step === 'creating' && (
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
-                  <p className="text-sm text-bolt-elements-textSecondary">Preparando seu projeto...</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">Criando pasta em omini/ no Google Drive</p>
+                  <p className="text-sm text-bolt-elements-textSecondary">{t('saveToDrive.preparingProject')}</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">{t('saveToDrive.creatingFolderInOmini')}</p>
                 </div>
               )}
 
@@ -551,7 +552,7 @@ export function SaveToDrive() {
               {step === 'uploading' && (
                 <div className="space-y-4 py-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-bolt-elements-textPrimary">Enviando arquivos...</p>
+                    <p className="text-sm font-medium text-bolt-elements-textPrimary">{t('saveToDrive.uploadingFiles')}</p>
                     <p className="text-sm text-bolt-elements-textSecondary">{progress}%</p>
                   </div>
 
@@ -564,7 +565,7 @@ export function SaveToDrive() {
 
                   <div className="flex items-center gap-2 text-xs text-bolt-elements-textTertiary">
                     <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                    <span>Salvando arquivos no Google Drive...</span>
+                    <span>{t('saveToDrive.savingFilesToDrive')}</span>
                   </div>
                 </div>
               )}
@@ -577,8 +578,8 @@ export function SaveToDrive() {
                       <div className="i-ph:check-circle-fill text-green-400 text-3xl" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-green-400">Projeto salvo!</p>
-                      <p className="text-xs text-bolt-elements-textTertiary mt-1">{totalFiles} arquivos enviados com sucesso</p>
+                      <p className="text-sm font-semibold text-green-400">{t('saveToDrive.projectSaved')}</p>
+                      <p className="text-xs text-bolt-elements-textTertiary mt-1">{totalFiles} {t('saveToDrive.filesUploadedSuccess')}</p>
                       <p className="text-xs text-bolt-elements-textTertiary mt-0.5">Pasta: omini/{getActiveProject().name || 'Omni-Builder Project'}</p>
                     </div>
                   </div>
@@ -591,7 +592,7 @@ export function SaveToDrive() {
                       className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 transition-all"
                     >
                       <div className="i-ph:folder-open text-base" />
-                      Abrir no Google Drive
+                      {t('saveToDrive.openInGoogleDrive')}
                     </a>
                   )}
 
@@ -604,7 +605,7 @@ export function SaveToDrive() {
                     }}
                     className="w-full py-2.5 px-4 rounded-xl text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
                   >
-                    Salvar novamente
+                    {t('saveToDrive.saveAgain')}
                   </button>
                 </div>
               )}
@@ -617,7 +618,7 @@ export function SaveToDrive() {
                       <div className="i-ph:warning-circle-fill text-red-400 text-3xl" />
                     </div>
                     <div className="text-center max-w-[80%]">
-                      <p className="text-sm font-semibold text-red-400">Falha ao salvar</p>
+                      <p className="text-sm font-semibold text-red-400">{t('saveToDrive.saveFailed')}</p>
                       <p className="text-xs text-bolt-elements-textTertiary mt-1 break-words">{error}</p>
                     </div>
                   </div>
@@ -625,7 +626,7 @@ export function SaveToDrive() {
                   {error.includes('access') || error.includes('token') || error.includes('scope') ? (
                     <div className="p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                       <p className="text-xs text-amber-400">
-                        O token do Google pode nao ter permissao de Drive. Tente fazer login novamente clicando em "Tentar novamente".
+                        {t('saveToDrive.tokenPermissionError')}
                       </p>
                     </div>
                   ) : null}
@@ -639,7 +640,7 @@ export function SaveToDrive() {
                     className="w-full py-3 px-4 bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary rounded-xl text-sm font-semibold border border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundAccent transition-all flex items-center justify-center gap-2"
                   >
                     <div className="i-ph:arrow-counter-clockwise text-base" />
-                    Tentar novamente
+                    {t('common.retry')}
                   </button>
                 </div>
               )}

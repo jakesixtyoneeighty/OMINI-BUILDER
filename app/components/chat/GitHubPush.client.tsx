@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { githubProviderTokenStore } from '~/lib/stores/auth';
 import { getActiveProject, updateActiveProjectSettings } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { useT } from '~/lib/i18n/useT';
 
 interface Repo {
   full_name: string;
@@ -31,6 +32,7 @@ export function GitHubPush() {
   const [repoFilter, setRepoFilter] = useState('');
   const [isPrivate, setIsPrivate] = useState(true);
   const [repoExists, setRepoExists] = useState<boolean | null>(null);
+  const t = useT();
 
   const fileCount = useMemo(() => {
     return Object.entries(files).filter(([_, f]) => f?.type === 'file' && !f.isBinary).length;
@@ -59,7 +61,7 @@ export function GitHubPush() {
       const data = await res.json();
       setRepos(data);
     } catch {
-      toast.error('Failed to load repositories');
+      toast.error(t('github.failedToLoadRepos'));
     } finally {
       setLoadingRepos(false);
     }
@@ -100,7 +102,7 @@ export function GitHubPush() {
   async function submit() {
     const useToken = (ghToken || '').trim();
     if (!useToken || !repo.trim()) {
-      toast.error('GitHub token and repository are required');
+      toast.error(t('github.tokenAndRepoRequired'));
       return;
     }
 
@@ -134,9 +136,9 @@ export function GitHubPush() {
       const data = await res.json();
       setPushResult(data);
       setStep('done');
-      toast.success('Code pushed successfully!');
+      toast.success(t('github.pushSuccessful'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unknown error');
+      toast.error(err instanceof Error ? err.message : t('common.error'));
       setStep('config');
     } finally {
       setLoading(false);
@@ -145,7 +147,7 @@ export function GitHubPush() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme" title="Push to GitHub">
+      <button onClick={() => setOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme" title={t('github.pushToGitHub')}>
         <div className="i-ph:git-branch text-base" />
       </button>
 
@@ -159,11 +161,11 @@ export function GitHubPush() {
                   <div className="i-ph:github-logo text-xl text-bolt-elements-textPrimary" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-bolt-elements-textPrimary">Push to GitHub</h2>
+                  <h2 className="text-base font-bold text-bolt-elements-textPrimary">{t('github.pushToGitHub')}</h2>
                   <p className="text-xs text-bolt-elements-textTertiary">
-                    {step === 'config' && 'Select a repository and push your code'}
-                    {step === 'pushing' && 'Uploading your files to GitHub...'}
-                    {step === 'done' && 'Your code has been pushed!'}
+                    {step === 'config' && t('github.selectRepo')}
+                    {step === 'pushing' && t('github.uploading')}
+                    {step === 'done' && t('github.pushed')}
                   </p>
                 </div>
               </div>
@@ -186,13 +188,13 @@ export function GitHubPush() {
                   {!ghToken && (
                     <div className="flex items-center gap-2.5 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                       <div className="i-ph:warning text-yellow-400 text-lg shrink-0" />
-                      <p className="text-xs text-yellow-300">No GitHub token configured. Add one in Settings to browse your repos.</p>
+                      <p className="text-xs text-yellow-300">{t('github.noToken')}</p>
                     </div>
                   )}
 
                   {/* Repo Selector */}
                   <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Repository</label>
+                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('github.repository')}</label>
                     {ghToken && repos.length > 0 ? (
                       <div className="relative">
                         <div className="flex gap-2">
@@ -211,7 +213,7 @@ export function GitHubPush() {
                         {repoFilter && (
                           <div className="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl z-10">
                             {filteredRepos.length === 0 ? (
-                              <div className="px-4 py-3 text-xs text-bolt-elements-textTertiary">No matching repositories</div>
+                              <div className="px-4 py-3 text-xs text-bolt-elements-textTertiary">{t('github.noMatchingRepos')}</div>
                             ) : (
                               filteredRepos.map(r => (
                                 <button
@@ -248,20 +250,20 @@ export function GitHubPush() {
                     {repoExists === true && (
                       <div className="flex items-center gap-1.5 mt-1.5 px-2">
                         <div className="i-ph:check-circle-fill text-green-400 text-xs" />
-                        <span className="text-[11px] text-green-400 font-medium">Existing repo — will be updated</span>
+                        <span className="text-[11px] text-green-400 font-medium">{t('github.existingRepo')}</span>
                       </div>
                     )}
                     {repoExists === false && (
                       <div className="flex items-center gap-1.5 mt-1.5 px-2">
                         <div className="i-ph:plus-circle-fill text-blue-400 text-xs" />
-                        <span className="text-[11px] text-blue-400 font-medium">New repo — will be created</span>
+                        <span className="text-[11px] text-blue-400 font-medium">{t('github.newRepo')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Private/Public Toggle */}
                   <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Visibility</label>
+                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('github.visibility')}</label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setIsPrivate(true)}
@@ -272,7 +274,7 @@ export function GitHubPush() {
                         }`}
                       >
                         <div className={isPrivate ? 'i-ph:lock-simple-fill' : 'i-ph:lock-simple'} />
-                        Private
+                        {t('github.private')}
                       </button>
                       <button
                         onClick={() => setIsPrivate(false)}
@@ -283,12 +285,12 @@ export function GitHubPush() {
                         }`}
                       >
                         <div className={!isPrivate ? 'i-ph:lock-simple-open-fill' : 'i-ph:lock-simple-open'} />
-                        Public
+                        {t('github.public')}
                       </button>
                     </div>
                     {repoExists === false && (
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                        Visibility applies when creating a new repository
+                        {t('github.visibilityApplies')}
                       </p>
                     )}
                   </div>
@@ -296,7 +298,7 @@ export function GitHubPush() {
                   {/* Branch & Commit Message */}
                   <div className="grid grid-cols-[140px_1fr] gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Branch</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('github.branch')}</label>
                       <input
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)}
@@ -305,7 +307,7 @@ export function GitHubPush() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Commit Message</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('github.commitMessage')}</label>
                       <input
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
@@ -319,7 +321,7 @@ export function GitHubPush() {
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
                     <div className="i-ph:files text-bolt-elements-textTertiary" />
                     <span className="text-xs text-bolt-elements-textSecondary">
-                      <span className="font-semibold text-bolt-elements-textPrimary">{fileCount}</span> files will be pushed
+                      <span className="font-semibold text-bolt-elements-textPrimary">{fileCount}</span> {t('github.filesWillBePushed')}
                     </span>
                   </div>
                 </div>
@@ -331,7 +333,7 @@ export function GitHubPush() {
                     <div className="i-svg-spinners:90-ring-with-bg text-2xl text-purple-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-semibold text-bolt-elements-textPrimary">Pushing to GitHub</p>
+                    <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('github.pushing')}</p>
                     <p className="text-xs text-bolt-elements-textTertiary mt-1">
                       Uploading {fileCount} files to {repo}/{branch}
                     </p>
@@ -345,7 +347,7 @@ export function GitHubPush() {
                     <div className="i-ph:check-circle text-3xl text-green-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-base font-bold text-bolt-elements-textPrimary">Push Successful!</p>
+                    <p className="text-base font-bold text-bolt-elements-textPrimary">{t('github.pushSuccessful')}</p>
                     <p className="text-xs text-bolt-elements-textTertiary mt-1">
                       {pushResult.pushed} files pushed to <span className="font-medium text-bolt-elements-textPrimary">{repo}/{branch}</span>
                     </p>
@@ -360,7 +362,7 @@ export function GitHubPush() {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-sm text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
                   >
                     <div className="i-ph:arrow-square-out" />
-                    Open on GitHub
+                    {t('github.openOnGitHub')}
                   </a>
                 </div>
               )}
@@ -371,12 +373,12 @@ export function GitHubPush() {
               <div className="px-6 py-4 border-t border-bolt-elements-borderColor flex justify-end gap-3">
                 {step === 'done' ? (
                   <button onClick={() => setOpen(false)} className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-all">
-                    Close
+                    {t('github.close')}
                   </button>
                 ) : (
                   <>
                     <button onClick={() => setOpen(false)} className="px-4 py-2.5 rounded-lg text-sm font-medium text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors">
-                      Cancel
+                      {t('github.cancel')}
                     </button>
                     <button
                       onClick={submit}
@@ -384,7 +386,7 @@ export function GitHubPush() {
                       className="px-5 py-2.5 rounded-lg text-sm font-bold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                     >
                       <div className="i-ph:arrow-up-right text-base" />
-                      Push Code
+                      {t('github.pushCode')}
                     </button>
                   </>
                 )}

@@ -1,7 +1,9 @@
 import { useStore } from '@nanostores/react';
 import { recentlyViewedStore } from '~/lib/stores/recently-viewed';
+import { useT } from '~/lib/i18n/useT';
 
 export function RecentlyViewed() {
+  const t = useT();
   const items = useStore(recentlyViewedStore);
 
   if (items.length === 0) return null;
@@ -15,10 +17,10 @@ export function RecentlyViewed() {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMinutes < 1) return 'Agora';
-    if (diffMinutes < 60) return `${diffMinutes}min atras`;
-    if (diffHours < 24) return `${diffHours}h atras`;
-    if (diffDays < 7) return `${diffDays}d atras`;
+    if (diffMinutes < 1) return t('recentlyViewed.now');
+    if (diffMinutes < 60) return `${diffMinutes}${t('recentlyViewed.minAgo')}`;
+    if (diffHours < 24) return `${diffHours}${t('recentlyViewed.hAgo')}`;
+    if (diffDays < 7) return `${diffDays}${t('recentlyViewed.dAgo')}`;
     return date.toLocaleDateString('pt-BR');
   };
 
@@ -39,12 +41,12 @@ export function RecentlyViewed() {
     <div className="w-full max-w-3xl mx-auto px-4">
       {/* Section header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-bolt-elements-textPrimary">Vistos recentemente</h3>
+        <h3 className="text-sm font-semibold text-bolt-elements-textPrimary">{t('recentlyViewed.title')}</h3>
         <a
           href="/projects"
           className="flex items-center gap-1 text-xs font-medium text-bolt-elements-item-contentAccent hover:underline transition-all"
         >
-          Ver todos
+          {t('recentlyViewed.viewAll')}
           <div className="i-ph:arrow-right text-[10px]" />
         </a>
       </div>
@@ -86,7 +88,7 @@ export function RecentlyViewed() {
               {/* Source badge */}
               {project.source === 'cloud' && (
                 <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-md bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent font-medium backdrop-blur-sm">
-                  Cloud
+                  {t('sidebar.cloud')}
                 </span>
               )}
 

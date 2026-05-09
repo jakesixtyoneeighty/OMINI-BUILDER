@@ -4,6 +4,7 @@ import { projectsStore, activeProjectIdStore, getActiveProject } from '~/lib/sto
 import { workbenchStore } from '~/lib/stores/workbench';
 import { authStore } from '~/lib/stores/auth';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 const GALLERY_CATEGORIES = [
   { id: 'web-apps', label: 'Web App', icon: 'i-ph:globe-duotone' },
@@ -100,6 +101,7 @@ function ImageUploader({
 }
 
 export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<'form' | 'success'>('form');
@@ -156,11 +158,11 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
 
   const handlePublish = useCallback(async () => {
     if (!formData.name.trim()) {
-      toast.error('Dê um nome ao seu projeto!');
+      toast.error(t('publishToGallery.projectNameRequired'));
       return;
     }
     if (fileCount === 0) {
-      toast.error('Nenhum arquivo para publicar. Crie alguns arquivos primeiro!');
+      toast.error(t('publishToGallery.noFilesToPublish'));
       return;
     }
 
@@ -209,7 +211,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
 
       setPublishedId(data.projectId);
       setStep('success');
-      toast.success('Projeto publicado na Galeria!');
+      toast.success(t('publishToGallery.published'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to publish');
     } finally {
@@ -227,10 +229,10 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
           }}
           disabled={fileCount === 0}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-          title="Publicar na Galeria"
+          title={t('publishToGallery.publish')}
         >
           <div className="i-ph:storefront-duotone text-sm" />
-          <span className="hidden sm:inline">Gallery</span>
+          <span className="hidden sm:inline">{t('publishToGallery.gallery')}</span>
           <div className="i-ph:caret-down text-[10px] opacity-70" />
         </button>
 
@@ -246,9 +248,9 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                       <div className="i-ph:storefront-duotone text-purple-400 text-base" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-bolt-elements-textPrimary">Publicar na Galeria</p>
+                      <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('publishToGallery.publish')}</p>
                       <p className="text-[10px] text-bolt-elements-textTertiary">
-                        {fileCount} arquivo{fileCount !== 1 ? 's' : ''} no projeto
+                        {fileCount} {t('publishToGallery.filesInProject')}
                       </p>
                     </div>
                   </div>
@@ -261,10 +263,10 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     {/* Cover Image */}
                     <div className="col-span-2">
                       <ImageUploader
-                        label="Capa (Cover)"
+                        label={t('publishToGallery.coverImage')}
                         value={coverImage}
                         onChange={setCoverImage}
-                        hint="Clique para enviar"
+                        hint={t('publishToGallery.clickToUpload')}
                         aspectClass="w-full aspect-video"
                         iconClass="i-ph:image-duotone"
                       />
@@ -272,10 +274,10 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     {/* Logo */}
                     <div>
                       <ImageUploader
-                        label="Logo"
+                        label={t('publishToGallery.logo')}
                         value={logo}
                         onChange={setLogo}
-                        hint="Logo"
+                        hint={t('publishToGallery.logo')}
                         aspectClass="w-full aspect-square"
                         iconClass="i-ph:star-duotone"
                       />
@@ -285,7 +287,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                   {/* Name */}
                   <div>
                     <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
-                      Nome do Projeto *
+                      {t('publishToGallery.projectName')} *
                     </label>
                     <input
                       type="text"
@@ -299,12 +301,12 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                   {/* Description */}
                   <div>
                     <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
-                      Descricao
+                      {t('publishToGallery.description')}
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-                      placeholder="Descreva seu projeto..."
+                      placeholder={t('publishToGallery.describeProject')}
                       rows={2}
                       className="w-full px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all resize-none"
                     />
@@ -313,7 +315,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                   {/* Category */}
                   <div>
                     <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1.5">
-                      Categoria
+                      {t('publishToGallery.category')}
                     </label>
                     <div className="grid grid-cols-4 gap-1.5">
                       {GALLERY_CATEGORIES.map((cat) => (
@@ -336,7 +338,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                   {/* Tags */}
                   <div>
                     <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
-                      Tags (separadas por virgula)
+                      {t('publishToGallery.tagsCommaSeparated')}
                     </label>
                     <input
                       type="text"
@@ -356,12 +358,12 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     {publishing ? (
                       <>
                         <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                        Publicando...
+                        {t('publishToGallery.publishing')}...
                       </>
                     ) : (
                       <>
                         <div className="i-ph:rocket-launch-duotone text-sm" />
-                        Publicar na Galeria
+                        {t('publishToGallery.publish')}
                       </>
                     )}
                   </button>
@@ -373,9 +375,9 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                 <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
                   <div className="i-ph:check-circle-fill text-3xl text-emerald-400" />
                 </div>
-                <p className="text-sm font-semibold text-bolt-elements-textPrimary mb-1">Publicado com sucesso!</p>
+                <p className="text-sm font-semibold text-bolt-elements-textPrimary mb-1">{t('publishToGallery.published')}</p>
                 <p className="text-xs text-bolt-elements-textTertiary mb-4">
-                  Seu projeto esta na galeria do Omni Builder
+                  {t('publishToGallery.publishedSubtitle')}
                 </p>
                 <div className="flex gap-2">
                   <a
@@ -384,7 +386,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-all border border-purple-500/20"
                   >
                     <div className="i-ph:storefront text-sm" />
-                    Ver Galeria
+                    {t('publishToGallery.viewGallery')}
                   </a>
                   <button
                     onClick={() => {
@@ -394,7 +396,7 @@ export const PublishToGalleryButton = memo(function PublishToGalleryButton() {
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-bolt-elements-background-depth-1 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary border border-bolt-elements-borderColor transition-all"
                   >
                     <div className="i-ph:plus text-sm" />
-                    Novo
+                    {t('publishToGallery.new')}
                   </button>
                 </div>
               </div>

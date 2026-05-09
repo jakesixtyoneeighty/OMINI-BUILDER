@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { type ChatHistoryItem } from '~/lib/persistence';
 import { starredProjectsStore, toggleStar } from '~/lib/stores/starred';
+import { useT } from '~/lib/i18n/useT';
 
 interface HistoryItemProps {
   item: ChatHistoryItem;
@@ -14,6 +15,7 @@ export function HistoryItem({ item, onDelete }: HistoryItemProps) {
   const hoverRef = useRef<HTMLDivElement>(null);
   const starred = useStore(starredProjectsStore);
   const isItemStarred = starred.has(item.urlId || item.id);
+  const t = useT();
 
   useEffect(() => {
     let timeout: NodeJS.Timeout | undefined;
@@ -56,7 +58,7 @@ export function HistoryItem({ item, onDelete }: HistoryItemProps) {
                   event.stopPropagation();
                   toggleStar(item.urlId || item.id);
                 }}
-                title={isItemStarred ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                title={isItemStarred ? t('historyItem.removeFromFavorites') : t('historyItem.addToFavorites')}
               >
                 <div className={isItemStarred ? 'i-ph:star-fill' : 'i-ph:star'} />
               </button>

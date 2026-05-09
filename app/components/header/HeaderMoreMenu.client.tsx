@@ -7,6 +7,7 @@ import { authStore, supabaseEnabled, githubProviderTokenStore } from '~/lib/stor
 import { autosaveDbEnabled, toggleAutosaveDb } from '~/lib/stores/auto-save';
 import { autosaveDriveEnabled, toggleAutosaveDrive } from '~/lib/stores/drive';
 import { projectsStore, activeProjectIdStore, updateActiveProjectSettings, getActiveProject } from '~/lib/stores/project';
+import { useT } from '~/lib/i18n/useT';
 
 interface HeaderMoreMenuProps {
   onOpenSettings: (tab: string) => void;
@@ -25,6 +26,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
   const autoSaveOn = useStore(autosaveDbEnabled);
   const autoSaveDriveOn = useStore(autosaveDriveEnabled);
   const chat = useStore(chatStore);
+  const t = useT();
 
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
@@ -60,7 +62,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-        title="More actions"
+        title={t('headerMore.moreActions')}
       >
         <div className="i-ph:dots-three-vertical text-base" />
       </button>
@@ -71,7 +73,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
           {chat.started && (
             <>
               <div className="px-3 py-2 border-b border-bolt-elements-borderColor">
-                <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">Save</span>
+                <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">{t('headerMore.save')}</span>
               </div>
               <div className="p-1">
                 {isActive && (
@@ -80,14 +82,14 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                   >
                     <div className="i-ph:cloud-arrow-up text-base text-emerald-400" />
-                    <span className="flex-1">Save to Cloud</span>
+                    <span className="flex-1">{t('saveProject.saveToCloud')}</span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleAutosaveDb(); }}
                         className={`flex items-center justify-center w-5 h-5 rounded transition-all ${
                           autoSaveOn && user ? 'text-emerald-400 bg-emerald-500/15' : 'text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1'
                         }`}
-                        title={autoSaveOn && user ? 'Auto-save on' : 'Auto-save off'}
+                        title={autoSaveOn && user ? t('saveProject.autoSaveOn') : t('saveProject.autoSaveOff')}
                       >
                         <div className={`text-[10px] ${autoSaveOn && user ? 'i-ph:check-bold' : 'i-ph:x-bold'}`} />
                       </button>
@@ -100,13 +102,13 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                   >
                     <div className="i-ph:google-drive-logo text-base text-blue-400" />
-                    <span className="flex-1">Save to Drive</span>
+                    <span className="flex-1">{t('headerMore.saveToDrive')}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleAutosaveDrive(); }}
                       className={`flex items-center justify-center w-5 h-5 rounded transition-all ${
                         autoSaveDriveOn ? 'text-green-400 bg-green-500/15' : 'text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1'
                       }`}
-                      title={autoSaveDriveOn ? 'Auto-save Drive on' : 'Auto-save Drive off'}
+                      title={autoSaveDriveOn ? t('headerMore.autoSaveDriveOn') : t('headerMore.autoSaveDriveOff')}
                     >
                       <div className={`text-[10px] ${autoSaveDriveOn ? 'i-ph:check-bold' : 'i-ph:x-bold'}`} />
                     </button>
@@ -120,7 +122,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
           {chat.started && (
             <>
               <div className="px-3 py-2 border-b border-bolt-elements-borderColor border-t border-bolt-elements-borderColor">
-                <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">Share</span>
+                <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">{t('headerMore.share')}</span>
               </div>
               <div className="p-1">
                 <button
@@ -128,16 +130,16 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                 >
                   <div className="i-ph:storefront-duotone text-base text-purple-400" />
-                  <span>Publish to Gallery</span>
+                  <span>{t('publishToGallery.publish')}</span>
                 </button>
                 <button
                   onClick={() => handleAction(onGitHubPush)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                 >
                   <div className="i-ph:github-logo text-base text-bolt-elements-textPrimary" />
-                  <span>Push to GitHub</span>
+                  <span>{t('github.pushToGitHub')}</span>
                   {ghToken && (
-                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent font-medium">connected</span>
+                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent font-medium">{t('headerMore.connected')}</span>
                   )}
                 </button>
               </div>
@@ -146,7 +148,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
 
           {/* Settings section */}
           <div className="px-3 py-2 border-b border-bolt-elements-borderColor border-t border-bolt-elements-borderColor">
-            <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">Settings</span>
+            <span className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider">{t('common.settings')}</span>
           </div>
           <div className="p-1">
             <button
@@ -158,14 +160,14 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
               ) : (
                 <div className="i-ph:moon-stars-duotone text-base text-indigo-400" />
               )}
-              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              <span>{theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
             </button>
             <button
               onClick={() => handleAction(() => onOpenSettings('general'))}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
             >
               <div className="i-ph:sliders-horizontal text-base" />
-              <span>Project Settings</span>
+              <span>{t('header.projectSettings')}</span>
             </button>
             <a
               href="/gallery"
@@ -173,7 +175,7 @@ export function HeaderMoreMenu({ onOpenSettings, onSaveProject, onSaveToDrive, o
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
             >
               <div className="i-ph:storefront text-base" />
-              <span>Browse Gallery</span>
+              <span>{t('headerMore.browseGallery')}</span>
             </a>
           </div>
         </div>

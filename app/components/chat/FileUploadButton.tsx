@@ -1,5 +1,6 @@
 import { memo, useState, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 interface FileUploadButtonProps {
   onFilesSelected: (files: File[]) => void;
@@ -7,6 +8,7 @@ interface FileUploadButtonProps {
 
 export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected }: FileUploadButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   const handleClick = useCallback(() => {
     inputRef.current?.click();
@@ -20,7 +22,7 @@ export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected
       const maxSize = 10 * 1024 * 1024;
       const validFiles = files.filter((f) => {
         if (f.size > maxSize) {
-          toast.warning(`"${f.name}" excede 10MB.`);
+          toast.warning(`"${f.name}" ${t('fileUpload.exceeds10MB')}`);
           return false;
         }
         return true;
@@ -48,7 +50,7 @@ export const FileUploadButton = memo(function FileUploadButton({ onFilesSelected
       <button
         type="button"
         onClick={handleClick}
-        title="Upload de arquivos"
+        title={t('fileUpload.uploadFiles')}
         className="flex items-center justify-center w-7 h-7 rounded-full border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-textPrimary/40 hover:bg-bolt-elements-item-backgroundActive transition-all active:scale-95"
       >
         <div className="i-ph:plus text-[13px]" />

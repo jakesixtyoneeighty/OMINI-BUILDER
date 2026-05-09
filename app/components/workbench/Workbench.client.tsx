@@ -9,6 +9,7 @@ import {
 import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
 import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
+import { useT } from '~/lib/i18n/useT';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
 import { classNames } from '~/utils/classNames';
 import { renderLogger } from '~/utils/logger';
@@ -22,14 +23,16 @@ interface WorkspaceProps {
   isStreaming?: boolean;
 }
 
-const tabOptions: TabOption<WorkbenchViewType>[] = [
-  { value: 'preview', icon: 'i-ph:eye', label: 'Preview' },
-  { value: 'code', icon: 'i-ph:code', label: 'Code' },
-  { value: 'database', icon: 'i-ph:database', label: 'Database' },
-];
-
 export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => {
   renderLogger.trace('Workbench');
+
+  const t = useT();
+
+  const tabOptions: TabOption<WorkbenchViewType>[] = [
+    { value: 'preview', icon: 'i-ph:eye', label: t('workbench.preview') },
+    { value: 'code', icon: 'i-ph:code', label: t('workbench.code') },
+    { value: 'database', icon: 'i-ph:database', label: t('workbench.database') },
+  ];
 
   const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
   const showWorkbench = useStore(workbenchStore.showWorkbench);
@@ -83,7 +86,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
 
   const onFileSave = useCallback(() => {
     workbenchStore.saveCurrentDocument().catch(() => {
-      toast.error('Failed to update file content');
+      toast.error(t('workbench.failedUpdateFile'));
     });
   }, []);
 
@@ -112,7 +115,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
               }}
             >
               <div className="i-ph:terminal" />
-              Toggle Terminal
+              {t('workbench.toggleTerminal')}
             </PanelHeaderButton>
           )}
           <IconButton

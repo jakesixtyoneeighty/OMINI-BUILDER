@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 interface ThinkingBlockProps {
   content: string;
@@ -77,6 +78,7 @@ function looksLikeCommand(text: string): boolean {
 }
 
 export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlockProps) => {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(isStreaming);
   const [activeTab, setActiveTab] = useState<'reasoning' | 'commands'>('reasoning');
 
@@ -93,15 +95,17 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
     <div
       className={classNames(
         'my-2 rounded-xl overflow-hidden transition-all duration-300',
-        isStreaming
-          ? 'border border-indigo-500/30'
-          : 'border border-bolt-elements-borderColor',
+        isStreaming ? 'border border-indigo-500/30' : 'border border-bolt-elements-borderColor',
       )}
-      style={isStreaming ? {
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05))',
-      } : {
-        background: 'var(--bolt-elements-background-depth-1, rgba(255,255,255,0.02))',
-      }}
+      style={
+        isStreaming
+          ? {
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05))',
+            }
+          : {
+              background: 'var(--bolt-elements-background-depth-1, rgba(255,255,255,0.02))',
+            }
+      }
     >
       <button
         className="flex items-center gap-2.5 w-full px-4 py-2.5 text-left transition-colors hover:bg-bolt-elements-item-backgroundActive/30"
@@ -116,14 +120,12 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           )}
         </div>
 
-        <span className="text-xs font-medium text-bolt-elements-textSecondary">
-          Raciocinio da IA
-        </span>
+        <span className="text-xs font-medium text-bolt-elements-textSecondary">{t('thinking.aiReasoning')}</span>
 
         {/* Word count badge */}
         {!isStreaming && wordCount > 0 && (
           <span className="text-[10px] text-bolt-elements-textTertiary bg-bolt-elements-background-depth-2 px-1.5 py-0.5 rounded-full">
-            {wordCount} palavras
+            {wordCount} {t('thinking.words')}
           </span>
         )}
 
@@ -131,14 +133,14 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
         {hasCommands && !isStreaming && (
           <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-1">
             <div className="i-ph:terminal text-[8px]" />
-            {commands.length} comando{commands.length > 1 ? 's' : ''}
+            {commands.length} {t('thinking.commands')}
           </span>
         )}
 
         {/* Streaming indicator */}
         {isStreaming && (
           <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
-            Pensando...
+            {t('thinking.thinking')}
           </span>
         )}
 
@@ -177,7 +179,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     }}
                   >
                     <div className="i-ph:brain text-[10px]" />
-                    Raciocinio
+                    {t('thinking.reasoning')}
                   </button>
                   <button
                     className={classNames(
@@ -192,7 +194,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     }}
                   >
                     <div className="i-ph:terminal text-[10px]" />
-                    Comandos ({commands.length})
+                    {t('thinking.commandsLabel')} ({commands.length})
                   </button>
                 </div>
               )}
@@ -211,9 +213,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                         className="flex items-start gap-2 px-2.5 py-1.5 rounded-md bg-bolt-elements-code-background border border-bolt-elements-borderColor/20"
                       >
                         <span className="text-[10px] text-indigo-400 font-mono shrink-0 mt-0.5">$</span>
-                        <code className="text-[11px] text-emerald-300 font-mono break-all leading-relaxed">
-                          {cmd}
-                        </code>
+                        <code className="text-[11px] text-emerald-300 font-mono break-all leading-relaxed">{cmd}</code>
                       </div>
                     ))}
                   </div>

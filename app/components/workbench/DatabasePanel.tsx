@@ -5,6 +5,7 @@ import { getSupabase } from '~/lib/supabase';
 import { authStore } from '~/lib/stores/auth';
 import { activeProjectIdStore, projectsStore, updateActiveProjectSettings } from '~/lib/stores/project';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 interface TableInfo {
   name: string;
@@ -13,6 +14,7 @@ interface TableInfo {
 }
 
 export const DatabasePanel = memo(() => {
+  const t = useT();
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const { user } = useStore(authStore);
@@ -89,7 +91,7 @@ export const DatabasePanel = memo(() => {
     try {
       const { data, error } = await sb.from(tableName).select('*').limit(50);
       if (error) {
-        toast.error(`Failed to fetch data: ${error.message}`);
+        toast.error(`${t('databasePanel.failedToFetchData')}: ${error.message}`);
         setTableData([]);
         return;
       }
@@ -110,7 +112,7 @@ export const DatabasePanel = memo(() => {
       },
     });
     setEditingDb(false);
-    toast.success('Database configuration saved!');
+    toast.success(t('databasePanel.databaseConfigSaved'));
   };
 
   const connected = dbType !== 'none' && (dbType === 'supabase' ? !!supabaseConfig.url : !!firebaseConfig.apiKey);
@@ -121,16 +123,16 @@ export const DatabasePanel = memo(() => {
       <div className="flex items-center justify-between px-4 py-3 border-b border-bolt-elements-borderColor">
         <div className="flex items-center gap-2">
           <div className="i-ph:database-duotone text-lg text-purple-400" />
-          <h2 className="text-sm font-semibold text-bolt-elements-textPrimary">Database</h2>
+          <h2 className="text-sm font-semibold text-bolt-elements-textPrimary">{t('workbench.database')}</h2>
           {connected && (
             <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Connected
+              {t('databasePanel.connected')}
             </span>
           )}
           {!connected && dbType === 'none' && (
             <span className="text-[10px] font-medium text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 px-2 py-0.5 rounded-full">
-              Not configured
+              {t('databasePanel.notConfigured')}
             </span>
           )}
         </div>
@@ -145,7 +147,7 @@ export const DatabasePanel = memo(() => {
         >
           <div className="flex items-center gap-1.5">
             <div className={editingDb ? 'i-ph:check-circle' : 'i-ph:gear-six'} />
-            {editingDb ? 'Done' : 'Configure'}
+            {editingDb ? t('databasePanel.done') : t('databasePanel.configure')}
           </div>
         </button>
       </div>
@@ -155,7 +157,7 @@ export const DatabasePanel = memo(() => {
         {editingDb && (
           <div className="p-4 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
             <h3 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-3">
-              Database Type
+              {t('databasePanel.databaseType')}
             </h3>
             <div className="flex gap-2 mb-4">
               {(['none', 'supabase', 'firebase'] as const).map((type) => (
@@ -170,7 +172,7 @@ export const DatabasePanel = memo(() => {
                   )}
                 >
                   <div className={type === 'supabase' ? 'i-ph:database' : type === 'firebase' ? 'i-ph:flame' : 'i-ph:prohibit'} />
-                  {type === 'none' ? 'None' : type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type === 'none' ? t('appSettings.none') : type.charAt(0).toUpperCase() + type.slice(1)}
                 </button>
               ))}
             </div>
@@ -179,7 +181,7 @@ export const DatabasePanel = memo(() => {
               <div className="space-y-3">
                 <div>
                   <label className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider mb-1 block">
-                    Supabase URL
+                    {t('databasePanel.supabaseUrl')}
                   </label>
                   <input
                     type="text"
@@ -191,7 +193,7 @@ export const DatabasePanel = memo(() => {
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider mb-1 block">
-                    Anon Key
+                    {t('databasePanel.anonKey')}
                   </label>
                   <input
                     type="password"
@@ -203,7 +205,7 @@ export const DatabasePanel = memo(() => {
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider mb-1 block">
-                    Service Role Key
+                    {t('databasePanel.serviceRoleKey')}
                   </label>
                   <input
                     type="password"
@@ -241,7 +243,7 @@ export const DatabasePanel = memo(() => {
                 className="mt-4 w-full px-4 py-2.5 rounded-lg text-xs font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
               >
                 <div className="i-ph:floppy-disk text-sm" />
-                Save Configuration
+                {t('databasePanel.saveConfiguration')}
               </button>
             )}
             {editType === 'none' && (
@@ -250,7 +252,7 @@ export const DatabasePanel = memo(() => {
                 className="mt-4 w-full px-4 py-2.5 rounded-lg text-xs font-semibold bg-bolt-elements-background-depth-2 text-bolt-elements-textTertiary border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary transition-all flex items-center justify-center gap-2"
               >
                 <div className="i-ph:x text-sm" />
-                Remove Database
+                {t('databasePanel.removeDatabase')}
               </button>
             )}
           </div>
@@ -263,29 +265,29 @@ export const DatabasePanel = memo(() => {
               <>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
-                    Tables
+                    {t('databasePanel.tables')}
                   </h3>
                   <button
                     onClick={fetchTables}
                     className="text-[10px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors flex items-center gap-1"
                   >
                     <div className={classNames('i-ph:arrow-clockwise text-xs', loading && 'animate-spin')} />
-                    Refresh
+                    {t('workbench.refresh')}
                   </button>
                 </div>
 
                 {loading && tables.length === 0 && (
                   <div className="flex items-center justify-center py-8 text-bolt-elements-textTertiary text-xs">
                     <div className="i-ph:spinner-gap animate-spin text-lg mr-2" />
-                    Loading tables...
+                    {t('databasePanel.loadingTables')}
                   </div>
                 )}
 
                 {!loading && tables.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 text-bolt-elements-textTertiary">
                     <div className="i-ph:table text-3xl mb-2 opacity-40" />
-                    <p className="text-xs">No tables found</p>
-                    <p className="text-[10px] mt-1">Create tables in your Supabase dashboard</p>
+                    <p className="text-xs">{t('databasePanel.noTablesFound')}</p>
+                    <p className="text-[10px] mt-1">{t('databasePanel.createTablesInDashboard')}</p>
                   </div>
                 )}
 
@@ -313,7 +315,7 @@ export const DatabasePanel = memo(() => {
                 {selectedTable && tableData.length > 0 && (
                   <div className="mt-4">
                     <h3 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">
-                      {selectedTable} <span className="text-bolt-elements-textTertiary font-normal">({tableData.length} rows)</span>
+                      {selectedTable} <span className="text-bolt-elements-textTertiary font-normal">({tableData.length} {t('databasePanel.rows')})</span>
                     </h3>
                     <div className="overflow-x-auto rounded-lg border border-bolt-elements-borderColor">
                       <table className="w-full text-xs">
@@ -351,7 +353,7 @@ export const DatabasePanel = memo(() => {
                 {selectedTable && tableData.length === 0 && !loading && (
                   <div className="mt-4 text-center text-bolt-elements-textTertiary text-xs py-4">
                     <div className="i-ph:empty text-2xl mb-1 opacity-40 mx-auto" />
-                    Table is empty
+                    {t('databasePanel.tableIsEmpty')}
                   </div>
                 )}
               </>
@@ -360,8 +362,8 @@ export const DatabasePanel = memo(() => {
             {dbType === 'firebase' && (
               <div className="flex flex-col items-center justify-center py-8 text-bolt-elements-textTertiary">
                 <div className="i-ph:flame text-3xl mb-2 text-orange-400/60" />
-                <p className="text-xs">Firebase connected</p>
-                <p className="text-[10px] mt-1">Use the Firebase console to manage your data</p>
+                <p className="text-xs">{t('databasePanel.firebaseConnected')}</p>
+                <p className="text-[10px] mt-1">{t('databasePanel.useFirebaseConsole')}</p>
                 {firebaseConfig.projectId && (
                   <a
                     href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}`}
@@ -370,7 +372,7 @@ export const DatabasePanel = memo(() => {
                     className="mt-3 text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
                   >
                     <div className="i-ph:arrow-square-out" />
-                    Open Firebase Console
+                    {t('databasePanel.openFirebaseConsole')}
                   </a>
                 )}
               </div>
@@ -387,16 +389,16 @@ export const DatabasePanel = memo(() => {
                 <div className="i-ph:plus text-xs" />
               </div>
             </div>
-            <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">No database connected</p>
+            <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">{t('databasePanel.noDatabaseConnected')}</p>
             <p className="text-xs text-bolt-elements-textTertiary mb-4 max-w-[260px] text-center">
-              Connect a Supabase or Firebase database to view and manage your data
+              {t('databasePanel.connectDatabaseMessage')}
             </p>
             <button
               onClick={() => setEditingDb(true)}
               className="px-4 py-2 rounded-lg text-xs font-medium bg-purple-500/12 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center gap-2"
             >
               <div className="i-ph:plug text-sm" />
-              Connect Database
+              {t('databasePanel.connectDatabase')}
             </button>
           </div>
         )}

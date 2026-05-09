@@ -3,6 +3,7 @@ import { memo, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { errorStore, type DetectedError } from '~/lib/stores/errors';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 interface ErrorBannerProps {
   onFixError?: (error: DetectedError) => void;
@@ -38,21 +39,6 @@ function getErrorColor(type: DetectedError['type']) {
   }
 }
 
-function getErrorBadge(type: DetectedError['type']) {
-  switch (type) {
-    case 'action':
-      return { label: 'File Error', color: 'bg-red-500/15 text-red-400' };
-    case 'preview':
-      return { label: 'Preview Error', color: 'bg-orange-500/15 text-orange-400' };
-    case 'runtime':
-      return { label: 'Runtime Error', color: 'bg-red-500/15 text-red-400' };
-    case 'compile':
-      return { label: 'Compile Error', color: 'bg-amber-500/15 text-amber-400' };
-    default:
-      return { label: 'Error', color: 'bg-red-500/15 text-red-400' };
-  }
-}
-
 function ErrorItem({
   error,
   onFix,
@@ -62,8 +48,25 @@ function ErrorItem({
   onFix: (error: DetectedError) => void;
   onDismiss: (id: string) => void;
 }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [fixing, setFixing] = useState(false);
+
+  const getErrorBadge = (type: DetectedError['type']) => {
+    switch (type) {
+      case 'action':
+        return { label: t('error.fileError'), color: 'bg-red-500/15 text-red-400' };
+      case 'preview':
+        return { label: t('error.previewError'), color: 'bg-orange-500/15 text-orange-400' };
+      case 'runtime':
+        return { label: t('error.runtimeError'), color: 'bg-red-500/15 text-red-400' };
+      case 'compile':
+        return { label: t('error.compileError'), color: 'bg-amber-500/15 text-amber-400' };
+      default:
+        return { label: t('common.error'), color: 'bg-red-500/15 text-red-400' };
+    }
+  };
+
   const badge = getErrorBadge(error.type);
 
   const handleFix = () => {
@@ -74,10 +77,10 @@ function ErrorItem({
 
   const timeAgo = (() => {
     const diff = Math.floor((Date.now() - error.timestamp) / 1000);
-    if (diff < 10) return 'agora';
-    if (diff < 60) return `${diff}s atr\u00e1s`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m atr\u00e1s`;
-    return `${Math.floor(diff / 3600)}h atr\u00e1s`;
+    if (diff < 10) return t('error.now');
+    if (diff < 60) return `${diff}s ${t('error.ago')}`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ${t('error.ago')}`;
+    return `${Math.floor(diff / 3600)}h ${t('error.ago')}`;
   })();
 
   return (
@@ -87,10 +90,7 @@ function ErrorItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className={classNames(
-        'rounded-lg border overflow-hidden',
-        getErrorColor(error.type),
-      )}
+      className={classNames('rounded-lg border overflow-hidden', getErrorColor(error.type))}
     >
       {/* Header */}
       <div
@@ -105,9 +105,7 @@ function ErrorItem({
           {badge.label}
         </span>
 
-        <span className="text-xs text-bolt-elements-textPrimary font-medium flex-1 truncate">
-          {error.message}
-        </span>
+        <span className="text-xs text-bolt-elements-textPrimary font-medium flex-1 truncate">{error.message}</span>
 
         {error.filePath && (
           <code className="text-[10px] text-bolt-elements-textTertiary bg-bolt-elements-background-depth-2 px-1.5 py-0.5 rounded max-w-[150px] truncate">
@@ -117,10 +115,12 @@ function ErrorItem({
 
         <span className="text-[10px] text-bolt-elements-textTertiary shrink-0">{timeAgo}</span>
 
-        <div className={classNames(
-          'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-          expanded && 'rotate-180',
-        )}>
+        <div
+          className={classNames(
+            'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
+            expanded && 'rotate-180',
+          )}
+        >
           <div className="i-ph:caret-down text-xs" />
         </div>
       </div>
@@ -139,7 +139,7 @@ function ErrorItem({
               {/* Error source */}
               {error.source && (
                 <div className="text-[11px] text-bolt-elements-textTertiary">
-                  <span className="font-medium">Fonte:</span> {error.source}
+                  <span className="font-medium">{t('error.source')}</span> {error.source}
                 </div>
               )}
 
@@ -170,12 +170,12 @@ function ErrorItem({
                   {fixing ? (
                     <>
                       <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                      Enviando...
+                      {t('error.sending')}
                     </>
                   ) : (
                     <>
                       <div className="i-ph:wrench text-sm" />
-                      Corrigir com IA
+                      {t('error.fixWithAI')}
                     </>
                   )}
                 </button>
@@ -187,7 +187,7 @@ function ErrorItem({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-bolt-elements-textTertiary hover:bg-bolt-elements-item-backgroundActive transition-all"
                 >
                   <div className="i-ph:x text-sm" />
-                  Descartar
+                  {t('error.dismiss')}
                 </button>
               </div>
             </div>
@@ -199,18 +199,16 @@ function ErrorItem({
 }
 
 export const ErrorBanner = memo(function ErrorBanner({ onFixError }: ErrorBannerProps) {
+  const t = useT();
   const errorsMap = useStore(errorStore.errors);
   const showErrorPanel = useStore(errorStore.showErrors);
 
-  const activeErrors = useMemo(
-    () => {
-      const map = errorsMap && typeof errorsMap === 'object' ? errorsMap : {};
-      return Object.values(map)
-        .filter((e): e is DetectedError => e && !e.dismissed)
-        .sort((a, b) => b.timestamp - a.timestamp);
-    },
-    [errorsMap],
-  );
+  const activeErrors = useMemo(() => {
+    const map = errorsMap && typeof errorsMap === 'object' ? errorsMap : {};
+    return Object.values(map)
+      .filter((e): e is DetectedError => e && !e.dismissed)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }, [errorsMap]);
 
   const handleFix = useCallback(
     (error: DetectedError) => {
@@ -237,11 +235,17 @@ export const ErrorBanner = memo(function ErrorBanner({ onFixError }: ErrorBanner
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-all"
         >
           <div className="i-ph:warning-fill text-sm" />
-          <span>{activeErrors.length} erro{activeErrors.length > 1 ? 's' : ''} detectado{activeErrors.length > 1 ? 's' : ''}</span>
-          <div className={classNames(
-            'text-bolt-elements-textTertiary transition-transform duration-200',
-            showErrorPanel && 'rotate-180',
-          )}>
+          <span>
+            {activeErrors.length > 1
+              ? t('error.errorsDetected', { count: activeErrors.length })
+              : t('error.errorDetected', { count: activeErrors.length })}
+          </span>
+          <div
+            className={classNames(
+              'text-bolt-elements-textTertiary transition-transform duration-200',
+              showErrorPanel && 'rotate-180',
+            )}
+          >
             <div className="i-ph:caret-down text-xs" />
           </div>
         </button>
@@ -255,13 +259,13 @@ export const ErrorBanner = memo(function ErrorBanner({ onFixError }: ErrorBanner
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
         >
           <div className="i-ph:wrench text-sm" />
-          Corrigir tudo
+          {t('error.fixAll')}
         </button>
         <button
           onClick={() => errorStore.clearAll()}
           className="ml-auto text-xs text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
         >
-          Descartar todos
+          {t('error.dismissAll')}
         </button>
       </div>
 

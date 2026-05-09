@@ -17,12 +17,14 @@ import { PistonPreview } from './PistonPreview';
 import type { PreviewMode } from '~/lib/stores/project';
 import type { FileMap, File as WFile } from '~/lib/stores/files';
 import { AppInspector } from './AppInspector.client';
+import { useT } from '~/lib/i18n/useT';
 
 /**
  * Wrapper that catches errors from preview iframes and reports them.
  */
 function PreviewErrorCatcher({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     const el = ref.current;
@@ -34,8 +36,8 @@ function PreviewErrorCatcher({ children }: { children: ReactNode }) {
         const { message, source } = customEvent.detail;
         errorStore.addError({
           type: 'runtime',
-          source: source || 'Preview',
-          message: message || 'Erro no preview',
+          source: source || t('workbench.preview'),
+          message: message || t('preview.previewError'),
         });
       }
     };
@@ -45,6 +47,18 @@ function PreviewErrorCatcher({ children }: { children: ReactNode }) {
   }, []);
 
   return <div ref={ref}>{children}</div>;
+}
+
+function getPreviewOptions(t: (key: string) => string): { mode: PreviewMode; label: string; icon: string; desc: string }[] {
+  return [
+    { mode: 'webcontainer', label: t('appSettings.webcontainer'), icon: 'i-ph:cube-duotone', desc: t('preview.webcontainerShortDesc') },
+    { mode: 'sandpack', label: t('appSettings.sandpack'), icon: 'i-ph:browser-duotone', desc: t('preview.sandpackShortDesc') },
+    { mode: 'iframe', label: t('appSettings.iframe'), icon: 'i-ph:code-duotone', desc: t('preview.iframeShortDesc') },
+    { mode: 'reactlive', label: t('appSettings.reactlive'), icon: 'i-ph:atom-duotone', desc: t('preview.reactliveShortDesc') },
+    { mode: 'playcode', label: t('appSettings.playcode'), icon: 'i-ph:code-block-duotone', desc: t('preview.playcodeShortDesc') },
+    { mode: 'piston', label: t('appSettings.piston'), icon: 'i-ph:rocket-duotone', desc: t('preview.pistonShortDesc') },
+    { mode: 'newtab', label: t('appSettings.newtab'), icon: 'i-ph:arrow-square-out-duotone', desc: t('preview.newtabShortDesc') },
+  ];
 }
 
 const PREVIEW_OPTIONS: { mode: PreviewMode; label: string; icon: string; desc: string }[] = [
@@ -193,6 +207,7 @@ const SANDBOX_STYLES = `
  * IframePreview — supports both React (via Sandpack) and static HTML (via srcdoc)
  */
 function IframePreview() {
+  const t = useT();
   const files = useStore(workbenchStore.files);
   const projectType = useMemo(() => detectProjectType(files), [files]);
   const isReactProject = projectType === 'react' || projectType === 'react-ts' || projectType === 'vue';
@@ -202,8 +217,8 @@ function IframePreview() {
   const [srcdoc, setSrcdoc] = useState('');
 
   useEffect(() => {
-    const t = setTimeout(() => setSrcdoc(staticHtml), 60);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSrcdoc(staticHtml), 60);
+    return () => clearTimeout(timer);
   }, [staticHtml]);
 
   const fileCount = Object.values(files).filter((f): f is WFile => f?.type === 'file' && !f.isBinary).length;
@@ -213,8 +228,8 @@ function IframePreview() {
       <div className="flex items-center justify-center h-full w-full text-bolt-elements-textTertiary">
         <div className="text-center">
           <div className="i-ph:code-duotone text-4xl mb-3 mx-auto" />
-          <p className="text-sm">No files to preview</p>
-          <p className="text-xs text-bolt-elements-textTertiary mt-1">Create or import files to see a preview</p>
+          <p className="text-sm">{t('preview.noFilesToPreview')}</p>
+          <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('preview.createOrImport')}</p>
         </div>
       </div>
     );
@@ -265,6 +280,7 @@ function IframePreview() {
  * NewTabPreview — opens preview in a new tab
  */
 function NewTabPreview() {
+  const t = useT();
   const files = useStore(workbenchStore.files);
   const projectType = useMemo(() => detectProjectType(files), [files]);
   const isReactProject = projectType === 'react' || projectType === 'react-ts' || projectType === 'vue';
@@ -294,8 +310,8 @@ function NewTabPreview() {
       <div className="flex items-center justify-center h-full w-full text-bolt-elements-textTertiary">
         <div className="text-center">
           <div className="i-ph:arrow-square-out-duotone text-4xl mb-3 mx-auto" />
-          <p className="text-sm">No files to preview</p>
-          <p className="text-xs text-bolt-elements-textTertiary mt-1">Create or import files to open in a new tab</p>
+          <p className="text-sm">{t('preview.noFilesToPreview')}</p>
+          <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('preview.createOrImportNewTab')}</p>
         </div>
       </div>
     );
@@ -308,9 +324,9 @@ function NewTabPreview() {
           <div className="i-ph:arrow-square-out-duotone text-3xl text-pink-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-bolt-elements-textPrimary">New Tab Preview</p>
+          <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('preview.newTabPreview')}</p>
           <p className="text-xs text-bolt-elements-textTertiary mt-1">
-            {fileCount} files
+            {fileCount} {t('preview.files')}
             {isReactProject ? ' (React — best viewed with WebContainer or Sandpack)' : ''}
           </p>
         </div>
@@ -319,10 +335,10 @@ function NewTabPreview() {
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-pink-500/15 text-pink-400 hover:bg-pink-500/25 transition-all border border-pink-500/20"
         >
           <div className="i-ph:arrow-square-out text-base" />
-          Open in New Tab
+          {t('preview.openInNewTab')}
         </button>
         {opened && (
-          <p className="text-[11px] text-bolt-elements-textTertiary">Tab opened! Check your pop-up blocker if nothing happened.</p>
+          <p className="text-[11px] text-bolt-elements-textTertiary">{t('preview.tabOpened')}</p>
         )}
       </div>
     </div>
@@ -330,6 +346,7 @@ function NewTabPreview() {
 }
 
 export const Preview = memo(function Preview() {
+  const t = useT();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
@@ -382,8 +399,8 @@ export const Preview = memo(function Preview() {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <IconButton
             icon="i-ph:arrow-square-out"
             onClick={() => {
@@ -392,15 +409,15 @@ export const Preview = memo(function Preview() {
                 window.open(previewPageUrl, '_blank');
               }
             }}
-            title="Abrir em nova aba"
+            title={t('workbench.newTab')}
             disabled={!activePreview?.baseUrl}
           />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium">
             <div className="i-ph:cube-duotone text-sm" />
-            WebContainer
+            {t('appSettings.webcontainer')}
           </div>
           <div className="flex-1 flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate">
-            {activePreview?.baseUrl || 'No preview available'}
+            {activePreview?.baseUrl || t('preview.noPreviewAvailable')}
           </div>
           {/* Inspector toggle */}
           <div className="relative">
@@ -428,7 +445,7 @@ export const Preview = memo(function Preview() {
                   ref={iframeRef}
                   className="webcontainer-preview-frame"
                   src={activePreview.baseUrl}
-                  title="Preview"
+                  title={t('workbench.preview')}
                   onLoad={() => {
                     setPreviewLoaded(true);
                     setTimeout(() => setShowNoPreview(false), 300);
@@ -459,8 +476,8 @@ export const Preview = memo(function Preview() {
                         <div className="i-ph:eye text-xl text-bolt-elements-textTertiary" />
                       </div>
                     </div>
-                    <p className="text-sm font-medium text-bolt-elements-textSecondary">Carregando preview...</p>
-                    <p className="text-xs text-bolt-elements-textTertiary mt-1">Aguarde enquanto o app e compilado</p>
+                    <p className="text-sm font-medium text-bolt-elements-textSecondary">{t('preview.loadingPreview')}</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('preview.compilingApp')}</p>
                     {/* Animated dots */}
                     <div className="flex items-center justify-center gap-1 mt-3">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -486,8 +503,8 @@ export const Preview = memo(function Preview() {
                     </div>
                   </div>
                 </div>
-                <p className="text-sm font-medium text-bolt-elements-textSecondary">Nenhum preview disponivel</p>
-                <p className="text-xs text-bolt-elements-textTertiary mt-1">Comece um chat para gerar o preview do app</p>
+                <p className="text-sm font-medium text-bolt-elements-textSecondary">{t('preview.noPreviewAvailable')}</p>
+                <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('preview.startChatToPreview')}</p>
                 {/* Subtle floating particles */}
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <div className="w-2 h-2 rounded-full bg-blue-500/20 animate-pulse" style={{ animationDelay: '0ms' }} />
@@ -509,14 +526,14 @@ export const Preview = memo(function Preview() {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-medium">
             <div className="i-ph:browser-duotone text-sm" />
-            Sandpack
+            {t('appSettings.sandpack')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            React, Vue, HTML Preview
+            {t('preview.reactVueHtmlPreview')}
           </div>
           {/* Inspector toggle */}
           <div className="relative">
@@ -538,14 +555,14 @@ export const Preview = memo(function Preview() {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-medium">
             <div className="i-ph:code-duotone text-sm" />
-            Iframe SrcDoc
+            {t('appSettings.iframe')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Iframe preview (React supported)
+            {t('preview.iframeReactSupported')}
           </div>
           {/* Inspector toggle */}
           <div className="relative">
@@ -567,14 +584,14 @@ export const Preview = memo(function Preview() {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 text-xs font-medium">
             <div className="i-ph:atom-duotone text-sm" />
-            React Live
+            {t('appSettings.reactlive')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Live React component preview
+            {t('preview.liveReactComponentPreview')}
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
@@ -589,13 +606,13 @@ export const Preview = memo(function Preview() {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium">
             <div className="i-ph:code-block-duotone text-sm" />
-            PlayCode
+            {t('appSettings.playcode')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            CodeSandbox API embed
+            {t('preview.codeSandboxApiEmbed')}
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
@@ -612,12 +629,12 @@ export const Preview = memo(function Preview() {
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium">
             <div className="i-ph:rocket-duotone text-sm" />
-            Piston
+            {t('appSettings.piston')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Remote code execution engine (25+ languages)
+            {t('preview.remoteCodeExecution')}
           </div>
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <PistonPreview />
@@ -633,12 +650,12 @@ export const Preview = memo(function Preview() {
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink-500/10 text-pink-400 text-xs font-medium">
             <div className="i-ph:arrow-square-out-duotone text-sm" />
-            New Tab
+            {t('appSettings.newtab')}
           </div>
           <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
-            Preview opens in a new browser tab
+            {t('preview.opensInNewBrowserTab')}
           </div>
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           <NewTabPreview />
@@ -651,4 +668,4 @@ export const Preview = memo(function Preview() {
   return null;
 });
 
-export { PREVIEW_OPTIONS };
+export { PREVIEW_OPTIONS, getPreviewOptions };

@@ -1,5 +1,6 @@
 import { memo, useState, useRef, useEffect } from 'react';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 interface BuildPlanDropdownProps {
   planMode: boolean;
@@ -8,7 +9,13 @@ interface BuildPlanDropdownProps {
   isStreaming?: boolean;
 }
 
-export const BuildPlanDropdown = memo(function BuildPlanDropdown({ planMode, onBuild, onPlan, isStreaming }: BuildPlanDropdownProps) {
+export const BuildPlanDropdown = memo(function BuildPlanDropdown({
+  planMode,
+  onBuild,
+  onPlan,
+  isStreaming,
+}: BuildPlanDropdownProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -29,7 +36,7 @@ export const BuildPlanDropdown = memo(function BuildPlanDropdown({ planMode, onB
         disabled={isStreaming}
         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all active:scale-[0.97] disabled:opacity-50"
       >
-        {planMode ? 'Plan' : 'Build'}
+        {planMode ? t('landing.plan') : t('landing.buildNow')}
         <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -37,7 +44,10 @@ export const BuildPlanDropdown = memo(function BuildPlanDropdown({ planMode, onB
         <div className="absolute right-0 bottom-full mb-1.5 w-40 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-lg shadow-xl z-[100] overflow-hidden">
           <div className="p-1">
             <button
-              onClick={() => { setOpen(false); onBuild(); }}
+              onClick={() => {
+                setOpen(false);
+                onBuild();
+              }}
               className={classNames(
                 'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition-all',
                 !planMode
@@ -46,11 +56,14 @@ export const BuildPlanDropdown = memo(function BuildPlanDropdown({ planMode, onB
               )}
             >
               <div className="i-ph:hammer text-sm" />
-              <span className="font-medium">Build</span>
+              <span className="font-medium">{t('landing.buildNow')}</span>
               {!planMode && <div className="ml-auto i-ph:check text-[10px]" />}
             </button>
             <button
-              onClick={() => { setOpen(false); onPlan(); }}
+              onClick={() => {
+                setOpen(false);
+                onPlan();
+              }}
               className={classNames(
                 'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition-all',
                 planMode
@@ -59,7 +72,7 @@ export const BuildPlanDropdown = memo(function BuildPlanDropdown({ planMode, onB
               )}
             >
               <div className="i-ph:list-checks text-sm" />
-              <span className="font-medium">Plan</span>
+              <span className="font-medium">{t('landing.plan')}</span>
               {planMode && <div className="ml-auto i-ph:check text-[10px]" />}
             </button>
           </div>

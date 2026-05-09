@@ -15,8 +15,16 @@ import { translations } from './translations';
 export function useT() {
   const lang = useStore(languageStore);
 
-  function t(key: string): string {
-    return translations[lang]?.[key] || translations.pt?.[key] || key;
+  function t(key: string, params?: Record<string, string | number>): string {
+    let value = translations[lang]?.[key] || translations.pt?.[key] || key;
+
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\{${k}\}`, 'g'), String(v));
+      }
+    }
+
+    return value;
   }
 
   return t;
@@ -29,8 +37,16 @@ export function useT() {
 export function getT() {
   const lang = languageStore.get();
 
-  function t(key: string): string {
-    return translations[lang as keyof typeof translations]?.[key] || translations.pt?.[key] || key;
+  function t(key: string, params?: Record<string, string | number>): string {
+    let value = translations[lang as keyof typeof translations]?.[key] || translations.pt?.[key] || key;
+
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\{${k}\}`, 'g'), String(v));
+      }
+    }
+
+    return value;
   }
 
   return t;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 export interface DbFieldRequest {
   name: string;
@@ -38,6 +39,7 @@ const dbTypeConfig = {
 
 export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestModalProps) {
   const config = dbTypeConfig[dbType];
+  const t = useT();
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -59,12 +61,12 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
     }
 
     if (Object.keys(filled).length === 0) {
-      toast.error('Please fill in at least one field');
+      toast.error(t('dbRequest.fillAtLeastOne'));
       return;
     }
 
     onSave(dbType, filled);
-    toast.success(`${config.label} configuration saved!`);
+    toast.success(`${config.label} ${t('dbRequest.configSaved')}`);
   };
 
   const handleSkip = () => {
@@ -87,10 +89,10 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
             </div>
             <div>
               <h2 className="text-lg font-bold text-bolt-elements-textPrimary">
-                {config.label} Credentials Required
+                {t('dbRequest.credentialsRequired').replace('{label}', config.label)}
               </h2>
               <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
-                The AI needs your {config.label} configuration to complete the project
+                {t('dbRequest.subtitle').replace('{label}', config.label)}
               </p>
             </div>
           </div>
@@ -102,7 +104,7 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
         {/* Fields List */}
         <div className="px-6 py-4 max-h-[50vh] overflow-y-auto">
           <p className="text-xs text-bolt-elements-textSecondary mb-4">
-            Fill in your {config.label} credentials below. You can leave any blank and add them later in Settings.
+            {t('dbRequest.fillCredentials').replace('{label}', config.label)}
           </p>
           <div className="space-y-3">
             {fields.map((f) => (
@@ -110,7 +112,7 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono text-sm font-semibold text-blue-400">{f.name}</span>
                   <span className="text-[10px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium px-1.5 py-0.5 rounded bg-blue-500/10">
-                    Required
+                    {t('envRequest.required')}
                   </span>
                 </div>
                 <p className="text-xs text-bolt-elements-textSecondary mb-2">{f.description}</p>
@@ -143,7 +145,7 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
             onClick={handleSkip}
             className="px-4 py-2.5 text-sm font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
           >
-            Skip for now
+            {t('envRequest.skipForNow')}
           </button>
           <div className="flex gap-2">
             <button
@@ -152,7 +154,7 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
               className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-500/12 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
             >
               <div className="i-ph:check text-base" />
-              Save Database Config
+              {t('dbRequest.saveDbConfig')}
             </button>
           </div>
         </div>

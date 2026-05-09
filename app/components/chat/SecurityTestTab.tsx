@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 /**
  * Predefined security test prompts.
@@ -158,10 +159,11 @@ interface SecurityTestTabProps {
 export function SecurityTestTab({ onRunTest, isStreaming }: SecurityTestTabProps) {
   const [runningTest, setRunningTest] = useState<string | null>(null);
   const [completedTests, setCompletedTests] = useState<Set<string>>(new Set());
+  const t = useT();
 
   const handleRunTest = (test: typeof SECURITY_TESTS[number]) => {
     if (isStreaming) {
-      toast.warning('Aguarde a resposta da IA antes de executar outro teste.');
+      toast.warning(t('security.waitAiResponse'));
       return;
     }
 
@@ -178,9 +180,9 @@ export function SecurityTestTab({ onRunTest, isStreaming }: SecurityTestTabProps
   return (
     <div className="p-5 space-y-3">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-bolt-elements-textPrimary mb-1">Teste de Segurança</h3>
+        <h3 className="text-sm font-semibold text-bolt-elements-textPrimary mb-1">{t('security.securityTest')}</h3>
         <p className="text-xs text-bolt-elements-textTertiary leading-relaxed">
-          Selecione um teste para enviar um prompt pré-definido à IA. Ela analisará o código do projeto em busca de vulnerabilidades e aplicará correções automaticamente.
+          {t('security.selectTestDescription')}
         </p>
       </div>
 
@@ -202,7 +204,7 @@ export function SecurityTestTab({ onRunTest, isStreaming }: SecurityTestTabProps
                   <span className="text-sm font-medium text-bolt-elements-textPrimary">{test.name}</span>
                   {isCompleted && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Executado
+                      {t('security.executed')}
                     </span>
                   )}
                 </div>
@@ -223,12 +225,12 @@ export function SecurityTestTab({ onRunTest, isStreaming }: SecurityTestTabProps
                   {isRunning ? (
                     <>
                       <div className="i-ph:spinner-gap text-sm animate-spin" />
-                      Executando...
+                      {t('security.running')}
                     </>
                   ) : (
                     <>
                       <div className="i-ph:play-fill text-sm" />
-                      Executar Teste
+                      {t('security.runTest')}
                     </>
                   )}
                 </button>

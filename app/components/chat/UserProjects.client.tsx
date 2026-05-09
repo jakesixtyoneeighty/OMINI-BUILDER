@@ -4,6 +4,7 @@ import { projectsStore, activeProjectIdStore, type ProjectRecord } from '~/lib/s
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { useState, useEffect } from 'react';
+import { useT } from '~/lib/i18n/useT';
 
 interface SupabaseProject {
   id: string;
@@ -20,6 +21,7 @@ export function UserProjects() {
   const auth = useStore(authStore);
   const [supabaseProjects, setSupabaseProjects] = useState<SupabaseProject[]>([]);
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   // Load projects from Supabase if user is logged in
   useEffect(() => {
@@ -100,7 +102,7 @@ export function UserProjects() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-bolt-elements-textPrimary flex items-center gap-2">
           <div className="i-ph:folder-open text-base text-bolt-elements-item-contentAccent" />
-          Seus Projetos
+          {t('userProjects.yourProjects')}
         </h2>
         {loading && (
           <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-textTertiary" />
@@ -124,7 +126,7 @@ export function UserProjects() {
             {/* Project info */}
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
-                {project.name || 'Untitled'}
+                {project.name || t('projects.untitled')}
               </div>
               {project.description && (
                 <div className="text-xs text-bolt-elements-textTertiary truncate mt-0.5">
@@ -134,7 +136,7 @@ export function UserProjects() {
               <div className="flex items-center gap-2 mt-1">
                 {project.source === 'cloud' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
-                    Cloud
+                    {t('userProjects.cloud')}
                   </span>
                 )}
                 {project.updated_at && (

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { projectsStore, activeProjectIdStore, renameProject } from '~/lib/stores/project';
 import { description } from '~/lib/persistence/useChatHistory';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 /**
  * Editable project name displayed in the header center.
@@ -18,8 +19,9 @@ export function EditableProjectName() {
   const projects = useStore(projectsStore);
   const chatDescription = useStore(description);
   const project = projects[activeId];
+  const t = useT();
 
-  const displayName = project?.name || project?.settings?.name || chatDescription || 'Untitled Project';
+  const displayName = project?.name || project?.settings?.name || chatDescription || t('projectName.untitledProject');
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -113,7 +115,7 @@ export function EditableProjectName() {
             'transition-all',
             isSaving && 'opacity-60',
           )}
-          placeholder="Nome do projeto..."
+          placeholder={t('projectName.placeholder')}
         />
         <div className="flex items-center gap-0.5">
           <button
@@ -121,7 +123,7 @@ export function EditableProjectName() {
             onClick={saveName}
             disabled={isSaving}
             className="flex items-center justify-center w-6 h-6 rounded text-green-400 hover:bg-green-500/15 transition-all"
-            title="Salvar (Enter)"
+            title={t('projectName.saveEnter')}
           >
             <div className={isSaving ? 'i-ph:spinner animate-spin' : 'i-ph:check'} />
           </button>
@@ -130,7 +132,7 @@ export function EditableProjectName() {
             onClick={cancelEditing}
             disabled={isSaving}
             className="flex items-center justify-center w-6 h-6 rounded text-red-400 hover:bg-red-500/15 transition-all"
-            title="Cancelar (Esc)"
+            title={t('projectName.cancelEsc')}
           >
             <div className="i-ph:x" />
           </button>
@@ -148,7 +150,7 @@ export function EditableProjectName() {
         'text-sm text-bolt-elements-textSecondary max-w-md truncate',
         'hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive',
       )}
-      title="Clique para renomear o projeto"
+      title={t('projectName.clickToRename')}
     >
       <span className="truncate">{displayName}</span>
       <div className="i-ph:pencil-simple text-xs opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />

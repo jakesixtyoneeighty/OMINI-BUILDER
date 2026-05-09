@@ -4,6 +4,7 @@ import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore } from '~/lib/stores/project';
+import { useT } from '~/lib/i18n/useT';
 
 interface SearchDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
   const listRef = useRef<HTMLDivElement>(null);
 
   const chatStarted = useStore(chatStore).started;
+  const t = useT();
 
   // Load projects when dialog opens
   useEffect(() => {
@@ -121,10 +123,10 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays === 0) return t('projects.today');
+    if (diffDays === 1) return t('projects.yesterday');
+    if (diffDays < 7) return `${diffDays} ${t('projects.daysAgo')}`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${t('projects.weeksAgo')}`;
     return date.toLocaleDateString();
   };
 
@@ -143,7 +145,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search projects..."
+            placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary outline-none"
@@ -164,8 +166,8 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
               <div className="i-ph:plus text-sm" />
             </div>
             <div>
-              <span className="font-medium">New Project</span>
-              <p className="text-[11px] text-bolt-elements-textTertiary">Start a new chat to create something</p>
+              <span className="font-medium">{t('projects.newProject')}</span>
+              <p className="text-[11px] text-bolt-elements-textTertiary">{t('searchDialog.startNewChat')}</p>
             </div>
           </button>
 
@@ -191,7 +193,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
                 <div className="i-ph:code text-sm text-bolt-elements-textTertiary" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="font-medium block truncate">{project.description || 'Untitled'}</span>
+                <span className="font-medium block truncate">{project.description || t('projects.untitled')}</span>
                 <span className="text-[11px] text-bolt-elements-textTertiary">{formatDate(project.timestamp)}</span>
               </div>
               <div className="i-ph:arrow-right text-xs text-bolt-elements-textTertiary shrink-0" />
@@ -202,7 +204,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
           {query && filtered.length === 0 && (
             <div className="flex flex-col items-center py-8 text-center">
               <div className="i-ph:magnifying-glass text-2xl text-bolt-elements-textTertiary mb-2" />
-              <p className="text-sm text-bolt-elements-textTertiary">No projects found for "{query}"</p>
+              <p className="text-sm text-bolt-elements-textTertiary">{t('searchDialog.noProjectsFound')} "{query}"</p>
             </div>
           )}
 
@@ -210,7 +212,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
           {!query && filtered.length === 0 && (
             <div className="flex flex-col items-center py-8 text-center">
               <div className="i-ph:folder-open text-2xl text-bolt-elements-textTertiary mb-2" />
-              <p className="text-sm text-bolt-elements-textTertiary">No projects yet</p>
+              <p className="text-sm text-bolt-elements-textTertiary">{t('searchDialog.noProjectsYet')}</p>
             </div>
           )}
         </div>
@@ -219,15 +221,15 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
         <div className="flex items-center gap-4 px-4 py-2 border-t border-bolt-elements-borderColor text-[10px] text-bolt-elements-textTertiary">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">↑↓</kbd>
-            Navigate
+            {t('searchDialog.navigate')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">↵</kbd>
-            Open
+            {t('common.open')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">esc</kbd>
-            Close
+            {t('common.close')}
           </span>
         </div>
       </div>

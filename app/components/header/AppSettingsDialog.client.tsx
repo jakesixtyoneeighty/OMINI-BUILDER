@@ -11,6 +11,7 @@ import {
   type SupabaseConfig,
 } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { useT } from '~/lib/i18n/useT';
 
 const TABS = [
   { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
@@ -40,6 +41,7 @@ const emptySupabase: SupabaseConfig = { url: '', anonKey: '', serviceRoleKey: ''
 
 // Inline editable env var row
 function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: number; onUpdate: (i: number, key: string, value: string) => void; onRemove: (i: number) => void }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [editKey, setEditKey] = useState(env.key);
   const [editValue, setEditValue] = useState(env.value);
@@ -82,10 +84,10 @@ function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: num
       <span className="font-mono text-sm text-bolt-elements-textPrimary font-medium">{env.key}</span>
       <span className="text-bolt-elements-textTertiary text-sm">=</span>
       <span className="font-mono text-sm text-bolt-elements-textSecondary truncate flex-1">{env.value}</span>
-      <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1" title="Editar">
+      <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-purple-400 transition-all p-1" title={t('appSettings.edit')}>
         <div className="i-ph:pencil-simple text-sm" />
       </button>
-      <button onClick={() => onRemove(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1" title="Remover">
+      <button onClick={() => onRemove(index)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1" title={t('appSettings.remove')}>
         <div className="i-ph:trash text-sm" />
       </button>
     </div>
@@ -93,6 +95,7 @@ function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: num
 }
 
 export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean; onClose: () => void; defaultTab?: string }) {
+  const t = useT();
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
@@ -193,7 +196,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     localStorage.setItem(`bolt.snapshots.${activeId}`, JSON.stringify(newSnapshots));
     localStorage.setItem(`bolt.snapshot.data.${snapshot.id}`, JSON.stringify(snapshot.files));
     setSnapshots(newSnapshots);
-    toast.success('Snapshot saved!');
+    toast.success(t('appSettings.snapshotSaved'));
   };
 
   const restoreSnapshot = (id: number) => {
@@ -201,7 +204,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     if (data) {
       const files = JSON.parse(data);
       workbenchStore.files.set(files);
-      toast.success('Snapshot restored!');
+      toast.success(t('appSettings.snapshotRestored'));
     }
   };
 
@@ -219,7 +222,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       reader.onload = (e) => {
         const logoUrl = e.target?.result as string;
         updateActiveProjectSettings({ logo: logoUrl });
-        toast.success('Logo updated!');
+        toast.success(t('appSettings.logoUpdated'));
       };
       reader.readAsDataURL(file);
     }
@@ -232,7 +235,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       updateActiveProjectSettings({ envVars: updated });
       setNewEnvKey('');
       setNewEnvValue('');
-      toast.success('Environment variable added!');
+      toast.success(t('appSettings.envVarAdded'));
     }
   };
 
@@ -247,22 +250,22 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
     updated[index] = { key: newKey, value: newValue };
     setEnvVars(updated);
     updateActiveProjectSettings({ envVars: updated });
-    toast.success('Variável de ambiente atualizada!');
+    toast.success(t('appSettings.envVarUpdated'));
   };
 
   const saveProjectInfo = () => {
     updateActiveProjectSettings({ name: projectName, description: projectDesc });
-    toast.success('Project info saved!');
+    toast.success(t('appSettings.projectInfoSaved'));
   };
 
   const saveNetlifySettings = () => {
     updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: netlifySiteId.trim() } });
-    toast.success('Netlify settings saved!');
+    toast.success(t('appSettings.netlifySettingsSaved'));
   };
 
   const saveVercelSettings = () => {
     updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } });
-    toast.success('Vercel settings saved!');
+    toast.success(t('appSettings.vercelSettingsSaved'));
   };
 
   const saveCloudRunSettings = () => {
@@ -275,12 +278,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
         allowUnauthenticated: crAllowUnauth,
       },
     });
-    toast.success('Cloud Run settings saved!');
+    toast.success(t('appSettings.cloudRunSettingsSaved'));
   };
 
   const saveGdriveSettings = () => {
     updateActiveProjectSettings({ googleDrive: { clientId: gdriveClientId.trim() } });
-    toast.success('Google Drive settings saved!');
+    toast.success(t('appSettings.gdriveSettingsSaved'));
   };
 
   const saveDatabaseSettings = (overrideType?: 'none' | 'firebase' | 'supabase') => {
@@ -292,7 +295,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
         supabase,
       },
     });
-    toast.success('Database settings saved!');
+    toast.success(t('appSettings.databaseSettingsSaved'));
 
     // Dispatch event so Chat can auto-prompt the AI to configure the database
     // Only dispatch if the user has actually filled in credentials
@@ -309,13 +312,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
         }));
       }, 100);
     } else if (type !== 'none') {
-      toast.info('Preencha as credenciais do banco de dados para ativar a integração com a IA.');
+      toast.info(t('appSettings.fillDbCredentials'));
     }
   };
 
   const saveCustomRules = () => {
     updateActiveProjectSettings({ customRules: customRules.trim() });
-    toast.success('AI Rules saved!');
+    toast.success(t('appSettings.aiRulesSaved'));
   };
 
   const getProjectFiles = async () => {
@@ -327,7 +330,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   };
 
   const deployToNetlify = async () => {
-    if (!netlifyToken.trim()) { toast.error('Netlify token is required'); return; }
+    if (!netlifyToken.trim()) { toast.error(t('appSettings.netlifyTokenRequired')); return; }
     setDeploying('netlify');
     setDeployResult(null);
     try {
@@ -337,16 +340,16 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: netlifyToken.trim(), siteId: netlifySiteId.trim() || undefined, files: fileList }),
       });
-      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
       setDeployResult({ url: data.url, siteId: data.siteId, provider: 'netlify' });
       if (data.siteId) { updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: data.siteId } }); setNetlifySiteId(data.siteId); }
-      toast.success('Deployed to Netlify!');
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
+      toast.success(t('appSettings.deployedToNetlify'));
+    } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
 
   const deployToVercel = async () => {
-    if (!vercelToken.trim()) { toast.error('Vercel token is required'); return; }
+    if (!vercelToken.trim()) { toast.error(t('appSettings.vercelTokenRequired')); return; }
     setDeploying('vercel');
     setDeployResult(null);
     try {
@@ -361,17 +364,17 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
           files: fileList,
         }),
       });
-      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
       setDeployResult({ url: data.url, projectId: data.projectId, provider: 'vercel' });
       if (data.projectId) { updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } }); }
-      toast.success('Deployed to Vercel!');
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
+      toast.success(t('appSettings.deployedToVercel'));
+    } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
 
   const deployToCloudRun = async () => {
-    if (!crProjectId.trim()) { toast.error('Google Cloud Project ID is required'); return; }
-    if (!crServiceAccountKey.trim()) { toast.error('Service Account Key is required'); return; }
+    if (!crProjectId.trim()) { toast.error(t('appSettings.gcpProjectIdRequired')); return; }
+    if (!crServiceAccountKey.trim()) { toast.error(t('appSettings.serviceAccountKeyRequired')); return; }
     setDeploying('cloudrun');
     setDeployResult(null);
     try {
@@ -388,12 +391,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
           files: fileList,
         }),
       });
-      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
       setDeployResult({ url: data.url, projectId: crProjectId, provider: 'cloudrun', message: data.message, buildLogsUrl: data.buildLogsUrl });
       if (data.serviceName) { updateActiveProjectSettings({ cloudRun: { projectId: crProjectId.trim(), region: crRegion, serviceAccountKey: crServiceAccountKey.trim(), serviceName: data.serviceName, allowUnauthenticated: crAllowUnauth } }); setCrServiceName(data.serviceName); }
-      toast.success('Cloud Run deployment started!');
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Deploy failed'); } finally { setDeploying('none'); }
+      toast.success(t('appSettings.cloudRunDeployStarted'));
+    } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 transition-all placeholder:text-bolt-elements-textTertiary";
@@ -412,29 +415,29 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 <div className="i-ph:folder-open text-purple-400 text-lg" />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-bolt-elements-textPrimary truncate">{projectName || 'Untitled'}</div>
-                <div className="text-[11px] text-bolt-elements-textTertiary truncate">{activeId !== 'default' ? activeId.slice(0, 12) + '...' : 'Default'}</div>
+                <div className="text-sm font-semibold text-bolt-elements-textPrimary truncate">{projectName || t('appSettings.untitled')}</div>
+                <div className="text-[11px] text-bolt-elements-textTertiary truncate">{activeId !== 'default' ? activeId.slice(0, 12) + '...' : t('appSettings.default')}</div>
               </div>
             </div>
           </div>
           <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-            {TABS.map(t => (
+            {TABS.map(tabItem => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tabItem.id}
+                onClick={() => setTab(tabItem.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-2.5 ${
-                  tab === t.id
+                  tab === tabItem.id
                     ? 'bg-purple-500/12 text-purple-400'
                     : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary'
                 }`}
               >
-                <div className={`${t.icon} text-base`} />
-                {t.label}
+                <div className={`${tabItem.icon} text-base`} />
+                {t('appSettings.' + tabItem.id)}
               </button>
             ))}
           </nav>
           <div className="p-3 border-t border-bolt-elements-borderColor">
-            <div className="text-[10px] text-bolt-elements-textTertiary text-center">Omni-Builder v1.0</div>
+            <div className="text-[10px] text-bolt-elements-textTertiary text-center">{t('appSettings.version')}</div>
           </div>
         </aside>
 
@@ -443,16 +446,16 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
           <div className="flex items-center justify-between px-6 py-4 border-b border-bolt-elements-borderColor shrink-0">
             <div>
               <h2 className="text-base font-bold text-bolt-elements-textPrimary">
-                {TABS.find(t => t.id === tab)?.label}
+                {t('appSettings.' + tab)}
               </h2>
               <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
-                {tab === 'general' && 'Project name, description and branding'}
-                {tab === 'preview' && 'Choose how your project preview works'}
-                {tab === 'deploy' && 'Configure deployment providers and tokens'}
-                {tab === 'database' && 'Connect Firebase or Supabase for database access'}
-                {tab === 'env' && 'Manage environment variables for your project'}
-                {tab === 'versions' && 'Save and restore project snapshots'}
-                {tab === 'rules' && 'Configure custom instructions for the AI assistant'}
+                {tab === 'general' && t('appSettings.generalDesc')}
+                {tab === 'preview' && t('appSettings.previewDesc')}
+                {tab === 'deploy' && t('appSettings.deployDesc')}
+                {tab === 'database' && t('appSettings.databaseDesc')}
+                {tab === 'env' && t('appSettings.envVarsDesc')}
+                {tab === 'versions' && t('appSettings.snapshotsDesc')}
+                {tab === 'rules' && t('appSettings.aiRulesDesc')}
               </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all">
@@ -465,15 +468,15 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
             {tab === 'general' && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Project Name</label>
-                  <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onBlur={saveProjectInfo} placeholder="My Awesome Project" className={inputClass} />
+                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('appSettings.projectName')}</label>
+                  <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onBlur={saveProjectInfo} placeholder={t('appSettings.projectNamePlaceholder')} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">Description</label>
-                  <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} onBlur={saveProjectInfo} placeholder="A brief description of your project..." rows={3} className={inputClass + ' resize-none'} />
+                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('appSettings.description')}</label>
+                  <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} onBlur={saveProjectInfo} placeholder={t('appSettings.descriptionPlaceholder')} rows={3} className={inputClass + ' resize-none'} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">App Logo</label>
+                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('appSettings.appLogo')}</label>
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 bg-bolt-elements-background-depth-1 rounded-xl border-2 border-dashed border-bolt-elements-borderColor flex items-center justify-center overflow-hidden shrink-0">
                       {settings?.logo ? (
@@ -481,17 +484,17 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       ) : (
                         <div className="flex flex-col items-center gap-1">
                           <div className="i-ph:image text-2xl text-bolt-elements-textTertiary" />
-                          <span className="text-[9px] text-bolt-elements-textTertiary">No logo</span>
+                          <span className="text-[9px] text-bolt-elements-textTertiary">{t('appSettings.noLogo')}</span>
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
                       <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-bolt-elements-borderColor cursor-pointer hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
                         <div className="i-ph:upload-simple text-lg text-bolt-elements-textTertiary group-hover:text-purple-400 transition-colors" />
-                        <span className="text-sm text-bolt-elements-textSecondary group-hover:text-purple-400 transition-colors">Upload Image</span>
+                        <span className="text-sm text-bolt-elements-textSecondary group-hover:text-purple-400 transition-colors">{t('appSettings.uploadImage')}</span>
                         <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                       </label>
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1.5 text-center">PNG, JPG, SVG up to 2MB</p>
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1.5 text-center">{t('appSettings.imageHint')}</p>
                     </div>
                   </div>
                 </div>
@@ -502,20 +505,20 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <div className="i-ph:google-drive-logo text-blue-400 text-base" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Google Drive</h3>
-                      <p className="text-[11px] text-bolt-elements-textTertiary">OAuth Client ID for saving projects</p>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.googleDrive')}</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.gdriveSubtitle')}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">OAuth Client ID</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.oauthClientId')}</label>
                       <input value={gdriveClientId} onChange={(e) => setGdriveClientId(e.target.value)} onBlur={saveGdriveSettings} placeholder="xxxxxxxxxxxx.apps.googleusercontent.com" type="text" className={monoInputClass + " focus:ring-blue-500/30 focus:border-blue-500/50"} />
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create at <span className="text-blue-400">console.cloud.google.com/apis/credentials</span> → OAuth 2.0 Client ID (Web). Add your domain to Authorized JavaScript Origins.</p>
                     </div>
                     {gdriveClientId && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
                         <div className="i-ph:check-circle-fill text-green-400 text-sm" />
-                        <span className="text-xs text-green-400">Client ID configured — ready to save to Google Drive</span>
+                        <span className="text-xs text-green-400">{t('appSettings.gdriveClientIdConfigured')}</span>
                       </div>
                     )}
                   </div>
@@ -528,13 +531,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3">
                   {([
-                    { mode: 'webcontainer' as const, icon: 'i-ph:cube-duotone', title: 'WebContainer', color: 'blue', desc: 'Full preview with terminal and real server. Requires COOP/COEP headers on your hosting.' },
-                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', color: 'amber', desc: 'Fast in-browser preview with React, Vue, HTML support. Works anywhere.' },
-                    { mode: 'iframe' as const, icon: 'i-ph:code-duotone', title: 'Iframe SrcDoc', color: 'green', desc: 'Lightweight srcdoc iframe that renders your HTML directly. Minimal overhead.' },
-                    { mode: 'reactlive' as const, icon: 'i-ph:atom-duotone', title: 'React Live', color: 'cyan', desc: 'Live React component preview with instant rendering powered by react-live.' },
-                    { mode: 'playcode' as const, icon: 'i-ph:code-block-duotone', title: 'PlayCode', color: 'orange', desc: 'CodeSandbox API embed for full build support. Best for complex React apps.' },
-                    { mode: 'piston' as const, icon: 'i-ph:rocket-duotone', title: 'Piston', color: 'purple', desc: 'Run Python, C++, Java, Go, Rust and 25+ languages remotely. Terminal switches to Piston mode.' },
-                    { mode: 'newtab' as const, icon: 'i-ph:arrow-square-out-duotone', title: 'New Tab', color: 'pink', desc: 'Opens your project in a new browser tab as a standalone page.' },
+                    { mode: 'webcontainer' as const, icon: 'i-ph:cube-duotone', title: 'WebContainer', color: 'blue', desc: t('appSettings.webcontainerDesc') },
+                    { mode: 'sandpack' as const, icon: 'i-ph:browser-duotone', title: 'Sandpack', color: 'amber', desc: t('appSettings.sandpackDesc') },
+                    { mode: 'iframe' as const, icon: 'i-ph:code-duotone', title: 'Iframe SrcDoc', color: 'green', desc: t('appSettings.iframeDesc') },
+                    { mode: 'reactlive' as const, icon: 'i-ph:atom-duotone', title: 'React Live', color: 'cyan', desc: t('appSettings.reactliveDesc') },
+                    { mode: 'playcode' as const, icon: 'i-ph:code-block-duotone', title: 'PlayCode', color: 'orange', desc: t('appSettings.playcodeDesc') },
+                    { mode: 'piston' as const, icon: 'i-ph:rocket-duotone', title: 'Piston', color: 'purple', desc: t('appSettings.pistonDesc') },
+                    { mode: 'newtab' as const, icon: 'i-ph:arrow-square-out-duotone', title: 'New Tab', color: 'pink', desc: t('appSettings.newtabDesc') },
                   ]).map(option => {
                     const isActive = currentPreviewMode === option.mode;
                     const activeColorMap: Record<string, string> = { blue: 'border-blue-500 bg-blue-500/8 ring-1 ring-blue-500/40', amber: 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/40', green: 'border-green-500 bg-green-500/8 ring-1 ring-green-500/40', cyan: 'border-cyan-500 bg-cyan-500/8 ring-1 ring-cyan-500/40', orange: 'border-orange-500 bg-orange-500/8 ring-1 ring-orange-500/40', pink: 'border-pink-500 bg-pink-500/8 ring-1 ring-pink-500/40', purple: 'border-purple-500 bg-purple-500/8 ring-1 ring-purple-500/40' };
@@ -543,7 +546,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     const badgeColor: Record<string, string> = { blue: 'bg-blue-500/20 text-blue-400', amber: 'bg-amber-500/20 text-amber-400', green: 'bg-green-500/20 text-green-400', cyan: 'bg-cyan-500/20 text-cyan-400', orange: 'bg-orange-500/20 text-orange-400', pink: 'bg-pink-500/20 text-pink-400', purple: 'bg-purple-500/20 text-purple-400' };
                     const checkColor: Record<string, string> = { blue: 'text-blue-400', amber: 'text-amber-400', green: 'text-green-400', cyan: 'text-cyan-400', orange: 'text-orange-400', pink: 'text-pink-400', purple: 'text-purple-400' };
                     return (
-                      <button key={option.mode} onClick={() => { updateActiveProjectSettings({ previewMode: option.mode }); toast.success(`${option.title} mode activated!`); }}
+                      <button key={option.mode} onClick={() => { updateActiveProjectSettings({ previewMode: option.mode }); toast.success(t('appSettings.modeActivated', { mode: option.title })); }}
                         className={`relative w-full p-4 rounded-xl border text-left transition-all group ${isActive ? activeColorMap[option.color] : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive'}`}>
                         <div className="flex items-center gap-3.5">
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isActive ? iconBgActive[option.color] : 'bg-bolt-elements-background-depth-2'}`}>
@@ -552,7 +555,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className={`font-semibold text-sm ${isActive ? iconColorActive[option.color] : 'text-bolt-elements-textPrimary'}`}>{option.title}</span>
-                              {isActive && <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeColor[option.color]} uppercase tracking-wider`}>Active</span>}
+                              {isActive && <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeColor[option.color]} uppercase tracking-wider`}>{t('appSettings.active')}</span>}
                             </div>
                             <p className="text-xs text-bolt-elements-textTertiary mt-0.5 leading-relaxed">{option.desc}</p>
                           </div>
@@ -575,24 +578,24 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <img src="/logos/netlify.svg" alt="Netlify" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Netlify</h3>
-                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy your site to Netlify</p>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.netlify')}</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.netlifySubtitle')}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Personal Access Token</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.personalAccessToken')}</label>
                       <input value={netlifyToken} onChange={(e) => setNetlifyToken(e.target.value)} onBlur={saveNetlifySettings} placeholder="ntfy_..." type="password" className={monoInputClass + " focus:ring-teal-500/30 focus:border-teal-500/50"} />
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a token at <span className="text-teal-400">app.netlify.com/user/applications#personal-access-tokens</span></p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Site ID (optional)</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.siteIdOptional')}</label>
                       <input value={netlifySiteId} onChange={(e) => setNetlifySiteId(e.target.value)} onBlur={saveNetlifySettings} placeholder="Leave empty to create a new site" className={monoInputClass + " focus:ring-teal-500/30 focus:border-teal-500/50"} />
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">If empty, a new site will be created. If set, the existing site will be updated.</p>
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">{t('appSettings.siteIdHint')}</p>
                     </div>
                     <button onClick={deployToNetlify} disabled={deploying !== 'none' || !netlifyToken.trim()}
                       className="w-full py-3 px-4 bg-teal-500/12 text-teal-400 rounded-xl text-sm font-semibold border border-teal-500/20 hover:bg-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
-                      {deploying === 'netlify' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Netlify</>)}
+                      {deploying === 'netlify' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> {t('appSettings.deploying')}</>) : (<><div className="i-ph:rocket-launch text-base" /> {t('appSettings.deployToNetlify')}</>)}
                     </button>
                   </div>
                 </div>
@@ -604,23 +607,23 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <img src="/logos/vercel.svg" alt="Vercel" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Vercel</h3>
-                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy your site to Vercel</p>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.vercel')}</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.vercelSubtitle')}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Access Token</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.accessToken')}</label>
                       <input value={vercelToken} onChange={(e) => setVercelToken(e.target.value)} onBlur={saveVercelSettings} placeholder="vercel_token_..." type="password" className={monoInputClass} />
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a token at <span className="text-purple-400">vercel.com/account/tokens</span></p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Project Name (optional)</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.projectNameOptional')}</label>
                       <input value={vercelProjectName} onChange={(e) => setVercelProjectName(e.target.value)} onBlur={saveVercelSettings} placeholder="my-project" className={monoInputClass} />
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Leave empty for an auto-generated name. Must be unique on Vercel.</p>
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">{t('appSettings.vercelProjectNameHint')}</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Framework Preset</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.frameworkPreset')}</label>
                       <select value={vercelFramework} onChange={(e) => setVercelFramework(e.target.value)} onBlur={saveVercelSettings}
                         className={monoInputClass + " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center]"}>
                         {VERCEL_FRAMEWORKS.map(fw => <option key={fw.value} value={fw.value}>{fw.label}</option>)}
@@ -628,7 +631,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     </div>
                     <button onClick={deployToVercel} disabled={deploying !== 'none' || !vercelToken.trim()}
                       className="w-full py-3 px-4 bg-purple-500/12 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
-                      {deploying === 'vercel' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Vercel</>)}
+                      {deploying === 'vercel' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> {t('appSettings.deploying')}</>) : (<><div className="i-ph:rocket-launch text-base" /> {t('appSettings.deployToVercel')}</>)}
                     </button>
                   </div>
                 </div>
@@ -640,18 +643,18 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <img src="/logos/google-cloud.svg" alt="Google Cloud" className="w-5 h-5 object-contain" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Google Cloud Run</h3>
-                      <p className="text-[11px] text-bolt-elements-textTertiary">Deploy to Google Cloud Run</p>
+                      <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.googleCloudRun')}</h3>
+                      <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.cloudRunSubtitle')}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Google Cloud Project ID</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.googleCloudProjectId')}</label>
                       <input value={crProjectId} onChange={(e) => setCrProjectId(e.target.value)} onBlur={saveCloudRunSettings} placeholder="my-gcp-project-123" className={monoInputClass + " focus:ring-blue-500/30 focus:border-blue-500/50"} />
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Your project ID from <span className="text-blue-400">console.cloud.google.com</span></p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Region</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.region')}</label>
                       <select value={crRegion} onChange={(e) => setCrRegion(e.target.value)} onBlur={saveCloudRunSettings}
                         className={monoInputClass + " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center] focus:ring-blue-500/30 focus:border-blue-500/50"}>
                         <option value="us-central1">us-central1 (Iowa)</option>
@@ -669,7 +672,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Service Account Key (JSON)</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.serviceAccountKeyJson')}</label>
                       <textarea value={crServiceAccountKey} onChange={(e) => setCrServiceAccountKey(e.target.value)} onBlur={saveCloudRunSettings}
                         placeholder='{"type": "service_account", "project_id": "...", ...}'
                         rows={3}
@@ -677,18 +680,18 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Create a service account with <span className="text-blue-400">Cloud Run Admin</span> and <span className="text-blue-400">Storage Admin</span> roles. Download the JSON key.</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">Service Name (optional)</label>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">{t('appSettings.serviceNameOptional')}</label>
                       <input value={crServiceName} onChange={(e) => setCrServiceName(e.target.value)} onBlur={saveCloudRunSettings} placeholder="my-service" className={monoInputClass + " focus:ring-blue-500/30 focus:border-blue-500/50"} />
-                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Leave empty for an auto-generated name.</p>
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">{t('appSettings.serviceNameHint')}</p>
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={crAllowUnauth} onChange={(e) => { setCrAllowUnauth(e.target.checked); saveCloudRunSettings(); }}
                         className="w-4 h-4 rounded border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 accent-blue-500" />
-                      <span className="text-sm text-bolt-elements-textSecondary">Allow unauthenticated access (public)</span>
+                      <span className="text-sm text-bolt-elements-textSecondary">{t('appSettings.allowUnauthenticated')}</span>
                     </label>
                     <button onClick={deployToCloudRun} disabled={deploying !== 'none' || !crProjectId.trim() || !crServiceAccountKey.trim()}
                       className="w-full py-3 px-4 bg-blue-500/12 text-blue-400 rounded-xl text-sm font-semibold border border-blue-500/20 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
-                      {deploying === 'cloudrun' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> Deploying...</>) : (<><div className="i-ph:rocket-launch text-base" /> Deploy to Cloud Run</>)}
+                      {deploying === 'cloudrun' ? (<><div className="i-svg-spinners:90-ring-with-bg text-base" /> {t('appSettings.deploying')}</>) : (<><div className="i-ph:rocket-launch text-base" /> {t('appSettings.deployToCloudRun')}</>)}
                     </button>
                   </div>
                 </div>
@@ -701,8 +704,8 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-green-400">
                           {deployResult.provider === 'cloudrun'
-                            ? `Cloud Run deployment started!`
-                            : `Deployed to ${deployResult.provider === 'vercel' ? 'Vercel' : 'Netlify'} successfully!`
+                            ? t('appSettings.cloudRunDeployStarted')
+                            : t('appSettings.deployedSuccessfully', { provider: deployResult.provider === 'vercel' ? t('appSettings.vercel') : t('appSettings.netlify') })
                           }
                         </p>
                         {deployResult.url && (
@@ -715,7 +718,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     )}
                     {deployResult.buildLogsUrl && (
                       <a href={deployResult.buildLogsUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline pl-8 flex items-center gap-1">
-                        <div className="i-ph:arrow-square-out text-xs" /> View build logs in Google Cloud Console
+                        <div className="i-ph:arrow-square-out text-xs" /> {t('appSettings.viewBuildLogs')}
                       </a>
                     )}
                   </div>
@@ -728,12 +731,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               <div className="space-y-5">
                 {/* Database Provider Selector */}
                 <div>
-                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-3">Database Provider</label>
+                  <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-3">{t('appSettings.databaseProvider')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     <button onClick={() => { setDbType('none'); saveDatabaseSettings('none'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'none' ? 'border-bolt-elements-borderColor bg-bolt-elements-item-backgroundActive ring-1 ring-purple-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
                       <div className="i-ph:prohibit text-xl mx-auto mb-1 text-bolt-elements-textTertiary" />
-                      <span className="text-xs font-medium text-bolt-elements-textPrimary block">None</span>
+                      <span className="text-xs font-medium text-bolt-elements-textPrimary block">{t('appSettings.none')}</span>
                     </button>
                     <button onClick={() => { setDbType('firebase'); saveDatabaseSettings('firebase'); }}
                       className={`p-3 rounded-xl border text-center transition-all ${dbType === 'firebase' ? 'border-amber-500 bg-amber-500/8 ring-1 ring-amber-500/30' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 hover:bg-bolt-elements-item-backgroundActive'}`}>
@@ -747,15 +750,15 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     </button>
                   </div>
                   <p className="text-[11px] text-bolt-elements-textTertiary mt-2">
-                    Once configured, the AI can read/write data to your database and generate code that uses your database.
+                    {t('appSettings.databaseAiDesc')}
                   </p>
                 </div>
 
                 {dbType === 'none' && (
                   <div className="text-center py-8">
                     <div className="i-ph:database text-4xl text-bolt-elements-textTertiary mx-auto mb-3" />
-                    <p className="text-sm text-bolt-elements-textSecondary">No database configured</p>
-                    <p className="text-xs text-bolt-elements-textTertiary mt-1 max-w-xs mx-auto">Select Firebase or Supabase above to connect a database. The AI will be able to generate code and interact with your database.</p>
+                    <p className="text-sm text-bolt-elements-textSecondary">{t('appSettings.noDatabase')}</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1 max-w-xs mx-auto">{t('appSettings.selectDbDesc')}</p>
                   </div>
                 )}
 
@@ -763,7 +766,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                       <div className="i-ph:info text-amber-400 text-base shrink-0" />
-                      <p className="text-xs text-amber-300/80">Add your Firebase web app configuration. You can find these values in the Firebase Console under Project Settings &gt; Your apps &gt; Web app.</p>
+                      <p className="text-xs text-amber-300/80">{t('appSettings.firebaseInfo')}</p>
                     </div>
                     {[
                       { key: 'apiKey' as const, label: 'API Key', placeholder: 'AIzaSy...' },
@@ -781,7 +784,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       </div>
                     ))}
                     <button onClick={saveDatabaseSettings} className="w-full py-3 px-4 bg-amber-500/12 text-amber-400 rounded-xl text-sm font-semibold border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2">
-                      <div className="i-ph:floppy-disk text-base" /> Save Firebase Config
+                      <div className="i-ph:floppy-disk text-base" /> {t('appSettings.saveFirebaseConfig')}
                     </button>
                   </div>
                 )}
@@ -790,7 +793,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
                       <div className="i-ph:info text-emerald-400 text-base shrink-0" />
-                      <p className="text-xs text-emerald-300/80">Add your Supabase project credentials. You can find these in the Supabase Dashboard under Project Settings &gt; API. The service role key allows the AI to bypass RLS for database operations.</p>
+                      <p className="text-xs text-emerald-300/80">{t('appSettings.supabaseInfo')}</p>
                     </div>
                     {[
                       { key: 'url' as const, label: 'Project URL', placeholder: 'https://xxxxx.supabase.co' },
@@ -800,7 +803,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       <div key={field.key}>
                         <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
                           {field.label}
-                          {field.key === 'serviceRoleKey' && <span className="text-red-400 ml-1.5 normal-case">Secret</span>}
+                          {field.key === 'serviceRoleKey' && <span className="text-red-400 ml-1.5 normal-case">{t('appSettings.secret')}</span>}
                         </label>
                         <input value={supabase[field.key]} onChange={(e) => setSupabase({ ...supabase, [field.key]: e.target.value })} onBlur={saveDatabaseSettings}
                           placeholder={field.placeholder} type={field.key === 'serviceRoleKey' ? 'password' : 'text'}
@@ -808,7 +811,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                       </div>
                     ))}
                     <button onClick={saveDatabaseSettings} className="w-full py-3 px-4 bg-emerald-500/12 text-emerald-400 rounded-xl text-sm font-semibold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
-                      <div className="i-ph:floppy-disk text-base" /> Save Supabase Config
+                      <div className="i-ph:floppy-disk text-base" /> {t('appSettings.saveSupabaseConfig')}
                     </button>
                   </div>
                 )}
@@ -816,13 +819,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {/* AI Database Capabilities Info */}
                 {dbType !== 'none' && (
                   <div className="border-t border-bolt-elements-borderColor pt-4">
-                    <h4 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">AI Database Capabilities</h4>
+                    <h4 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-2">{t('appSettings.aiDbCapabilities')}</h4>
                     <div className="space-y-1.5">
                       {[
-                        { icon: 'i-ph:table', text: 'Create, read, update, and delete data in your tables' },
-                        { icon: 'i-ph:code', text: 'Generate client code with your database SDK pre-configured' },
-                        { icon: 'i-ph:download-simple', text: 'Install and configure the Firebase/Supabase npm packages' },
-                        { icon: 'i-ph:shield-check', text: 'Create secure queries and proper error handling' },
+                        { icon: 'i-ph:table', text: t('appSettings.aiDbCrud') },
+                        { icon: 'i-ph:code', text: t('appSettings.aiDbSdk') },
+                        { icon: 'i-ph:download-simple', text: t('appSettings.aiDbPackages') },
+                        { icon: 'i-ph:shield-check', text: t('appSettings.aiDbSecure') },
                       ].map(item => (
                         <div key={item.text} className="flex items-center gap-2 text-xs text-bolt-elements-textSecondary">
                           <div className={`${item.icon} text-sm text-purple-400`} />
@@ -848,13 +851,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {envVars.length === 0 && (
                   <div className="text-center py-8">
                     <div className="i-ph:key text-3xl text-bolt-elements-textTertiary mx-auto mb-2" />
-                    <p className="text-sm text-bolt-elements-textTertiary">Nenhuma variável de ambiente ainda</p>
+                    <p className="text-sm text-bolt-elements-textTertiary">{t('appSettings.noEnvVars')}</p>
                   </div>
                 )}
                 <div className="flex gap-2 p-3 bg-bolt-elements-background-depth-1 rounded-lg border border-dashed border-bolt-elements-borderColor">
                   <input value={newEnvKey} onChange={(e) => setNewEnvKey(e.target.value)} placeholder="KEY" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
                     className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
-                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder="valor" onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
+                  <input value={newEnvValue} onChange={(e) => setNewEnvValue(e.target.value)} placeholder={t('appSettings.value')} onKeyDown={(e) => e.key === 'Enter' && addEnvVar()}
                     className="flex-1 px-3 py-2 rounded-md text-sm font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-purple-500/50" />
                   <button onClick={addEnvVar} disabled={!newEnvKey.trim() || !newEnvValue.trim()}
                     className="px-3 py-2 bg-purple-500/15 text-purple-400 rounded-md hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
@@ -872,25 +875,25 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     <div className="i-ph:brain-duotone text-amber-400 text-base" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Custom AI Instructions</h3>
-                    <p className="text-[11px] text-bolt-elements-textTertiary">Rules that will be applied to every AI response</p>
+                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.customAiInstructions')}</h3>
+                    <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.customAiRulesDesc')}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs text-bolt-elements-textSecondary leading-relaxed">
-                    Define custom instructions that the AI will follow in every response. These rules are injected into the system prompt and are not visible to the user in the chat. Use this to enforce coding styles, architecture patterns, naming conventions, or any project-specific constraints.
+                    {t('appSettings.aiRulesLongDesc')}
                   </p>
                   <div className="p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="i-ph:lightbulb text-amber-400 text-sm" />
-                      <span className="text-[11px] font-semibold text-amber-400">Examples</span>
+                      <span className="text-[11px] font-semibold text-amber-400">{t('appSettings.examples')}</span>
                     </div>
                     <ul className="text-[11px] text-amber-400/80 space-y-0.5 ml-5 list-disc">
-                      <li>Always use TypeScript with strict mode enabled</li>
-                      <li>Use Tailwind CSS for styling, never inline styles</li>
-                      <li>Follow the repository pattern for data access</li>
-                      <li>Component names must be PascalCase</li>
-                      <li>All API calls must have error handling with try/catch</li>
+                      <li>{t('appSettings.exampleTypescript')}</li>
+                      <li>{t('appSettings.exampleTailwind')}</li>
+                      <li>{t('appSettings.exampleRepo')}</li>
+                      <li>{t('appSettings.examplePascalCase')}</li>
+                      <li>{t('appSettings.exampleErrorHandling')}</li>
                     </ul>
                   </div>
                 </div>
@@ -899,18 +902,18 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     value={customRules}
                     onChange={(e) => setCustomRules(e.target.value)}
                     onBlur={saveCustomRules}
-                    placeholder="Enter your custom AI rules here...&#10;&#10;Example:&#10;- Always use functional components&#10;- Use Tailwind CSS for all styling&#10;- Follow REST API naming conventions&#10;- Add JSDoc comments to all functions&#10;- Use Portuguese (pt-BR) for all UI text"
+                    placeholder={t('appSettings.aiRulesPlaceholder')}
                     rows={12}
                     className="w-full px-4 py-3 rounded-lg text-sm font-mono bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all placeholder:text-bolt-elements-textTertiary resize-y leading-relaxed"
                   />
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[11px] text-bolt-elements-textTertiary">{customRules.length} characters</span>
+                    <span className="text-[11px] text-bolt-elements-textTertiary">{customRules.length} {t('appSettings.characters')}</span>
                     {customRules.length > 0 && (
                       <button
-                        onClick={() => { setCustomRules(''); updateActiveProjectSettings({ customRules: '' }); toast.info('AI Rules cleared'); }}
+                        onClick={() => { setCustomRules(''); updateActiveProjectSettings({ customRules: '' }); toast.info(t('appSettings.aiRulesCleared')); }}
                         className="text-[11px] text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
                       >
-                        <div className="i-ph:trash text-xs" /> Clear
+                        <div className="i-ph:trash text-xs" /> {t('appSettings.clear')}
                       </button>
                     )}
                   </div>
@@ -923,13 +926,13 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
               <div className="space-y-4">
                 <button onClick={saveSnapshot}
                   className="w-full py-3 px-4 bg-purple-500/12 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2">
-                  <div className="i-ph:camera text-base" /> Create Snapshot
+                  <div className="i-ph:camera text-base" /> {t('appSettings.createSnapshot')}
                 </button>
                 {snapshots.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="i-ph:clock-counter-clockwise text-3xl text-bolt-elements-textTertiary mx-auto mb-2" />
-                    <p className="text-sm text-bolt-elements-textTertiary">No snapshots yet</p>
-                    <p className="text-xs text-bolt-elements-textTertiary mt-1">Create a snapshot to save the current state of your project</p>
+                    <p className="text-sm text-bolt-elements-textTertiary">{t('appSettings.noSnapshots')}</p>
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('appSettings.noSnapshotsDesc')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -941,7 +944,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                           <div className="text-[11px] text-bolt-elements-textTertiary">{new Date(s.timestamp).toLocaleString()}</div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <button onClick={() => restoreSnapshot(s.id)} className="px-2.5 py-1.5 text-[11px] font-medium text-purple-400 bg-purple-500/10 rounded-md hover:bg-purple-500/20 transition-all">Restore</button>
+                          <button onClick={() => restoreSnapshot(s.id)} className="px-2.5 py-1.5 text-[11px] font-medium text-purple-400 bg-purple-500/10 rounded-md hover:bg-purple-500/20 transition-all">{t('appSettings.restore')}</button>
                           <button onClick={() => deleteSnapshot(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all"><div className="i-ph:trash text-sm" /></button>
                         </div>
                       </div>

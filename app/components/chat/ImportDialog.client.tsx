@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
 import { createScopedLogger } from '~/utils/logger';
+import { useT } from '~/lib/i18n/useT';
 
 const logger = createScopedLogger('ImportDialog');
 
@@ -26,6 +27,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
   const [loading, setLoading] = useState(false);
   const [importType, setImportType] = useState<'zip' | 'folder'>('zip');
   const [folderPath, setFolderPath] = useState('');
+  const t = useT();
 
   const handleZipImport = async (file: File) => {
     if (!file) return;
@@ -39,7 +41,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
       await onImport(result);
       onClose();
     } catch (error) {
-      toast.error(`Import failed: ${error instanceof Error ? error.message : error}`);
+      toast.error(`${t('importDialog.importFailed')} ${error instanceof Error ? error.message : error}`);
     } finally {
       setLoading(false);
     }
@@ -73,7 +75,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
       await onImport(result);
       onClose();
     } catch (error) {
-      toast.error(`Import failed: ${error instanceof Error ? error.message : error}`);
+      toast.error(`${t('importDialog.importFailed')} ${error instanceof Error ? error.message : error}`);
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">
-            {importType === 'zip' ? 'Import ZIP File' : 'Import Folder'}
+            {importType === 'zip' ? t('importDialog.importZipFile') : t('importDialog.importFolder')}
           </h2>
           <button onClick={onClose} className="text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary">
             <div className="i-ph:x text-lg" />
@@ -105,7 +107,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">
-              {importType === 'zip' ? 'ZIP File' : 'Select Folder'}
+              {importType === 'zip' ? t('importDialog.zipFile') : t('importDialog.selectFolder')}
             </label>
             {importType === 'zip' ? (
               <input                type="file"
@@ -119,7 +121,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
                 disabled={loading}
                 className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent disabled:opacity-50"
               >
-                {loading ? 'Importing...' : 'Select Folder'}
+                {loading ? t('github.importing') : t('importDialog.selectFolder')}
               </button>
             )}
           </div>
@@ -127,7 +129,7 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
 
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onClose} disabled={loading} className="px-3 py-1.5 rounded text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary disabled:opacity-50">
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

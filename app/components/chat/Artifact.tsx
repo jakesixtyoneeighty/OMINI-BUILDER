@@ -7,6 +7,7 @@ import type { ActionState } from '~/lib/runtime/action-runner';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
+import { useT } from '~/lib/i18n/useT';
 
 const highlighterOptions = {
   langs: ['shell'],
@@ -59,6 +60,7 @@ function isInstallCommand(content: string): boolean {
 }
 
 export const Artifact = memo(({ messageId }: ArtifactProps) => {
+  const t = useT();
   const artifacts = useStore(workbenchStore.artifacts);
   const artifact = artifacts[messageId];
 
@@ -108,7 +110,13 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
       }
     }
 
-    return { createdFiles: created, editedFiles: edited, installActions: installs, buildActions: builds, otherShellActions: otherShell };
+    return {
+      createdFiles: created,
+      editedFiles: edited,
+      installActions: installs,
+      buildActions: builds,
+      otherShellActions: otherShell,
+    };
   }, [actions]);
 
   const hasContent = actions.length > 0;
@@ -120,7 +128,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     if (createdFiles.length > 0) {
       result.push({
         key: 'created',
-        label: `Created ${createdFiles.length} file${createdFiles.length > 1 ? 's' : ''}`,
+        label:
+          createdFiles.length > 1
+            ? t('artifact.createdPlural', { count: createdFiles.length })
+            : t('artifact.created', { count: createdFiles.length }),
         icon: 'i-ph:file-plus',
         iconColor: 'text-emerald-500',
         actions: createdFiles,
@@ -130,7 +141,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     if (editedFiles.length > 0) {
       result.push({
         key: 'edited',
-        label: `Edited ${editedFiles.length} file${editedFiles.length > 1 ? 's' : ''}`,
+        label:
+          editedFiles.length > 1
+            ? t('artifact.editedPlural', { count: editedFiles.length })
+            : t('artifact.edited', { count: editedFiles.length }),
         icon: 'i-ph:pencil-simple',
         iconColor: 'text-amber-500',
         actions: editedFiles,
@@ -140,7 +154,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     if (installActions.length > 0) {
       result.push({
         key: 'install',
-        label: `Installed packages`,
+        label: t('artifact.installedPackages'),
         icon: 'i-ph:package',
         iconColor: 'text-violet-500',
         actions: installActions,
@@ -150,7 +164,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     if (otherShellActions.length > 0) {
       result.push({
         key: 'shell',
-        label: `Ran ${otherShellActions.length} command${otherShellActions.length > 1 ? 's' : ''}`,
+        label:
+          otherShellActions.length > 1
+            ? t('artifact.ranPlural', { count: otherShellActions.length })
+            : t('artifact.ran', { count: otherShellActions.length }),
         icon: 'i-ph:terminal',
         iconColor: 'text-blue-500',
         actions: otherShellActions,
@@ -160,7 +177,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     if (buildActions.length > 0) {
       result.push({
         key: 'built',
-        label: 'Built',
+        label: t('artifact.built'),
         icon: 'i-ph:wrench',
         iconColor: 'text-blue-500',
         actions: buildActions,
@@ -168,24 +185,27 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     }
 
     return result;
-  }, [createdFiles, editedFiles, installActions, buildActions, otherShellActions]);
+  }, [createdFiles, editedFiles, installActions, buildActions, otherShellActions, t]);
 
   return (
     <div
       className={classNames(
         'my-3 rounded-xl overflow-hidden transition-all duration-300',
-        isProcessing
-          ? 'artifact-processing border border-transparent'
-          : 'border border-bolt-elements-borderColor',
+        isProcessing ? 'artifact-processing border border-transparent' : 'border border-bolt-elements-borderColor',
       )}
-      style={isProcessing ? {
-        background: 'linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.15), rgba(168,85,247,0.15), rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
-        backgroundSize: '300% 300%',
-        animation: 'gradientShift 3s ease infinite',
-        border: '1px solid rgba(99,102,241,0.3)',
-      } : {
-        background: 'var(--bolt-elements-artifacts-background, rgba(255,255,255,0.03))',
-      }}
+      style={
+        isProcessing
+          ? {
+              background:
+                'linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.15), rgba(168,85,247,0.15), rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
+              backgroundSize: '300% 300%',
+              animation: 'gradientShift 3s ease infinite',
+              border: '1px solid rgba(99,102,241,0.3)',
+            }
+          : {
+              background: 'var(--bolt-elements-artifacts-background, rgba(255,255,255,0.03))',
+            }
+      }
     >
       {/* Header - clickable to open workbench */}
       <div
@@ -197,10 +217,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
       >
         <div className="i-ph:cube-duotone text-base text-bolt-elements-textTertiary shrink-0" />
         <span className="text-sm font-semibold text-bolt-elements-textPrimary flex-1 truncate">
-          {artifact?.title || 'Project'}
+          {artifact?.title || t('artifact.project')}
         </span>
         <span className="text-[10px] text-bolt-elements-textTertiary hidden sm:inline">
-          Abrir Workbench
+          {t('artifact.openWorkbench')}
         </span>
         <div className="i-ph:arrow-square-out text-xs text-bolt-elements-textTertiary" />
       </div>
@@ -224,9 +244,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
                   {/* Section header */}
                   <div className="flex items-center gap-2 px-4 py-2 bg-bolt-elements-bg-depth-2">
                     <div className={`${section.icon} text-xs ${section.iconColor}`} />
-                    <span className="text-xs font-medium text-bolt-elements-textSecondary">
-                      {section.label}
-                    </span>
+                    <span className="text-xs font-medium text-bolt-elements-textSecondary">{section.label}</span>
                   </div>
                   {/* Action items */}
                   <ul className="list-none">
@@ -347,9 +365,7 @@ function FileActionItem({ action, isLast, sectionKey }: { action: ActionState; i
 
           {/* Line count for new files */}
           {isCreated && isComplete && action.additions !== undefined && action.additions > 0 && (
-            <span className="text-[10px] font-mono text-emerald-400 shrink-0">
-              +{action.additions}
-            </span>
+            <span className="text-[10px] font-mono text-emerald-400 shrink-0">+{action.additions}</span>
           )}
         </div>
 
@@ -367,10 +383,12 @@ function FileActionItem({ action, isLast, sectionKey }: { action: ActionState; i
         </div>
 
         {/* Expand chevron */}
-        <div className={classNames(
-          'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-          expanded && 'rotate-180',
-        )}>
+        <div
+          className={classNames(
+            'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
+            expanded && 'rotate-180',
+          )}
+        >
           <div className="i-ph:caret-down text-[10px]" />
         </div>
       </div>
@@ -412,6 +430,7 @@ function ShellActionItem({
   isBuildSection?: boolean;
   isInstallSection?: boolean;
 }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   const isComplete = action.status === 'complete';
@@ -433,14 +452,15 @@ function ShellActionItem({
       const match = npmMatch || pnpmMatch || yarnMatch || pipMatch;
       if (match) {
         const packages = match[1].trim();
-        return `Installed ${packages.split(/\s+/).length} package${packages.split(/\s+/).length > 1 ? 's' : ''}: ${firstLine}`;
+        const pkgCount = packages.split(/\s+/).length;
+        return `${pkgCount > 1 ? t('artifact.installedPlural', { count: pkgCount }) : t('artifact.installed', { count: pkgCount })}: ${firstLine}`;
       }
       return firstLine;
     }
 
     // Detect common patterns
     const npxMatch = content.match(/npx\s+(\S+)/);
-    if (npxMatch) return `Ran ${npxMatch[1]}`;
+    if (npxMatch) return `${t('artifact.ran', { count: 1 })} ${npxMatch[1]}`;
 
     return firstLine.length > 60 ? firstLine.substring(0, 57) + '...' : firstLine;
   };
@@ -453,9 +473,7 @@ function ShellActionItem({
         onClick={() => setExpanded(!expanded)}
       >
         {/* Command text */}
-        <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-mono">
-          {getLabel()}
-        </span>
+        <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-mono">{getLabel()}</span>
 
         {/* Status icon */}
         <div className="shrink-0 w-4 h-4 flex items-center justify-center">
@@ -471,10 +489,12 @@ function ShellActionItem({
         </div>
 
         {/* Expand chevron */}
-        <div className={classNames(
-          'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-          expanded && 'rotate-180',
-        )}>
+        <div
+          className={classNames(
+            'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
+            expanded && 'rotate-180',
+          )}
+        >
           <div className="i-ph:caret-down text-[10px]" />
         </div>
       </div>

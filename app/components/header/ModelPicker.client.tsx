@@ -10,6 +10,7 @@ import {
   selectProviderModel,
   type ProviderId,
 } from '~/lib/stores/llm';
+import { useT } from '~/lib/i18n/useT';
 
 interface FlatOption {
   provider: ProviderId;
@@ -24,6 +25,7 @@ const PROVIDER_LOGOS: Record<ProviderId, string> = {
 };
 
 export function ModelPicker() {
+  const t = useT();
   const { provider, model, keys } = useStore(llmStore);
   const allModels = useStore(modelsStore);
   const loading = useStore(modelsLoadingStore);
@@ -111,7 +113,7 @@ export function ModelPicker() {
   }, [filtered]);
 
   const isAnyLoading = Object.values(loading).some(Boolean);
-  const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || 'Select model';
+  const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || t('model.selectModel');
 
   const dropdownContent = open ? (
     <div
@@ -124,7 +126,7 @@ export function ModelPicker() {
           autoFocus
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Search models..."
+          placeholder={t('model.searchModels')}
           className="w-full px-2 py-1.5 rounded text-xs bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
         />
       </div>
@@ -132,11 +134,11 @@ export function ModelPicker() {
       <div className="max-h-[300px] overflow-y-auto">
         {configuredCount === 0 ? (
           <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-            No API keys configured. Open Settings to add one.
+            {t('model.noApiKeys')}
           </div>
         ) : flat.length === 0 ? (
           <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-            {isAnyLoading ? 'Loading models…' : 'No models loaded yet.'}
+            {isAnyLoading ? t('model.loadingModels') : t('model.noModelsLoaded')}
           </div>
         ) : (
           (Object.keys(grouped) as ProviderId[]).map((p) => {
@@ -176,13 +178,13 @@ export function ModelPicker() {
       </div>
 
       <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
-        <span>{flat.length} models</span>
+        <span>{flat.length} {t('model.models')}</span>
         <button
           onClick={() => refreshAllConfiguredModels()}
           disabled={isAnyLoading || configuredCount === 0}
           className="hover:text-bolt-elements-textPrimary disabled:opacity-50"
         >
-          {isAnyLoading ? 'Refreshing…' : 'Refresh'}
+          {isAnyLoading ? t('model.refreshing') : t('model.refresh')}
         </button>
       </div>
     </div>
@@ -195,7 +197,7 @@ export function ModelPicker() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
-        title="Select model"
+        title={t('model.selectModel')}
       >
         <img src={PROVIDER_LOGOS[provider]} alt={provider} className="w-4 h-4 object-contain" />
         <span className="font-medium truncate max-w-[120px]">{currentLabel}</span>

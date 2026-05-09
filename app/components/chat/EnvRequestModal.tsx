@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { useT } from '~/lib/i18n/useT';
 
 export interface EnvVarRequest {
   name: string;
@@ -13,6 +14,7 @@ interface EnvRequestModalProps {
 }
 
 export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalProps) {
+  const t = useT();
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const v of variables) {
@@ -29,12 +31,12 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
       .map((v) => ({ key: v.name, value: values[v.name].trim() }));
 
     if (filled.length === 0) {
-      toast.error('Please fill in at least one variable');
+      toast.error(t('envRequest.fillAtLeastOne'));
       return;
     }
 
     onSave(filled);
-    toast.success(`${filled.length} environment variable${filled.length > 1 ? 's' : ''} saved!`);
+    toast.success(`${filled.length} ${t('envRequest.variablesSaved')}`);
   };
 
   const handleSkip = () => {
@@ -54,9 +56,9 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
               <div className="i-ph:key text-amber-400 text-xl" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">Environment Variables Required</h2>
+              <h2 className="text-lg font-bold text-bolt-elements-textPrimary">{t('envRequest.title')}</h2>
               <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
-                The AI needs these variables to complete the project
+                {t('envRequest.subtitle')}
               </p>
             </div>
           </div>
@@ -68,7 +70,7 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
         {/* Variables List */}
         <div className="px-6 py-4 max-h-[50vh] overflow-y-auto">
           <p className="text-xs text-bolt-elements-textSecondary mb-4">
-            Fill in the values for each variable. You can leave any blank and add them later in Settings.
+            {t('envRequest.fillValues')}
           </p>
           <div className="space-y-3">
             {variables.map((v) => (
@@ -76,7 +78,7 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono text-sm font-semibold text-amber-400">{v.name}</span>
                   <span className="text-[10px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium px-1.5 py-0.5 rounded bg-amber-500/10">
-                    Required
+                    {t('envRequest.required')}
                   </span>
                 </div>
                 <p className="text-xs text-bolt-elements-textSecondary mb-2">{v.description}</p>
@@ -107,7 +109,7 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
             onClick={handleSkip}
             className="px-4 py-2.5 text-sm font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
           >
-            Skip for now
+            {t('envRequest.skipForNow')}
           </button>
           <div className="flex gap-2">
             <button
@@ -116,7 +118,7 @@ export function EnvRequestModal({ variables, onClose, onSave }: EnvRequestModalP
               className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-amber-500/12 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
             >
               <div className="i-ph:check text-base" />
-              Save Variables
+              {t('envRequest.saveVariables')}
             </button>
           </div>
         </div>

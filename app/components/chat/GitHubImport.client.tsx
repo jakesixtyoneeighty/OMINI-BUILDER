@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { githubProviderTokenStore } from '~/lib/stores/auth';
 import { GitHubRepoSelect } from './GitHubRepoSelect.client';
+import { useT } from '~/lib/i18n/useT';
 
 interface ImportedFile {
   path: string;
@@ -28,6 +29,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
   const [repo, setRepo] = useState('');
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
+  const t = useT();
   
   const zipInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -48,9 +50,9 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
       await onImport(data);
       setOpen(false);
       setRepo('');
-      toast.success(`Imported ${data.stats.imported} files from GitHub`);
+      toast.success(`${t('githubImport.imported')} ${data.stats.imported} ${t('githubImport.filesFromGitHub')}`);
     } catch (err) {
-      toast.error(`GitHub import failed: ${err instanceof Error ? err.message : err}`);
+      toast.error(`${t('githubImport.gitHubImportFailed')} ${err instanceof Error ? err.message : err}`);
     } finally {
       setLoading(false);
     }
@@ -71,9 +73,9 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
       
       await onImport({ ...data, owner: 'local', repo: file.name });
-      toast.success(`Imported ${data.stats.imported} files from ZIP`);
+      toast.success(`${t('githubImport.imported')} ${data.stats.imported} ${t('githubImport.filesFromZip')}`);
     } catch (err) {
-      toast.error(`ZIP import failed: ${err instanceof Error ? err.message : err}`);
+      toast.error(`${t('githubImport.zipImportFailed')} ${err instanceof Error ? err.message : err}`);
     } finally {
       setLoading(false);
       if (zipInputRef.current) zipInputRef.current.value = '';
@@ -117,9 +119,9 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
       };
 
       await onImport(result);
-      toast.success(`Imported ${importedFiles.length} files from folder`);
+      toast.success(`${t('githubImport.imported')} ${importedFiles.length} ${t('githubImport.filesFromFolder')}`);
     } catch (err) {
-      toast.error(`Folder import failed: ${err instanceof Error ? err.message : err}`);
+      toast.error(`${t('githubImport.folderImportFailed')} ${err instanceof Error ? err.message : err}`);
     } finally {
       setLoading(false);
       if (folderInputRef.current) folderInputRef.current.value = '';
@@ -134,7 +136,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
         >
           <div className="i-ph:github-logo text-lg" />
-          GitHub
+          {t('githubImport.github')}
         </button>
         
         <button
@@ -143,7 +145,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
           <div className="i-ph:archive text-lg" />
-          ZIP
+          {t('githubImport.zip')}
         </button>
 
         <button
@@ -152,7 +154,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
           <div className="i-ph:folder-open text-lg" />
-          Folder
+          {t('githubImport.folder')}
         </button>
       </div>
 
@@ -181,7 +183,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="i-ph:github-logo text-3xl text-bolt-elements-textPrimary" />
-                <h2 className="text-xl font-bold text-bolt-elements-textPrimary">Import from GitHub</h2>
+                <h2 className="text-xl font-bold text-bolt-elements-textPrimary">{t('github.import')}</h2>
               </div>
               <button onClick={() => setOpen(false)} className="text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors">
                 <div className="i-ph:x text-xl" />
@@ -191,7 +193,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                  Repository URL or owner/name
+                  {t('github.repositoryUrl')}
                 </label>
                 <GitHubRepoSelect value={repo} onChange={(v) => setRepo(v)} placeholder="e.g. stackblitz/bolt.new" />
               </div>
@@ -199,7 +201,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
               {!ghToken && (
                 <div>
                   <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                    GitHub Token (Optional)
+                    {t('github.githubTokenOptional')}
                   </label>
                   <input
                     type="password"
@@ -218,14 +220,14 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
                 disabled={loading}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
               >
-                Cancel
+                {t('github.cancel')}
               </button>
               <button
                 onClick={submitGitHub}
                 disabled={loading || !repo.trim()}
                 className="px-6 py-2 rounded-lg text-sm font-bold bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 disabled:opacity-50 transition-all"
               >
-                {loading ? 'Importing...' : 'Import Repository'}
+                {loading ? t('github.importing') : t('github.importRepository')}
               </button>
             </div>
           </div>

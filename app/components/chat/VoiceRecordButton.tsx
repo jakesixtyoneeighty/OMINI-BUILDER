@@ -1,4 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { useT } from '~/lib/i18n/useT';
 
 interface VoiceRecordButtonProps {
   onTranscript: (text: string) => void;
@@ -8,6 +9,7 @@ export const VoiceRecordButton = memo(function VoiceRecordButton({ onTranscript 
   const [recording, setRecording] = useState(false);
   const [supported, setSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const t = useT();
 
   useEffect(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -91,7 +93,7 @@ export const VoiceRecordButton = memo(function VoiceRecordButton({ onTranscript 
     <button
       type="button"
       onClick={recording ? stopRecording : startRecording}
-      title={recording ? 'Parar gravacao' : 'Gravar voz'}
+      title={recording ? t('voiceRecord.stopRecording') : t('voiceRecord.recordVoice')}
       className={`
         flex items-center justify-center w-7 h-7 rounded-full border transition-all active:scale-95
         ${recording

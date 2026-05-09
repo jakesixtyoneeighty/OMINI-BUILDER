@@ -7,6 +7,7 @@ import {
   setInspectorActive,
   type InspectorElement,
 } from '~/lib/stores/inspector';
+import { useT } from '~/lib/i18n/useT';
 
 interface AppInspectorProps {
   isActive: boolean;
@@ -452,6 +453,7 @@ async function injectInspectorIntoWebContainer(inspectorScriptContent: string): 
 }
 
 function AppInspector({ isActive, onToggle }: AppInspectorProps) {
+  const t = useT();
   const [injecting, setInjecting] = useState(false);
   const cleanupRef = useRef<(() => void) | null>(null);
 
@@ -602,10 +604,10 @@ function AppInspector({ isActive, onToggle }: AppInspectorProps) {
             ? 'bg-orange-500/15 text-orange-400 border border-orange-500/25 shadow-sm shadow-orange-500/10'
             : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
         )}
-        title={isActive ? 'Desativar Inspetor' : 'Ativar Inspetor'}
+        title={isActive ? t('inspector.deactivate') : t('inspector.activate')}
       >
         <div className={classNames('text-sm', isActive ? (injecting ? 'i-ph:spinner animate-spin' : 'i-ph:magnifying-glass-plus') : 'i-ph:magnifying-glass')} />
-        {isActive && <span>{injecting ? 'Injetando...' : 'Inspetor'}</span>}
+        {isActive && <span>{injecting ? t('inspector.injecting') : t('inspector.inspector')}</span>}
         {isActive && selectedElements.length > 0 && (
           <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-orange-500 text-white">
             {selectedElements.length}

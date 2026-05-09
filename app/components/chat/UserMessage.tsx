@@ -1,16 +1,20 @@
 import type { Message } from 'ai';
 import { modificationsRegex } from '~/utils/diff';
 import { Markdown } from './Markdown';
+import { useT } from '~/lib/i18n/useT';
 
 interface UserMessageProps {
   message: Message;
 }
 
 export function UserMessage({ message }: UserMessageProps) {
+  const t = useT();
   const attachments = message.experimental_attachments || [];
   const imageAttachments = attachments.filter((a) => a.contentType?.startsWith('image/'));
   const fileAttachments = attachments.filter((a) => !a.contentType?.startsWith('image/'));
-  const inspectorAttachments = attachments.filter((a) => a.contentType === 'application/json' && a.name && !a.name.includes('.'));
+  const inspectorAttachments = attachments.filter(
+    (a) => a.contentType === 'application/json' && a.name && !a.name.includes('.'),
+  );
 
   // Separate inspector elements from regular files
   const regularFiles = fileAttachments.filter((a) => !inspectorAttachments.includes(a));
@@ -27,7 +31,7 @@ export function UserMessage({ message }: UserMessageProps) {
             >
               <img
                 src={attachment.url}
-                alt={attachment.name || `Image ${i + 1}`}
+                alt={attachment.name || t('userMessage.image', { n: i + 1 })}
                 className="w-full h-auto max-h-[200px] object-cover rounded-xl"
               />
               {attachment.name && (
@@ -49,9 +53,7 @@ export function UserMessage({ message }: UserMessageProps) {
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20"
             >
               <div className="i-ph:code text-xs text-orange-400 shrink-0" />
-              <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
-                {attachment.name}
-              </code>
+              <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">{attachment.name}</code>
             </div>
           ))}
         </div>
@@ -61,7 +63,8 @@ export function UserMessage({ message }: UserMessageProps) {
       {regularFiles.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {regularFiles.map((attachment, i) => {
-            const isCode = attachment.contentType?.includes('json') ||
+            const isCode =
+              attachment.contentType?.includes('json') ||
               attachment.contentType?.includes('javascript') ||
               attachment.contentType?.includes('typescript') ||
               attachment.contentType?.includes('text');
@@ -70,9 +73,13 @@ export function UserMessage({ message }: UserMessageProps) {
                 key={`file-${i}`}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20"
               >
-                <div className={isCode ? 'i-ph:file-js text-xs text-blue-400 shrink-0' : 'i-ph:file text-xs text-blue-400 shrink-0'} />
+                <div
+                  className={
+                    isCode ? 'i-ph:file-js text-xs text-blue-400 shrink-0' : 'i-ph:file text-xs text-blue-400 shrink-0'
+                  }
+                />
                 <span className="text-[11px] text-blue-400 font-medium truncate max-w-[140px]">
-                  {attachment.name || `File ${i + 1}`}
+                  {attachment.name || t('userMessage.file', { n: i + 1 })}
                 </span>
               </div>
             );

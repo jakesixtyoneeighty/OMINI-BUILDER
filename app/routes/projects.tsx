@@ -9,6 +9,7 @@ import { deleteProject, renameProject, projectsStore, type ProjectRecord } from 
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
+import { useT } from '~/lib/i18n/useT';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'Projects — Omni-Builder' }, { name: 'description', content: 'View and manage your Omni-Builder projects' }];
@@ -72,6 +73,7 @@ interface ProjectCard {
 
 /* ===== Main client content ===== */
 function ProjectsContent() {
+  const t = useT();
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -94,7 +96,7 @@ function ProjectsContent() {
           for (const item of filtered) {
             cardMap.set(item.urlId || item.id, {
               id: item.urlId || item.id,
-              name: item.description || 'Untitled',
+              name: item.description || t('projects.untitled'),
               description: '',
               logo: '',
               timestamp: item.timestamp,
@@ -133,7 +135,7 @@ function ProjectsContent() {
               } else {
                 cardMap.set(p.id, {
                   id: p.id,
-                  name: p.name || 'Untitled',
+                  name: p.name || t('projects.untitled'),
                   description: p.description || '',
                   logo: p.logo || '',
                   timestamp: p.updated_at || p.created_at || '',
@@ -175,11 +177,11 @@ function ProjectsContent() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hoje';
-    if (diffDays === 1) return 'Ontem';
-    if (diffDays < 7) return `${diffDays} dias atras`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} semanas atras`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} meses atras`;
+    if (diffDays === 0) return t('projects.today');
+    if (diffDays === 1) return t('projects.yesterday');
+    if (diffDays < 7) return `${diffDays} ${t('projects.daysAgo')}`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${t('projects.weeksAgo')}`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ${t('projects.monthsAgo')}`;
     return date.toLocaleDateString('pt-BR');
   };
 
@@ -190,25 +192,25 @@ function ProjectsContent() {
   const handleDeleteProject = async (project: ProjectCard) => {
     try {
       await deleteProject(project.id);
-      toast.success('Projeto excluido com sucesso!');
+      toast.success(t('projects.projectDeleted'));
       loadProjects();
     } catch (error) {
-      toast.error('Falha ao excluir projeto');
+      toast.error(t('projects.deleteFailed'));
     }
     setDialogContent(null);
   };
 
   const handleRenameProject = async (projectId: string, newName: string) => {
     if (!newName.trim()) {
-      toast.error('Nome nao pode ficar vazio');
+      toast.error(t('projects.nameCannotBeEmpty'));
       return;
     }
     try {
       await renameProject(projectId, newName.trim());
-      toast.success('Projeto renomeado com sucesso!');
+      toast.success(t('projects.projectRenamed'));
       loadProjects();
     } catch (error) {
-      toast.error('Falha ao renomear projeto');
+      toast.error(t('projects.renameFailed'));
     }
     setEditingId(null);
   };
@@ -252,9 +254,9 @@ function ProjectsContent() {
         {/* Page header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">Projetos</h1>
+            <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('projects.title')}</h1>
             <p className="text-sm text-bolt-elements-textTertiary mt-1">
-              {projects.length} projeto{projects.length !== 1 ? 's' : ''}
+              {projects.length} {t('projects.count')}
             </p>
           </div>
           <button
@@ -262,7 +264,7 @@ function ProjectsContent() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
           >
             <div className="i-ph:plus text-base" />
-            Novo Projeto
+            {t('projects.newProject')}
           </button>
         </div>
 
@@ -273,7 +275,7 @@ function ProjectsContent() {
               <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-sm text-bolt-elements-textTertiary" />
               <input
                 type="text"
-                placeholder="Buscar projetos..."
+                placeholder={t('projects.searchProjects')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive transition-all"
@@ -332,7 +334,7 @@ function ProjectsContent() {
                     {/* Source badge */}
                     {project.source === 'cloud' && (
                       <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-md bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent font-medium backdrop-blur-sm">
-                        Cloud
+                        {t('sidebar.cloud')}
                       </span>
                     )}
                     {/* Menu button */}
@@ -361,18 +363,18 @@ function ProjectsContent() {
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                     >
                       <div className="i-ph:pencil-simple text-base" />
-                      Renomear
+                      {t('projects.rename')}
                     </button>
                     <button
                       onClick={() => {
                         setMenuOpenId(null);
                         navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
-                        toast.success('Link copiado!');
+                        toast.success(t('projects.linkCopied'));
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                     >
                       <div className="i-ph:link text-base" />
-                      Copiar link
+                      {t('projects.copyLink')}
                     </button>
                     <button
                       onClick={() => {
@@ -382,7 +384,7 @@ function ProjectsContent() {
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
                     >
                       <div className="i-ph:trash text-base" />
-                      Excluir
+                      {t('projects.delete')}
                     </button>
                   </div>
                 )}
@@ -418,7 +420,7 @@ function ProjectsContent() {
                   ) : (
                     <a href={`/chat/${project.id}`} className="block">
                       <h3 className="text-sm font-semibold text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
-                        {project.name || 'Untitled'}
+                        {project.name || t('projects.untitled')}
                       </h3>
                     </a>
                   )}
@@ -435,7 +437,7 @@ function ProjectsContent() {
                     {project.messageCount > 0 && (
                       <div className="flex items-center gap-1.5">
                         <div className="i-ph:chat-circle-dots text-xs" />
-                        <span>{project.messageCount} mensagens</span>
+                        <span>{project.messageCount} {t('projects.messages')}</span>
                       </div>
                     )}
                   </div>
@@ -451,14 +453,14 @@ function ProjectsContent() {
             <div className="w-20 h-20 rounded-2xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-5">
               <div className="i-ph:folder-open text-4xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-2">Nenhum projeto ainda</p>
-            <p className="text-sm text-bolt-elements-textTertiary mb-6">Comece um novo chat para criar seu primeiro projeto</p>
+            <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-2">{t('projects.noProjectsYet')}</p>
+            <p className="text-sm text-bolt-elements-textTertiary mb-6">{t('projects.startNewChat')}</p>
             <button
               onClick={handleNewProject}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
             >
               <div className="i-ph:plus text-base" />
-              Novo Projeto
+              {t('projects.newProject')}
             </button>
           </div>
         )}
@@ -469,8 +471,8 @@ function ProjectsContent() {
             <div className="w-16 h-16 rounded-xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-4">
               <div className="i-ph:magnifying-glass text-2xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-sm font-medium text-bolt-elements-textPrimary mb-1">Nenhum resultado encontrado</p>
-            <p className="text-sm text-bolt-elements-textTertiary">Tente ajustar os termos de busca</p>
+            <p className="text-sm font-medium text-bolt-elements-textPrimary mb-1">{t('projects.noResults')}</p>
+            <p className="text-sm text-bolt-elements-textTertiary">{t('projects.tryAdjustingSearch')}</p>
           </div>
         )}
       </div>
@@ -480,24 +482,24 @@ function ProjectsContent() {
         <Dialog onBackdrop={() => setDialogContent(null)} onClose={() => setDialogContent(null)}>
           {dialogContent?.type === 'delete' && (
             <>
-              <DialogTitle>Excluir Projeto?</DialogTitle>
+              <DialogTitle>{t('projects.deleteProject')}</DialogTitle>
               <DialogDescription asChild>
                 <div>
                   <p>
-                    Voce esta prestes a excluir <strong>{dialogContent.project.name}</strong>.
+                    {t('projects.deleteProjectConfirm')} <strong>{dialogContent.project.name}</strong>.
                   </p>
-                  <p className="mt-1">Esta acao nao pode ser desfeita. Todos os dados do projeto serao perdidos.</p>
+                  <p className="mt-1">{t('projects.deleteProjectConfirm2')}</p>
                 </div>
               </DialogDescription>
               <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
                 <DialogButton type="secondary" onClick={() => setDialogContent(null)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </DialogButton>
                 <DialogButton
                   type="danger"
                   onClick={() => handleDeleteProject(dialogContent.project)}
                 >
-                  Excluir
+                  {t('projects.delete')}
                 </DialogButton>
               </div>
             </>

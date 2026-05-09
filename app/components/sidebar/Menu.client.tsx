@@ -18,6 +18,7 @@ import { HistoryItem } from './HistoryItem';
 import { binDates } from './date-binning';
 import { ClientOnly } from 'remix-utils/client-only';
 import { StorageBar } from './StorageBar.client';
+import { useT } from '~/lib/i18n/useT';
 
 const sidebarVariants = {
   closed: {
@@ -69,6 +70,7 @@ export function Menu() {
   const starred = useStore(starredProjectsStore);
   const projects = useStore(projectsStore);
   const recentlyViewed = useStore(recentlyViewedStore);
+  const t = useT();
 
   // Sort recently viewed so user's own projects (cloud source) appear first
   const sortedRecentlyViewed = useMemo(() => {
@@ -114,7 +116,7 @@ export function Menu() {
       if (!proj || id === 'default') return null;
       return {
         id,
-        name: proj.name || 'Untitled',
+        name: proj.name || t('sidebar.untitled'),
         description: proj.settings?.description || '',
         logo: proj.settings?.logo || '',
         source: 'local' as const,
@@ -130,13 +132,13 @@ export function Menu() {
 
   // Navigation items
   const navItems: NavItem[] = [
-    { icon: 'i-ph:house', label: 'Home', onClick: handleNewChat, active: !chatStarted },
-    { icon: 'i-ph:folder-open', label: 'Projects', href: '/projects' },
-    { icon: 'i-ph:star', label: 'Starred', onClick: () => setNavSection('starred') },
-    { icon: 'i-ph:clock-counter-clockwise', label: 'Recently viewed', onClick: () => setNavSection('chats') },
+    { icon: 'i-ph:house', label: t('sidebar.home'), onClick: handleNewChat, active: !chatStarted },
+    { icon: 'i-ph:folder-open', label: t('sidebar.projects'), href: '/projects' },
+    { icon: 'i-ph:star', label: t('sidebar.starred'), onClick: () => setNavSection('starred') },
+    { icon: 'i-ph:clock-counter-clockwise', label: t('sidebar.recentlyViewed'), onClick: () => setNavSection('chats') },
     {
       icon: 'i-ph:book-open-text',
-      label: 'Docs & Help center',
+      label: t('sidebar.docsHelp'),
       href: 'https://github.com/stackblitz/bolt.new',
       external: true,
     },
@@ -167,7 +169,7 @@ export function Menu() {
             }
           })
           .catch((error) => {
-            toast.error('Failed to delete conversation');
+            toast.error(t('sidebar.failedToDelete'));
             logger.error(error);
           });
       }
@@ -209,16 +211,16 @@ export function Menu() {
   const userEmail = user?.email || '';
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
   const userAvatar = user?.user_metadata?.avatar_url || '';
-  const displayName = userName || userEmail || 'Guest';
+  const displayName = userName || userEmail || t('sidebar.guest');
 
   // Total starred count (projects + chats)
   const totalStarred = starredProjectEntries.length + starredChatItems.length;
 
   const renderChatList = (items: ChatHistoryItem[], showDateBinning = true) => (
     <>
-      {!collapsed && items.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">No previous conversations</div>}
+      {!collapsed && items.length === 0 && <div className="pl-2 text-sm text-bolt-elements-textTertiary">{t('sidebar.noConversations')}</div>}
       {collapsed && items.length === 0 && (
-        <div className="flex items-center justify-center py-2" title="No previous conversations">
+        <div className="flex items-center justify-center py-2" title={t('sidebar.noConversations')}>
           <div className="i-ph:chat-circle-dots text-base text-bolt-elements-textTertiary" />
         </div>
       )}
@@ -244,18 +246,18 @@ export function Menu() {
         <Dialog onBackdrop={closeDialog} onClose={closeDialog}>
           {dialogContent?.type === 'delete' && (
             <>
-              <DialogTitle>Delete Chat?</DialogTitle>
+              <DialogTitle>{t('sidebar.deleteChat')}</DialogTitle>
               <DialogDescription asChild>
                 <div>
                   <p>
-                    You are about to delete <strong>{dialogContent.item.description}</strong>.
+                    {t('sidebar.deleteChatConfirm')} <strong>{dialogContent.item.description}</strong>.
                   </p>
-                  <p className="mt-1">Are you sure you want to delete this chat?</p>
+                  <p className="mt-1">{t('sidebar.deleteChatConfirm2')}</p>
                 </div>
               </DialogDescription>
               <div className="px-5 pb-4 bg-bolt-elements-background-depth-2 flex gap-2 justify-end">
                 <DialogButton type="secondary" onClick={closeDialog}>
-                  Cancel
+                  {t('common.cancel')}
                 </DialogButton>
                 <DialogButton
                   type="danger"
@@ -264,7 +266,7 @@ export function Menu() {
                     closeDialog();
                   }}
                 >
-                  Delete
+                  {t('common.delete')}
                 </DialogButton>
               </div>
             </>
@@ -292,11 +294,11 @@ export function Menu() {
       {/* Project info */}
       {!collapsed && (
         <div className="flex-1 min-w-0">
-          <div className="text-sm truncate">{project.name || 'Untitled'}</div>
+          <div className="text-sm truncate">{project.name || t('sidebar.untitled')}</div>
           <div className="flex items-center gap-1.5 mt-0.5">
             {project.source === 'cloud' && (
               <span className="text-[9px] px-1 py-0 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
-                Cloud
+                {t('sidebar.cloud')}
               </span>
             )}
             {project.description && (
@@ -328,11 +330,11 @@ export function Menu() {
       {/* Project info */}
       {!collapsed && (
         <div className="flex-1 min-w-0">
-          <div className="text-sm truncate">{item.name || 'Untitled'}</div>
+          <div className="text-sm truncate">{item.name || t('sidebar.untitled')}</div>
           <div className="flex items-center gap-1.5 mt-0.5">
             {item.source === 'cloud' && (
               <span className="text-[9px] px-1 py-0 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
-                Cloud
+                {t('sidebar.cloud')}
               </span>
             )}
             {item.description && (
@@ -352,7 +354,7 @@ export function Menu() {
       <button
         onClick={() => setAccountSettingsOpen(true)}
         className={`w-full flex items-center gap-3 border-b border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive transition-all ${collapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'}`}
-        title={collapsed ? `${displayName} — Account Settings` : 'Account Settings'}
+        title={collapsed ? `${displayName} — ${t('sidebar.accountSettings')}` : t('sidebar.accountSettings')}
       >
         <div
           className="flex items-center justify-center w-8 h-8 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText text-xs font-bold shrink-0 overflow-hidden"
@@ -393,7 +395,7 @@ export function Menu() {
                   <div className="i-ph:arrow-square-out text-xs ml-auto text-bolt-elements-textTertiary" />
                 )}
                 {/* Starred badge */}
-                {!collapsed && item.label === 'Starred' && totalStarred > 0 && (
+                {!collapsed && item.label === t('sidebar.starred') && totalStarred > 0 && (
                   <span className="ml-auto px-1.5 py-0.5 rounded-full bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent text-[10px] font-bold leading-none">
                     {totalStarred}
                   </span>
@@ -440,10 +442,10 @@ export function Menu() {
               type="button"
               onClick={() => setNavSection('main')}
               className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
-              title={collapsed ? 'Back' : undefined}
+              title={collapsed ? t('sidebar.back') : undefined}
             >
               <div className="i-ph:caret-left text-base shrink-0" />
-              {!collapsed && <span>Back</span>}
+              {!collapsed && <span>{t('sidebar.back')}</span>}
             </button>
           </div>
 
@@ -451,20 +453,20 @@ export function Menu() {
           {!collapsed && (
             <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider flex items-center gap-2">
               <div className="i-ph:star text-sm text-yellow-400" />
-              Favoritos
+              {t('sidebar.favorites')}
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
             {totalStarred === 0 ? (
               collapsed ? (
-                <div className="flex items-center justify-center py-2" title="Nenhum favorito ainda">
+                <div className="flex items-center justify-center py-2" title={t('sidebar.noFavorites')}>
                   <div className="i-ph:star text-base text-bolt-elements-textTertiary" />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 text-bolt-elements-textTertiary">
                   <div className="i-ph:star text-2xl mb-2 opacity-30" />
-                  <p className="text-sm">Nenhum favorito ainda</p>
-                  <p className="text-[11px] mt-1 opacity-70">Clique na estrela ao lado de um projeto para favoritar</p>
+                  <p className="text-sm">{t('sidebar.noFavorites')}</p>
+                  <p className="text-[11px] mt-1 opacity-70">{t('sidebar.clickStarToFavorite')}</p>
                 </div>
               )
             ) : (
@@ -476,7 +478,7 @@ export function Menu() {
                   <>
                     {!collapsed && starredProjectEntries.length > 0 && (
                       <div className="text-[10px] text-bolt-elements-textTertiary px-2.5 pt-3 pb-1 uppercase tracking-wider">
-                        Chats favoritos
+                        {t('sidebar.favoriteChats')}
                       </div>
                     )}
                     {renderChatList(starredChatItems, false)}
@@ -494,10 +496,10 @@ export function Menu() {
               type="button"
               onClick={() => setNavSection('main')}
               className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
-              title={collapsed ? 'Back' : undefined}
+              title={collapsed ? t('sidebar.back') : undefined}
             >
               <div className="i-ph:caret-left text-base shrink-0" />
-              {!collapsed && <span>Back</span>}
+              {!collapsed && <span>{t('sidebar.back')}</span>}
             </button>
           </div>
 
@@ -509,7 +511,7 @@ export function Menu() {
                 className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-lg p-2.5 transition-theme w-full text-left text-sm font-medium"
               >
                 <span className="inline-block i-bolt:chat scale-110" />
-                Start new chat
+                {t('sidebar.startNewChat')}
               </button>
             </div>
           )}
@@ -518,7 +520,7 @@ export function Menu() {
               <button
                 onClick={handleNewChat}
                 className="flex items-center justify-center py-2.5 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover transition-all w-full"
-                title="Start new chat"
+                title={t('sidebar.startNewChat')}
               >
                 <span className="inline-block i-bolt:chat text-base" />
               </button>
@@ -529,20 +531,20 @@ export function Menu() {
           {!collapsed && (
             <div className="text-bolt-elements-textPrimary font-medium px-5 my-2 text-xs uppercase tracking-wider flex items-center gap-2">
               <div className="i-ph:clock-counter-clockwise text-sm text-bolt-elements-item-contentAccent" />
-              Vistos recentemente
+              {t('sidebar.recentlyViewedTitle')}
             </div>
           )}
           <div className={`flex-1 overflow-y-auto ${collapsed ? 'px-1.5' : 'px-3'} pb-3`}>
             {sortedRecentlyViewed.length === 0 ? (
               collapsed ? (
-                <div className="flex items-center justify-center py-2" title="Nenhum projeto visto recentemente">
+                <div className="flex items-center justify-center py-2" title={t('sidebar.noRecentlyViewed')}>
                   <div className="i-ph:clock-counter-clockwise text-base text-bolt-elements-textTertiary" />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 text-bolt-elements-textTertiary">
                   <div className="i-ph:clock-counter-clockwise text-2xl mb-2 opacity-30" />
-                  <p className="text-sm">Nenhum projeto visto recentemente</p>
-                  <p className="text-[11px] mt-1 opacity-70">Os projetos que voce abrir aparecerao aqui</p>
+                  <p className="text-sm">{t('sidebar.noRecentlyViewed')}</p>
+                  <p className="text-[11px] mt-1 opacity-70">{t('sidebar.projectsWillAppearHere')}</p>
                 </div>
               )
             ) : (
@@ -563,7 +565,7 @@ export function Menu() {
         {/* Collapsed storage indicator */}
         {collapsed && (
           <div className="flex justify-center py-1.5 border-b border-bolt-elements-borderColor">
-            <div className="i-ph:cloud text-xs text-bolt-elements-textTertiary" title="Cloud Storage" />
+            <div className="i-ph:cloud text-xs text-bolt-elements-textTertiary" title={t('sidebar.cloudStorage')} />
           </div>
         )}
 
@@ -626,7 +628,7 @@ export function Menu() {
             type="button"
             onClick={toggleCollapsed}
             className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
           >
             <div className={`i-ph:caret-line-left text-base transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`} />
           </button>
@@ -642,7 +644,7 @@ export function Menu() {
         type="button"
         onClick={() => setMobileOpen(!mobileOpen)}
         className="lg:hidden fixed top-3 left-3 z-[1000] flex items-center justify-center w-9 h-9 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all"
-        aria-label="Toggle sidebar"
+        aria-label={t('sidebar.toggleSidebar')}
       >
         <div className={mobileOpen ? 'i-ph:x text-base' : 'i-ph:list text-base'} />
       </button>
