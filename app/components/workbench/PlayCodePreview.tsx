@@ -88,11 +88,11 @@ function buildPreviewHtml(files: FileMap): { html: string; isReact: boolean } {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"><\/script>
   <style>
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #0a0a0f; color: #e2e8f0; }
-    .file-block { margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #2a2a3e; }
-    .file-name { background: #1a1a2e; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #a78bfa; border-bottom: 1px solid #2a2a3e; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: var(--bolt-elements-bg-depth-1, #0a0a0f); color: #e2e8f0; }
+    .file-block { margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid var(--bolt-elements-borderColor, #2a2a3e); }
+    .file-name { background: var(--bolt-elements-bg-depth-2, #1a1a2e); padding: 8px 12px; font-size: 12px; font-weight: 600; color: #a78bfa; border-bottom: 1px solid var(--bolt-elements-borderColor, #2a2a3e); }
     pre { margin: 0; padding: 12px; overflow-x: auto; background: #11111b; }
-    code { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 12px; line-height: 1.6; color: #c4b5fd; }
+    code { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 12px; line-height: 1.6; color: var(--bolt-elements-textSecondary, #c4b5fd); }
     .notice { text-align: center; padding: 24px; color: #94a3b8; font-size: 13px; }
     .notice strong { color: #a78bfa; }
     ${css}
@@ -151,7 +151,7 @@ export const PlayCodePreview = memo(function PlayCodePreview() {
     <div className="w-full h-full flex flex-col">
       <iframe
         ref={iframeRef}
-        className="w-full h-full border-0 bg-white"
+        className="w-full h-full border-0 bg-bolt-elements-bg-depth-1"
         srcDoc={srcdoc}
         title="PlayCode Preview"
         sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups"

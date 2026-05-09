@@ -208,7 +208,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     {commands.map((cmd, i) => (
                       <div
                         key={i}
-                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-md bg-[#1e1e1e] border border-bolt-elements-borderColor/20"
+                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-md bg-bolt-elements-code-background border border-bolt-elements-borderColor/20"
                       >
                         <span className="text-[10px] text-indigo-400 font-mono shrink-0 mt-0.5">$</span>
                         <code className="text-[11px] text-emerald-300 font-mono break-all leading-relaxed">

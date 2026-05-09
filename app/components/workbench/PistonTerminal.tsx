@@ -230,9 +230,9 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
   }, [input, handleCommand]);
 
   return (
-    <div className="h-full flex flex-col bg-[#1a1a2e]">
+    <div className="h-full flex flex-col bg-bolt-elements-bg-depth-2">
       {/* Terminal header */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#16162a] border-b border-purple-500/20 shrink-0">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-3 border-b border-purple-500/20 shrink-0">
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 text-[10px] font-medium">
           <div className="i-ph:rocket-duotone text-xs" />
           Piston
@@ -263,7 +263,7 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
       </div>
 
       {/* Input line */}
-      <div className="flex items-center gap-2 px-3 py-2 border-t border-purple-500/20 bg-[#16162a] shrink-0">
+      <div className="flex items-center gap-2 px-3 py-2 border-t border-purple-500/20 bg-bolt-elements-bg-depth-3 shrink-0">
         <span className="text-purple-400 font-mono text-sm select-none">❯</span>
         <input
           ref={inputRef}

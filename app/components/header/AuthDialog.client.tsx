@@ -60,7 +60,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
       onClick={() => !loading && onClose()}
     >
       {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-[#0a0a12]">
+      <div className="absolute inset-0 bg-bolt-elements-bg-depth-1">
         {/* Gradient orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/15 blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/10 blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
@@ -83,23 +83,23 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
         {/* Close button */}
         <button
           onClick={() => !loading && onClose()}
-          className="absolute -top-16 right-0 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+          className="absolute -top-16 right-0 flex items-center gap-1.5 text-sm text-bolt-elements-textTertiary hover:text-gray-300 transition-colors"
         >
           <span>Fechar</span>
           <div className="i-ph:x text-lg" />
         </button>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl shadow-2xl shadow-purple-500/5 p-8 space-y-6">
+        <div className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 backdrop-blur-xl shadow-2xl shadow-purple-500/5 p-8 space-y-6">
           {/* Logo + Title */}
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25">
               <img src="/logo.svg" alt="Omni-Builder" className="w-10 h-10" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-bolt-elements-textPrimary tracking-tight">
                 {mode === 'login' ? 'Bem-vindo de volta' : 'Criar sua conta'}
               </h1>
-              <p className="text-sm text-gray-400 mt-1.5">
+              <p className="text-sm text-bolt-elements-textSecondary mt-1.5">
                 {mode === 'login'
                   ? 'Entre para acessar seus projetos e configurações'
                   : 'Comece a criar aplicações com IA agora mesmo'}
@@ -112,7 +112,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
             <button
               onClick={() => handleProvider('github')}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium border border-white/[0.08] text-gray-200 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-200 disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textPrimary bg-bolt-elements-button-secondary-background hover:bg-bolt-elements-button-secondary-backgroundHover hover:border-bolt-elements-borderColorActive transition-all duration-200 disabled:opacity-40"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -122,7 +122,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
             <button
               onClick={() => handleProvider('google')}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium border border-white/[0.08] text-gray-200 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-200 disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textPrimary bg-bolt-elements-button-secondary-background hover:bg-bolt-elements-button-secondary-backgroundHover hover:border-bolt-elements-borderColorActive transition-all duration-200 disabled:opacity-40"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -136,15 +136,15 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <span className="text-[11px] uppercase tracking-widest text-gray-500 font-medium">ou</span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-bolt-elements-borderColor to-transparent" />
+            <span className="text-[11px] uppercase tracking-widest text-bolt-elements-textTertiary font-medium">ou</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-bolt-elements-borderColor to-transparent" />
           </div>
 
           {/* Email form */}
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-bolt-elements-textSecondary uppercase tracking-wider">
                 Email
               </label>
               <input
@@ -154,11 +154,11 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
                 placeholder="seu@email.com"
                 autoComplete="email"
                 disabled={loading}
-                className="w-full px-4 py-3 rounded-xl text-sm bg-white/[0.04] border border-white/[0.08] text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all duration-200 disabled:opacity-40"
+                className="w-full px-4 py-3 rounded-xl text-sm bg-bolt-elements-button-secondary-background border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive focus:ring-1 focus:ring-bolt-elements-borderColorActive/25 transition-all duration-200 disabled:opacity-40"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-bolt-elements-textSecondary uppercase tracking-wider">
                 Senha
               </label>
               <input
@@ -169,7 +169,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
                 placeholder="••••••••"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 disabled={loading}
-                className="w-full px-4 py-3 rounded-xl text-sm bg-white/[0.04] border border-white/[0.08] text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all duration-200 disabled:opacity-40"
+                className="w-full px-4 py-3 rounded-xl text-sm bg-bolt-elements-button-secondary-background border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive focus:ring-1 focus:ring-bolt-elements-borderColorActive/25 transition-all duration-200 disabled:opacity-40"
               />
             </div>
             <button
@@ -189,7 +189,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
           </div>
 
           {/* Toggle mode */}
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-bolt-elements-textTertiary">
             {mode === 'login' ? (
               <>
                 Não tem uma conta?{' '}
@@ -215,7 +215,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
         </div>
 
         {/* Bottom branding */}
-        <p className="text-center text-[11px] text-gray-600 mt-4">
+        <p className="text-center text-[11px] text-bolt-elements-textTertiary mt-4">
           Omni-Builder — Powered by Z.ai
         </p>
       </div>

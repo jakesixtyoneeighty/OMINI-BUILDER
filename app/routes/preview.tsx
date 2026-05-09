@@ -33,12 +33,12 @@ export default function PreviewPage() {
 
   if (!previewUrl) {
     return (
-      <div className="flex flex-col items-center justify-center w-screen h-screen bg-[#0a0a0f] text-white">
+      <div className="flex flex-col items-center justify-center w-screen h-screen bg-bolt-elements-bg-depth-1 text-bolt-elements-textPrimary">
         <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
           <div className="i-ph:link-break text-3xl text-red-400" />
         </div>
         <h1 className="text-xl font-bold mb-2">URL do preview nao encontrada</h1>
-        <p className="text-sm text-gray-400 mb-6 text-center max-w-md">
+        <p className="text-sm text-bolt-elements-textSecondary mb-6 text-center max-w-md">
           Abra o preview a partir do Omni-Builder clicando no botao "Abrir em nova aba" no painel de preview.
         </p>
         <a
@@ -53,14 +53,14 @@ export default function PreviewPage() {
   }
 
   return (
-    <div className="flex flex-col w-screen h-screen bg-[#0a0a0f] overflow-hidden">
+    <div className="flex flex-col w-screen h-screen bg-bolt-elements-bg-depth-1 overflow-hidden">
       {/* Minimal toolbar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0d0d1a] border-b border-[#1a1a2e] shrink-0">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-2 border-b border-bolt-elements-borderColor shrink-0">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium">
           <div className="i-ph:cube-duotone text-sm" />
           WebContainer
         </div>
-        <div className="flex-1 flex items-center bg-[#0a0a0f] border border-[#1a1a2e] rounded-md px-3 py-1 text-xs text-gray-400 truncate font-mono">
+        <div className="flex-1 flex items-center bg-bolt-elements-bg-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate font-mono">
           {previewUrl}
         </div>
         <button
@@ -70,14 +70,14 @@ export default function PreviewPage() {
             const iframe = document.querySelector('iframe');
             if (iframe) iframe.src = iframe.src;
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-[#1a1a2e] transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-all"
           title="Atualizar preview"
         >
           <div className="i-ph:arrow-clockwise text-sm" />
         </button>
         <a
           href="/"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-[#1a1a2e] transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-all"
           title="Voltar ao Omni-Builder"
         >
           <div className="i-ph:arrow-left text-sm" />
@@ -88,17 +88,17 @@ export default function PreviewPage() {
       {/* Preview iframe */}
       <div className="flex-1 relative" style={{ minHeight: 0 }}>
         {!loaded && !error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f] z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-bolt-elements-bg-depth-1 z-10">
             <div className="text-center">
               <div className="relative w-16 h-16 mx-auto mb-4">
-                <div className="absolute inset-0 rounded-full border-2 border-[#1a1a2e]" />
+                <div className="absolute inset-0 rounded-full border-2 border-bolt-elements-borderColor" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="i-ph:eye text-xl text-gray-500" />
+                  <div className="i-ph:eye text-xl text-bolt-elements-textTertiary" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-400">Carregando preview...</p>
-              <p className="text-xs text-gray-600 mt-1">Aguarde enquanto o app e compilado</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary">Carregando preview...</p>
+              <p className="text-xs text-bolt-elements-textTertiary mt-1">Aguarde enquanto o app e compilado</p>
               <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -109,13 +109,13 @@ export default function PreviewPage() {
         )}
 
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f] z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-bolt-elements-bg-depth-1 z-10">
             <div className="text-center">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
                 <div className="i-ph:warning-circle text-3xl text-red-400" />
               </div>
-              <p className="text-sm font-medium text-gray-300 mb-1">Falha ao carregar o preview</p>
-              <p className="text-xs text-gray-500 mb-4">O WebContainer pode ter sido encerrado ou a URL expirou.</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">Falha ao carregar o preview</p>
+              <p className="text-xs text-bolt-elements-textTertiary mb-4">O WebContainer pode ter sido encerrado ou a URL expirou.</p>
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => {
@@ -131,7 +131,7 @@ export default function PreviewPage() {
                 </button>
                 <a
                   href="/"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[#1a1a2e] border border-[#2a2a3e] text-gray-300 hover:text-white transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all"
                 >
                   Voltar ao Omni-Builder
                 </a>
@@ -142,7 +142,7 @@ export default function PreviewPage() {
 
         <iframe
           src={previewUrl}
-          className="w-full h-full border-0 bg-white"
+          className="w-full h-full border-0 bg-bolt-elements-bg-depth-1"
           title="App Preview"
           onLoad={handleLoad}
           onError={handleError}
@@ -153,7 +153,7 @@ export default function PreviewPage() {
             width: '100%',
             height: '100%',
             border: 'none',
-            background: 'white',
+            background: 'var(--bolt-elements-bg-depth-1, #09090b)',
           }}
         />
       </div>

@@ -108,7 +108,7 @@ function FetchSiteCard({ url, domain, isStreaming }: { url: string; domain: stri
   const screenshotUrl = `/api/screenshot?url=${encodeURIComponent(url)}`;
 
   return (
-    <div className="my-2 rounded-xl overflow-hidden border border-[#e0e0e0] dark:border-bolt-elements-borderColor bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1 max-w-sm">
+    <div className="my-2 rounded-xl overflow-hidden border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 max-w-sm">
       {/* Screenshot */}
       <div className="relative w-full h-32 bg-bolt-elements-bg-depth-3 overflow-hidden">
         <img

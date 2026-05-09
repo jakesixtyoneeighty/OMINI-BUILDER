@@ -180,7 +180,7 @@ function getTemplateConfig(projectType: ProjectType, files: FileMap) {
 }
 
 const SANDBOX_STYLES = `
-.sp-wrapper { width: 100% !important; height: 100% !important; border: none !important; background: white !important; display: flex !important; flex-direction: column !important; }
+.sp-wrapper { width: 100% !important; height: 100% !important; border: none !important; background: var(--bolt-elements-bg-depth-1, #09090b) !important; display: flex !important; flex-direction: column !important; }
 .sp-preview { height: 100% !important; flex: 1 !important; min-height: 0 !important; }
 .sp-preview-iframe { height: 100% !important; width: 100% !important; }
 .sp-layout { border: none !important; height: 100% !important; background: transparent !important; flex: 1 !important; }
@@ -258,7 +258,7 @@ function IframePreview() {
   }
 
   // For plain HTML/CSS/JS, use srcdoc
-  return <iframe ref={iframeRef} className="w-full h-full border-0 bg-white" srcDoc={srcdoc} title="Iframe Preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups" />;
+  return <iframe ref={iframeRef} className="w-full h-full border-0 bg-bolt-elements-bg-depth-1" srcDoc={srcdoc} title="Iframe Preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups" />;
 }
 
 /**
@@ -440,7 +440,7 @@ export const Preview = memo(function Preview() {
                     width: '100%',
                     height: '100%',
                     border: 'none',
-                    background: 'white',
+                    background: 'var(--bolt-elements-bg-depth-1)',
                     margin: 0,
                     padding: 0,
                   }}

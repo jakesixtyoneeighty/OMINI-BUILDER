@@ -178,7 +178,7 @@ export function ErrorBoundary() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0f] text-white p-6 overflow-y-auto">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-bolt-elements-bg-depth-1 text-bolt-elements-textPrimary p-6 overflow-y-auto">
       <div className="w-full max-w-2xl">
         {/* Error icon */}
         <div className="flex justify-center mb-6">
@@ -191,10 +191,10 @@ export function ErrorBoundary() {
 
         {/* Title & Message */}
         <h1 className="text-2xl font-bold text-center mb-2 text-red-400">{title}</h1>
-        <p className="text-gray-300 text-center text-sm mb-4 leading-relaxed">{message}</p>
+        <p className="text-bolt-elements-textSecondary text-center text-sm mb-4 leading-relaxed">{message}</p>
 
         {/* Context info */}
-        <div className="flex items-center justify-center gap-4 text-[11px] text-gray-500 mb-6">
+        <div className="flex items-center justify-center gap-4 text-[11px] text-bolt-elements-textTertiary mb-6">
           <span>{new Date().toLocaleString()}</span>
           {typeof window !== 'undefined' && (
             <span className="font-mono truncate max-w-[300px]">{window.location.href}</span>
@@ -203,7 +203,7 @@ export function ErrorBoundary() {
 
         {/* Error details card */}
         {(stackTrace || errorData || rawError || status) && (
-          <div className="mb-6 rounded-xl bg-[#0d0d1a] border border-red-500/20 overflow-hidden">
+          <div className="mb-6 rounded-xl bg-bolt-elements-bg-depth-2 border border-red-500/20 overflow-hidden">
             {/* Card header */}
             <div className="flex items-center justify-between px-4 py-3 bg-red-500/5 border-b border-red-500/15">
               <div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ export function ErrorBoundary() {
 
             {/* Status badge (for route errors) */}
             {status && (
-              <div className="px-4 py-2 border-b border-[#1a1a2e]">
+              <div className="px-4 py-2 border-b border-bolt-elements-borderColor">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-300 text-xs font-mono">
                   HTTP {status} {statusText}
                 </span>
@@ -230,7 +230,7 @@ export function ErrorBoundary() {
 
             {/* Error name badge */}
             {errorName && errorName !== 'Error' && (
-              <div className="px-4 py-2 border-b border-[#1a1a2e]">
+              <div className="px-4 py-2 border-b border-bolt-elements-borderColor">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 text-xs font-mono">
                   {errorName}
                 </span>
@@ -242,7 +242,7 @@ export function ErrorBoundary() {
               <div>
                 <button
                   onClick={() => setShowFullStack(!showFullStack)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-gray-400 hover:text-gray-300 hover:bg-[#1a1a2e] transition-colors border-b border-[#1a1a2e]"
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-colors border-b border-bolt-elements-borderColor"
                 >
                   <span className="font-medium">Stack Trace ({stackTrace.split('\n').length} linhas)</span>
                   <div className={`i-ph:${showFullStack ? 'caret-up' : 'caret-down'} text-sm`} />
@@ -259,8 +259,8 @@ export function ErrorBoundary() {
 
             {/* Error data (for route errors with data) */}
             {errorData && typeof errorData === 'object' && (
-              <div className="border-t border-[#1a1a2e]">
-                <div className="px-4 py-2 border-b border-[#1a1a2e] text-xs text-gray-500 font-medium">Error Data</div>
+              <div className="border-t border-bolt-elements-borderColor">
+                <div className="px-4 py-2 border-b border-bolt-elements-borderColor text-xs text-bolt-elements-textTertiary font-medium">Error Data</div>
                 <pre className="p-4 text-[11px] text-amber-300/80 font-mono overflow-auto max-h-[200px] whitespace-pre-wrap break-words">
                   {JSON.stringify(errorData, null, 2)}
                 </pre>
@@ -269,8 +269,8 @@ export function ErrorBoundary() {
 
             {/* Raw error (for non-standard errors) */}
             {rawError && !stackTrace && (
-              <div className="border-t border-[#1a1a2e]">
-                <div className="px-4 py-2 border-b border-[#1a1a2e] text-xs text-gray-500 font-medium">Raw Error</div>
+              <div className="border-t border-bolt-elements-borderColor">
+                <div className="px-4 py-2 border-b border-bolt-elements-borderColor text-xs text-bolt-elements-textTertiary font-medium">Raw Error</div>
                 <pre className="p-4 text-[11px] text-red-300/70 font-mono overflow-auto max-h-[200px] whitespace-pre-wrap break-words">
                   {rawError}
                 </pre>
@@ -283,14 +283,14 @@ export function ErrorBoundary() {
         <div className="flex gap-3">
           <button
             onClick={handleGoBack}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-[#1a1a2e] border border-[#2a2a3e] text-gray-300 hover:bg-[#2a2a3e] hover:text-white transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-bolt-elements-button-secondary-backgroundHover/80 hover:text-bolt-elements-textPrimary transition-all"
           >
             <div className="i-ph:arrow-left text-base" />
             Voltar
           </button>
           <button
             onClick={handleClearAndReload}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-[#1a1a2e] border border-[#2a2a3e] text-gray-300 hover:bg-[#2a2a3e] hover:text-white transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-bolt-elements-button-secondary-backgroundHover/80 hover:text-bolt-elements-textPrimary transition-all"
           >
             <div className="i-ph:trash text-base" />
             Limpar Cache
@@ -305,7 +305,7 @@ export function ErrorBoundary() {
         </div>
 
         {/* Footer hint */}
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-bolt-elements-textTertiary mt-6">
           Omni-Builder v1.0 — Se o erro persistir, copie os detalhes e abra uma issue no GitHub.
         </p>
       </div>

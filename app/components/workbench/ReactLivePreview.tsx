@@ -294,17 +294,17 @@ const LIVE_PREVIEW_STYLES = `
   flex: 1;
   overflow: auto;
   padding: 0;
-  background: white;
+  background: var(--bolt-elements-bg-depth-1, #09090b);
 }
 .react-live-error {
-  background: #1a1a2e;
+  background: var(--bolt-elements-bg-depth-2, #1a1a2e);
   color: #f87171;
   padding: 12px 16px;
   font-family: 'Fira Code', 'Cascadia Code', monospace;
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
-  border-top: 1px solid #374151;
+  border-top: 1px solid var(--bolt-elements-borderColor, #374151);
   max-height: 150px;
   overflow-y: auto;
 }
@@ -348,7 +348,7 @@ export const ReactLivePreview = memo(function ReactLivePreview() {
 
   // If no React files, use iframe fallback
   if (!useReactLive) {
-    return <iframe ref={iframeRef} className="w-full h-full border-0 bg-white" srcDoc={fallbackSrcdoc} title="Preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups" />;
+    return <iframe ref={iframeRef} className="w-full h-full border-0 bg-bolt-elements-bg-depth-1" srcDoc={fallbackSrcdoc} title="Preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups" />;
   }
 
   return (

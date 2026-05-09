@@ -176,7 +176,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         'my-3 rounded-xl overflow-hidden transition-all duration-300',
         isProcessing
           ? 'artifact-processing border border-transparent'
-          : 'border border-[#e0e0e0] dark:border-bolt-elements-borderColor',
+          : 'border border-bolt-elements-borderColor',
       )}
       style={isProcessing ? {
         background: 'linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.15), rgba(168,85,247,0.15), rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
@@ -215,14 +215,14 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             transition={{ duration: 0.2, ease: cubicEasingFn }}
             className="overflow-hidden"
           >
-            <div className="border-t border-[#e0e0e0] dark:border-bolt-elements-borderColor">
+            <div className="border-t border-bolt-elements-borderColor">
               {sections.map((section, sIdx) => (
                 <div
                   key={section.key}
-                  className={sIdx < sections.length - 1 ? 'border-b border-[#e0e0e0]/50 dark:border-bolt-elements-borderColor/50' : ''}
+                  className={sIdx < sections.length - 1 ? 'border-b border-bolt-elements-borderColor/50' : ''}
                 >
                   {/* Section header */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-[#f8f9fa] dark:bg-bolt-elements-background-depth-1">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-bolt-elements-bg-depth-2">
                     <div className={`${section.icon} text-xs ${section.iconColor}`} />
                     <span className="text-xs font-medium text-bolt-elements-textSecondary">
                       {section.label}
@@ -321,7 +321,7 @@ function FileActionItem({ action, isLast, sectionKey }: { action: ActionState; i
   const isFailed = action.status === 'failed';
 
   return (
-    <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
+    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/30' : ''}>
       {/* Action summary line */}
       <div
         className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
@@ -446,7 +446,7 @@ function ShellActionItem({
   };
 
   return (
-    <div className={!isLast ? 'border-b border-[#e0e0e0]/30 dark:border-bolt-elements-borderColor/30' : ''}>
+    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/30' : ''}>
       {/* Command summary line */}
       <div
         className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
@@ -505,7 +505,7 @@ function ShellActionItem({
 function ShellCodeBlock({ code }: { code: string }) {
   return (
     <div
-      className="text-xs rounded-lg overflow-hidden bg-[#1e1e1e] border border-bolt-elements-borderColor/30"
+      className="text-xs rounded-lg overflow-hidden bg-bolt-elements-code-background border border-bolt-elements-borderColor/30"
       dangerouslySetInnerHTML={{
         __html: shellHighlighter.codeToHtml(code, {
           lang: 'shell',

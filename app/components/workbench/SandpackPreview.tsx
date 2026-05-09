@@ -239,7 +239,7 @@ const SANDBOX_STYLES = `
   width: 100% !important;
   height: 100% !important;
   border: none !important;
-  background: white !important;
+  background: var(--bolt-elements-bg-depth-1, #09090b) !important;
   display: flex !important;
   flex-direction: column !important;
 }

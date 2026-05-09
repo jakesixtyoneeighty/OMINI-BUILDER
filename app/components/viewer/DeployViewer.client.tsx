@@ -361,7 +361,7 @@ server.listen(3000, () => {
           <iframe
             ref={iframeRef}
             src={previewUrl}
-            className="absolute inset-0 w-full h-full border-0 bg-white"
+            className="absolute inset-0 w-full h-full border-0 bg-bolt-elements-bg-depth-1"
             title="Deployed Project Preview"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             allow="cross-origin-isolated"

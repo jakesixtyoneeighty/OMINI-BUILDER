@@ -81,7 +81,7 @@ function ImageUploader({
           <>
             <img src={value} alt={label} className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 text-black text-[11px] font-semibold shadow-lg">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bolt-elements-bg-depth-2 text-bolt-elements-textPrimary text-[11px] font-semibold shadow-lg border border-bolt-elements-borderColor">
                 <div className="i-ph:pencil-simple text-xs" />
                 Change
               </div>

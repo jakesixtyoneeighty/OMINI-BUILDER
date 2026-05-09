@@ -31,8 +31,44 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.015;
+  opacity: 0.012;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Force dark backgrounds on all major surfaces */
+[data-theme="dark"] body {
+  background-color: #09090b;
+}
+
+[data-theme="dark"] header,
+[data-theme="dark"] nav {
+  background-color: var(--bolt-elements-bg-depth-1) !important;
+}
+
+/* Force dark inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bolt-elements-bg-depth-1);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Force dark buttons that might inherit light colors */
+[data-theme="dark"] button:not([class*="bg-gradient"]):not([class*="bg-accent"]):not([class*="bg-blue-500"]):not([class*="bg-purple-6"]):not([class*="bg-indigo-6"]):not([class*="bg-pink-5"]):not([class*="from-purple"]):not([class*="from-indigo"]) {
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Force dark on dialog/modal backdrops */
+[data-theme="dark"] [role="dialog"],
+[data-theme="dark"] .fixed.inset-0 > div:not([class*="bg-black"]) {
+  background-color: var(--bolt-elements-bg-depth-2);
+}
+
+/* Ensure all cards/containers are dark */
+[data-theme="dark"] .rounded-xl,
+[data-theme="dark"] .rounded-2xl,
+[data-theme="dark"] .rounded-lg {
+  border-color: var(--bolt-elements-borderColor);
 }
 
 /* Scrollbar styling for dark theme */
@@ -73,6 +109,35 @@ body {
 /* Button hover glow for primary actions */
 [data-theme="dark"] button:hover {
   transition: all 0.15s ease;
+}
+
+/* ===== Override hardcoded white backgrounds in dark mode ===== */
+
+/* CodeBlock copy button - dark background */
+[data-theme="dark"] .CopyButtonContainer {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+}
+[data-theme="dark"] .CopyButtonContainer button:before {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+  color: var(--bolt-elements-textSecondary) !important;
+  border-color: var(--bolt-elements-borderColor) !important;
+}
+
+/* User avatar - dark background */
+[data-theme="dark"] .bg-white.text-gray-600 {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+  color: var(--bolt-elements-textSecondary) !important;
+}
+
+/* Preview iframe - dark background when loading */
+[data-theme="dark"] iframe {
+  background-color: var(--bolt-elements-bg-depth-1) !important;
+}
+
+/* PublishToGalleryButton change overlay */
+[data-theme="dark"] .bg-white\/90.text-black {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+  color: var(--bolt-elements-textPrimary) !important;
 }
 
 /* Selection color */
