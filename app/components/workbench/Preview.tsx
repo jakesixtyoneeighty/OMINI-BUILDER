@@ -403,7 +403,12 @@ export const Preview = memo(function Preview() {
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
           <IconButton
             icon="i-ph:arrow-square-out"
-            onClick={() => { if (activePreview?.baseUrl) window.open(activePreview.baseUrl, '_blank'); }}
+            onClick={() => {
+              if (activePreview?.baseUrl) {
+                const previewPageUrl = `/preview?url=${encodeURIComponent(activePreview.baseUrl)}`;
+                window.open(previewPageUrl, '_blank');
+              }
+            }}
             title="Abrir em nova aba"
             disabled={!activePreview?.baseUrl}
           />
