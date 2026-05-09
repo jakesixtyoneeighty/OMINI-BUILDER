@@ -112,6 +112,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     const current = projects[projectId] ?? getActiveProject();
     const db = current.settings?.database;
     if (!db || db.type === 'none') return undefined;
+    if (db.type === 'omni' && db.omni?.enabled) {
+      return { type: 'omni' as const, omni: { projectId, enabled: true } };
+    }
     if (db.type === 'firebase' && db.firebase?.apiKey) {
       return { type: 'firebase' as const, firebase: { apiKey: db.firebase.apiKey, authDomain: db.firebase.authDomain, projectId: db.firebase.projectId, storageBucket: db.firebase.storageBucket, messagingSenderId: db.firebase.messagingSenderId, appId: db.firebase.appId } };
     }
@@ -455,7 +458,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
   // DB request modal state
   const [dbFields, setDbFields] = useState<DbFieldRequest[]>([]);
-  const [dbType, setDbType] = useState<'supabase' | 'firebase'>('supabase');
+  const [dbType, setDbType] = useState<'supabase' | 'firebase' | 'omni'>('supabase');
   const [dbModalOpen, setDbModalOpen] = useState(false);
   const processedDbMessages = useRef<Set<number>>(new Set());
 
@@ -476,7 +479,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       if (content.match(/<env_request\s*>[\s\S]*?<\/env_request\s*>/i)) {
         processedEnvMessages.current.add(i);
       }
-      if (content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>[\s\S]*?<\/db_request\s*>/i)) {
+      if (content.match(/<db_request\s+type=["']?(supabase|firebase|omni)["']?\s*>[\s\S]*?<\/db_request\s*>/i)) {
         processedDbMessages.current.add(i);
       }
       if (content.match(/<user_question\s+question=["'][^"']*["][\s\S]*?<\/user_question\s*>/i)) {
@@ -535,10 +538,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       if (msg.role !== 'assistant' || processedDbMessages.current.has(i)) continue;
       const content = msg.content || '';
       // Very robust regex: handles all whitespace/quote variations, multiline, self-closing
-      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase)["']?\s*>([\s\S]*?)<\/db_request\s*>/i);
+      const dbRequestMatch = content.match(/<db_request\s+type=["']?(supabase|firebase|omni)["']?\s*>([\s\S]*?)<\/db_request\s*>/i);
       if (dbRequestMatch) {
         processedDbMessages.current.add(i);
-        const reqType = dbRequestMatch[1].toLowerCase() as 'supabase' | 'firebase';
+        const reqType = dbRequestMatch[1].toLowerCase() as 'supabase' | 'firebase' | 'omni';
         const body = dbRequestMatch[2];
         // Parse <field> tags (supports self-closing <field ... />)
         const fieldsRaw = body
@@ -552,7 +555,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
           .filter((f) => f.name);
 
         // If no fields were parsed from the AI response, use default fields based on db type
-        const defaultFields: DbFieldRequest[] = reqType === 'supabase'
+        const defaultFields: DbFieldRequest[] = reqType === 'omni'
+          ? [
+              { name: 'enabled', description: 'Enable Omni DB built-in database (100MB free, no configuration needed)' },
+            ]
+          : reqType === 'supabase'
           ? [
               { name: 'url', description: 'Project URL from Supabase dashboard (e.g. https://xxxxx.supabase.co)' },
               { name: 'anonKey', description: 'Anonymous/public key from Project Settings > API' },
@@ -622,7 +629,25 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
       // Small delay to ensure the chat UI is ready before appending
       setTimeout(() => {
-        if (type === 'supabase') {
+        if (type === 'omni') {
+          append({
+            role: 'user',
+            content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
+
+Please:
+1. Create a lib/omni-db.js file with the OmniDB SDK class
+2. Initialize the database with: const db = new OmniDB('${projectId}');
+3. Create all necessary collections with their schemas
+4. Generate all the CRUD operations and hooks needed for the app
+5. Make sure all components that need data use this database instance
+
+The Omni DB API endpoint is POST /api/db. It supports: init, stats, collections, createCollection, dropCollection, getSchema, query, insert, update, delete, count.
+
+Each collection needs a schema with field definitions like: { fieldName: { type: "string|number|boolean", required: true/false, unique: true/false } }
+
+The database is ready to use. Please configure the project to connect to it and create the necessary collections.`,
+          });
+        } else if (type === 'supabase') {
           append({
             role: 'user',
             content: `I just configured a Supabase database for this project. Here are the connection details:\n- Project URL: ${config.url}\n- Anon Key: ${config.anonKey}\n\nPlease:\n1. Install @supabase/supabase-js if not already installed\n2. Create a lib/database.ts or lib/supabase.ts file with the Supabase client initialized\n3. Set up the database connection in the project\n4. Make sure all API routes and components that need data use this Supabase client\n5. Create any necessary types for the database tables\n\nThe database is ready to use. Please configure the project to connect to it.`,
@@ -762,7 +787,44 @@ Por favor:
   const handleDbSave = async (type: string, values: Record<string, string>) => {
     setDbModalOpen(false);
 
-    if (type === 'supabase') {
+    if (type === 'omni') {
+      const { updateActiveProjectSettings } = await import('~/lib/stores/project');
+      updateActiveProjectSettings({
+        database: {
+          type: 'omni',
+          firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
+          supabase: { url: '', anonKey: '', serviceRoleKey: '' },
+          omni: { enabled: true, projectId },
+        },
+      });
+
+      // Init the DB
+      try {
+        await fetch('/api/db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'init', projectId }),
+        });
+      } catch {}
+
+      append({
+        role: 'user',
+        content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
+
+Please:
+1. Create a lib/omni-db.js file with the OmniDB SDK class
+2. Initialize the database with: const db = new OmniDB('${projectId}');
+3. Create all necessary collections with their schemas
+4. Generate all the CRUD operations and hooks needed for the app
+5. Make sure all components that need data use this database instance
+
+The Omni DB API endpoint is POST /api/db. It supports: init, stats, collections, createCollection, dropCollection, getSchema, query, insert, update, delete, count.
+
+Each collection needs a schema with field definitions like: { fieldName: { type: "string|number|boolean", required: true/false, unique: true/false } }
+
+The database is ready to use. Please configure the project to connect to it and create the necessary collections.`,
+      });
+    } else if (type === 'supabase') {
       const { updateActiveProjectSettings } = await import('~/lib/stores/project');
       updateActiveProjectSettings({
         database: {

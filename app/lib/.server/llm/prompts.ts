@@ -3,7 +3,7 @@ import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 
 export interface DatabaseContext {
-  type: 'none' | 'firebase' | 'supabase';
+  type: 'none' | 'firebase' | 'supabase' | 'omni';
   firebase?: {
     apiKey: string;
     authDomain: string;
@@ -15,6 +15,9 @@ export interface DatabaseContext {
   supabase?: {
     url: string;
     anonKey: string;
+  };
+  omni?: {
+    projectId: string;
   };
 }
 
@@ -251,12 +254,19 @@ After the user provides the values, you will receive a confirmation message with
 <db_request_instructions>
 When you need database credentials to make the project work, you MUST request them from the user using the \`<db_request>\` tag. This opens a modal where the user can fill in their credentials.
 
+**IMPORTANT: Omni DB is the PREFERRED and RECOMMENDED database option.** It is a built-in database provided by Omni Builder that requires NO configuration from the user. Each project gets 100MB of free storage. ALWAYS prefer Omni DB over Supabase or Firebase unless the user explicitly requests a different database.
+
 **Rules for using <db_request>:**
 1. Only use it when you truly NEED database credentials that the user must provide.
 2. Do NOT request credentials that are already provided in the <database_context> section above.
 3. You can include this tag at any point in your response — before, after, or alongside artifacts.
-4. The \`type\` attribute MUST be either "supabase" or "firebase".
+4. The \`type\` attribute MUST be either "omni", "supabase", or "firebase".
 5. IMPORTANT: Output the tag as raw HTML directly in your response text, NOT inside a code block.
+
+**Format for Omni DB (RECOMMENDED - output this EXACTLY as raw text, not in a code block):**
+<db_request type="omni">
+  <field name="enabled" description="Enable Omni DB built-in database (100MB free, no configuration needed)" />
+</db_request>
 
 **Format for Supabase (output this EXACTLY as raw text, not in a code block):**
 <db_request type="supabase">
@@ -353,9 +363,131 @@ CRITICAL: In plan mode, you MUST present the plan FIRST and STOP. If the user's 
 
 ${dbContext && dbContext.type !== 'none' ? `
 <database_context>
-The user has configured a ${dbContext.type === 'firebase' ? 'Firebase' : 'Supabase'} database for this project. You can and SHOULD use this database in the code you generate.
+The user has configured a ${dbContext.type === 'firebase' ? 'Firebase' : dbContext.type === 'supabase' ? 'Supabase' : 'Omni DB'} database for this project. You can and SHOULD use this database in the code you generate.
 
-${dbContext.type === 'firebase' ? `**Firebase Configuration:**
+${dbContext.type === 'omni' ? `**Omni DB Configuration:**
+- Project ID: "${dbContext.omni?.projectId || ''}"
+- Storage Quota: 100MB per project (free)
+- API Endpoint: POST /api/db (same origin as the app)
+
+**CRITICAL Omni DB Instructions:**
+Omni DB is a built-in document/collection database. It uses a REST API for all operations. You MUST follow these instructions when generating code that uses Omni DB:
+
+1. **SDK Installation**: Copy the Omni DB SDK file into the project. Create \`lib/omni-db.js\` (or \`lib/omni-db.ts\`) with the following code:
+
+\`\`\`javascript
+// Omni DB SDK - Built-in database for Omni Builder
+class OmniDB {
+  constructor(projectId) {
+    this.projectId = projectId;
+    this.baseUrl = '/api/db';
+  }
+
+  async _request(action, extra = {}) {
+    const res = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, projectId: this.projectId, ...extra }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Omni DB request failed');
+    return data;
+  }
+
+  async createCollection(name, schema) {
+    return this._request('createCollection', { collection: name, schema });
+  }
+
+  async dropCollection(name) {
+    return this._request('dropCollection', { collection: name });
+  }
+
+  async getSchema(name) {
+    return this._request('getSchema', { collection: name });
+  }
+
+  async insert(collection, data) {
+    return this._request('insert', { collection, data });
+  }
+
+  async query(collection, options = {}) {
+    return this._request('query', {
+      collection,
+      where: options.where,
+      orderBy: options.orderBy,
+      orderDir: options.orderDir,
+      limit: options.limit,
+      offset: options.offset,
+      select: options.select,
+    });
+  }
+
+  async count(collection, where) {
+    return this._request('count', { collection, where });
+  }
+
+  async update(collection, rowId, data) {
+    return this._request('update', { collection, rowId, data });
+  }
+
+  async delete(collection, rowId) {
+    return this._request('delete', { collection, rowId });
+  }
+
+  async stats() {
+    return this._request('stats');
+  }
+}
+
+export default OmniDB;
+// Usage: const db = new OmniDB('your-project-id');
+\`\`\`
+
+2. **Initialize the SDK**: In the app's entry point or a dedicated file:
+\`\`\`javascript
+import OmniDB from './lib/omni-db.js';
+const db = new OmniDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
+\`\`\`
+
+3. **Create collections with schemas**: Define the schema for each collection:
+\`\`\`javascript
+await db.createCollection('users', {
+  name: { type: 'string', required: true },
+  email: { type: 'string', required: true, unique: true },
+  age: { type: 'number' },
+  createdAt: { type: 'string' }
+});
+\`\`\`
+
+4. **CRUD Operations**:
+   - **Insert**: \`await db.insert('users', { name: 'John', email: 'john@example.com', age: 25 });\`
+   - **Query**: \`const result = await db.query('users', { where: { age: { gt: 18 } }, limit: 10 });\`
+   - **Update**: \`await db.update('users', 'row-id', { age: 26 });\`
+   - **Delete**: \`await db.delete('users', 'row-id');\`
+   - **Count**: \`const { count } = await db.count('users');\`
+
+5. **Query Filters**:
+   - Equality: \`{ field: 'value' }\` or \`{ field: { eq: 'value' } }\`
+   - Not equal: \`{ field: { neq: 'value' } }\`
+   - Greater than: \`{ field: { gt: 10 } }\`
+   - Greater or equal: \`{ field: { gte: 10 } }\`
+   - Less than: \`{ field: { lt: 10 } }\`
+   - Less or equal: \`{ field: { lte: 10 } }\`
+   - Like: \`{ field: { like: '%pattern%' } }\`
+   - Case-insensitive like: \`{ field: { ilike: '%pattern%' } }\`
+   - In: \`{ field: { in: ['a', 'b', 'c'] } }\`
+
+6. **System Fields**: Every document has these auto-generated fields:
+   - \`_id\`: Unique identifier (UUID)
+   - \`_createdAt\`: Creation timestamp
+   - \`_updatedAt\`: Last update timestamp
+
+7. **IMPORTANT**: Always create collections BEFORE inserting data. Use try/catch for error handling.
+
+8. **IMPORTANT**: When the user asks to build an app that needs data storage (todo lists, blogs, e-commerce, dashboards, etc.), ALWAYS use Omni DB as the database. Do NOT ask the user to set up Supabase or Firebase unless they explicitly want to.
+
+9. **For React/Vue/Svelte apps**: Create a context/provider or hook that wraps the OmniDB instance so components can easily access it.
+` : dbContext.type === 'firebase' ? `**Firebase Configuration:**
 - apiKey: "${dbContext.firebase?.apiKey || ''}"
 - authDomain: "${dbContext.firebase?.authDomain || ''}"
 - projectId: "${dbContext.firebase?.projectId || ''}"

@@ -11,7 +11,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 interface ClientDatabaseConfig {
-  type: 'none' | 'firebase' | 'supabase';
+  type: 'none' | 'firebase' | 'supabase' | 'omni';
   firebase?: {
     apiKey: string;
     authDomain: string;
@@ -23,6 +23,10 @@ interface ClientDatabaseConfig {
   supabase?: {
     url: string;
     anonKey: string;
+  };
+  omni?: {
+    projectId: string;
+    enabled: boolean;
   };
 }
 
@@ -67,6 +71,15 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
 function resolveDbContext(config?: ClientDatabaseConfig): DatabaseContext | undefined {
   if (!config || config.type === 'none') {
     return undefined;
+  }
+
+  if (config.type === 'omni' && config.omni?.enabled) {
+    return {
+      type: 'omni',
+      omni: {
+        projectId: config.omni.projectId || '',
+      },
+    };
   }
 
   if (config.type === 'firebase' && config.firebase?.apiKey) {

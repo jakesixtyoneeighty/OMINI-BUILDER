@@ -25,6 +25,11 @@ export interface SupabaseConfig {
   serviceRoleKey: string;
 }
 
+export interface OmniDBConfig {
+  enabled: boolean;
+  projectId: string;
+}
+
 export interface ProjectSettings {
   name: string;
   description: string;
@@ -55,9 +60,10 @@ export interface ProjectSettings {
     branch: string;
   };
   database: {
-    type: 'none' | 'firebase' | 'supabase';
+    type: 'none' | 'firebase' | 'supabase' | 'omni';
     firebase: FirebaseConfig;
     supabase: SupabaseConfig;
+    omni: OmniDBConfig;
   };
   googleDrive: {
     clientId: string;
@@ -90,6 +96,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
     type: 'none',
     firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
     supabase: { url: '', anonKey: '', serviceRoleKey: '' },
+    omni: { enabled: false, projectId: '' },
   },
   googleDrive: { clientId: '' },
   customRules: '',
@@ -157,7 +164,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
     vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
     cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
-    database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) } },
+    database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) }, omni: { ...DEFAULT_SETTINGS.database.omni, ...current.settings.database.omni, ...(patch.database?.omni ?? {}) } },
     googleDrive: { ...DEFAULT_SETTINGS.googleDrive, ...current.settings.googleDrive, ...(patch.googleDrive ?? {}) },
   };
 
@@ -206,6 +213,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
         type: updatedSettings.database.type,
         firebase: updatedSettings.database.firebase,
         supabase: updatedSettings.database.supabase,
+        omni: updatedSettings.database.omni,
       },
       google_drive_config: {
         clientId: updatedSettings.googleDrive.clientId,
@@ -277,6 +285,7 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
         type: data.database_config?.type || 'none',
         firebase: data.database_config?.firebase || { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
         supabase: data.database_config?.supabase || { url: '', anonKey: '', serviceRoleKey: '' },
+        omni: data.database_config?.omni || { enabled: false, projectId: '' },
       },
       googleDrive: {
         clientId: data.google_drive_config?.clientId || '',

@@ -9,7 +9,7 @@ export interface DbFieldRequest {
 
 interface DbRequestModalProps {
   fields: DbFieldRequest[];
-  dbType: 'supabase' | 'firebase';
+  dbType: 'supabase' | 'firebase' | 'omni';
   onClose: () => void;
   onSave: (type: string, values: Record<string, string>) => void;
 }
@@ -35,11 +35,92 @@ const dbTypeConfig = {
     },
     passwordFields: ['apiKey', 'appId'],
   },
+  omni: {
+    label: 'Omni DB',
+    placeholder: {},
+    passwordFields: [],
+  },
 } as const;
 
 export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestModalProps) {
   const config = dbTypeConfig[dbType];
   const t = useT();
+
+  // If Omni DB, auto-configure without showing form
+  if (dbType === 'omni') {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="w-[520px] max-w-[95vw] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <div className="relative px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0">
+                <div className="i-ph:cube-duotone text-purple-400 text-xl" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-bolt-elements-textPrimary">
+                  Omni DB - Banco de Dados Integrado
+                </h2>
+                <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
+                  100 MB grátis por aplicativo, sem configuração necessária
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Separator */}
+          <div className="h-px bg-bolt-elements-borderColor mx-6" />
+
+          {/* Info */}
+          <div className="px-6 py-4">
+            <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 mb-4">
+              <ul className="text-sm text-bolt-elements-textSecondary space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
+                  <span><b>100 MB de armazenamento</b> gratuito por aplicativo</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
+                  <span><b>API REST completa</b> — CRUD, queries, filtros avançados</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
+                  <span><b>IA configura tudo</b> — schemas, SDK, e código gerado automaticamente</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
+                  <span><b>Coleções flexíveis</b> com schema definido e validação</span>
+                </li>
+              </ul>
+            </div>
+            <p className="text-xs text-bolt-elements-textTertiary">
+              A IA vai criar as coleções e gerar o código de integração automaticamente.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-bolt-elements-borderColor flex items-center justify-between">
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 text-sm font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => onSave('omni', { enabled: 'true' })}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center gap-2"
+            >
+              <div className="i-ph:cube text-base" />
+              Ativar Omni DB
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
