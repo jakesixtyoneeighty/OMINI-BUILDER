@@ -401,6 +401,12 @@ export const Preview = memo(function Preview() {
         <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title="Refresh" />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
+          <IconButton
+            icon="i-ph:arrow-square-out"
+            onClick={() => { if (activePreview?.baseUrl) window.open(activePreview.baseUrl, '_blank'); }}
+            title="Abrir em nova aba"
+            disabled={!activePreview?.baseUrl}
+          />
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium">
             <div className="i-ph:cube-duotone text-sm" />
             WebContainer
