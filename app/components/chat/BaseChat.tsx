@@ -20,6 +20,7 @@ import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { inspectorStore, clearInspectorElements, removeInspectorElement, type InspectorElement } from '~/lib/stores/inspector';
+import { useT } from '~/lib/i18n/useT';
 
 import styles from './BaseChat.module.scss';
 
@@ -104,6 +105,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user } = useStore(authStore);
     const inspectorElements = useStore(inspectorStore).selectedElements;
+    const t = useT();
 
     // @ file mention state
     const [mentionState, setMentionState] = useState<{
@@ -428,14 +430,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 <div className="mt-[12vh] max-w-2xl mx-auto px-4 text-center relative z-10">
                   {/* Headline */}
                   <h1 className="text-4xl sm:text-[52px] font-bold text-bolt-elements-textPrimary mb-4 leading-[1.1] tracking-tight">
-                    What will you{' '}
-                    <span className="text-bolt-elements-item-contentAccent">build</span>
-                    {' '}today?
+                    {t('landing.headline')}{' '}
+                    <span className="text-bolt-elements-item-contentAccent">{t('landing.headlineAccent')}</span>
+                    {' '}{t('landing.headlineEnd')}
                   </h1>
 
                   {/* Subtitle */}
                   <p className="text-base text-bolt-elements-textTertiary mb-6 max-w-md mx-auto leading-relaxed">
-                    Create stunning apps & websites by chatting with AI.
+                    {t('landing.subtitle')}
                   </p>
 
                   {/* Model picker */}
@@ -456,7 +458,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     >
                       {/* Card header */}
                       <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">Let&apos;s build</span>
+                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">{t('landing.letsBuild')}</span>
                       </div>
 
                       {/* Mentioned files chips */}
@@ -564,7 +566,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="How can Omni-Builder help you today? (type @ to mention a file)"
+                          placeholder={t('landing.placeholder')}
                           translate="no"
                           rows={2}
                           style={{ maxHeight: 180 }}
@@ -598,7 +600,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:code text-sm" />
-                            Standard
+                            {t('landing.standard')}
                           </button>
 
                           {/* Design System mode */}
@@ -613,7 +615,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:palette text-sm" />
-                            Design System
+                            {t('landing.designSystem')}
                           </button>
 
                           {/* Plan mode */}
@@ -631,7 +633,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:list-checks text-sm" />
-                            Plan
+                            {t('landing.plan')}
                           </button>
                         </div>
 
@@ -649,7 +651,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
                           )}
                         >
-                          Build now
+                          {t('landing.buildNow')}
                           <div className="i-ph:arrow-right text-sm" />
                         </button>
                       </div>
@@ -658,7 +660,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                     {/* "or start from" row - GitHub/ZIP/Folder + Clone Site */}
                     <div className="mt-3 flex items-center justify-center gap-3">
-                      <span className="text-xs text-bolt-elements-textTertiary">or start from</span>
+                      <span className="text-xs text-bolt-elements-textTertiary">{t('landing.orStartFrom')}</span>
                       <div className="flex items-center gap-2">
                         {importFromGithub && (
                           <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
@@ -816,7 +818,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             el.style.height = 'auto';
                             el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                           }}
-                          placeholder="How can Omni-Builder help? (type @ to mention a file)"
+                          placeholder={t('landing.placeholder')}
                           translate="no"
                           rows={1}
                           style={{ maxHeight: 180 }}
@@ -897,7 +899,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       el.style.height = 'auto';
                       el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                     }}
-                    placeholder="How can Omni-Builder help? (type @ to mention a file)"
+                    placeholder={t('landing.placeholder')}
                     translate="no"
                     rows={1}
                     style={{ maxHeight: 300 }}

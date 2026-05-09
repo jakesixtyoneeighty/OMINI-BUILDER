@@ -4,6 +4,7 @@ import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProj
 import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
+import { useT } from '~/lib/i18n/useT';
 
 type DeployProvider = 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
 
@@ -16,6 +17,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const [deploying, setDeploying] = useState<DeployProvider | null>(null);
   const [deployResult, setDeployResult] = useState<{ url: string; provider: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   const projectId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
@@ -117,7 +119,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">Deploy no Netlify realizado!</span>
+          <span className="font-semibold">{t('deploy.successNetlify')}</span>
           <a
             href={data.url}
             target="_blank"
@@ -126,12 +128,12 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           >
             {data.url}
           </a>
-          {netlifySiteId && <span className="text-[9px] text-bolt-elements-textTertiary">Site atualizado (mesmo URL)</span>}
+          {netlifySiteId && <span className="text-[9px] text-bolt-elements-textTertiary">{t('deploy.siteUpdated')}</span>}
         </div>,
         { autoClose: 10000 },
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha no deploy', { autoClose: 8000 });
+      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
     }
@@ -178,7 +180,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">Deploy realizado pelo Omni Builder!</span>
+          <span className="font-semibold">{t('deploy.successOmni')}</span>
           <a
             href={data.viewUrl}
             target="_blank"
@@ -191,7 +193,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 10000 },
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha no deploy', { autoClose: 8000 });
+      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
     }
@@ -250,7 +252,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">Deploy realizado com sucesso!</span>
+          <span className="font-semibold">{t('deploy.successGeneric')}</span>
           {data?.url && (
             <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300">
               {data.url}
@@ -260,7 +262,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 8000 },
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha no deploy', { autoClose: 8000 });
+      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
     }
@@ -309,17 +311,17 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             {isDeploying ? (
               <>
                 <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                Deploying...
+                {t('deploy.deploying')}
               </>
             ) : deployResult ? (
               <>
                 <div className="i-ph:check-circle-fill text-sm" />
-                Deployed!
+                {t('deploy.deployed')}
               </>
             ) : (
               <>
                 <div className="i-ph:rocket-launch-duotone text-sm" />
-                Deploy
+                {t('deploy.button')}
               </>
             )}
           </button>
@@ -347,9 +349,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   <div className="i-ph:rocket-launch-duotone text-teal-400 text-base" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-bolt-elements-textPrimary">Deploy do Projeto</p>
+                  <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('deploy.projectDeploy')}</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    {netlifySiteId ? 'Atualizar site no Netlify' : 'Publicar no Netlify'}
+                    {netlifySiteId ? t('deploy.updateNetlify') : t('deploy.publishNetlify')}
                   </p>
                 </div>
               </div>
@@ -366,14 +368,14 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-bolt-elements-textPrimary">
-                    {netlifySiteId ? 'Atualizar no Netlify' : 'Publicar no Netlify'}
+                    {netlifySiteId ? t('deploy.updateOnNetlify') : t('deploy.publishOnNetlify')}
                   </p>
                   <p className="text-[10px] text-bolt-elements-textTertiary truncate">
-                    {netlifySiteId ? 'Mesmo URL — atualiza o site existente' : 'Cria um novo site no Netlify'}
+                    {netlifySiteId ? t('deploy.sameUrlUpdate') : t('deploy.createNewSite')}
                   </p>
                 </div>
                 <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-500/20 text-teal-400 uppercase tracking-wider">
-                  Padrão
+                  {t('deploy.default')}
                 </div>
               </button>
 
@@ -386,8 +388,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   <div className="i-ph:openai-logo-duotone text-purple-400 text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">Deploy com IA</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">Pede para IA preparar e fazer o deploy</p>
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">{t('deploy.deployWithAI')}</p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">{t('deploy.deployWithAIDesc')}</p>
                 </div>
                 <div className="i-ph:sparkle text-purple-400/50 text-xs" />
               </button>
@@ -401,8 +403,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   <div className="i-ph:eye-duotone text-blue-400 text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">Preview Omni Builder</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">Preview ao vivo com WebContainer</p>
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">{t('deploy.previewOmni')}</p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">{t('deploy.previewOmniDesc')}</p>
                 </div>
               </button>
 
@@ -410,7 +412,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               {(hasVercel || hasCloudRun) && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
-                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">Outros</span>
+                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">{t('deploy.others')}</span>
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                 </div>
               )}
@@ -446,7 +448,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div className="mx-1 mt-1 p-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className="i-ph:check-circle-fill text-emerald-400 text-sm" />
-                    <span className="text-[10px] font-semibold text-emerald-400">Ultimo deploy: {deployResult.provider}</span>
+                    <span className="text-[10px] font-semibold text-emerald-400">{t('deploy.lastDeploy')}: {deployResult.provider}</span>
                   </div>
                   {deployResult.url && (
                     <a
@@ -469,7 +471,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
               >
                 <div className="i-ph:gear-six text-sm" />
-                Configurar Provedores
+                {t('deploy.configureProviders')}
               </button>
             </div>
           </div>

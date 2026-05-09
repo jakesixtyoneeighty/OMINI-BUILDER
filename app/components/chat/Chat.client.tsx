@@ -15,6 +15,7 @@ import { addRecentlyViewed, loadRecentlyViewedFromSupabase } from '~/lib/stores/
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { languageStore } from '~/lib/stores/language';
+import { useT } from '~/lib/i18n/useT';
 import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
 import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
@@ -950,6 +951,7 @@ Por favor:
 });
 
 function ProjectLoadingScreen() {
+  const t = useT();
   return (
     <div className="flex items-center justify-center h-full w-full bg-bolt-elements-background-depth-1">
       <div className="text-center">
@@ -962,8 +964,8 @@ function ProjectLoadingScreen() {
             <div className="i-ph:folder-open text-2xl text-blue-400" />
           </div>
         </div>
-        <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-1">Carregando Projeto</p>
-        <p className="text-sm text-bolt-elements-textTertiary mb-4">Restaurando arquivos e configuracoes...</p>
+        <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-1">{t('project.loading')}</p>
+        <p className="text-sm text-bolt-elements-textTertiary mb-4">{t('project.restoring')}</p>
         {/* Animated progress bar */}
         <div className="w-48 mx-auto h-1 bg-bolt-elements-background-depth-2 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-loading-bar" style={{

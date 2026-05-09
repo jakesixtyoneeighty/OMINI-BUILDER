@@ -16,10 +16,13 @@ import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { SearchDialog } from './SearchDialog.client';
 import { ModelPicker } from './ModelPicker.client';
 import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
+import { useT } from '~/lib/i18n/useT';
 import { classNames } from '~/utils/classNames';
 
 export function Header() {
   const chat = useStore(chatStore);
+  const t = useT();
+  const currentLang = useStore(languageStore);
 
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
@@ -142,21 +145,50 @@ export function Header() {
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className={themeStore.get() === 'dark' ? 'i-ph:sun-dim-duotone text-base text-amber-400' : 'i-ph:moon-stars-duotone text-base text-indigo-400'} />
-                        <span>{themeStore.get() === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                        <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
                       </button>
+
+                      {/* Language sub-menu */}
+                      <div className="relative group/lang">
+                        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left">
+                          <span className="text-base">{LANGUAGE_FLAGS[currentLang]}</span>
+                          <span>{LANGUAGE_NAMES[currentLang]}</span>
+                          <div className="i-ph:caret-right text-[10px] ml-auto" />
+                        </button>
+                        <div className="absolute left-full top-0 ml-1 w-40 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[110] overflow-hidden p-1 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all">
+                          {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
+                            <button
+                              key={lang}
+                              type="button"
+                              onClick={() => { languageStore.set(lang); setMoreMenuOpen(false); }}
+                              className={classNames(
+                                'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all text-left',
+                                currentLang === lang
+                                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentAccent'
+                                  : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary',
+                              )}
+                            >
+                              <span className="text-sm">{LANGUAGE_FLAGS[lang]}</span>
+                              <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
+                              {currentLang === lang && <div className="i-ph:check-bold text-[10px] ml-auto text-bolt-elements-item-contentAccent" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <button
                         onClick={() => { setAppSettingsOpen(true); setMoreMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:gear-six text-base" />
-                        <span>API Keys & Settings</span>
+                        <span>{t('header.apiKeysSettings')}</span>
                       </button>
                       <button
                         onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); setMoreMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:sliders-horizontal text-base" />
-                        <span>Project Settings</span>
+                        <span>{t('header.projectSettings')}</span>
                       </button>
                       <a
                         href="/gallery"
@@ -164,7 +196,7 @@ export function Header() {
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:storefront text-base" />
-                        <span>Gallery</span>
+                        <span>{t('header.gallery')}</span>
                       </a>
                     </div>
                   </div>
@@ -190,6 +222,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   const currentLang = useStore(languageStore);
   const resourcesRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!resourcesOpen) return;
@@ -230,7 +263,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-borderColorActive transition-all cursor-text text-left"
         >
           <div className="i-ph:magnifying-glass text-sm text-bolt-elements-textTertiary" />
-          <span className="text-sm text-bolt-elements-textTertiary">Search projects...</span>
+          <span className="text-sm text-bolt-elements-textTertiary">{t('search.placeholder')}</span>
           <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
             Ctrl+K
           </kbd>
@@ -245,7 +278,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           rel="noopener noreferrer"
           className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
-          Community
+          {t('header.community')}
         </a>
 
         {/* Language selector */}
@@ -291,14 +324,14 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           href="#"
           className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
-          Enterprise
+          {t('header.enterprise')}
         </a>
         <div ref={resourcesRef} className="relative hidden md:block">
           <button
             onClick={() => setResourcesOpen(!resourcesOpen)}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
           >
-            Resources
+            {t('header.resources')}
             <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${resourcesOpen ? 'rotate-180' : ''}`} />
           </button>
           {resourcesOpen && (
@@ -309,7 +342,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
               >
                 <div className="i-ph:storefront text-base" />
-                Gallery
+                {t('header.gallery')}
               </a>
               <a
                 href="https://github.com/stackblitz/bolt.new"
@@ -319,7 +352,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
               >
                 <div className="i-ph:book-open-text text-base" />
-                Documentation
+                {t('header.documentation')}
               </a>
               <a
                 href="https://github.com/stackblitz/bolt.new"
