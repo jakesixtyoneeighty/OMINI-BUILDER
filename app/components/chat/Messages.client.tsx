@@ -45,7 +45,7 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                 )}
                 <div className="grid grid-col-1 w-full">
                   {isUserMessage ? (
-                    <UserMessage content={content} />
+                    <UserMessage message={message} />
                   ) : (
                     <>
                       <AssistantMessage content={content} tokenUsage={tokenUsage?.[index]} isStreaming={isStreaming && isLast} />

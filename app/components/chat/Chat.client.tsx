@@ -406,7 +406,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     setChatStarted(true);
   };
 
-  const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
+  const sendMessage = async (_event: React.UIEvent, messageInput?: string, attachments?: { name?: string; contentType?: string; url: string }[]) => {
     const _input = messageInput || input;
     if (_input.length === 0 || isLoading) return;
 
@@ -428,10 +428,18 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
     if (fileModifications !== undefined) {
       const diff = fileModificationsToHTML(fileModifications);
-      append({ role: 'user', content: `${diff}\n\n${messageContent}` });
+      append({
+        role: 'user',
+        content: `${diff}\n\n${messageContent}`,
+        ...(attachments && attachments.length > 0 ? { experimental_attachments: attachments } : {}),
+      });
       workbenchStore.resetAllFileModifications();
     } else {
-      append({ role: 'user', content: messageContent });
+      append({
+        role: 'user',
+        content: messageContent,
+        ...(attachments && attachments.length > 0 ? { experimental_attachments: attachments } : {}),
+      });
     }
     setInput('');
     resetEnhancer();

@@ -11,10 +11,17 @@ interface ToolResult<Name extends string, Args, Result> {
   result: Result;
 }
 
+interface Attachment {
+  name?: string;
+  contentType?: string;
+  url: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   toolInvocations?: ToolResult<string, unknown, unknown>[];
+  experimental_attachments?: Attachment[];
 }
 
 export type Messages = Message[];
