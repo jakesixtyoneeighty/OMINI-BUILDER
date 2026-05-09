@@ -8,7 +8,7 @@ import { AuthButton } from './AuthButton.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { AppSettingsDialog } from './AppSettingsDialog.client';
 import { DeployButton } from './DeployButton.client';
-import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
+import { EditableProjectName } from './EditableProjectName.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
 import { SaveToDrive } from '~/components/chat/SaveToDrive.client';
 import { PublishToGalleryButton } from './PublishToGalleryButton.client';
@@ -88,11 +88,9 @@ export function Header() {
       {/* Separator */}
       <div className="w-px h-5 bg-bolt-elements-borderColor" />
 
-      {/* CENTER: Chat description */}
+      {/* CENTER: Editable project name */}
       <div className="flex-1 flex items-center justify-center px-3 min-w-0">
-        <span className="truncate text-sm text-bolt-elements-textSecondary max-w-md">
-          <ClientOnly>{() => <ChatDescription />}</ClientOnly>
-        </span>
+        <ClientOnly>{() => <EditableProjectName />}</ClientOnly>
       </div>
 
       {/* RIGHT: Action buttons */}
