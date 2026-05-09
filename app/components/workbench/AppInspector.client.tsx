@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { classNames } from '~/utils/classNames';
 
 interface InspectorAnnotation {
@@ -18,36 +18,147 @@ interface AppInspectorProps {
   iframeRef?: React.RefObject<HTMLIFrameElement>;
 }
 
-// Script to inject into the iframe for element inspection
+/**
+ * Improved inspector script — runs INSIDE the preview iframe.
+ *
+ * Key improvements over the previous version:
+ * - Handles Shadow DOM via composedPath()
+ * - Handles SVG elements (className is SVGAnimatedString)
+ * - Better CSS selector generation with nth-child
+ * - Richer element info (attributes, computed styles, shadow DOM detection)
+ * - Scroll/resize overlay repositioning
+ * - Sub-iframe injection for nested iframes
+ * - MutationObserver for dynamically added iframes
+ * - Always starts active when loaded
+ */
 const INSPECTOR_SCRIPT = `
 (function() {
-  if (window.__inspectorActive) return;
-  window.__inspectorActive = true;
+  if (window.__omniInspectorLoaded) return;
+  window.__omniInspectorLoaded = true;
+  window.__omniInspectorActive = true;
 
   let overlay = null;
   let label = null;
-  let tooltip = null;
+  let infoPanel = null;
+  let lastTarget = null;
+  let rafId = null;
 
   function createUI() {
+    if (overlay) return;
+
     overlay = document.createElement('div');
     overlay.id = '__inspector-overlay';
-    overlay.style.cssText = 'position:fixed;pointer-events:none;z-index:999999;border:2px solid #3b82f6;background:rgba(59,130,246,0.12);transition:all 0.08s ease;border-radius:3px;box-shadow:0 0 0 1px rgba(59,130,246,0.3);';
-    document.body.appendChild(overlay);
+    overlay.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;border:2px solid #3b82f6;background:rgba(59,130,246,0.10);transition:all 0.06s ease;border-radius:3px;box-shadow:0 0 0 1px rgba(59,130,246,0.3),0 0 12px rgba(59,130,246,0.08);display:none;';
+    document.documentElement.appendChild(overlay);
 
     label = document.createElement('div');
     label.id = '__inspector-label';
-    label.style.cssText = 'position:fixed;z-index:1000000;pointer-events:none;font-family:monospace;font-size:11px;padding:3px 8px;background:#1e293b;color:#60a5fa;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4);border:1px solid rgba(96,165,250,0.3);';
-    document.body.appendChild(label);
+    label.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;line-height:1.4;padding:3px 8px;background:#0f172a;color:#60a5fa;border-radius:4px 4px 4px 0;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid rgba(96,165,250,0.3);display:none;';
+    document.documentElement.appendChild(label);
 
-    tooltip = document.createElement('div');
-    tooltip.id = '__inspector-tooltip';
-    tooltip.style.cssText = 'position:fixed;z-index:1000001;pointer-events:none;font-family:system-ui;font-size:12px;padding:8px 12px;background:#0f172a;color:#e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.5);border:1px solid rgba(59,130,246,0.4);max-width:250px;display:none;';
-    document.body.appendChild(tooltip);
+    infoPanel = document.createElement('div');
+    infoPanel.id = '__inspector-info';
+    infoPanel.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;line-height:1.5;padding:4px 8px;background:rgba(15,23,42,0.95);color:#94a3b8;border-radius:0 4px 4px 4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid rgba(96,165,250,0.2);display:none;max-width:300px;overflow:hidden;text-overflow:ellipsis;';
+    document.documentElement.appendChild(infoPanel);
+  }
+
+  function removeUI() {
+    if (overlay) { overlay.remove(); overlay = null; }
+    if (label) { label.remove(); label = null; }
+    if (infoPanel) { infoPanel.remove(); infoPanel = null; }
+    lastTarget = null;
+  }
+
+  function isInspectorElement(el) {
+    if (!el) return false;
+    if (el.id && el.id.startsWith('__inspector')) return true;
+    if (el.tagName === 'SCRIPT' && el.id === '__inspector-script') return true;
+    if (el.tagName === 'LINK' && el.id === '__inspector-style') return true;
+    return false;
+  }
+
+  /* Resolve the actual target element, traversing Shadow DOM boundaries */
+  function resolveTarget(e) {
+    var path = e.composedPath();
+    for (var i = 0; i < path.length; i++) {
+      var el = path[i];
+      if (el === document || el === document.documentElement || el === document.body) continue;
+      if (el.nodeType !== Node.ELEMENT_NODE) continue;
+      if (isInspectorElement(el)) continue;
+      return el;
+    }
+    return e.target;
+  }
+
+  function getClassName(el) {
+    if (!el) return '';
+    if (typeof el.className === 'string') return el.className;
+    if (el.className && typeof el.className.baseVal === 'string') return el.className.baseVal;
+    if (el.getAttribute) {
+      var cls = el.getAttribute('class');
+      return cls || '';
+    }
+    return '';
+  }
+
+  function formatLabel(el) {
+    var tag = el.tagName ? el.tagName.toLowerCase() : '';
+    var id = el.id ? '#' + el.id : '';
+    var cls = getClassName(el);
+    var mainClasses = cls.split(/\\s+/).filter(function(c) { return c && !c.startsWith('__') && !c.startsWith('css-') && !c.startsWith('sc-'); }).slice(0, 2);
+    var clsStr = mainClasses.length > 0 ? '.' + mainClasses.join('.') : '';
+    var dim = Math.round(el.getBoundingClientRect().width) + 'x' + Math.round(el.getBoundingClientRect().height);
+    return tag + id + (clsStr ? clsStr.substring(0, 35) : '') + ' (' + dim + ')';
+  }
+
+  function formatInfo(el) {
+    var parts = [];
+    var tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if (el.id) parts.push('#' + el.id);
+    var href = el.getAttribute('href');
+    if (href && tag === 'a') parts.push('href="' + href.substring(0, 40) + '"');
+    var src = el.getAttribute('src');
+    if (src && (tag === 'img' || tag === 'iframe' || tag === 'video' || tag === 'script')) parts.push('src="' + src.substring(0, 40) + '"');
+    var alt = el.getAttribute('alt');
+    if (alt) parts.push('alt="' + alt.substring(0, 30) + '"');
+    var placeholder = el.getAttribute('placeholder');
+    if (placeholder) parts.push('placeholder="' + placeholder.substring(0, 30) + '"');
+    var role = el.getAttribute('role');
+    if (role) parts.push('role="' + role + '"');
+    var ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel) parts.push('aria-label="' + ariaLabel.substring(0, 30) + '"');
+    var type = el.getAttribute('type');
+    if (type && (tag === 'input' || tag === 'button')) parts.push('type="' + type + '"');
+    var text = getDirectText(el);
+    if (text) parts.push('"' + text.substring(0, 40) + '"');
+    if (el.getRootNode() !== document) parts.push('[shadow-dom]');
+    return parts.join(' | ');
+  }
+
+  function getDirectText(el) {
+    var text = '';
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var node = el.childNodes[i];
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent;
+      }
+    }
+    text = text.trim();
+    if (!text) {
+      text = (el.textContent || '').trim().substring(0, 80);
+    }
+    return text;
   }
 
   function updateOverlay(el) {
     if (!overlay || !el) return;
-    const rect = el.getBoundingClientRect();
+    var rect = el.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      overlay.style.display = 'none';
+      if (label) label.style.display = 'none';
+      if (infoPanel) infoPanel.style.display = 'none';
+      return;
+    }
     overlay.style.top = rect.top + 'px';
     overlay.style.left = rect.left + 'px';
     overlay.style.width = rect.width + 'px';
@@ -55,113 +166,348 @@ const INSPECTOR_SCRIPT = `
     overlay.style.display = 'block';
 
     if (label) {
-      const tag = el.tagName.toLowerCase();
-      const id = el.id ? '#' + el.id : '';
-      const cls = el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').filter(c => c && !c.startsWith('__')).slice(0, 2).join('.') : '';
-      label.textContent = tag + id + (cls ? cls.substring(0, 30) : '');
+      label.textContent = formatLabel(el);
       label.style.display = 'block';
-
-      // Position label above or below element
-      const labelH = 22;
-      if (rect.top > labelH + 4) {
-        label.style.top = (rect.top - labelH - 4) + 'px';
+      var labelH = 24;
+      if (rect.top > labelH + 6) {
+        label.style.top = (rect.top - labelH - 2) + 'px';
       } else {
-        label.style.top = (rect.bottom + 4) + 'px';
+        label.style.top = (rect.bottom + 2) + 'px';
       }
-      label.style.left = rect.left + 'px';
+      label.style.left = Math.max(2, rect.left) + 'px';
     }
+
+    if (infoPanel) {
+      var infoText = formatInfo(el);
+      if (infoText) {
+        infoPanel.textContent = infoText;
+        infoPanel.style.display = 'block';
+        var infoTop = rect.bottom + 2;
+        if (label && rect.top <= 24 + 6) {
+          infoTop = rect.bottom + 2 + 20;
+        }
+        infoPanel.style.top = infoTop + 'px';
+        infoPanel.style.left = Math.max(2, rect.left) + 'px';
+      } else {
+        infoPanel.style.display = 'none';
+      }
+    }
+  }
+
+  function scheduleUpdate(el) {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(function() {
+      updateOverlay(el);
+      rafId = null;
+    });
   }
 
   function getSelector(el) {
     if (!el || el === document.body || el === document.documentElement) return '';
-    let parts = [];
-    while (el && el !== document.body && el !== document.documentElement) {
-      let selector = el.tagName.toLowerCase();
-      if (el.id) {
-        selector += '#' + el.id;
+    var parts = [];
+    var current = el;
+    var maxDepth = 6;
+    while (current && current !== document.body && current !== document.documentElement && maxDepth > 0) {
+      var selector = current.tagName.toLowerCase();
+      if (current.id) {
+        selector += '#' + current.id;
         parts.unshift(selector);
         break;
       }
-      if (el.className && typeof el.className === 'string') {
-        const mainClass = el.className.split(' ').filter(c => c && !c.startsWith('__')).slice(0, 2).join('.');
-        if (mainClass) selector += '.' + mainClass;
+      var cls = getClassName(current);
+      var mainClasses = cls.split(/\\s+/).filter(function(c) {
+        return c && !c.startsWith('__') && !c.startsWith('css-') && !c.startsWith('sc-') && !c.startsWith('emotion-');
+      }).slice(0, 2);
+      if (mainClasses.length > 0) {
+        selector += '.' + mainClasses.join('.');
+      }
+      /* Add nth-child for disambiguation when no id and no class */
+      if (!current.id && mainClasses.length === 0) {
+        var parent = current.parentElement;
+        if (parent) {
+          var siblings = Array.from(parent.children).filter(function(s) { return s.tagName === current.tagName; });
+          if (siblings.length > 1) {
+            var idx = siblings.indexOf(current) + 1;
+            selector += ':nth-of-type(' + idx + ')';
+          }
+        }
       }
       parts.unshift(selector);
-      el = el.parentElement;
+      current = current.parentElement;
+      maxDepth--;
     }
-    return parts.slice(-3).join(' > ');
+    return parts.slice(-4).join(' > ');
   }
 
   function getElementInfo(el) {
-    const selector = getSelector(el);
+    var selector = getSelector(el);
+    var className = getClassName(el);
+    var directText = getDirectText(el);
+
+    var attrs = {};
+    var importantAttrs = ['id','href','src','alt','title','placeholder','type','name','value','role','aria-label','aria-labelledby','data-testid','for','action','method','target','rel'];
+    for (var i = 0; i < importantAttrs.length; i++) {
+      var val = el.getAttribute(importantAttrs[i]);
+      if (val) attrs[importantAttrs[i]] = val;
+    }
+
+    var computed = null;
+    try {
+      var cs = window.getComputedStyle(el);
+      computed = {
+        display: cs.display,
+        position: cs.position,
+        color: cs.color,
+        backgroundColor: cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : '',
+        fontSize: cs.fontSize,
+        fontWeight: cs.fontWeight,
+      };
+    } catch(e) {}
+
+    var rect = el.getBoundingClientRect();
     return {
       selector: selector,
       tagName: el.tagName.toLowerCase(),
-      className: el.className && typeof el.className === 'string' ? el.className : '',
-      textContent: (el.textContent || '').substring(0, 100).trim(),
+      className: className,
+      textContent: directText.substring(0, 120),
+      attributes: attrs,
       dimensions: {
-        width: Math.round(el.getBoundingClientRect().width),
-        height: Math.round(el.getBoundingClientRect().height),
-      }
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      },
+      styles: computed,
+      isInShadowDom: el.getRootNode() !== document,
     };
   }
 
+  /* ---- Event Listeners ---- */
+
   document.addEventListener('mouseover', function(e) {
-    if (!window.__inspectorActive) return;
-    if (e.target?.id?.startsWith('__inspector')) return;
+    if (!window.__omniInspectorActive) return;
+    var target = resolveTarget(e);
+    if (!target || isInspectorElement(target)) return;
     if (!overlay) createUI();
-    updateOverlay(e.target);
+    scheduleUpdate(target);
+    lastTarget = target;
+  }, true);
+
+  document.addEventListener('mouseout', function(e) {
+    if (!window.__omniInspectorActive) return;
+    /* Only hide if leaving the last target, not just moving between children */
+    var related = e.relatedTarget;
+    if (related && isInspectorElement(related)) return;
+    /* Small delay to avoid flicker when moving between child elements */
+    setTimeout(function() {
+      if (lastTarget && !lastTarget.matches(':hover') && !lastTarget.contains(document.elementFromPoint && document.elementFromPoint(-1,-1))) {
+        if (overlay) overlay.style.display = 'none';
+        if (label) label.style.display = 'none';
+        if (infoPanel) infoPanel.style.display = 'none';
+        lastTarget = null;
+      }
+    }, 80);
   }, true);
 
   document.addEventListener('click', function(e) {
-    if (!window.__inspectorActive) return;
-    if (e.target?.id?.startsWith('__inspector')) return;
+    if (!window.__omniInspectorActive) return;
+    var target = resolveTarget(e);
+    if (!target || isInspectorElement(target)) return;
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    const info = getElementInfo(e.target);
-    window.parent.postMessage({ type: '__inspector-click', data: info }, '*');
+    var info = getElementInfo(target);
+    /* Send to parent window (works for both same-origin and cross-origin with postMessage) */
+    try { window.parent.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
+    /* Also try opener for new-tab scenario */
+    try { if (window.opener) window.opener.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
 
-    // Flash effect on click
+    /* Flash effect */
     if (overlay) {
       overlay.style.borderColor = '#f97316';
       overlay.style.background = 'rgba(249,115,22,0.15)';
-      setTimeout(() => {
-        overlay.style.borderColor = '#3b82f6';
-        overlay.style.background = 'rgba(59,130,246,0.12)';
-      }, 300);
+      overlay.style.boxShadow = '0 0 0 2px rgba(249,115,22,0.4),0 0 20px rgba(249,115,22,0.12)';
+      setTimeout(function() {
+        if (overlay) {
+          overlay.style.borderColor = '#3b82f6';
+          overlay.style.background = 'rgba(59,130,246,0.10)';
+          overlay.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.3),0 0 12px rgba(59,130,246,0.08)';
+        }
+      }, 400);
     }
   }, true);
 
-  document.addEventListener('mouseout', function(e) {
-    if (!window.__inspectorActive) return;
-    if (overlay) overlay.style.display = 'none';
-    if (label) label.style.display = 'none';
-    if (tooltip) tooltip.style.display = 'none';
-  }, true);
+  /* Reposition overlay on scroll and resize */
+  function onScrollOrResize() {
+    if (!window.__omniInspectorActive || !lastTarget) return;
+    scheduleUpdate(lastTarget);
+  }
+  window.addEventListener('scroll', onScrollOrResize, true);
+  window.addEventListener('resize', onScrollOrResize, true);
 
-  // Listen for activate/deactivate messages from parent
+  /* Listen for activate/deactivate messages from parent */
   window.addEventListener('message', function(e) {
-    if (e.data?.type === '__inspector-activate') {
-      window.__inspectorActive = true;
+    if (e.data && e.data.type === '__inspector-activate') {
+      window.__omniInspectorActive = true;
       if (!overlay) createUI();
     }
-    if (e.data?.type === '__inspector-deactivate') {
-      window.__inspectorActive = false;
-      if (overlay) { overlay.remove(); overlay = null; }
-      if (label) { label.remove(); label = null; }
-      if (tooltip) { tooltip.remove(); tooltip = null; }
+    if (e.data && e.data.type === '__inspector-deactivate') {
+      window.__omniInspectorActive = false;
+      removeUI();
     }
   });
 
-  // Signal to parent that inspector script is loaded
-  window.parent.postMessage({ type: '__inspector-ready' }, '*');
+  /* Try to inject into sub-iframes (same-origin only) */
+  function injectIntoSubIframes() {
+    try {
+      var iframes = document.querySelectorAll('iframe');
+      for (var i = 0; i < iframes.length; i++) {
+        try {
+          var doc = iframes[i].contentDocument;
+          if (doc && !doc.getElementById('__inspector-script') && doc.readyState === 'complete') {
+            var script = doc.createElement('script');
+            script.id = '__inspector-script';
+            script.textContent = '(function(){if(window.__omniInspectorLoaded)return;window.__omniInspectorLoaded=true;window.__omniInspectorActive=true;var o=null,l=null;function cu(){o=doc.createElement("div");o.id="__inspector-overlay";o.style.cssText="position:fixed;pointer-events:none;z-index:2147483647;border:2px solid #3b82f6;background:rgba(59,130,246,0.10);border-radius:3px;display:none;";doc.body.appendChild(o);l=doc.createElement("div");l.id="__inspector-label";l.style.cssText="position:fixed;z-index:2147483647;pointer-events:none;font-size:11px;padding:3px 8px;background:#0f172a;color:#60a5fa;border-radius:4px;white-space:nowrap;display:none;";doc.body.appendChild(l)}doc.addEventListener("mouseover",function(e){if(!window.__omniInspectorActive||e.target.id&&e.target.id.startsWith("__inspector"))return;if(!o)cu();var r=e.target.getBoundingClientRect();o.style.top=r.top+"px";o.style.left=r.left+"px";o.style.width=r.width+"px";o.style.height=r.height+"px";o.style.display="block";if(l){l.textContent=e.target.tagName.toLowerCase();l.style.display="block";l.style.top=(r.top-20)+"px";l.style.left=r.left+"px"}},true);doc.addEventListener("click",function(e){if(!window.__omniInspectorActive)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();window.parent.postMessage({type:"__inspector-click",data:{selector:e.target.tagName.toLowerCase(),tagName:e.target.tagName.toLowerCase(),className:typeof e.target.className==="string"?e.target.className:"",textContent:(e.target.textContent||"").substring(0,100)}}, "*")},true)});';
+            doc.head.appendChild(script);
+          }
+        } catch (ex) { /* cross-origin iframe, skip */ }
+      }
+    } catch(e) {}
+  }
+
+  /* Observe DOM for dynamically added iframes */
+  var iframeObserver = new MutationObserver(function(mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      var added = mutations[i].addedNodes;
+      for (var j = 0; j < added.length; j++) {
+        if (added[j].nodeName === 'IFRAME' || (added[j].querySelector && added[j].querySelector('iframe'))) {
+          setTimeout(injectIntoSubIframes, 500);
+        }
+      }
+    }
+  });
+  try {
+    iframeObserver.observe(document.documentElement, { childList: true, subtree: true });
+  } catch(e) {}
+
+  /* Initial sub-iframe injection after a delay */
+  setTimeout(injectIntoSubIframes, 1500);
+
+  /* Signal to parent that inspector script is loaded */
+  try { window.parent.postMessage({ type: '__inspector-ready' }, '*'); } catch(e) {}
+  try { if (window.opener) window.opener.postMessage({ type: '__inspector-ready' }, '*'); } catch(e) {}
 })();
 `;
 
 export type { InspectorAnnotation };
 export { AppInspector };
+
+/**
+ * Get the WebContainer instance dynamically (only on client)
+ */
+async function getWebContainer() {
+  try {
+    const { webcontainer } = await import('~/lib/webcontainer');
+    const wc = await Promise.race([
+      webcontainer,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+    ]);
+    return wc;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Inject the inspector script into the WebContainer filesystem so it loads
+ * inside the preview page (same-origin with the WebContainer dev server content).
+ */
+async function injectInspectorIntoWebContainer(inspectorScriptContent: string): Promise<() => void> {
+  const wc = await getWebContainer();
+  if (!wc) return () => {};
+
+  const inspectorFileName = '__omni_inspector__.js';
+  const scriptTag = `<script src="/${inspectorFileName}" data-omni-inspector><\/script>`;
+  const scriptTagPattern = /<script\s+src="\/__omni_inspector__\.js"\s+data-omni-inspector><\/script>/i;
+
+  let originalHtmlContent: string | null = null;
+  let htmlPath: string | null = null;
+  let wroteToPublic = false;
+
+  try {
+    // 1. Write the inspector script file
+    // Try public/ first (Vite projects), then root
+    try {
+      await wc.fs.mkdir('public', { recursive: true });
+      await wc.fs.writeFile('public/' + inspectorFileName, inspectorScriptContent);
+      wroteToPublic = true;
+    } catch {
+      // Fallback: write to root
+      try {
+        await wc.fs.writeFile(inspectorFileName, inspectorScriptContent);
+      } catch {}
+    }
+
+    // 2. Find and modify index.html
+    const htmlPaths = ['index.html', 'public/index.html', 'src/index.html'];
+    for (const path of htmlPaths) {
+      try {
+        const content = await wc.fs.readFile(path, 'utf-8');
+        if (content && content.includes('<html')) {
+          htmlPath = path;
+          originalHtmlContent = content;
+          break;
+        }
+      } catch {
+        // File doesn't exist at this path, try next
+      }
+    }
+
+    if (htmlPath && originalHtmlContent) {
+      // Check if already injected
+      if (!scriptTagPattern.test(originalHtmlContent)) {
+        let modified = originalHtmlContent;
+
+        // Insert before </head> or after <head>
+        if (modified.includes('</head>')) {
+          modified = modified.replace('</head>', scriptTag + '\n</head>');
+        } else if (modified.includes('<head>')) {
+          modified = modified.replace('<head>', '<head>\n' + scriptTag);
+        } else if (modified.includes('<body>')) {
+          // No head tag — insert before body
+          modified = modified.replace('<body>', scriptTag + '\n<body>');
+        } else if (modified.includes('<html')) {
+          // Last resort: append after opening html tag
+          modified = modified.replace(/<html[^>]*>/, '$&\n' + scriptTag);
+        }
+
+        if (modified !== originalHtmlContent) {
+          await wc.fs.writeFile(htmlPath, modified);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Inspector] Failed to inject into WebContainer:', err);
+  }
+
+  // Return cleanup function
+  return async () => {
+    try {
+      // Remove the inspector script file
+      if (wroteToPublic) {
+        try { await wc.fs.rm('public/' + inspectorFileName); } catch {}
+      } else {
+        try { await wc.fs.rm(inspectorFileName); } catch {}
+      }
+
+      // Restore original index.html
+      if (htmlPath && originalHtmlContent) {
+        try {
+          await wc.fs.writeFile(htmlPath, originalHtmlContent);
+        } catch {}
+      }
+    } catch {}
+  };
+}
 
 function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps) {
   const [annotations, setAnnotations] = useState<InspectorAnnotation[]>([]);
@@ -172,77 +518,151 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     className: string;
     textContent: string;
     dimensions?: { width: number; height: number };
+    attributes?: Record<string, string>;
+    styles?: Record<string, string>;
+    isInShadowDom?: boolean;
   } | null>(null);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [inspectorReady, setInspectorReady] = useState(false);
+  const [injecting, setInjecting] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  // Find the preview iframe (works for any preview mode)
+  // Find the preview iframe
   const findIframe = useCallback(() => {
+    // First try the ref if provided
+    // Then search by common patterns
     const iframes = document.querySelectorAll('iframe');
     for (const iframe of iframes) {
       if (
         iframe.src?.includes('localhost') ||
+        iframe.src?.includes('webcontainer') ||
         iframe.srcdoc ||
         iframe.id?.includes('preview') ||
         iframe.className?.includes('preview') ||
+        iframe.className?.includes('webcontainer') ||
         iframe.closest('[data-preview-content]')
       ) {
         return iframe;
       }
     }
-    return null;
+    return iframes.length > 0 ? iframes[0] : null;
   }, []);
 
-  // Inject inspector script into preview iframe and manage activation
+  // Determine if the iframe is cross-origin (WebContainer)
+  const isCrossOriginIframe = useCallback((iframe: HTMLIFrameElement) => {
+    try {
+      // If we can access contentDocument, it's same-origin
+      const doc = iframe.contentDocument;
+      return !doc;
+    } catch {
+      return true;
+    }
+  }, []);
+
+  // Inject inspector into same-origin iframe via DOM
+  const injectDirectly = useCallback((iframe: HTMLIFrameElement) => {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc && doc.readyState === 'complete') {
+        const existingScript = doc.getElementById('__inspector-script');
+        if (!existingScript) {
+          const script = doc.createElement('script');
+          script.id = '__inspector-script';
+          script.textContent = INSPECTOR_SCRIPT;
+          doc.head?.appendChild(script);
+        } else {
+          iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*');
+        }
+        return true;
+      }
+    } catch {
+      // Cross-origin, will use file injection
+    }
+    return false;
+  }, []);
+
+  // Main injection effect
   useEffect(() => {
     if (!isActive) {
-      // Deactivate in iframe
+      // Deactivate
       const iframe = findIframe();
       if (iframe) {
         try {
-          if (iframe.contentWindow) {
-            iframe.contentWindow.postMessage({ type: '__inspector-deactivate' }, '*');
-          }
+          iframe.contentWindow?.postMessage({ type: '__inspector-deactivate' }, '*');
         } catch {}
+      }
+      // Also send to all windows (for new-tab scenario)
+      try { window.postMessage({ type: '__inspector-deactivate' }, '*'); } catch {}
+
+      // Run cleanup for WebContainer file injection
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
       }
       setInspectorReady(false);
       return;
     }
 
-    const injectAndActivate = () => {
-      const iframe = findIframe();
-      if (!iframe) return;
+    let cancelled = false;
 
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc && doc.readyState === 'complete') {
-          // Check if inspector is already loaded
-          const existingScript = doc.getElementById('__inspector-script');
-          if (!existingScript) {
-            const script = doc.createElement('script');
-            script.id = '__inspector-script';
-            script.textContent = INSPECTOR_SCRIPT;
-            doc.head.appendChild(script);
-          } else {
-            // Re-activate existing inspector
-            iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*');
+    const activate = async () => {
+      setInjecting(true);
+      const iframe = findIframe();
+
+      if (iframe) {
+        const crossOrigin = isCrossOriginIframe(iframe);
+
+        if (crossOrigin) {
+          // Cross-origin iframe (WebContainer) — inject via filesystem
+          try {
+            const cleanup = await injectInspectorIntoWebContainer(INSPECTOR_SCRIPT);
+            if (!cancelled) {
+              cleanupRef.current = cleanup;
+            } else {
+              // Component unmounted during injection, clean up immediately
+              cleanup();
+            }
+          } catch (err) {
+            console.warn('[Inspector] WebContainer injection failed, trying postMessage:', err);
+            // Fallback: try postMessage activation (won't work unless script was already injected)
+            try { iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*'); } catch {}
           }
+        } else {
+          // Same-origin iframe — inject via DOM
+          injectDirectly(iframe);
         }
-      } catch (err) {
-        // Cross-origin iframe — try postMessage activation
+      } else {
+        // No iframe found yet — try WebContainer injection anyway
+        // (the preview might load after a delay)
         try {
-          iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*');
+          const cleanup = await injectInspectorIntoWebContainer(INSPECTOR_SCRIPT);
+          if (!cancelled) {
+            cleanupRef.current = cleanup;
+          } else {
+            cleanup();
+          }
         } catch {}
       }
+
+      setInjecting(false);
     };
 
-    injectAndActivate();
-    const interval = setInterval(injectAndActivate, 2000);
+    activate();
+
+    // Also try direct injection periodically for same-origin iframes that load later
+    const interval = setInterval(() => {
+      if (cancelled) return;
+      const iframe = findIframe();
+      if (iframe && !isCrossOriginIframe(iframe)) {
+        injectDirectly(iframe);
+      }
+    }, 3000);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
     };
-  }, [isActive, findIframe]);
+  }, [isActive, findIframe, isCrossOriginIframe, injectDirectly]);
 
   // Listen for inspector events from iframe
   useEffect(() => {
@@ -250,8 +670,17 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type === '__inspector-click') {
-        const { selector, tagName, className, textContent, dimensions } = event.data.data;
-        setSelectedElement({ selector, tagName, className, textContent, dimensions });
+        const data = event.data.data;
+        setSelectedElement({
+          selector: data.selector || '',
+          tagName: data.tagName || '',
+          className: data.className || '',
+          textContent: data.textContent || '',
+          dimensions: data.dimensions,
+          attributes: data.attributes,
+          styles: data.styles,
+          isInShadowDom: data.isInShadowDom,
+        });
         setShowCommentForm(true);
         setCommentInput('');
       }
@@ -302,8 +731,8 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
         )}
         title={isActive ? 'Desativar Inspetor' : 'Ativar Inspetor'}
       >
-        <div className={classNames('text-sm', isActive ? 'i-ph:magnifying-glass-plus' : 'i-ph:magnifying-glass')} />
-        {isActive && <span>Inspetor</span>}
+        <div className={classNames('text-sm', isActive ? (injecting ? 'i-ph:spinner animate-spin' : 'i-ph:magnifying-glass-plus') : 'i-ph:magnifying-glass')} />
+        {isActive && <span>{injecting ? 'Injetando...' : 'Inspetor'}</span>}
       </button>
 
       {/* Inspector panel (when active and has annotations) */}
@@ -361,7 +790,7 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
       {/* Comment form modal (when an element is clicked) */}
       {showCommentForm && selectedElement && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => { setShowCommentForm(false); setSelectedElement(null); }}>
-          <div className="w-96 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="w-[420px] max-h-[85vh] overflow-y-auto bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-orange-500/5">
               <div className="flex items-center gap-2">
@@ -370,13 +799,16 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-bolt-elements-textPrimary">Elemento Selecionado</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary">
+                  <p className="text-[10px] text-bolt-elements-textTertiary flex items-center gap-1.5">
                     <code className="text-orange-400">{selectedElement.tagName}</code>
                     {selectedElement.className && (
                       <span>.{selectedElement.className.split(' ').slice(0, 2).join('.')}</span>
                     )}
                     {selectedElement.dimensions && (
-                      <span className="text-bolt-elements-textTertiary"> ({selectedElement.dimensions.width}x{selectedElement.dimensions.height})</span>
+                      <span>({selectedElement.dimensions.width}x{selectedElement.dimensions.height})</span>
+                    )}
+                    {selectedElement.isInShadowDom && (
+                      <span className="text-purple-400">shadow-dom</span>
                     )}
                   </p>
                 </div>
@@ -386,14 +818,40 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
             {/* Form */}
             <div className="p-4 space-y-3">
               {/* Element info */}
-              <div className="px-3 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                <p className="text-[10px] text-bolt-elements-textTertiary mb-1">Seletor CSS</p>
-                <code className="text-xs text-orange-400 font-mono break-all">{selectedElement.selector}</code>
+              <div className="px-3 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor space-y-1.5">
+                <div>
+                  <p className="text-[10px] text-bolt-elements-textTertiary">Seletor CSS</p>
+                  <code className="text-xs text-orange-400 font-mono break-all">{selectedElement.selector}</code>
+                </div>
                 {selectedElement.textContent && (
-                  <>
-                    <p className="text-[10px] text-bolt-elements-textTertiary mt-1.5 mb-1">Texto</p>
-                    <p className="text-xs text-bolt-elements-textSecondary truncate">"{selectedElement.textContent}"</p>
-                  </>
+                  <div>
+                    <p className="text-[10px] text-bolt-elements-textTertiary">Texto</p>
+                    <p className="text-xs text-bolt-elements-textSecondary line-clamp-2">"{selectedElement.textContent}"</p>
+                  </div>
+                )}
+                {selectedElement.attributes && Object.keys(selectedElement.attributes).length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-bolt-elements-textTertiary">Atributos</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {Object.entries(selectedElement.attributes).map(([key, val]) => (
+                        <span key={key} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                          {key}={val.length > 20 ? val.substring(0, 20) + '...' : val}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedElement.styles && (
+                  <div>
+                    <p className="text-[10px] text-bolt-elements-textTertiary">Estilos</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {Object.entries(selectedElement.styles).filter(([, v]) => v).map(([key, val]) => (
+                        <span key={key} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-green-500/10 text-green-400 border border-green-500/15">
+                          {key}: {val}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
