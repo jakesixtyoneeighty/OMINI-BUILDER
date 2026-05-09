@@ -6,8 +6,9 @@ interface DeployFile {
 }
 
 interface DeployBody {
-  token: string;
+  token?: string;
   siteId?: string;
+  siteName?: string;
   files: DeployFile[];
 }
 
@@ -24,7 +25,7 @@ function encodeFile(path: string, content: string): { path: string; content: str
   return { path, content: btoa(bin), encoding: 'base64' };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
 
   let body: DeployBody;
@@ -34,9 +35,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { token, siteId, files } = body;
+  const { siteId, siteName, files } = body;
 
-  if (!token) return json({ error: 'Netlify token is required' }, { status: 400 });
+  // Resolve token: use client-provided token, or fall back to server's NETLIFY_DEFAULT_API_KEY
+  const env = (context as any)?.cloudflare?.env || {};
+  const token = body.token || env.NETLIFY_DEFAULT_API_KEY || '';
+
+  if (!token) return json({ error: 'Netlify token is required. Configure it in Settings or set NETLIFY_DEFAULT_API_KEY env var.' }, { status: 400 });
   if (!Array.isArray(files) || files.length === 0) return json({ error: 'No files to deploy' }, { status: 400 });
 
   try {
@@ -54,11 +59,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Create site if no siteId provided
     if (!targetSiteId) {
+      const name = siteName || `omni-builder-${Date.now().toString(36)}`;
       const createRes = await fetch(`${NETLIFY_API}/sites`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: `omni-builder-${Date.now().toString(36)}`,
+          name,
           body: 'Deployed from Omni-Builder',
         }),
       });
@@ -66,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const t = await createRes.text();
         return json({ error: `Failed to create Netlify site: ${t}` }, { status: createRes.status });
       }
-      const siteData = (await createRes.json()) as { id: string; ssl_url?: string; url?: string };
+      const siteData = (await createRes.json()) as { id: string; ssl_url?: string; url?: string; name?: string };
       targetSiteId = siteData.id;
       siteUrl = siteData.ssl_url || siteData.url || '';
     } else {
@@ -84,7 +90,6 @@ export async function action({ request }: ActionFunctionArgs) {
     const deployFiles: Record<string, { file: string; content: string; encoding: string }> = {};
     for (const f of files) {
       const cleanPath = f.path.replace(/^\/+/, '');
-      // Netlify needs a "file" key (not "path") in the upload format
       const encoded = encodeFile(cleanPath, f.content);
       deployFiles[cleanPath] = { file: cleanPath, content: encoded.content, encoding: encoded.encoding };
     }

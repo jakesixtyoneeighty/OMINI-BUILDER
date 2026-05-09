@@ -3,3 +3,6 @@ name = "bolt"
 compatibility_flags = ["nodejs_compat_v2"]
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./build/client"
+
+[vars]
+NETLIFY_DEFAULT_API_KEY = ""

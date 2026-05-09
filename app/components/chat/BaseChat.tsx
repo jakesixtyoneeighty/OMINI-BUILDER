@@ -232,55 +232,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       return attachments;
     }, [attachedFiles, inspectorElements]);
 
-    // Build a concise context string from attachments that the AI can understand
-    // This gets prepended to the user message text so the AI knows what the attachments are
-    const buildAttachmentContext = useCallback((): string => {
-      const parts: string[] = [];
-
-      // File context
-      for (const f of attachedFiles) {
-        if (f.type.startsWith('image/')) {
-          parts.push(`[Attached image: ${f.name}]`);
-        } else {
-          parts.push(`[Attached file: ${f.name}]`);
-        }
-      }
-
-      // Inspector element context
-      for (const el of inspectorElements) {
-        const elParts = [`[Inspector Element: <${el.tagName}>`];
-        if (el.selector) elParts.push(`Selector: ${el.selector}`);
-        if (el.attributes?.id) elParts.push(`ID: ${el.attributes.id}`);
-        if (el.className) elParts.push(`Class: ${el.className.split(' ').filter((c: string) => c && !c.startsWith('__') && !c.startsWith('css-')).join(' ')}`);
-        if (el.textContent) elParts.push(`Text: "${el.textContent.substring(0, 80)}"`);
-        if (el.attributes?.href) elParts.push(`Href: ${el.attributes.href}`);
-        if (el.attributes?.src) elParts.push(`Src: ${el.attributes.src}`);
-        if (el.attributes?.placeholder) elParts.push(`Placeholder: "${el.attributes.placeholder}"`);
-        if (el.attributes?.type) elParts.push(`Type: ${el.attributes.type}`);
-        if (el.attributes?.role) elParts.push(`Role: ${el.attributes.role}`);
-        if (el.dimensions) elParts.push(`Dimensions: ${el.dimensions.width}x${el.dimensions.height}px`);
-        if (el.styles) {
-          const styleParts: string[] = [];
-          if (el.styles.display) styleParts.push(`display: ${el.styles.display}`);
-          if (el.styles.position) styleParts.push(`position: ${el.styles.position}`);
-          if (el.styles.color) styleParts.push(`color: ${el.styles.color}`);
-          if (el.styles.backgroundColor) styleParts.push(`background: ${el.styles.backgroundColor}`);
-          if (el.styles.fontSize) styleParts.push(`font-size: ${el.styles.fontSize}`);
-          if (styleParts.length > 0) elParts.push(`Styles: { ${styleParts.join(', ')} }`);
-        }
-        if (el.isInShadowDom) elParts.push('[Shadow DOM]');
-        elParts.push(']');
-        parts.push(elParts.join(', '));
-      }
-
-      // Mentioned file context
-      for (const f of mentionedFiles) {
-        parts.push(`[Referenced file: ${f.path}]`);
-      }
-
-      return parts.length > 0 ? parts.join('\n') + '\n\n' : '';
-    }, [attachedFiles, inspectorElements, mentionedFiles]);
-
     /** Tag icon map for inspector element types */
     const getElementIcon = (tagName: string): string => {
       const map: Record<string, string> = {
@@ -331,23 +282,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         return;
       }
 
-      const hasAttachments = attachedFiles.length > 0 || inspectorElements.length > 0 || mentionedFiles.length > 0;
-
-      // Build structured attachments (sent alongside the message, not as text)
+      // Build structured attachments (sent alongside the message, NOT as text)
       const attachments = buildAttachments();
-
-      // Build a concise context prefix so the AI knows what the attachments contain
-      const contextPrefix = buildAttachmentContext();
-
-      // If we have attachments, prepend a short context to the user message
-      if (hasAttachments && contextPrefix) {
-        const currentVal = textareaRef?.current?.value || input;
-        const newVal = contextPrefix + currentVal;
-        const syntheticEvent = {
-          target: { value: newVal },
-        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-        handleInputChange?.(syntheticEvent);
-      }
 
       // Clear all attachment states before sending
       setAttachedFiles([]);
@@ -355,9 +291,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       clearInspectorElements();
       setMentionState(null);
 
-      // Send message with structured attachments
+      // Send message with structured attachments - NO text prefix added
       sendMessage?.(event, undefined, attachments.length > 0 ? attachments : undefined);
-    }, [isStreaming, handleStop, sendMessage, buildAttachments, buildAttachmentContext, handleInputChange, textareaRef, user, attachedFiles, inspectorElements.length, mentionedFiles, input]);
+    }, [isStreaming, handleStop, sendMessage, buildAttachments, handleInputChange, textareaRef, user, attachedFiles, inspectorElements.length, mentionedFiles]);
 
     // Handle @ file mention selection
     const handleMentionSelect = useCallback((filePath: string) => {

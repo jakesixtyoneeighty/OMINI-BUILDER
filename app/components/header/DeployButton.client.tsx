@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
-import { projectsStore, activeProjectIdStore, getActiveProject } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
@@ -22,18 +22,21 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const project = projects[projectId] ?? getActiveProject();
   const settings = project?.settings;
 
-  const hasNetlify = !!(settings?.netlify?.token);
+  // Netlify is always available because the server has NETLIFY_DEFAULT_API_KEY
+  // The user's own token takes priority, but the server key is the fallback
+  const netlifySiteId = settings?.netlify?.siteId || '';
+  const hasUserNetlifyToken = !!(settings?.netlify?.token);
   const hasVercel = !!(settings?.vercel?.token);
   const hasCloudRun = !!(settings?.cloudRun?.serviceAccountKey && settings?.cloudRun?.projectId);
-  const hasAnyProvider = hasNetlify || hasVercel || hasCloudRun;
 
   const configuredProviders = useMemo(() => {
     const list: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
-    if (hasNetlify) list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
+    // Netlify is always available (server has default key)
+    list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
     if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
     if (hasCloudRun) list.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
     return list;
-  }, [hasNetlify, hasVercel, hasCloudRun]);
+  }, [hasVercel, hasCloudRun]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,7 +68,75 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
   };
 
-  // Deploy via Omni Builder (self-hosted preview)
+  // PRIMARY DEPLOY: Deploy to Netlify using server's default key
+  // If the project already has a siteId, re-deploy to the same site (same URL)
+  const deployToNetlify = async () => {
+    setDeploying('netlify');
+    setDeployResult(null);
+    setOpen(false);
+
+    try {
+      const fileList = await getProjectFiles();
+      const projectName = (settings?.name || project?.name || 'my-project')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 30);
+
+      const token = settings?.netlify?.token || ''; // Empty = server will use NETLIFY_DEFAULT_API_KEY
+
+      const res = await fetch('/api/netlify-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token || undefined, // If empty, server uses default key
+          siteId: netlifySiteId || undefined,
+          siteName: netlifySiteId ? undefined : projectName, // Only set name for new sites
+          files: fileList,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Deploy failed');
+      }
+
+      setDeployResult({ url: data.url, provider: 'Netlify' });
+
+      // Save the siteId so future deploys go to the same site (same URL)
+      if (data.siteId && data.siteId !== netlifySiteId) {
+        updateActiveProjectSettings({
+          netlify: {
+            token: hasUserNetlifyToken ? (settings?.netlify?.token || '') : '',
+            siteId: data.siteId,
+          },
+        });
+      }
+
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">Deploy no Netlify realizado!</span>
+          <a
+            href={data.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline text-xs hover:text-blue-300"
+          >
+            {data.url}
+          </a>
+          {netlifySiteId && <span className="text-[9px] text-bolt-elements-textTertiary">Site atualizado (mesmo URL)</span>}
+        </div>,
+        { autoClose: 10000 },
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha no deploy', { autoClose: 8000 });
+    } finally {
+      setDeploying(null);
+    }
+  };
+
   const deployToOmniBuilder = async () => {
     setDeploying('omnibuilder');
     setDeployResult(null);
@@ -138,21 +209,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       switch (provider) {
         case 'netlify': {
-          const token = settings?.netlify?.token || '';
-          const siteId = settings?.netlify?.siteId || '';
-          res = await fetch('/api/netlify-deploy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, siteId: siteId || undefined, files: fileList }),
-          });
-          if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
-          data = await res.json();
-          setDeployResult({ url: data.url, provider: 'Netlify' });
-          if (data.siteId) {
-            const { updateActiveProjectSettings } = await import('~/lib/stores/project');
-            updateActiveProjectSettings({ netlify: { token, siteId: data.siteId } });
-          }
-          break;
+          // Use the shared deployToNetlify logic
+          setDeploying(null);
+          return deployToNetlify();
         }
         case 'vercel': {
           const token = settings?.vercel?.token || '';
@@ -210,70 +269,75 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const deployWithAI = useCallback(() => {
     setOpen(false);
 
-    const providerInfo = configuredProviders.map((p) => p.label).join(', ') || 'nenhum provedor configurado';
+    const providerInfo = configuredProviders.map((p) => p.label).join(', ');
 
     window.dispatchEvent(
       new CustomEvent('deploy-requested', {
         detail: {
           configuredProviders: providerInfo,
-          hasNetlify,
+          hasNetlify: true,
           hasVercel,
           hasCloudRun,
-          netlifySiteId: settings?.netlify?.siteId || '',
+          netlifySiteId,
           vercelProjectName: settings?.vercel?.projectName || '',
           cloudRunServiceName: settings?.cloudRun?.serviceName || '',
           cloudRunRegion: settings?.cloudRun?.region || 'us-central1',
         },
       }),
     );
-  }, [configuredProviders, hasNetlify, hasVercel, hasCloudRun]);
-
-  const quickDeploy = useCallback(() => {
-    if (!hasAnyProvider) {
-      onOpenSettings();
-      toast.info('Configure um provedor de deploy primeiro!', { autoClose: 4000 });
-      return;
-    }
-    deployTo(configuredProviders[0].key);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAnyProvider, configuredProviders, onOpenSettings]);
+  }, [configuredProviders, hasVercel, hasCloudRun, netlifySiteId]);
 
   const isDeploying = deploying !== null;
 
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Main button */}
-        <button
-          onClick={() => setOpen(!open)}
-          disabled={isDeploying}
-          className={classNames(
-            'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
-            isDeploying
-              ? 'bg-teal-600/80 text-white cursor-wait'
-              : 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500 hover:shadow-md active:scale-[0.97]',
-          )}
-        >
-          {isDeploying ? (
-            <>
-              <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-              {deploying === 'omnibuilder' ? 'Deploying to Omni...' : 'Deploying...'}
-            </>
-          ) : deployResult ? (
-            <>
-              <div className="i-ph:check-circle-fill text-sm" />
-              Deployed!
-            </>
-          ) : (
-            <>
-              <div className="i-ph:rocket-launch-duotone text-sm" />
-              Deploy
-              <div className="i-ph:caret-down text-[10px] opacity-70" />
-            </>
-          )}
-        </button>
+        {/* Main button — PRIMARY: Deploy to Netlify. Click deploys, long-press/right area opens dropdown */}
+        <div className="flex">
+          <button
+            onClick={deployToNetlify}
+            disabled={isDeploying}
+            className={classNames(
+              'flex items-center gap-2 px-3 py-1.5 rounded-l-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
+              isDeploying
+                ? 'bg-teal-600/80 text-white cursor-wait'
+                : deployResult
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
+                  : 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500 hover:shadow-md active:scale-[0.97]',
+            )}
+          >
+            {isDeploying ? (
+              <>
+                <div className="i-svg-spinners:90-ring-with-bg text-sm" />
+                Deploying...
+              </>
+            ) : deployResult ? (
+              <>
+                <div className="i-ph:check-circle-fill text-sm" />
+                Deployed!
+              </>
+            ) : (
+              <>
+                <div className="i-ph:rocket-launch-duotone text-sm" />
+                Deploy
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => setOpen(!open)}
+            disabled={isDeploying}
+            className={classNames(
+              'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-white/10',
+              isDeploying
+                ? 'bg-teal-600/80 text-white cursor-wait'
+                : 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500',
+            )}
+          >
+            <div className="i-ph:caret-down text-[10px] opacity-70" />
+          </button>
+        </div>
 
-        {/* Dropdown */}
+        {/* Dropdown — shown on caret click or right-click */}
         {open && !isDeploying && (
           <div className="absolute right-0 top-full mt-2 w-72 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
@@ -285,27 +349,31 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div>
                   <p className="text-sm font-semibold text-bolt-elements-textPrimary">Deploy do Projeto</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    Escolha como publicar seu projeto
+                    {netlifySiteId ? 'Atualizar site no Netlify' : 'Publicar no Netlify'}
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="p-2 space-y-1">
-              {/* Deploy pelo Omni Builder — PRIMARY option */}
+              {/* PRIMARY: Deploy to Netlify (always available) */}
               <button
-                onClick={deployToOmniBuilder}
+                onClick={deployToNetlify}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-teal-500/20 bg-teal-500/5"
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center shrink-0 group-hover:from-teal-500/30 group-hover:to-emerald-500/30 transition-colors">
                   <div className="i-ph:cube-duotone text-teal-400 text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">Deploy pelo Omni Builder</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">Preview ao vivo com WebContainer — link instantâneo</p>
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">
+                    {netlifySiteId ? 'Atualizar no Netlify' : 'Publicar no Netlify'}
+                  </p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">
+                    {netlifySiteId ? 'Mesmo URL — atualiza o site existente' : 'Cria um novo site no Netlify'}
+                  </p>
                 </div>
                 <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-500/20 text-teal-400 uppercase tracking-wider">
-                  Novo
+                  Padrão
                 </div>
               </button>
 
@@ -324,48 +392,54 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div className="i-ph:sparkle text-purple-400/50 text-xs" />
               </button>
 
-              {/* Separator — External providers */}
-              {hasAnyProvider && (
+              {/* Deploy pelo Omni Builder */}
+              <button
+                onClick={deployToOmniBuilder}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0 group-hover:bg-blue-500/25 transition-colors">
+                  <div className="i-ph:eye-duotone text-blue-400 text-base" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">Preview Omni Builder</p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">Preview ao vivo com WebContainer</p>
+                </div>
+              </button>
+
+              {/* Separator — Other external providers */}
+              {(hasVercel || hasCloudRun) && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
-                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">Deploy Externo</span>
+                  <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">Outros</span>
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                 </div>
               )}
 
-              {/* Quick Deploy — deploy to first available provider */}
-              {hasAnyProvider && (
+              {/* Vercel (only if configured) */}
+              {hasVercel && (
                 <button
-                  onClick={quickDeploy}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/25 transition-colors">
-                    <div className="i-ph:lightning-duotone text-emerald-400 text-base" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-bolt-elements-textPrimary">Deploy Rapido</p>
-                    <p className="text-[10px] text-bolt-elements-textTertiary truncate">
-                      {configuredProviders.length === 1
-                        ? `Deploy para ${configuredProviders[0].label}`
-                        : `Deploy para ${configuredProviders[0].label} (primeiro)`}
-                    </p>
-                  </div>
-                </button>
-              )}
-
-              {/* Individual provider buttons */}
-              {configuredProviders.length > 1 && configuredProviders.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => deployTo(p.key)}
+                  onClick={() => deployTo('vercel')}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                 >
                   <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0 overflow-hidden">
-                    <img src={p.logo} alt={p.label} className="w-5 h-5 object-contain" />
+                    <img src="/logos/vercel.svg" alt="Vercel" className="w-5 h-5 object-contain" />
                   </div>
-                  <span className="text-xs text-bolt-elements-textSecondary font-medium">{p.label}</span>
+                  <span className="text-xs text-bolt-elements-textSecondary font-medium">Vercel</span>
                 </button>
-              ))}
+              )}
+
+              {/* Cloud Run (only if configured) */}
+              {hasCloudRun && (
+                <button
+                  onClick={() => deployTo('cloudrun')}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0 overflow-hidden">
+                    <img src="/logos/google-cloud.svg" alt="Google Cloud" className="w-5 h-5 object-contain" />
+                  </div>
+                  <span className="text-xs text-bolt-elements-textSecondary font-medium">Google Cloud Run</span>
+                </button>
+              )}
 
               {/* Deploy result card */}
               {deployResult && (

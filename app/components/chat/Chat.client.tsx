@@ -659,23 +659,21 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
       // Build context about configured providers
       const providerDetails: string[] = [];
-      if (hasNetlify) providerDetails.push(`- Netlify: Token configurado${netlifySiteId ? `, Site ID: ${netlifySiteId}` : ' (novo site)'}`);
+      if (hasNetlify) providerDetails.push(`- Netlify: Disponivel (chave padrao do servidor)${netlifySiteId ? `, Site ID: ${netlifySiteId} (atualizar mesmo URL)` : ' (criar novo site)'}`);
       if (hasVercel) providerDetails.push(`- Vercel: Token configurado${vercelProjectName ? `, Projeto: ${vercelProjectName}` : ' (novo projeto)'}`);
       if (hasCloudRun) providerDetails.push(`- Google Cloud Run: Projeto ${cloudRunServiceName || 'default'}, Regiao: ${cloudRunRegion}`);
 
       const deployPrompt = `Faca o deploy deste projeto agora!
 
-Provedores configurados:
-${providerDetails.length > 0 ? providerDetails.join('\n') : 'Nenhum provedor configurado ainda. Configure um provedor nas Configuracoes do App (icone de engrenagem > aba Deploy).'}
+Provedores disponiveis:
+${providerDetails.length > 0 ? providerDetails.join('\n') : 'Netlify esta disponivel via chave padrao do servidor.'}
 
 Por favor:
 1. Revise todos os arquivos do projeto e garanta que esta tudo pronto para producao
 2. Verifique se o package.json tem os scripts corretos (build, start, etc.)
 3. Adicione um arquivo .gitignore se necessario
 4. Otimize a build para producao (minificacao, etc.)
-5. ${providerDetails.length > 0 ? `Faca o deploy usando o(s) provedor(es) configurado(s) acima` : 'Aguarde — o usuario precisa configurar um provedor de deploy nas configuracoes antes de fazer o deploy'}
-
-${!hasNetlify && !hasVercel && !hasCloudRun ? 'AVISO: Nenhum provedor de deploy esta configurado. Apos preparar o projeto, informe ao usuario que ele precisa configurar pelo menos um provedor (Netlify, Vercel ou Cloud Run) nas Configuracoes do App.' : ''}`;
+5. Faca o deploy usando o(s) provedor(es) disponivel(is) acima`;
 
       setTimeout(() => {
         append({ role: 'user', content: deployPrompt });
