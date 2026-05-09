@@ -112,11 +112,20 @@ function resolveDbContext(config?: ClientDatabaseConfig): DatabaseContext | unde
 async function chatAction({ context, request }: ActionFunctionArgs) {
   const body = await request.json<ChatRequest>();
   const { messages } = body;
-  const selection = resolveSelection(body, context.cloudflare.env);
+  const env = context.cloudflare.env;
+  const selection = resolveSelection(body, env);
   const dbContext = resolveDbContext(body.databaseConfig);
   const planMode = body.planMode ?? false;
   const customRules = body.customRules;
   const language = body.language || 'pt';
+
+  // Get Supabase credentials for Omni DB tool
+  const supabaseUrl = env.SUPABASE_URL || '';
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY || '';
+
+  // Determine server origin from request for absolute URLs in SDK
+  const url = new URL(request.url);
+  const serverOrigin = `${url.protocol}//${url.host}`;
 
   const stream = new SwitchableStream();
 
@@ -149,13 +158,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language);
+        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language);
+    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin);
 
     stream.switchSource(result.toAIStream());
 

@@ -2,7 +2,7 @@
  * Omni DB SDK - Built-in database for Omni Builder
  *
  * Each project gets 100MB of free storage.
- * API Endpoint: POST /api/db
+ * API Endpoint: POST {serverOrigin}/api/db
  *
  * Usage:
  *   import OmniDB from './lib/omni-db.js';
@@ -32,6 +32,8 @@ class OmniDB {
       throw new Error('OmniDB: projectId is required');
     }
     this.projectId = projectId;
+    // Use the Omni Builder server URL so the database works from ANY hosting (Netlify, Vercel, etc.)
+    // Falls back to same-origin /api/db for local development
     this.baseUrl = options.baseUrl || '/api/db';
   }
 

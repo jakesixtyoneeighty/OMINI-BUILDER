@@ -358,6 +358,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         const prevLength = parsedMessagesRef.current;
         if (prevLength < messages.length) {
           parsedMessagesRef.current = messages.length;
+
+          // Dispatch event so DatabasePanel auto-refreshes (AI may have used omni_db tool)
+          window.dispatchEvent(new CustomEvent('omni-db-collections-changed'));
+
           if (lastMsg.content.includes('boltArtifact') || lastMsg.content.includes('boltAction')) {
             const titleMatch = lastMsg.content.match(/<boltArtifact[^>]*title="([^"]+)"/);
             const artifactTitle = titleMatch ? titleMatch[1] : undefined;
@@ -635,15 +639,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
             content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
 
 Please:
-1. Create a lib/omni-db.js file with the OmniDB SDK class
-2. Initialize the database with: const db = new OmniDB('${projectId}');
-3. Create all necessary collections with their schemas
+1. FIRST: Use the omni_db tool to create all necessary collections with their schemas (this makes them appear in the Database panel immediately)
+2. Create a lib/omni-db.js file with the OmniDB SDK class
+3. Initialize the database with: const db = new OmniDB('${projectId}');
 4. Generate all the CRUD operations and hooks needed for the app
 5. Make sure all components that need data use this database instance
 
-The Omni DB API endpoint is POST /api/db. It supports: init, stats, collections, createCollection, dropCollection, getSchema, query, insert, update, delete, count.
-
-Each collection needs a schema with field definitions like: { fieldName: { type: "string|number|boolean", required: true/false, unique: true/false } }
+IMPORTANT: Use the omni_db tool to create each collection BEFORE writing code that uses them. This ensures the collections exist in the database.
 
 The database is ready to use. Please configure the project to connect to it and create the necessary collections.`,
           });
@@ -812,15 +814,13 @@ Por favor:
         content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
 
 Please:
-1. Create a lib/omni-db.js file with the OmniDB SDK class
-2. Initialize the database with: const db = new OmniDB('${projectId}');
-3. Create all necessary collections with their schemas
+1. FIRST: Use the omni_db tool to create all necessary collections with their schemas (this makes them appear in the Database panel immediately)
+2. Create a lib/omni-db.js file with the OmniDB SDK class
+3. Initialize the database with: const db = new OmniDB('${projectId}');
 4. Generate all the CRUD operations and hooks needed for the app
 5. Make sure all components that need data use this database instance
 
-The Omni DB API endpoint is POST /api/db. It supports: init, stats, collections, createCollection, dropCollection, getSchema, query, insert, update, delete, count.
-
-Each collection needs a schema with field definitions like: { fieldName: { type: "string|number|boolean", required: true/false, unique: true/false } }
+IMPORTANT: Use the omni_db tool to create each collection BEFORE writing code that uses them. This ensures the collections exist in the database.
 
 The database is ready to use. Please configure the project to connect to it and create the necessary collections.`,
       });

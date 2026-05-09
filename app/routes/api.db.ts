@@ -31,6 +31,21 @@ export async function action(args: ActionFunctionArgs) {
   return dbAction(args);
 }
 
+// Handle CORS preflight and GET requests
+export async function loader({ request }: ActionFunctionArgs) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  return json({ status: 'ok', service: 'Omni DB API', version: '1.0' }, { headers: corsHeaders });
+}
+
 async function dbAction({ context, request }: ActionFunctionArgs) {
   // CORS headers for cross-origin requests from WebContainer
   const corsHeaders = {
@@ -160,18 +175,6 @@ async function dbAction({ context, request }: ActionFunctionArgs) {
           return json({ error: 'Invalid collection name. Use only letters, numbers, and underscores. Must start with a letter or underscore.' }, { status: 400, headers: corsHeaders });
         }
 
-        // Check if collection already exists
-        const { data: existing } = await sb
-          .from('app_db_schemas')
-          .select('id')
-          .eq('project_id', projectId)
-          .eq('collection_name', collection)
-          .single();
-
-        if (existing) {
-          return json({ error: `Collection "${collection}" already exists` }, { status: 409, headers: corsHeaders });
-        }
-
         // Add system fields to schema
         const fullSchema = {
           _id: { type: 'string', required: true, unique: true },
@@ -179,6 +182,31 @@ async function dbAction({ context, request }: ActionFunctionArgs) {
           _updatedAt: { type: 'string', required: true },
           ...schema,
         };
+
+        // Check if collection already exists - if so, update the schema (idempotent)
+        const { data: existing } = await sb
+          .from('app_db_schemas')
+          .select('id, schema_def')
+          .eq('project_id', projectId)
+          .eq('collection_name', collection)
+          .single();
+
+        if (existing) {
+          // Collection already exists - merge schemas and update
+          const existingSchema = existing.schema_def as Record<string, any>;
+          const mergedSchema = { ...existingSchema, ...fullSchema };
+
+          const { error: updateError } = await sb
+            .from('app_db_schemas')
+            .update({ schema_def: mergedSchema })
+            .eq('id', existing.id);
+
+          if (updateError) {
+            return json({ error: `Failed to update collection: ${updateError.message}` }, { status: 500, headers: corsHeaders });
+          }
+
+          return json({ success: true, collection: { name: collection, schema: mergedSchema }, message: `Collection "${collection}" already existed. Schema updated.` }, { headers: corsHeaders });
+        }
 
         const { data: newSchema, error: schemaError } = await sb
           .from('app_db_schemas')

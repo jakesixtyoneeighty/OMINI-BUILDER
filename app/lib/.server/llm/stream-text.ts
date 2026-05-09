@@ -2,7 +2,7 @@ import { streamText as _streamText, convertToCoreMessages, type CoreMessage } fr
 import { getModel, type ProviderId } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt, type DatabaseContext } from './prompts';
-import { tools } from './tools';
+import { buildTools } from './tools';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -34,7 +34,18 @@ export interface ModelSelection {
   apiKey: string;
 }
 
-export function streamText(messages: Messages, selection: ModelSelection, options?: StreamingOptions, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string, language?: string) {
+export function streamText(
+  messages: Messages,
+  selection: ModelSelection,
+  options?: StreamingOptions,
+  dbContext?: DatabaseContext,
+  planMode?: boolean,
+  customRules?: string,
+  language?: string,
+  supabaseUrl?: string,
+  supabaseKey?: string,
+  serverOrigin?: string,
+) {
   const extra: { headers?: Record<string, string> } = {};
 
   if (selection.provider === 'anthropic') {
@@ -44,11 +55,15 @@ export function streamText(messages: Messages, selection: ModelSelection, option
   // Convert messages to core messages, handling tool invocations
   const coreMessages = convertToCoreMessages(messages as any);
 
+  // Build tools including omni_db if Omni DB is configured
+  const projectId = dbContext?.type === 'omni' ? dbContext.omni?.projectId : undefined;
+  const activeTools = buildTools(projectId, supabaseUrl, supabaseKey);
+
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
-    system: getSystemPrompt(undefined, dbContext, planMode, customRules, language),
+    system: getSystemPrompt(undefined, dbContext, planMode, customRules, language, serverOrigin),
     maxTokens: MAX_TOKENS,
-    tools,
+    tools: activeTools,
     ...extra,
     messages: coreMessages,
     ...options,

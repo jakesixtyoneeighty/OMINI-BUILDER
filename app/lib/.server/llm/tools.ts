@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * Web search tool — searches the internet for real-time information.
@@ -189,7 +190,204 @@ function extractTitle(content: string): string {
 }
 
 /**
- * All tools to be passed to the AI streamText call.
+ * Create the Omni DB tool with access to Supabase credentials.
+ * This tool lets the AI directly create collections on the server
+ * so they appear in the DatabasePanel immediately.
+ */
+export function createOmniDbTool(projectId: string, supabaseUrl: string, supabaseKey: string) {
+  return tool({
+    description: `Manage the Omni DB built-in database for this project. Use this tool to:
+- Create collections with schemas (they will be immediately available in the Database panel)
+- Initialize the database for the project
+- Check storage stats
+
+IMPORTANT: Always use this tool to create collections BEFORE generating code that uses them. This ensures the collections exist in the database and appear in the Database panel right away.
+
+Call this tool with action="createCollection" for each collection the app needs.`,
+    parameters: z.object({
+      action: z.enum(['init', 'createCollection', 'stats', 'collections']).describe('The database action to perform'),
+      collection: z.string().optional().describe('Collection name (for createCollection)'),
+      schema: z.record(z.object({
+        type: z.string(),
+        required: z.boolean().optional(),
+        unique: z.boolean().optional(),
+        default: z.any().optional(),
+      })).optional().describe('Collection schema (for createCollection)'),
+    }),
+    execute: async ({ action, collection, schema }) => {
+      try {
+        const sb = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+        const MAX_BYTES_PER_PROJECT = 104857600; // 100MB
+
+        switch (action) {
+          case 'init': {
+            const { data: existingQuota } = await sb
+              .from('app_db_quota')
+              .select('*')
+              .eq('project_id', projectId)
+              .single();
+
+            if (existingQuota) {
+              return { success: true, quota: existingQuota };
+            }
+
+            const { data: newQuota, error: quotaError } = await sb
+              .from('app_db_quota')
+              .insert({
+                project_id: projectId,
+                used_bytes: 0,
+                max_bytes: MAX_BYTES_PER_PROJECT,
+                row_count: 0,
+                collection_count: 0,
+              })
+              .select()
+              .single();
+
+            if (quotaError) {
+              return { error: `Failed to initialize DB: ${quotaError.message}` };
+            }
+
+            return { success: true, quota: newQuota };
+          }
+
+          case 'createCollection': {
+            if (!collection || !schema) {
+              return { error: 'Missing collection name or schema' };
+            }
+
+            // Validate collection name
+            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(collection)) {
+              return { error: 'Invalid collection name. Use only letters, numbers, and underscores. Must start with a letter or underscore.' };
+            }
+
+            // Check if collection already exists - if so, update the schema
+            const { data: existing } = await sb
+              .from('app_db_schemas')
+              .select('id, schema_def')
+              .eq('project_id', projectId)
+              .eq('collection_name', collection)
+              .single();
+
+            // Add system fields to schema
+            const fullSchema = {
+              _id: { type: 'string', required: true, unique: true },
+              _createdAt: { type: 'string', required: true },
+              _updatedAt: { type: 'string', required: true },
+              ...schema,
+            };
+
+            if (existing) {
+              // Collection already exists - update the schema by merging
+              const existingSchema = existing.schema_def as Record<string, any>;
+              const mergedSchema = { ...existingSchema, ...fullSchema };
+
+              const { error: updateError } = await sb
+                .from('app_db_schemas')
+                .update({ schema_def: mergedSchema })
+                .eq('id', existing.id);
+
+              if (updateError) {
+                return { error: `Failed to update collection: ${updateError.message}` };
+              }
+
+              return { success: true, collection: { name: collection, schema: mergedSchema }, message: `Collection "${collection}" already existed. Schema updated.` };
+            }
+
+            // Create new collection
+            const { data: newSchema, error: schemaError } = await sb
+              .from('app_db_schemas')
+              .insert({
+                project_id: projectId,
+                collection_name: collection,
+                schema_def: fullSchema,
+              })
+              .select()
+              .single();
+
+            if (schemaError) {
+              return { error: `Failed to create collection: ${schemaError.message}` };
+            }
+
+            return { success: true, collection: { name: collection, schema: fullSchema } };
+          }
+
+          case 'stats': {
+            const { data: quota, error } = await sb
+              .from('app_db_quota')
+              .select('*')
+              .eq('project_id', projectId)
+              .single();
+
+            if (error || !quota) {
+              return { quota: { used_bytes: 0, max_bytes: MAX_BYTES_PER_PROJECT, row_count: 0, collection_count: 0 } };
+            }
+
+            return { quota };
+          }
+
+          case 'collections': {
+            const { data: schemas, error } = await sb
+              .from('app_db_schemas')
+              .select('collection_name, schema_def, created_at, updated_at')
+              .eq('project_id', projectId)
+              .order('collection_name');
+
+            if (error) {
+              return { error: `Failed to fetch collections: ${error.message}` };
+            }
+
+            const collectionStats = [];
+            for (const s of schemas || []) {
+              const { count } = await sb
+                .from('app_db_data')
+                .select('*', { count: 'exact', head: true })
+                .eq('project_id', projectId)
+                .eq('collection_name', s.collection_name);
+
+              collectionStats.push({
+                name: s.collection_name,
+                schema: s.schema_def,
+                rowCount: count || 0,
+                createdAt: s.created_at,
+                updatedAt: s.updated_at,
+              });
+            }
+
+            return { collections: collectionStats };
+          }
+
+          default:
+            return { error: `Unknown action: ${action}` };
+        }
+      } catch (err) {
+        console.error('Omni DB tool error:', err);
+        return { error: err instanceof Error ? err.message : 'Internal error' };
+      }
+    },
+  });
+}
+
+/**
+ * Build the tools object for the AI streamText call.
+ * Includes omni_db tool when Omni DB is configured.
+ */
+export function buildTools(projectId?: string, supabaseUrl?: string, supabaseKey?: string) {
+  const result: Record<string, any> = {
+    web_search: webSearchTool,
+    web_reader: webReaderTool,
+  };
+
+  // Add omni_db tool if Omni DB is configured with valid Supabase credentials
+  if (projectId && supabaseUrl && supabaseKey) {
+    result.omni_db = createOmniDbTool(projectId, supabaseUrl, supabaseKey);
+  }
+
+  return result;
+}
+
+/**
+ * All tools to be passed to the AI streamText call (without Omni DB).
+ * Use buildTools() for the full set including omni_db.
  */
 export const tools = {
   web_search: webSearchTool,

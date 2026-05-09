@@ -99,6 +99,25 @@ export const DatabasePanel = memo(() => {
     }
   }, [dbType, loadOmniData]);
 
+  // Auto-refresh when AI creates collections via omni_db tool
+  useEffect(() => {
+    if (dbType !== 'omni') return;
+
+    const handleDbChange = () => {
+      loadOmniData();
+    };
+
+    // Listen for AI tool calls that create collections
+    window.addEventListener('omni-db-collections-changed', handleDbChange);
+    // Also refresh when AI finishes a response (it may have used the omni_db tool)
+    window.addEventListener('ai-response-finished', handleDbChange);
+
+    return () => {
+      window.removeEventListener('omni-db-collections-changed', handleDbChange);
+      window.removeEventListener('ai-response-finished', handleDbChange);
+    };
+  }, [dbType, loadOmniData]);
+
   const fetchTables = useCallback(async () => {
     const sb = getSupabase();
     if (!sb || !user) return;
