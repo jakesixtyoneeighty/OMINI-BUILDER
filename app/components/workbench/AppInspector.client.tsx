@@ -9,6 +9,21 @@ interface InspectorAnnotation {
   textContent: string;
   comment: string;
   timestamp: number;
+  attributes?: Record<string, string>;
+  dimensions?: { width: number; height: number };
+  isInShadowDom?: boolean;
+}
+
+interface SelectedElement {
+  id: string;
+  selector: string;
+  tagName: string;
+  className: string;
+  textContent: string;
+  dimensions?: { width: number; height: number };
+  attributes?: Record<string, string>;
+  styles?: Record<string, string>;
+  isInShadowDom?: boolean;
 }
 
 interface AppInspectorProps {
@@ -19,17 +34,8 @@ interface AppInspectorProps {
 }
 
 /**
- * Improved inspector script — runs INSIDE the preview iframe.
- *
- * Key improvements over the previous version:
- * - Handles Shadow DOM via composedPath()
- * - Handles SVG elements (className is SVGAnimatedString)
- * - Better CSS selector generation with nth-child
- * - Richer element info (attributes, computed styles, shadow DOM detection)
- * - Scroll/resize overlay repositioning
- * - Sub-iframe injection for nested iframes
- * - MutationObserver for dynamically added iframes
- * - Always starts active when loaded
+ * Inspector script — runs INSIDE the preview iframe.
+ * Handles Shadow DOM, SVG, rich element info, sub-iframes.
  */
 const INSPECTOR_SCRIPT = `
 (function() {
@@ -77,7 +83,6 @@ const INSPECTOR_SCRIPT = `
     return false;
   }
 
-  /* Resolve the actual target element, traversing Shadow DOM boundaries */
   function resolveTarget(e) {
     var path = e.composedPath();
     for (var i = 0; i < path.length; i++) {
@@ -221,7 +226,6 @@ const INSPECTOR_SCRIPT = `
       if (mainClasses.length > 0) {
         selector += '.' + mainClasses.join('.');
       }
-      /* Add nth-child for disambiguation when no id and no class */
       if (!current.id && mainClasses.length === 0) {
         var parent = current.parentElement;
         if (parent) {
@@ -293,10 +297,8 @@ const INSPECTOR_SCRIPT = `
 
   document.addEventListener('mouseout', function(e) {
     if (!window.__omniInspectorActive) return;
-    /* Only hide if leaving the last target, not just moving between children */
     var related = e.relatedTarget;
     if (related && isInspectorElement(related)) return;
-    /* Small delay to avoid flicker when moving between child elements */
     setTimeout(function() {
       if (lastTarget && !lastTarget.matches(':hover') && !lastTarget.contains(document.elementFromPoint && document.elementFromPoint(-1,-1))) {
         if (overlay) overlay.style.display = 'none';
@@ -316,9 +318,7 @@ const INSPECTOR_SCRIPT = `
     e.stopImmediatePropagation();
 
     var info = getElementInfo(target);
-    /* Send to parent window (works for both same-origin and cross-origin with postMessage) */
     try { window.parent.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
-    /* Also try opener for new-tab scenario */
     try { if (window.opener) window.opener.postMessage({ type: '__inspector-click', data: info }, '*'); } catch(ex) {}
 
     /* Flash effect */
@@ -336,7 +336,6 @@ const INSPECTOR_SCRIPT = `
     }
   }, true);
 
-  /* Reposition overlay on scroll and resize */
   function onScrollOrResize() {
     if (!window.__omniInspectorActive || !lastTarget) return;
     scheduleUpdate(lastTarget);
@@ -344,7 +343,6 @@ const INSPECTOR_SCRIPT = `
   window.addEventListener('scroll', onScrollOrResize, true);
   window.addEventListener('resize', onScrollOrResize, true);
 
-  /* Listen for activate/deactivate messages from parent */
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === '__inspector-activate') {
       window.__omniInspectorActive = true;
@@ -356,7 +354,7 @@ const INSPECTOR_SCRIPT = `
     }
   });
 
-  /* Try to inject into sub-iframes (same-origin only) */
+  /* Sub-iframe injection */
   function injectIntoSubIframes() {
     try {
       var iframes = document.querySelectorAll('iframe');
@@ -369,12 +367,11 @@ const INSPECTOR_SCRIPT = `
             script.textContent = '(function(){if(window.__omniInspectorLoaded)return;window.__omniInspectorLoaded=true;window.__omniInspectorActive=true;var o=null,l=null;function cu(){o=doc.createElement("div");o.id="__inspector-overlay";o.style.cssText="position:fixed;pointer-events:none;z-index:2147483647;border:2px solid #3b82f6;background:rgba(59,130,246,0.10);border-radius:3px;display:none;";doc.body.appendChild(o);l=doc.createElement("div");l.id="__inspector-label";l.style.cssText="position:fixed;z-index:2147483647;pointer-events:none;font-size:11px;padding:3px 8px;background:#0f172a;color:#60a5fa;border-radius:4px;white-space:nowrap;display:none;";doc.body.appendChild(l)}doc.addEventListener("mouseover",function(e){if(!window.__omniInspectorActive||e.target.id&&e.target.id.startsWith("__inspector"))return;if(!o)cu();var r=e.target.getBoundingClientRect();o.style.top=r.top+"px";o.style.left=r.left+"px";o.style.width=r.width+"px";o.style.height=r.height+"px";o.style.display="block";if(l){l.textContent=e.target.tagName.toLowerCase();l.style.display="block";l.style.top=(r.top-20)+"px";l.style.left=r.left+"px"}},true);doc.addEventListener("click",function(e){if(!window.__omniInspectorActive)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();window.parent.postMessage({type:"__inspector-click",data:{selector:e.target.tagName.toLowerCase(),tagName:e.target.tagName.toLowerCase(),className:typeof e.target.className==="string"?e.target.className:"",textContent:(e.target.textContent||"").substring(0,100)}}, "*")},true)});';
             doc.head.appendChild(script);
           }
-        } catch (ex) { /* cross-origin iframe, skip */ }
+        } catch (ex) {}
       }
     } catch(e) {}
   }
 
-  /* Observe DOM for dynamically added iframes */
   var iframeObserver = new MutationObserver(function(mutations) {
     for (var i = 0; i < mutations.length; i++) {
       var added = mutations[i].addedNodes;
@@ -385,25 +382,17 @@ const INSPECTOR_SCRIPT = `
       }
     }
   });
-  try {
-    iframeObserver.observe(document.documentElement, { childList: true, subtree: true });
-  } catch(e) {}
-
-  /* Initial sub-iframe injection after a delay */
+  try { iframeObserver.observe(document.documentElement, { childList: true, subtree: true }); } catch(e) {}
   setTimeout(injectIntoSubIframes, 1500);
 
-  /* Signal to parent that inspector script is loaded */
   try { window.parent.postMessage({ type: '__inspector-ready' }, '*'); } catch(e) {}
   try { if (window.opener) window.opener.postMessage({ type: '__inspector-ready' }, '*'); } catch(e) {}
 })();
 `;
 
-export type { InspectorAnnotation };
+export type { InspectorAnnotation, SelectedElement };
 export { AppInspector };
 
-/**
- * Get the WebContainer instance dynamically (only on client)
- */
 async function getWebContainer() {
   try {
     const { webcontainer } = await import('~/lib/webcontainer');
@@ -417,10 +406,6 @@ async function getWebContainer() {
   }
 }
 
-/**
- * Inject the inspector script into the WebContainer filesystem so it loads
- * inside the preview page (same-origin with the WebContainer dev server content).
- */
 async function injectInspectorIntoWebContainer(inspectorScriptContent: string): Promise<() => void> {
   const wc = await getWebContainer();
   if (!wc) return () => {};
@@ -434,20 +419,14 @@ async function injectInspectorIntoWebContainer(inspectorScriptContent: string): 
   let wroteToPublic = false;
 
   try {
-    // 1. Write the inspector script file
-    // Try public/ first (Vite projects), then root
     try {
       await wc.fs.mkdir('public', { recursive: true });
       await wc.fs.writeFile('public/' + inspectorFileName, inspectorScriptContent);
       wroteToPublic = true;
     } catch {
-      // Fallback: write to root
-      try {
-        await wc.fs.writeFile(inspectorFileName, inspectorScriptContent);
-      } catch {}
+      try { await wc.fs.writeFile(inspectorFileName, inspectorScriptContent); } catch {}
     }
 
-    // 2. Find and modify index.html
     const htmlPaths = ['index.html', 'public/index.html', 'src/index.html'];
     for (const path of htmlPaths) {
       try {
@@ -457,29 +436,21 @@ async function injectInspectorIntoWebContainer(inspectorScriptContent: string): 
           originalHtmlContent = content;
           break;
         }
-      } catch {
-        // File doesn't exist at this path, try next
-      }
+      } catch {}
     }
 
     if (htmlPath && originalHtmlContent) {
-      // Check if already injected
       if (!scriptTagPattern.test(originalHtmlContent)) {
         let modified = originalHtmlContent;
-
-        // Insert before </head> or after <head>
         if (modified.includes('</head>')) {
           modified = modified.replace('</head>', scriptTag + '\n</head>');
         } else if (modified.includes('<head>')) {
           modified = modified.replace('<head>', '<head>\n' + scriptTag);
         } else if (modified.includes('<body>')) {
-          // No head tag — insert before body
           modified = modified.replace('<body>', scriptTag + '\n<body>');
         } else if (modified.includes('<html')) {
-          // Last resort: append after opening html tag
           modified = modified.replace(/<html[^>]*>/, '$&\n' + scriptTag);
         }
-
         if (modified !== originalHtmlContent) {
           await wc.fs.writeFile(htmlPath, modified);
         }
@@ -489,48 +460,63 @@ async function injectInspectorIntoWebContainer(inspectorScriptContent: string): 
     console.warn('[Inspector] Failed to inject into WebContainer:', err);
   }
 
-  // Return cleanup function
   return async () => {
     try {
-      // Remove the inspector script file
       if (wroteToPublic) {
         try { await wc.fs.rm('public/' + inspectorFileName); } catch {}
       } else {
         try { await wc.fs.rm(inspectorFileName); } catch {}
       }
-
-      // Restore original index.html
       if (htmlPath && originalHtmlContent) {
-        try {
-          await wc.fs.writeFile(htmlPath, originalHtmlContent);
-        } catch {}
+        try { await wc.fs.writeFile(htmlPath, originalHtmlContent); } catch {}
       }
     } catch {}
   };
 }
 
+/** Tag icon map for element types */
+function getElementIcon(tagName: string): string {
+  const map: Record<string, string> = {
+    button: 'i-ph:cursor-click',
+    input: 'i-ph:text-cursor',
+    textarea: 'i-ph:text-aa',
+    a: 'i-ph:link',
+    img: 'i-ph:image',
+    video: 'i-ph:video-camera',
+    h1: 'i-ph:text-h',
+    h2: 'i-ph:text-h',
+    h3: 'i-ph:text-h',
+    h4: 'i-ph:text-h',
+    h5: 'i-ph:text-h',
+    h6: 'i-ph:text-h',
+    p: 'i-ph:text-paragraph',
+    span: 'i-ph:text-aa',
+    div: 'i-ph:square-dashed',
+    section: 'i-ph:squares-four',
+    nav: 'i-ph:navigation-arrow',
+    header: 'i-ph:caret-line-up',
+    footer: 'i-ph:caret-line-down',
+    form: 'i-ph:note-pencil',
+    select: 'i-ph:list',
+    table: 'i-ph:table',
+    ul: 'i-ph:list-bullets',
+    ol: 'i-ph:list-numbers',
+    li: 'i-ph:minus',
+    svg: 'i-ph:path',
+    iframe: 'i-ph:browser',
+    label: 'i-ph:tag',
+  };
+  return map[tagName] || 'i-ph:code';
+}
+
 function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps) {
-  const [annotations, setAnnotations] = useState<InspectorAnnotation[]>([]);
-  const [commentInput, setCommentInput] = useState<string>('');
-  const [selectedElement, setSelectedElement] = useState<{
-    selector: string;
-    tagName: string;
-    className: string;
-    textContent: string;
-    dimensions?: { width: number; height: number };
-    attributes?: Record<string, string>;
-    styles?: Record<string, string>;
-    isInShadowDom?: boolean;
-  } | null>(null);
-  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [selectedElements, setSelectedElements] = useState<SelectedElement[]>([]);
+  const [commentInput, setCommentInput] = useState('');
   const [inspectorReady, setInspectorReady] = useState(false);
   const [injecting, setInjecting] = useState(false);
   const cleanupRef = useRef<(() => void) | null>(null);
 
-  // Find the preview iframe
   const findIframe = useCallback(() => {
-    // First try the ref if provided
-    // Then search by common patterns
     const iframes = document.querySelectorAll('iframe');
     for (const iframe of iframes) {
       if (
@@ -548,10 +534,8 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     return iframes.length > 0 ? iframes[0] : null;
   }, []);
 
-  // Determine if the iframe is cross-origin (WebContainer)
   const isCrossOriginIframe = useCallback((iframe: HTMLIFrameElement) => {
     try {
-      // If we can access contentDocument, it's same-origin
       const doc = iframe.contentDocument;
       return !doc;
     } catch {
@@ -559,7 +543,6 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     }
   }, []);
 
-  // Inject inspector into same-origin iframe via DOM
   const injectDirectly = useCallback((iframe: HTMLIFrameElement) => {
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -575,31 +558,25 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
         }
         return true;
       }
-    } catch {
-      // Cross-origin, will use file injection
-    }
+    } catch {}
     return false;
   }, []);
 
   // Main injection effect
   useEffect(() => {
     if (!isActive) {
-      // Deactivate
       const iframe = findIframe();
       if (iframe) {
-        try {
-          iframe.contentWindow?.postMessage({ type: '__inspector-deactivate' }, '*');
-        } catch {}
+        try { iframe.contentWindow?.postMessage({ type: '__inspector-deactivate' }, '*'); } catch {}
       }
-      // Also send to all windows (for new-tab scenario)
       try { window.postMessage({ type: '__inspector-deactivate' }, '*'); } catch {}
-
-      // Run cleanup for WebContainer file injection
       if (cleanupRef.current) {
         cleanupRef.current();
         cleanupRef.current = null;
       }
       setInspectorReady(false);
+      setSelectedElements([]);
+      setCommentInput('');
       return;
     }
 
@@ -611,45 +588,27 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
 
       if (iframe) {
         const crossOrigin = isCrossOriginIframe(iframe);
-
         if (crossOrigin) {
-          // Cross-origin iframe (WebContainer) — inject via filesystem
           try {
             const cleanup = await injectInspectorIntoWebContainer(INSPECTOR_SCRIPT);
-            if (!cancelled) {
-              cleanupRef.current = cleanup;
-            } else {
-              // Component unmounted during injection, clean up immediately
-              cleanup();
-            }
+            if (!cancelled) { cleanupRef.current = cleanup; } else { cleanup(); }
           } catch (err) {
-            console.warn('[Inspector] WebContainer injection failed, trying postMessage:', err);
-            // Fallback: try postMessage activation (won't work unless script was already injected)
             try { iframe.contentWindow?.postMessage({ type: '__inspector-activate' }, '*'); } catch {}
           }
         } else {
-          // Same-origin iframe — inject via DOM
           injectDirectly(iframe);
         }
       } else {
-        // No iframe found yet — try WebContainer injection anyway
-        // (the preview might load after a delay)
         try {
           const cleanup = await injectInspectorIntoWebContainer(INSPECTOR_SCRIPT);
-          if (!cancelled) {
-            cleanupRef.current = cleanup;
-          } else {
-            cleanup();
-          }
+          if (!cancelled) { cleanupRef.current = cleanup; } else { cleanup(); }
         } catch {}
       }
-
       setInjecting(false);
     };
 
     activate();
 
-    // Also try direct injection periodically for same-origin iframes that load later
     const interval = setInterval(() => {
       if (cancelled) return;
       const iframe = findIframe();
@@ -658,31 +617,28 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
       }
     }, 3000);
 
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   }, [isActive, findIframe, isCrossOriginIframe, injectDirectly]);
 
-  // Listen for inspector events from iframe
+  // Listen for inspector click events — add element as chip (no modal!)
   useEffect(() => {
     if (!isActive) return;
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type === '__inspector-click') {
         const data = event.data.data;
-        setSelectedElement({
+        const el: SelectedElement = {
+          id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           selector: data.selector || '',
           tagName: data.tagName || '',
           className: data.className || '',
           textContent: data.textContent || '',
           dimensions: data.dimensions,
           attributes: data.attributes,
-          styles: data.styles,
           isInShadowDom: data.isInShadowDom,
-        });
-        setShowCommentForm(true);
-        setCommentInput('');
+        };
+        // Add as a chip (like a file attachment)
+        setSelectedElements(prev => [...prev, el]);
       }
       if (event.data?.type === '__inspector-ready') {
         setInspectorReady(true);
@@ -693,29 +649,50 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
     return () => window.removeEventListener('message', handler);
   }, [isActive]);
 
-  const handleAddComment = useCallback(() => {
-    if (!selectedElement || !commentInput.trim()) return;
-
-    const annotation: InspectorAnnotation = {
-      id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      selector: selectedElement.selector,
-      tagName: selectedElement.tagName,
-      className: selectedElement.className,
-      textContent: selectedElement.textContent,
-      comment: commentInput.trim(),
-      timestamp: Date.now(),
-    };
-
-    setAnnotations(prev => [...prev, annotation]);
-    onAddAnnotation(annotation);
-    setShowCommentForm(false);
-    setCommentInput('');
-    setSelectedElement(null);
-  }, [selectedElement, commentInput, onAddAnnotation]);
-
-  const removeAnnotation = useCallback((id: string) => {
-    setAnnotations(prev => prev.filter(a => a.id !== id));
+  const removeElement = useCallback((id: string) => {
+    setSelectedElements(prev => prev.filter(el => el.id !== id));
   }, []);
+
+  const clearAll = useCallback(() => {
+    setSelectedElements([]);
+    setCommentInput('');
+  }, []);
+
+  // Send all selected elements + comment as annotations to the chat
+  const handleSend = useCallback(() => {
+    if (selectedElements.length === 0) return;
+
+    // Create one annotation per element, all sharing the same comment
+    for (const el of selectedElements) {
+      const annotation: InspectorAnnotation = {
+        id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        selector: el.selector,
+        tagName: el.tagName,
+        className: el.className,
+        textContent: el.textContent,
+        comment: commentInput.trim() || '(sem comentario)',
+        timestamp: Date.now(),
+        attributes: el.attributes,
+        dimensions: el.dimensions,
+        isInShadowDom: el.isInShadowDom,
+      };
+      onAddAnnotation(annotation);
+    }
+
+    // Clear after sending
+    setSelectedElements([]);
+    setCommentInput('');
+  }, [selectedElements, commentInput, onAddAnnotation]);
+
+  // Format element chip label
+  const formatChipLabel = (el: SelectedElement) => {
+    const tag = el.tagName;
+    const mainClass = el.className ? el.className.split(' ').filter(c => c && !c.startsWith('__') && !c.startsWith('css-')).slice(0, 1)[0] : '';
+    const id = el.attributes?.id ? '#' + el.attributes.id : '';
+    if (mainClass) return `${tag}.${mainClass}`;
+    if (id) return `${tag}${id}`;
+    return tag;
+  };
 
   return (
     <>
@@ -733,170 +710,99 @@ function AppInspector({ isActive, onToggle, onAddAnnotation }: AppInspectorProps
       >
         <div className={classNames('text-sm', isActive ? (injecting ? 'i-ph:spinner animate-spin' : 'i-ph:magnifying-glass-plus') : 'i-ph:magnifying-glass')} />
         {isActive && <span>{injecting ? 'Injetando...' : 'Inspetor'}</span>}
+        {isActive && selectedElements.length > 0 && (
+          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-orange-500 text-white">
+            {selectedElements.length}
+          </span>
+        )}
       </button>
 
-      {/* Inspector panel (when active and has annotations) */}
-      {isActive && annotations.length > 0 && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden z-[100]">
-          <div className="px-3 py-2 border-b border-bolt-elements-borderColor bg-orange-500/5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="i-ph:magnifying-glass-plus text-orange-400 text-sm" />
-                <span className="text-xs font-semibold text-bolt-elements-textPrimary">
-                  Anotacoes ({annotations.length})
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAnnotations([])}
-                className="text-[10px] text-bolt-elements-textTertiary hover:text-red-400 transition-colors"
-              >
-                Limpar
-              </button>
+      {/* Selected elements bar (appears below toolbar when elements are selected) */}
+      {isActive && selectedElements.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden z-[100]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-bolt-elements-borderColor bg-orange-500/5">
+            <div className="flex items-center gap-2">
+              <div className="i-ph:cursor-click text-orange-400 text-sm" />
+              <span className="text-[11px] font-semibold text-bolt-elements-textPrimary">
+                {selectedElements.length} elemento{selectedElements.length > 1 ? 's' : ''} selecionado{selectedElements.length > 1 ? 's' : ''}
+              </span>
             </div>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-[10px] text-bolt-elements-textTertiary hover:text-red-400 transition-colors"
+            >
+              Limpar tudo
+            </button>
           </div>
-          <div className="max-h-40 overflow-y-auto p-1.5 space-y-1">
-            {annotations.map(ann => (
+
+          {/* Element chips (like attached files) */}
+          <div className="px-2.5 py-2 flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
+            {selectedElements.map((el) => (
               <div
-                key={ann.id}
-                className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-bolt-elements-background-depth-1 text-left group"
+                key={el.id}
+                className="group inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg bg-bolt-elements-background-depth-1 border border-orange-500/20 hover:border-orange-500/40 transition-all"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <code className="text-[10px] text-orange-400 font-mono truncate">
-                      {ann.tagName}{ann.className ? '.' + ann.className.split(' ')[0] : ''}
-                    </code>
-                    <span className="text-[9px] text-bolt-elements-textTertiary truncate">
-                      {ann.selector.substring(0, 40)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-bolt-elements-textPrimary mt-0.5">
-                    {ann.comment}
-                  </p>
-                </div>
+                {/* Element icon */}
+                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
+                {/* Element label */}
+                <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
+                  {formatChipLabel(el)}
+                </code>
+                {/* Preview text (if any) */}
+                {el.textContent && (
+                  <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
+                    {el.textContent.substring(0, 20)}
+                  </span>
+                )}
+                {/* Remove button */}
                 <button
                   type="button"
-                  onClick={() => removeAnnotation(ann.id)}
-                  className="opacity-0 group-hover:opacity-100 text-bolt-elements-textTertiary hover:text-red-400 transition-all shrink-0"
+                  onClick={() => removeElement(el.id)}
+                  className="flex items-center justify-center w-4 h-4 rounded text-bolt-elements-textTertiary hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0 opacity-60 group-hover:opacity-100"
                 >
-                  <div className="i-ph:x text-xs" />
+                  <div className="i-ph:x text-[10px]" />
                 </button>
               </div>
             ))}
           </div>
+
+          {/* Comment + Send */}
+          <div className="flex items-center gap-1.5 px-2.5 py-2 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
+            <input
+              type="text"
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              placeholder="Comentario (opcional)..."
+              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-1 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all shrink-0"
+              title="Enviar para o chat (Enter)"
+            >
+              <div className="i-ph:paper-plane-tilt text-xs" />
+              Enviar
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Comment form modal (when an element is clicked) */}
-      {showCommentForm && selectedElement && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => { setShowCommentForm(false); setSelectedElement(null); }}>
-          <div className="w-[420px] max-h-[85vh] overflow-y-auto bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-orange-500/5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
-                  <div className="i-ph:cursor-click text-orange-400 text-base" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-bolt-elements-textPrimary">Elemento Selecionado</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary flex items-center gap-1.5">
-                    <code className="text-orange-400">{selectedElement.tagName}</code>
-                    {selectedElement.className && (
-                      <span>.{selectedElement.className.split(' ').slice(0, 2).join('.')}</span>
-                    )}
-                    {selectedElement.dimensions && (
-                      <span>({selectedElement.dimensions.width}x{selectedElement.dimensions.height})</span>
-                    )}
-                    {selectedElement.isInShadowDom && (
-                      <span className="text-purple-400">shadow-dom</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="p-4 space-y-3">
-              {/* Element info */}
-              <div className="px-3 py-2 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor space-y-1.5">
-                <div>
-                  <p className="text-[10px] text-bolt-elements-textTertiary">Seletor CSS</p>
-                  <code className="text-xs text-orange-400 font-mono break-all">{selectedElement.selector}</code>
-                </div>
-                {selectedElement.textContent && (
-                  <div>
-                    <p className="text-[10px] text-bolt-elements-textTertiary">Texto</p>
-                    <p className="text-xs text-bolt-elements-textSecondary line-clamp-2">"{selectedElement.textContent}"</p>
-                  </div>
-                )}
-                {selectedElement.attributes && Object.keys(selectedElement.attributes).length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-bolt-elements-textTertiary">Atributos</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {Object.entries(selectedElement.attributes).map(([key, val]) => (
-                        <span key={key} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/15">
-                          {key}={val.length > 20 ? val.substring(0, 20) + '...' : val}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {selectedElement.styles && (
-                  <div>
-                    <p className="text-[10px] text-bolt-elements-textTertiary">Estilos</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {Object.entries(selectedElement.styles).filter(([, v]) => v).map(([key, val]) => (
-                        <span key={key} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-green-500/10 text-green-400 border border-green-500/15">
-                          {key}: {val}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Comment input */}
-              <div>
-                <label className="block text-[11px] font-medium text-bolt-elements-textSecondary mb-1">
-                  O que deseja alterar? *
-                </label>
-                <textarea
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder="Ex: Mudar cor do botao para azul, aumentar fonte..."
-                  className="w-full px-3 py-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all resize-none"
-                  rows={3}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                      handleAddComment();
-                    }
-                  }}
-                />
-                <p className="text-[9px] text-bolt-elements-textTertiary mt-1">Ctrl+Enter para adicionar</p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleAddComment}
-                  disabled={!commentInput.trim()}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="i-ph:plus text-sm" />
-                  Adicionar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowCommentForm(false); setSelectedElement(null); }}
-                  className="px-3 py-2 rounded-lg text-xs font-medium bg-bolt-elements-background-depth-1 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary border border-bolt-elements-borderColor transition-all"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Hint when inspector is active but no elements selected yet */}
+      {isActive && selectedElements.length === 0 && (
+        <div className="absolute top-full left-0 mt-1 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-lg shadow-lg overflow-hidden z-[100] px-3 py-1.5">
+          <p className="text-[11px] text-bolt-elements-textTertiary flex items-center gap-1.5">
+            <div className="i-ph:hand-pointing text-orange-400 text-sm" />
+            Clique nos elementos do preview para selecionar
+          </p>
         </div>
       )}
     </>

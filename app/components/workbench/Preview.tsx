@@ -334,7 +334,6 @@ export const Preview = memo(function Preview() {
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
   const [inspectorActive, setInspectorActive] = useState(false);
-  const [inspectorAnnotations, setInspectorAnnotations] = useState<any[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [showNoPreview, setShowNoPreview] = useState(true);
   const previews = useStore(workbenchStore.previews);
@@ -379,20 +378,11 @@ export const Preview = memo(function Preview() {
   };
 
   const handleAddAnnotation = useCallback((annotation: any) => {
-    setInspectorAnnotations(prev => [...prev, annotation]);
-  }, []);
-
-  const handleSendAnnotations = useCallback(() => {
-    if (inspectorAnnotations.length === 0) return;
-    const msg = inspectorAnnotations.map(a => {
-      const elDesc = `<${a.tagName}${a.className ? ' class="' + a.className.split(' ').slice(0, 2).join(' ') + '"' : ''}>`;
-      return `[Inspector: ${a.selector} (${elDesc})] — ${a.comment}`;
-    }).join('\n');
-    // Dispatch event for Chat.client.tsx to pick up
+    // When AppInspector sends annotations, dispatch to chat immediately
+    const elDesc = `<${annotation.tagName}${annotation.className ? ' class="' + annotation.className.split(' ').slice(0, 2).join(' ') + '"' : ''}>`;
+    const msg = `[Inspector: ${annotation.selector} (${elDesc})] — ${annotation.comment}`;
     window.dispatchEvent(new CustomEvent('inspector-annotations', { detail: { message: msg } }));
-    setInspectorAnnotations([]);
-    setInspectorActive(false);
-  }, [inspectorAnnotations]);
+  }, []);
 
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
@@ -427,17 +417,6 @@ export const Preview = memo(function Preview() {
               onAddAnnotation={handleAddAnnotation}
               iframeRef={iframeRef}
             />
-            {inspectorActive && inspectorAnnotations.length > 0 && (
-              <button
-                type="button"
-                onClick={handleSendAnnotations}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
-                title="Enviar anotacoes para o chat"
-              >
-                <div className="i-ph:paper-plane-tilt text-sm" />
-                Enviar ({inspectorAnnotations.length})
-              </button>
-            )}
           </div>
           {previews.length > 0 && (
             <PortDropdown
@@ -555,17 +534,6 @@ export const Preview = memo(function Preview() {
               onToggle={() => setInspectorActive(!inspectorActive)}
               onAddAnnotation={handleAddAnnotation}
             />
-            {inspectorActive && inspectorAnnotations.length > 0 && (
-              <button
-                type="button"
-                onClick={handleSendAnnotations}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
-                title="Enviar anotacoes para o chat"
-              >
-                <div className="i-ph:paper-plane-tilt text-sm" />
-                Enviar ({inspectorAnnotations.length})
-              </button>
-            )}
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
@@ -596,17 +564,6 @@ export const Preview = memo(function Preview() {
               onToggle={() => setInspectorActive(!inspectorActive)}
               onAddAnnotation={handleAddAnnotation}
             />
-            {inspectorActive && inspectorAnnotations.length > 0 && (
-              <button
-                type="button"
-                onClick={handleSendAnnotations}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-500 hover:to-amber-500 shadow-sm transition-all"
-                title="Enviar anotacoes para o chat"
-              >
-                <div className="i-ph:paper-plane-tilt text-sm" />
-                Enviar ({inspectorAnnotations.length})
-              </button>
-            )}
           </div>
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
