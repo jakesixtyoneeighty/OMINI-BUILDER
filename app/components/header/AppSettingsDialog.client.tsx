@@ -160,6 +160,10 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const [deploying, setDeploying] = useState<'none' | 'netlify' | 'vercel' | 'cloudrun'>('none');
   const [deployResult, setDeployResult] = useState<{ url: string; siteId?: string; projectId?: string; provider: string; message?: string; buildLogsUrl?: string } | null>(null);
 
+  // Last deploy from saved settings (persists across dialog open/close)
+  const lastDeploy = settings?.lastDeploy;
+  const hasLastDeploy = lastDeploy && lastDeploy.url;
+
   // AI Rules
   const [customRules, setCustomRules] = useState(settings?.customRules || '');
 
@@ -365,8 +369,15 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
-      setDeployResult({ url: data.url, siteId: data.siteId, provider: 'netlify' });
-      if (data.siteId) { updateActiveProjectSettings({ netlify: { token: netlifyToken.trim(), siteId: data.siteId } }); setNetlifySiteId(data.siteId); }
+      const deployUrl = data.url;
+      const deploySiteId = data.siteId;
+      setDeployResult({ url: deployUrl, siteId: deploySiteId, provider: 'netlify' });
+      // Persist deploy info so it survives dialog close/reopen
+      updateActiveProjectSettings({
+        netlify: { token: netlifyToken.trim(), siteId: deploySiteId || netlifySiteId.trim() },
+        lastDeploy: { url: deployUrl, provider: 'netlify', siteId: deploySiteId || netlifySiteId.trim(), deployedAt: new Date().toISOString() },
+      });
+      if (deploySiteId) { setNetlifySiteId(deploySiteId); }
       toast.success(t('appSettings.deployedToNetlify'));
     } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
@@ -389,8 +400,12 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
-      setDeployResult({ url: data.url, projectId: data.projectId, provider: 'vercel' });
-      if (data.projectId) { updateActiveProjectSettings({ vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework } }); }
+      const deployUrl = data.url;
+      setDeployResult({ url: deployUrl, projectId: data.projectId, provider: 'vercel' });
+      updateActiveProjectSettings({
+        vercel: { token: vercelToken.trim(), projectName: vercelProjectName.trim(), framework: vercelFramework },
+        lastDeploy: { url: deployUrl, provider: 'vercel', siteId: data.projectId || '', deployedAt: new Date().toISOString() },
+      });
       toast.success(t('appSettings.deployedToVercel'));
     } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
@@ -416,8 +431,14 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || t('appSettings.deployFailed')); }
       const data = await res.json();
-      setDeployResult({ url: data.url, projectId: crProjectId, provider: 'cloudrun', message: data.message, buildLogsUrl: data.buildLogsUrl });
-      if (data.serviceName) { updateActiveProjectSettings({ cloudRun: { projectId: crProjectId.trim(), region: crRegion, serviceAccountKey: crServiceAccountKey.trim(), serviceName: data.serviceName, allowUnauthenticated: crAllowUnauth } }); setCrServiceName(data.serviceName); }
+      const deployUrl = data.url || '';
+      setDeployResult({ url: deployUrl, projectId: crProjectId, provider: 'cloudrun', message: data.message, buildLogsUrl: data.buildLogsUrl });
+      const crSettings: any = { projectId: crProjectId.trim(), region: crRegion, serviceAccountKey: crServiceAccountKey.trim(), serviceName: data.serviceName || crServiceName.trim(), allowUnauthenticated: crAllowUnauth };
+      updateActiveProjectSettings({
+        cloudRun: crSettings,
+        lastDeploy: { url: deployUrl, provider: 'cloudrun', siteId: data.serviceName || '', deployedAt: new Date().toISOString() },
+      });
+      if (data.serviceName) { setCrServiceName(data.serviceName); }
       toast.success(t('appSettings.cloudRunDeployStarted'));
     } catch (err) { toast.error(err instanceof Error ? err.message : t('appSettings.deployFailed')); } finally { setDeploying('none'); }
   };
@@ -719,23 +740,28 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   </div>
                 </div>
 
-                {/* Deploy Result */}
+                {/* Deploy Result (current session) */}
                 {deployResult && (
-                  <div className="flex flex-col gap-2 p-3 rounded-lg bg-green-500/8 border border-green-500/20">
+                  <div className="flex flex-col gap-2 p-4 rounded-xl bg-green-500/8 border border-green-500/20">
                     <div className="flex items-center gap-3">
-                      <div className={`i-ph:${deployResult.provider === 'cloudrun' ? 'clock' : 'check-circle-fill'} ${deployResult.provider === 'cloudrun' ? 'text-amber-400' : 'text-green-400'} text-lg shrink-0`} />
+                      <div className={`i-ph:${deployResult.provider === 'cloudrun' ? 'clock' : 'check-circle-fill'} ${deployResult.provider === 'cloudrun' ? 'text-amber-400' : 'text-green-400'} text-xl shrink-0`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-green-400">
+                        <p className="text-sm font-semibold text-green-400">
                           {deployResult.provider === 'cloudrun'
                             ? t('appSettings.cloudRunDeployStarted')
                             : t('appSettings.deployedSuccessfully', { provider: deployResult.provider === 'vercel' ? t('appSettings.vercel') : t('appSettings.netlify') })
                           }
                         </p>
-                        {deployResult.url && (
-                          <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-400 hover:underline truncate block">{deployResult.url}</a>
-                        )}
                       </div>
                     </div>
+                    {deployResult.url && (
+                      <a href={deployResult.url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 mx-1 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-all group">
+                        <div className="i-ph:globe text-green-400 shrink-0" />
+                        <span className="text-sm text-green-300 font-mono truncate flex-1">{deployResult.url}</span>
+                        <div className="i-ph:arrow-square-out text-green-400 shrink-0 group-hover:text-green-300 transition-colors" />
+                      </a>
+                    )}
                     {deployResult.message && (
                       <p className="text-[11px] text-bolt-elements-textTertiary pl-8">{deployResult.message}</p>
                     )}
@@ -746,6 +772,60 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                     )}
                   </div>
                 )}
+
+                {/* Last Deploy (persisted) */}
+                {!deployResult && hasLastDeploy && (
+                  <div className="p-4 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="i-ph:rocket-launch text-purple-400 text-base shrink-0" />
+                      <span className="text-xs font-semibold text-bolt-elements-textPrimary">{t('appSettings.lastDeploy')}</span>
+                      {lastDeploy.deployedAt && (
+                        <span className="text-[10px] text-bolt-elements-textTertiary ml-auto">
+                          {new Date(lastDeploy.deployedAt).toLocaleDateString()} {new Date(lastDeploy.deployedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                    <a href={lastDeploy.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-purple-500/8 border border-purple-500/20 hover:bg-purple-500/15 transition-all group">
+                      <div className="i-ph:globe text-purple-400 shrink-0" />
+                      <span className="text-sm text-purple-300 font-mono truncate flex-1">{lastDeploy.url}</span>
+                      <div className="i-ph:arrow-square-out text-purple-400 shrink-0 group-hover:text-purple-300 transition-colors" />
+                    </a>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[10px] text-bolt-elements-textTertiary uppercase font-semibold">{lastDeploy.provider}</span>
+                      {lastDeploy.siteId && <span className="text-[10px] text-bolt-elements-textTertiary font-mono">ID: {lastDeploy.siteId.slice(0, 12)}...</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pre-deploy AI Configure Button */}
+                <button
+                  onClick={() => {
+                    const providerDetails: string[] = [];
+                    if (netlifyToken.trim()) providerDetails.push(`Netlify (token configurado, ${netlifySiteId ? 'site: ' + netlifySiteId : 'novo site'})`);
+                    if (vercelToken.trim()) providerDetails.push(`Vercel (token configurado, ${vercelProjectName ? 'projeto: ' + vercelProjectName : 'novo projeto'})`);
+                    if (crProjectId.trim()) providerDetails.push(`Google Cloud Run (projeto: ${crProjectId}, regiao: ${crRegion})`);
+                    if (providerDetails.length === 0) providerDetails.push('Netlify (chave padrao do servidor)');
+
+                    window.dispatchEvent(new CustomEvent('deploy-requested', {
+                      detail: {
+                        configuredProviders: providerDetails,
+                        hasNetlify: !!netlifyToken.trim(),
+                        hasVercel: !!vercelToken.trim(),
+                        hasCloudRun: !!crProjectId.trim(),
+                        netlifySiteId: netlifySiteId.trim(),
+                        vercelProjectName: vercelProjectName.trim(),
+                        cloudRunServiceName: crServiceName.trim(),
+                        cloudRunRegion: crRegion,
+                      },
+                    }));
+                    onClose();
+                  }}
+                  className="w-full py-3 px-4 bg-purple-500/10 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <div className="i-ph:brain-duotone text-base" />
+                  {t('appSettings.configureDeployWithAI')}
+                </button>
               </div>
             )}
 
