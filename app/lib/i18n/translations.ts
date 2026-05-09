@@ -328,6 +328,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.siteUpdated': 'Site atualizado (mesmo URL)',
     'deploy.successOmni': 'Deploy realizado pelo Omni Builder!',
     'deploy.successGeneric': 'Deploy realizado com sucesso!',
+    'deploy.deployingNetlify': 'Deploy no Netlify em processamento...',
     'deploy.failed': 'Falha no deploy',
 
     // === Chat ===
@@ -1122,6 +1123,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.siteUpdated': 'Site updated (same URL)',
     'deploy.successOmni': 'Deploy via Omni Builder successful!',
     'deploy.successGeneric': 'Deploy successful!',
+    'deploy.deployingNetlify': 'Deploy to Netlify processing...',
     'deploy.failed': 'Deploy failed',
 
     // === Chat ===
@@ -1916,6 +1918,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.siteUpdated': 'Sitio actualizado (mismo URL)',
     'deploy.successOmni': 'Deploy via Omni Builder realizado!',
     'deploy.successGeneric': 'Deploy realizado con exito!',
+    'deploy.deployingNetlify': 'Deploy a Netlify procesando...',
     'deploy.failed': 'Fallo el deploy',
 
     // === Chat ===
@@ -2710,6 +2713,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.siteUpdated': '站点已更新（相同 URL）',
     'deploy.successOmni': 'Omni Builder 部署成功！',
     'deploy.successGeneric': '部署成功！',
+    'deploy.deployingNetlify': '正在部署到 Netlify...',
     'deploy.failed': '部署失败',
 
     // === Chat ===

@@ -107,19 +107,23 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       setDeployResult({ url: data.url, provider: 'Netlify' });
 
-      // Save the siteId so future deploys go to the same site (same URL)
-      if (data.siteId && data.siteId !== netlifySiteId) {
-        updateActiveProjectSettings({
-          netlify: {
-            token: hasUserNetlifyToken ? (settings?.netlify?.token || '') : '',
-            siteId: data.siteId,
-          },
-        });
-      }
+      // Save the siteId AND lastDeploy so the deploy state persists
+      updateActiveProjectSettings({
+        netlify: {
+          token: hasUserNetlifyToken ? (settings?.netlify?.token || '') : '',
+          siteId: data.siteId || netlifySiteId || '',
+        },
+        lastDeploy: {
+          url: data.url,
+          provider: 'netlify',
+          siteId: data.siteId || netlifySiteId || '',
+          deployedAt: new Date().toISOString(),
+        },
+      });
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">{t('deploy.successNetlify')}</span>
+          <span className="font-semibold">{data.warning ? t('deploy.deployingNetlify') : t('deploy.successNetlify')}</span>
           <a
             href={data.url}
             target="_blank"
@@ -128,7 +132,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           >
             {data.url}
           </a>
-          {netlifySiteId && <span className="text-[9px] text-bolt-elements-textTertiary">{t('deploy.siteUpdated')}</span>}
+          {data.warning && <span className="text-[9px] text-amber-400">{data.warning}</span>}
+          {netlifySiteId && !data.warning && <span className="text-[9px] text-bolt-elements-textTertiary">{t('deploy.siteUpdated')}</span>}
         </div>,
         { autoClose: 10000 },
       );
