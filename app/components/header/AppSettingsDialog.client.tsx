@@ -46,13 +46,17 @@ function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: num
   const [editKey, setEditKey] = useState(env.key);
   const [editValue, setEditValue] = useState(env.value);
   const [hasChanges, setHasChanges] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     setEditKey(env.key);
     setEditValue(env.value);
     setHasChanges(false);
     setEditing(false);
+    setExpanded(false);
   }, [env.key, env.value]);
+
+  const isLongValue = env.value.length > 60;
 
   const save = () => { onUpdate(index, editKey, editValue); setEditing(false); setHasChanges(false); };
   const cancel = () => { setEditKey(env.key); setEditValue(env.value); setEditing(false); setHasChanges(false); };
@@ -89,9 +93,6 @@ function EnvVarRow({ env, index, onUpdate, onRemove }: { env: EnvVar; index: num
       </div>
     );
   }
-
-  const [expanded, setExpanded] = useState(false);
-  const isLongValue = env.value.length > 60;
 
   return (
     <div className="px-3 py-2.5 bg-bolt-elements-background-depth-1 rounded-lg border border-bolt-elements-borderColor group hover:border-purple-500/30 transition-colors">
