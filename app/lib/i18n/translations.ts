@@ -329,6 +329,14 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successOmni': 'Deploy realizado pelo Omni Builder!',
     'deploy.successGeneric': 'Deploy realizado com sucesso!',
     'deploy.deployingNetlify': 'Deploy no Netlify em processamento...',
+    'deploy.updateCloudflare': 'Atualizar site no Cloudflare',
+    'deploy.publishCloudflare': 'Publicar no Cloudflare (gratis)',
+    'deploy.updateOnCloudflare': 'Atualizar no Cloudflare Pages',
+    'deploy.publishOnCloudflare': 'Publicar no Cloudflare Pages',
+    'deploy.freeNoApiKey': 'Gratis — sem API key necessaria',
+    'deploy.free': 'Gratis',
+    'deploy.successCloudflare': 'Deploy no Cloudflare Pages realizado!',
+    'deploy.processing': 'Site esta sendo processado. Aguarde alguns segundos...',
     'deploy.failed': 'Falha no deploy',
 
     // === Chat ===
@@ -1124,6 +1132,14 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successOmni': 'Deploy via Omni Builder successful!',
     'deploy.successGeneric': 'Deploy successful!',
     'deploy.deployingNetlify': 'Deploy to Netlify processing...',
+    'deploy.updateCloudflare': 'Update site on Cloudflare',
+    'deploy.publishCloudflare': 'Publish to Cloudflare (free)',
+    'deploy.updateOnCloudflare': 'Update on Cloudflare Pages',
+    'deploy.publishOnCloudflare': 'Publish on Cloudflare Pages',
+    'deploy.freeNoApiKey': 'Free — no API key required',
+    'deploy.free': 'Free',
+    'deploy.successCloudflare': 'Deploy to Cloudflare Pages successful!',
+    'deploy.processing': 'Site is being processed. Please wait a few seconds...',
     'deploy.failed': 'Deploy failed',
 
     // === Chat ===
@@ -1919,6 +1935,14 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successOmni': 'Deploy via Omni Builder realizado!',
     'deploy.successGeneric': 'Deploy realizado con exito!',
     'deploy.deployingNetlify': 'Deploy a Netlify procesando...',
+    'deploy.updateCloudflare': 'Actualizar sitio en Cloudflare',
+    'deploy.publishCloudflare': 'Publicar en Cloudflare (gratis)',
+    'deploy.updateOnCloudflare': 'Actualizar en Cloudflare Pages',
+    'deploy.publishOnCloudflare': 'Publicar en Cloudflare Pages',
+    'deploy.freeNoApiKey': 'Gratis — sin API key requerida',
+    'deploy.free': 'Gratis',
+    'deploy.successCloudflare': 'Deploy en Cloudflare Pages realizado!',
+    'deploy.processing': 'El sitio esta siendo procesado. Espere unos segundos...',
     'deploy.failed': 'Fallo el deploy',
 
     // === Chat ===
@@ -2714,6 +2738,14 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successOmni': 'Omni Builder 部署成功！',
     'deploy.successGeneric': '部署成功！',
     'deploy.deployingNetlify': '正在部署到 Netlify...',
+    'deploy.updateCloudflare': '更新 Cloudflare 站点',
+    'deploy.publishCloudflare': '发布到 Cloudflare (免费)',
+    'deploy.updateOnCloudflare': '在 Cloudflare Pages 上更新',
+    'deploy.publishOnCloudflare': '发布到 Cloudflare Pages',
+    'deploy.freeNoApiKey': '免费 — 无需 API 密钥',
+    'deploy.free': '免费',
+    'deploy.successCloudflare': 'Cloudflare Pages 部署成功！',
+    'deploy.processing': '站点正在处理中，请稍候...',
     'deploy.failed': '部署失败',
 
     // === Chat ===

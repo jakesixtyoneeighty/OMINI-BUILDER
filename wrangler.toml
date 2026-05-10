@@ -4,7 +4,11 @@ compatibility_flags = ["nodejs_compat_v2"]
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./build/client"
 
-# Do NOT declare NETLIFY_DEFAULT_API_KEY here — it must be set in Cloudflare Pages dashboard.
-# Declaring it with an empty value overrides the Pages environment variable.
+# Do NOT declare secrets here — they must be set in the Cloudflare Pages dashboard.
+# Required env vars for Cloudflare Pages deploy (free, no user API key needed):
+#   CLOUDFLARE_API_TOKEN  — API token with Pages Edit permission
+#   CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
+# Optional:
+#   NETLIFY_DEFAULT_API_KEY — Netlify API key (only if using Netlify as provider)
 # [vars]
-# NETLIFY_DEFAULT_API_KEY = ""
+# CLOUDFLARE_ACCOUNT_ID = ""

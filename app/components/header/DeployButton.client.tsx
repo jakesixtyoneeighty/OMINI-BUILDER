@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
 import { useT } from '~/lib/i18n/useT';
 
-type DeployProvider = 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
+type DeployProvider = 'cloudflare' | 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
 
 interface DeployButtonProps {
   onOpenSettings: () => void;
@@ -24,21 +24,21 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const project = projects[projectId] ?? getActiveProject();
   const settings = project?.settings;
 
-  // Netlify is always available because the server has NETLIFY_DEFAULT_API_KEY
-  // The user's own token takes priority, but the server key is the fallback
-  const netlifySiteId = settings?.netlify?.siteId || '';
+  // Cloudflare Pages is always available — free, no API key needed by user
+  const cloudflareProject = settings?.cloudflare?.projectName || '';
   const hasUserNetlifyToken = !!(settings?.netlify?.token);
   const hasVercel = !!(settings?.vercel?.token);
   const hasCloudRun = !!(settings?.cloudRun?.serviceAccountKey && settings?.cloudRun?.projectId);
 
   const configuredProviders = useMemo(() => {
     const list: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
-    // Netlify is always available (server has default key)
-    list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
+    // Cloudflare Pages is always available (free, no API key, server handles it)
+    list.push({ key: 'cloudflare', label: 'Cloudflare Pages', logo: '/logos/cloudflare.svg', color: 'text-orange-400' });
+    if (hasUserNetlifyToken) list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
     if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
     if (hasCloudRun) list.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
     return list;
-  }, [hasVercel, hasCloudRun]);
+  }, [hasUserNetlifyToken, hasVercel, hasCloudRun]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -70,8 +70,79 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
   };
 
-  // PRIMARY DEPLOY: Deploy to Netlify using server's default key
-  // If the project already has a siteId, re-deploy to the same site (same URL)
+  // ── PRIMARY DEPLOY: Cloudflare Pages (free, no API key) ──
+  // If the project already has a projectName, re-deploy to the same site (same URL)
+  const deployToCloudflare = async () => {
+    setDeploying('cloudflare');
+    setDeployResult(null);
+    setOpen(false);
+
+    try {
+      const fileList = await getProjectFiles();
+      const projectName = (settings?.name || project?.name || 'my-project')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 28);
+
+      // Use existing project name if available, or generate a new one
+      const deployProjectName = cloudflareProject || projectName;
+
+      const res = await fetch('/api/cloudflare-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: deployProjectName,
+          files: fileList,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Deploy failed');
+      }
+
+      setDeployResult({ url: data.url, provider: 'Cloudflare Pages' });
+
+      // Save the projectName AND lastDeploy so the deploy state persists
+      updateActiveProjectSettings({
+        cloudflare: {
+          projectName: data.projectName || deployProjectName,
+        },
+        lastDeploy: {
+          url: data.url,
+          provider: 'cloudflare',
+          siteId: data.projectName || deployProjectName,
+          deployedAt: new Date().toISOString(),
+        },
+      });
+
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">{t('deploy.successCloudflare')}</span>
+          <a
+            href={data.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
+          >
+            {data.url}
+          </a>
+          {data.processing && <span className="text-[9px] text-amber-400">{t('deploy.processing')}</span>}
+          {cloudflareProject && !data.processing && <span className="text-[9px] text-bolt-elements-textTertiary">{t('deploy.siteUpdated')}</span>}
+        </div>,
+        { autoClose: 12000 },
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
+    } finally {
+      setDeploying(null);
+    }
+  };
+
+  // ── Netlify Deploy (requires API key) ──
   const deployToNetlify = async () => {
     setDeploying('netlify');
     setDeployResult(null);
@@ -86,15 +157,16 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         .replace(/^-|-$/g, '')
         .substring(0, 30);
 
-      const token = settings?.netlify?.token || ''; // Empty = server will use NETLIFY_DEFAULT_API_KEY
+      const token = settings?.netlify?.token || '';
+      const netlifySiteId = settings?.netlify?.siteId || '';
 
       const res = await fetch('/api/netlify-deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: token || undefined, // If empty, server uses default key
+          token: token || undefined,
           siteId: netlifySiteId || undefined,
-          siteName: netlifySiteId ? undefined : projectName, // Only set name for new sites
+          siteName: netlifySiteId ? undefined : projectName,
           files: fileList,
         }),
       });
@@ -107,7 +179,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       setDeployResult({ url: data.url, provider: 'Netlify' });
 
-      // Save the siteId AND lastDeploy so the deploy state persists
       updateActiveProjectSettings({
         netlify: {
           token: hasUserNetlifyToken ? (settings?.netlify?.token || '') : '',
@@ -123,19 +194,12 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">{data.warning ? t('deploy.deployingNetlify') : t('deploy.successNetlify')}</span>
-          <a
-            href={data.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 underline text-xs hover:text-blue-300"
-          >
+          <span className="font-semibold">{t('deploy.successNetlify')}</span>
+          <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">
             {data.url}
           </a>
-          {data.warning && <span className="text-[9px] text-amber-400">{data.warning}</span>}
-          {netlifySiteId && !data.warning && <span className="text-[9px] text-bolt-elements-textTertiary">{t('deploy.siteUpdated')}</span>}
         </div>,
-        { autoClose: 10000 },
+        { autoClose: 12000 },
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
@@ -192,7 +256,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             rel="noopener noreferrer"
             className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
           >
-            Abrir site: {data.viewUrl}
+            {data.viewUrl}
           </a>
         </div>,
         { autoClose: 12000 },
@@ -215,6 +279,11 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       let data: any;
 
       switch (provider) {
+        case 'cloudflare': {
+          // Use the shared deployToCloudflare logic
+          setDeploying(null);
+          return deployToCloudflare();
+        }
         case 'netlify': {
           // Use the shared deployToNetlify logic
           setDeploying(null);
@@ -255,7 +324,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         }
       }
 
-      const providerLabel = provider === 'netlify' ? 'Netlify' : provider === 'vercel' ? 'Vercel' : provider === 'cloudrun' ? 'Cloud Run' : provider;
+      const providerLabel = provider === 'cloudflare' ? 'Cloudflare Pages' : provider === 'netlify' ? 'Netlify' : provider === 'vercel' ? 'Vercel' : provider === 'cloudrun' ? 'Cloud Run' : provider;
       toast.success(
         <div className="flex flex-col gap-1">
           <span className="font-semibold">{t('deploy.successGeneric')}</span>
@@ -266,7 +335,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               rel="noopener noreferrer"
               className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
             >
-              Abrir site: {data.url}
+              {data.url}
             </a>
           )}
         </div>,
@@ -288,35 +357,37 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       new CustomEvent('deploy-requested', {
         detail: {
           configuredProviders: providerInfo,
-          hasNetlify: true,
+          hasNetlify: hasUserNetlifyToken,
+          hasCloudflare: true,
           hasVercel,
           hasCloudRun,
-          netlifySiteId,
+          cloudflareProject,
+          netlifySiteId: settings?.netlify?.siteId || '',
           vercelProjectName: settings?.vercel?.projectName || '',
           cloudRunServiceName: settings?.cloudRun?.serviceName || '',
           cloudRunRegion: settings?.cloudRun?.region || 'us-central1',
         },
       }),
     );
-  }, [configuredProviders, hasVercel, hasCloudRun, netlifySiteId]);
+  }, [configuredProviders, hasUserNetlifyToken, hasVercel, hasCloudRun, cloudflareProject]);
 
   const isDeploying = deploying !== null;
 
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Main button — PRIMARY: Deploy to Netlify. Click deploys, long-press/right area opens dropdown */}
+        {/* Main button — PRIMARY: Deploy to Cloudflare Pages (free, no API key) */}
         <div className="flex">
           <button
-            onClick={deployToNetlify}
+            onClick={deployToCloudflare}
             disabled={isDeploying}
             className={classNames(
               'flex items-center gap-2 px-3 py-1.5 rounded-l-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
               isDeploying
-                ? 'bg-teal-600/80 text-white cursor-wait'
+                ? 'bg-orange-600/80 text-white cursor-wait'
                 : deployResult
                   ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
-                  : 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500 hover:shadow-md active:scale-[0.97]',
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
             )}
           >
             {isDeploying ? (
@@ -342,51 +413,51 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             className={classNames(
               'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-white/10',
               isDeploying
-                ? 'bg-teal-600/80 text-white cursor-wait'
-                : 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500',
+                ? 'bg-orange-600/80 text-white cursor-wait'
+                : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400',
             )}
           >
             <div className="i-ph:caret-down text-[10px] opacity-70" />
           </button>
         </div>
 
-        {/* Dropdown — shown on caret click or right-click */}
+        {/* Dropdown */}
         {open && !isDeploying && (
           <div className="absolute right-0 top-full mt-2 w-72 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-gradient-to-r from-teal-600/10 to-emerald-600/10">
+            <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-gradient-to-r from-orange-500/10 to-amber-500/10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
-                  <div className="i-ph:rocket-launch-duotone text-teal-400 text-base" />
+                <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+                  <div className="i-ph:rocket-launch-duotone text-orange-400 text-base" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('deploy.projectDeploy')}</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    {netlifySiteId ? t('deploy.updateNetlify') : t('deploy.publishNetlify')}
+                    {cloudflareProject ? t('deploy.updateCloudflare') : t('deploy.publishCloudflare')}
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="p-2 space-y-1">
-              {/* PRIMARY: Deploy to Netlify (always available) */}
+              {/* PRIMARY: Deploy to Cloudflare Pages (free, no API key) */}
               <button
-                onClick={deployToNetlify}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-teal-500/20 bg-teal-500/5"
+                onClick={deployToCloudflare}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-orange-500/20 bg-orange-500/5"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center shrink-0 group-hover:from-teal-500/30 group-hover:to-emerald-500/30 transition-colors">
-                  <div className="i-ph:cube-duotone text-teal-400 text-base" />
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center shrink-0 group-hover:from-orange-500/30 group-hover:to-amber-500/30 transition-colors">
+                  <div className="i-ph:cloud-duotone text-orange-400 text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-bolt-elements-textPrimary">
-                    {netlifySiteId ? t('deploy.updateOnNetlify') : t('deploy.publishOnNetlify')}
+                    {cloudflareProject ? t('deploy.updateOnCloudflare') : t('deploy.publishOnCloudflare')}
                   </p>
                   <p className="text-[10px] text-bolt-elements-textTertiary truncate">
-                    {netlifySiteId ? t('deploy.sameUrlUpdate') : t('deploy.createNewSite')}
+                    {cloudflareProject ? t('deploy.sameUrlUpdate') : t('deploy.freeNoApiKey')}
                   </p>
                 </div>
-                <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-500/20 text-teal-400 uppercase tracking-wider">
-                  {t('deploy.default')}
+                <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-orange-500/20 text-orange-400 uppercase tracking-wider">
+                  {t('deploy.free')}
                 </div>
               </button>
 
@@ -420,12 +491,25 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               </button>
 
               {/* Separator — Other external providers */}
-              {(hasVercel || hasCloudRun) && (
+              {(hasUserNetlifyToken || hasVercel || hasCloudRun) && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                   <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">{t('deploy.others')}</span>
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                 </div>
+              )}
+
+              {/* Netlify (only if user has configured a token) */}
+              {hasUserNetlifyToken && (
+                <button
+                  onClick={deployToNetlify}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0 overflow-hidden">
+                    <img src="/logos/netlify.svg" alt="Netlify" className="w-5 h-5 object-contain" />
+                  </div>
+                  <span className="text-xs text-bolt-elements-textSecondary font-medium">Netlify</span>
+                </button>
               )}
 
               {/* Vercel (only if configured) */}
