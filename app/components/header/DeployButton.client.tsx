@@ -62,6 +62,25 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
+  // Listen for AI deploy trigger — when the AI calls the deploy tool,
+  // it dispatches 'ai-deploy-trigger' and we automatically deploy to Cloudflare Pages
+  useEffect(() => {
+    const handleAiDeploy = (event: Event) => {
+      const { projectName } = (event as CustomEvent).detail || {};
+      // If a project name is provided by the AI, update settings first
+      if (projectName) {
+        updateActiveProjectSettings({
+          cloudflare: { projectName },
+        });
+      }
+      // Trigger the Cloudflare Pages deploy
+      deployToCloudflare();
+    };
+
+    window.addEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
+    return () => window.removeEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const getProjectFiles = async () => {
     await workbenchStore.saveAllFiles();
     const files = workbenchStore.files.get();

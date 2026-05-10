@@ -138,6 +138,25 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',
     body: chatBody,
+    onToolCall: async ({ toolCall }) => {
+      // When the AI calls the "deploy" tool, trigger the client-side deploy
+      if (toolCall.toolName === 'deploy') {
+        // Dispatch an event that DeployButton listens to
+        // This triggers the actual Cloudflare Pages deploy with the project files
+        const projectName = (toolCall.args as any)?.projectName || undefined;
+        window.dispatchEvent(
+          new CustomEvent('ai-deploy-trigger', {
+            detail: { projectName },
+          }),
+        );
+        return {
+          action: 'deploy',
+          provider: 'cloudflare',
+          projectName: projectName || null,
+          message: 'Deploy initiated! The project will be published to Cloudflare Pages (free, no API key).',
+        };
+      }
+    },
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
 
@@ -693,15 +712,16 @@ The database is ready to use. Please configure the project to connect to it and 
 
       const deployPrompt = `Faca o deploy deste projeto agora!
 
-Provedores disponiveis:
-${providerDetails.length > 0 ? providerDetails.join('\n') : 'Netlify esta disponivel via chave padrao do servidor.'}
+Cloudflare Pages esta disponivel (gratis, sem API key, URL *.pages.dev com SSL automatico).
+${hasUserNetlifyToken ? 'Netlify tambem esta disponivel (token configurado).' : ''}
+${hasVercel ? 'Vercel tambem esta disponivel (token configurado).' : ''}
 
 Por favor:
 1. Revise todos os arquivos do projeto e garanta que esta tudo pronto para producao
 2. Verifique se o package.json tem os scripts corretos (build, start, etc.)
 3. Adicione um arquivo .gitignore se necessario
 4. Otimize a build para producao (minificacao, etc.)
-5. Faca o deploy usando o(s) provedor(es) disponivel(is) acima`;
+5. Use a ferramenta deploy para fazer o deploy automaticamente para Cloudflare Pages`;
 
       setTimeout(() => {
         append({ role: 'user', content: deployPrompt });

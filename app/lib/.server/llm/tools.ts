@@ -368,13 +368,48 @@ Call this tool with action="createCollection" for each collection the app needs.
 }
 
 /**
+ * Create the deploy tool — tells the AI to instruct the user to deploy.
+ * The actual deploy is triggered client-side via a custom event because
+ * the project files live in the browser (WebContainer), not on the server.
+ */
+export function createDeployTool() {
+  return tool({
+    description: `Deploy the project to Cloudflare Pages (FREE, no API key needed). Use this tool when:
+- The user asks to deploy, publish, or go live with their project
+- The user says "deploy", "publicar", "colocar no ar", "make it live", "ship it"
+- The user wants to share their project with others via a public URL
+
+This deploys to Cloudflare Pages which gives a *.pages.dev URL. It's completely free, requires no API key, and the site gets SSL automatically.
+
+IMPORTANT: Before deploying, briefly review the project to make sure everything is ready (index.html exists, no build errors, etc). If there are obvious issues, fix them first or warn the user.`,
+    parameters: z.object({
+      projectName: z.string().optional().describe('Optional project name for the deployment URL (lowercase, hyphens only). If not provided, a name will be generated automatically from the project name.'),
+    }),
+    execute: async ({ projectName }) => {
+      // The actual deploy happens client-side via the DeployButton component.
+      // The AI tool just confirms the intent and provides the project name.
+      // The Chat.client.tsx listens for 'ai-deploy-request' events.
+      return {
+        action: 'deploy',
+        provider: 'cloudflare',
+        projectName: projectName || null,
+        message: 'Deploy iniciado! O projeto sera publicado no Cloudflare Pages (gratis, sem API key). O deploy sera feito automaticamente pela interface.',
+        instructions: 'Tell the user that the deploy has been initiated and they will see the URL shortly. The site will be available at a *.pages.dev URL with automatic SSL.',
+      };
+    },
+  });
+}
+
+/**
  * Build the tools object for the AI streamText call.
  * Includes omni_db tool when Omni DB is configured.
+ * Includes deploy tool always (Cloudflare Pages — free, no API key).
  */
-export function buildTools(projectId?: string, supabaseUrl?: string, supabaseKey?: string) {
+export function buildTools(projectId?: string, supabaseUrl?: string, supabaseKey?: string, _serverOrigin?: string) {
   const result: Record<string, any> = {
     web_search: webSearchTool,
     web_reader: webReaderTool,
+    deploy: createDeployTool(),
   };
 
   // Add omni_db tool if Omni DB is configured with valid Supabase credentials

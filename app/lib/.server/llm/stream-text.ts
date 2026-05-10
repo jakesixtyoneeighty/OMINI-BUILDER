@@ -55,9 +55,9 @@ export function streamText(
   // Convert messages to core messages, handling tool invocations
   const coreMessages = convertToCoreMessages(messages as any);
 
-  // Build tools including omni_db if Omni DB is configured
+  // Build tools including omni_db if Omni DB is configured, and deploy tool
   const projectId = dbContext?.type === 'omni' ? dbContext.omni?.projectId : undefined;
-  const activeTools = buildTools(projectId, supabaseUrl, supabaseKey);
+  const activeTools = buildTools(projectId, supabaseUrl, supabaseKey, serverOrigin);
 
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
