@@ -85,12 +85,16 @@ if (typeof window !== 'undefined') {
     const project = projects[projectId];
     if (project?.settings?.provider || project?.settings?.model) {
       const current = llmStore.get();
-      const newProvider = project.settings.provider || current.provider;
+      let newProvider = (project.settings.provider as ProviderId) || current.provider;
       const newModel = project.settings.model || current.model;
+      // Migrate: if the project's saved provider has no key and it's not freeapi, fall back
+      if (newProvider !== 'freeapi' && !current.keys[newProvider]) {
+        newProvider = 'freeapi';
+      }
       // Only update if different to avoid infinite loops
       if (current.provider !== newProvider || current.model !== newModel) {
         llmStore.setKey('provider', newProvider);
-        llmStore.setKey('model', newModel);
+        llmStore.setKey('model', newProvider === 'freeapi' && current.provider !== 'freeapi' ? 'gpt-4o-mini' : newModel);
       }
     }
   });
@@ -130,16 +134,29 @@ export async function loadKeysFromSupabase() {
 
     if (!error && data) {
       const current = llmStore.get();
-      llmStore.set({
-        provider: (data.last_provider as ProviderId) || current.provider,
-        model: data.last_model || current.model,
-        keys: {
-          anthropic: data.anthropic_key || current.keys.anthropic,
-          openrouter: data.openrouter_key || current.keys.openrouter,
-          google: data.google_key || current.keys.google,
-          freeapi: (data as any).freeapi_key || current.keys.freeapi,
-        },
-      });
+      const restoredProvider = (data.last_provider as ProviderId) || current.provider;
+      const restoredModel = data.last_model || current.model;
+      const restoredKeys = {
+        anthropic: data.anthropic_key || current.keys.anthropic,
+        openrouter: data.openrouter_key || current.keys.openrouter,
+        google: data.google_key || current.keys.google,
+        freeapi: (data as any).freeapi_key || current.keys.freeapi,
+      };
+
+      // Migrate: if the restored provider has no key and it's not freeapi, fall back to freeapi
+      if (restoredProvider !== 'freeapi' && !restoredKeys[restoredProvider]) {
+        llmStore.set({
+          provider: 'freeapi',
+          model: 'gpt-4o-mini',
+          keys: restoredKeys,
+        });
+      } else {
+        llmStore.set({
+          provider: restoredProvider,
+          model: restoredModel,
+          keys: restoredKeys,
+        });
+      }
     }
   }
 }
