@@ -190,12 +190,12 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             href={data.viewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 underline text-xs hover:text-blue-300"
+            className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
           >
-            {data.viewUrl}
+            Abrir site: {data.viewUrl}
           </a>
         </div>,
-        { autoClose: 10000 },
+        { autoClose: 12000 },
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
@@ -255,16 +255,22 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         }
       }
 
+      const providerLabel = provider === 'netlify' ? 'Netlify' : provider === 'vercel' ? 'Vercel' : provider === 'cloudrun' ? 'Cloud Run' : provider;
       toast.success(
         <div className="flex flex-col gap-1">
           <span className="font-semibold">{t('deploy.successGeneric')}</span>
           {data?.url && (
-            <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300">
-              {data.url}
+            <a
+              href={data.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
+            >
+              Abrir site: {data.url}
             </a>
           )}
         </div>,
-        { autoClose: 8000 },
+        { autoClose: 12000 },
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });

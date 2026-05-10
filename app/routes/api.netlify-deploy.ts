@@ -15,7 +15,7 @@ interface DeployBody {
 const NETLIFY_API = 'https://api.netlify.com/api/v1';
 
 /**
- * Compute SHA1 hash of a string (hex encoded).
+ * Compute SHA1 hash using Web Crypto API (available in Cloudflare Workers).
  * Netlify uses SHA1 hashes to identify files — we send the hash in the deploy
  * creation, then upload only the files Netlify doesn't already have.
  */
@@ -25,16 +25,6 @@ async function sha1(content: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-1', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function encodeBase64(content: string): string {
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(content, 'utf-8').toString('base64');
-  }
-  const bytes = new TextEncoder().encode(content);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -77,7 +67,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          body: 'Deployed from Omni-Builder',
         }),
       });
       if (!createRes.ok) {
@@ -93,29 +82,58 @@ export async function action({ request, context }: ActionFunctionArgs) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (siteRes.ok) {
-        const siteData = (await siteRes.json()) as { ssl_url?: string; url?: string };
+        const siteData = (await siteRes.json()) as { ssl_url?: string; url?: string; name?: string };
         siteUrl = siteData.ssl_url || siteData.url || '';
       }
     }
 
-    // Step 1: Compute SHA1 hashes for all files
+    // ── Prepare files ──
+    // Inject _redirects for SPA routing if not present.
+    // This prevents 404 on client-side routes like /about, /dashboard, etc.
+    const allFiles = [...files];
+    const hasRedirects = files.some((f) => f.path.replace(/^\/+/, '') === '_redirects');
+
+    if (!hasRedirects) {
+      allFiles.push({
+        path: '_redirects',
+        content: '/*    /index.html   200',
+      });
+    }
+
+    // Inject a netlify.toml if not present (for additional config)
+    const hasNetlifyToml = files.some((f) => f.path.replace(/^\/+/, '') === 'netlify.toml');
+    if (!hasNetlifyToml) {
+      allFiles.push({
+        path: 'netlify.toml',
+        content: [
+          '[build]',
+          '  publish = "."',
+          '',
+          '[[redirects]]',
+          '  from = "/*"',
+          '  to = "/index.html"',
+          '  status = 200',
+        ].join('\n'),
+      });
+    }
+
+    // ── Step 1: Compute SHA1 hashes for all files ──
+    // Netlify's deploy API requires SHA1 hashes to determine which files
+    // need uploading (files already on the site with matching hashes are skipped)
     const fileEntries: { path: string; content: string; hash: string }[] = [];
     const filesMap: Record<string, string> = {}; // hash -> path (for quick lookup)
+    const filesObject: Record<string, string> = {}; // path -> hash (for deploy creation)
 
-    for (const f of files) {
+    for (const f of allFiles) {
       const cleanPath = f.path.replace(/^\/+/, '');
       const hash = await sha1(f.content);
       fileEntries.push({ path: cleanPath, content: f.content, hash });
       filesMap[hash] = cleanPath;
+      filesObject[cleanPath] = hash;
     }
 
-    // Step 2: Create a deploy with file hashes
+    // ── Step 2: Create a deploy with file hashes ──
     // The Netlify API expects: { files: { "path": "sha1hash" }, ... }
-    const filesObject: Record<string, string> = {};
-    for (const entry of fileEntries) {
-      filesObject[entry.path] = entry.hash;
-    }
-
     const deployRes = await fetch(`${NETLIFY_API}/sites/${targetSiteId}/deploys`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -137,8 +155,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
       required?: string[]; // Array of SHA1 hashes that Netlify needs uploaded
     };
 
-    // Step 3: Upload files that Netlify doesn't already have
-    // deployData.required contains the list of SHA1 hashes Netlify needs
+    // ── Step 3: Upload files that Netlify doesn't already have ──
+    // deployData.required contains the list of SHA1 hashes Netlify needs.
+    // We upload each required file via PUT to /deploys/{id}/files/{sha1hash}
     const requiredHashes = new Set(deployData.required || []);
 
     if (requiredHashes.size > 0) {
@@ -163,7 +182,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
     }
 
-    // Step 4: Wait for deploy to complete (poll up to 60 seconds)
+    // ── Step 4: Wait for deploy to complete (poll up to 60 seconds) ──
     let deployStatus = 'uploading';
     let attempts = 0;
     const maxAttempts = 30; // 30 * 2s = 60s
