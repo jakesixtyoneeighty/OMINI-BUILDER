@@ -137,11 +137,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     // ── Step 3: Prepare files ──
-    // Inject _redirects for SPA routing if not already present
     const allFiles = [...files];
     const hasRedirects = files.some((f) => f.path.replace(/^\/+/, '') === '_redirects');
+    const hasIndexHtml = files.some((f) => f.path.replace(/^\/+/, '') === 'index.html');
 
-    if (!hasRedirects) {
+    // Inject _redirects for SPA routing if not already present
+    // Only add when there's an index.html (i.e., built project or static site)
+    // This ensures client-side routing works (e.g., React Router)
+    if (!hasRedirects && hasIndexHtml) {
       allFiles.push({
         path: '_redirects',
         content: '/*    /index.html   200',
@@ -156,7 +159,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
         content: [
           '/*',
           '  X-Content-Type-Options: nosniff',
-          '  X-Frame-Options: DENY',
           '  Referrer-Policy: strict-origin-when-cross-origin',
         ].join('\n'),
       });

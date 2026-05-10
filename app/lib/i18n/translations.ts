@@ -338,6 +338,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successCloudflare': 'Deploy no Cloudflare Pages realizado!',
     'deploy.processing': 'Site esta sendo processado. Aguarde alguns segundos...',
     'deploy.failed': 'Falha no deploy',
+    'deploy.building': 'Compilando projeto...',
+    'deploy.buildSuccess': 'Build concluido!',
+    'deploy.buildFailed': 'Falha no build',
+    'deploy.fallbackRaw': 'Enviando arquivos fonte diretamente...',
+    'deploy.filesFrom': 'arquivos de',
 
     // === Chat ===
     'chat.stop': 'Parar',
@@ -1141,6 +1146,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successCloudflare': 'Deploy to Cloudflare Pages successful!',
     'deploy.processing': 'Site is being processed. Please wait a few seconds...',
     'deploy.failed': 'Deploy failed',
+    'deploy.building': 'Building project...',
+    'deploy.buildSuccess': 'Build completed!',
+    'deploy.buildFailed': 'Build failed',
+    'deploy.fallbackRaw': 'Sending raw source files...',
+    'deploy.filesFrom': 'files from',
 
     // === Chat ===
     'chat.stop': 'Stop',
@@ -1944,6 +1954,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successCloudflare': 'Deploy en Cloudflare Pages realizado!',
     'deploy.processing': 'El sitio esta siendo procesado. Espere unos segundos...',
     'deploy.failed': 'Fallo el deploy',
+    'deploy.building': 'Compilando proyecto...',
+    'deploy.buildSuccess': 'Build completado!',
+    'deploy.buildFailed': 'Fallo en el build',
+    'deploy.fallbackRaw': 'Enviando archivos fuente...',
+    'deploy.filesFrom': 'archivos de',
 
     // === Chat ===
     'chat.stop': 'Detener',
@@ -2747,6 +2762,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.successCloudflare': 'Cloudflare Pages 部署成功！',
     'deploy.processing': '站点正在处理中，请稍候...',
     'deploy.failed': '部署失败',
+    'deploy.building': '构建项目中...',
+    'deploy.buildSuccess': '构建完成！',
+    'deploy.buildFailed': '构建失败',
+    'deploy.fallbackRaw': '正在发送源文件...',
+    'deploy.filesFrom': '个文件来自',
 
     // === Chat ===
     'chat.stop': '停止',

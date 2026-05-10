@@ -5,8 +5,10 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
 import { useT } from '~/lib/i18n/useT';
+import { buildProjectForDeploy, type BuildFile } from '~/utils/deploy-build';
 
 type DeployProvider = 'cloudflare' | 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
+type DeployPhase = 'idle' | 'building' | 'deploying';
 
 interface DeployButtonProps {
   onOpenSettings: () => void;
@@ -15,6 +17,7 @@ interface DeployButtonProps {
 export const DeployButton = memo(function DeployButton({ onOpenSettings }: DeployButtonProps) {
   const [open, setOpen] = useState(false);
   const [deploying, setDeploying] = useState<DeployProvider | null>(null);
+  const [deployPhase, setDeployPhase] = useState<DeployPhase>('idle');
   const [deployResult, setDeployResult] = useState<{ url: string; provider: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const t = useT();
@@ -81,6 +84,10 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     return () => window.removeEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Get raw source files from the workbench store.
+   * Used as fallback when build fails or for providers that handle building server-side.
+   */
   const getProjectFiles = async () => {
     await workbenchStore.saveAllFiles();
     const files = workbenchStore.files.get();
@@ -89,15 +96,77 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
   };
 
+  /**
+   * Build the project in the WebContainer and return the built output files.
+   * This is needed because Cloudflare Pages Direct Upload doesn't run
+   * a build step — it serves files as-is. So we must send pre-built
+   * files (HTML, JS, CSS) instead of raw source (TSX, etc.).
+   */
+  const getBuiltFiles = async (): Promise<BuildFile[]> => {
+    await workbenchStore.saveAllFiles();
+
+    // Show build phase to the user
+    setDeployPhase('building');
+    toast.info(
+      <div className="flex items-center gap-2">
+        <div className="i-svg-spinners:90-ring-with-bg text-sm animate-spin" />
+        <span>{t('deploy.building')}</span>
+      </div>,
+      { autoClose: false, toastId: 'deploy-building' },
+    );
+
+    try {
+      const result = await buildProjectForDeploy();
+
+      toast.dismiss('deploy-building');
+
+      if (result.success && result.files.length > 0) {
+        toast.success(
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{t('deploy.buildSuccess')}</span>
+            <span className="text-[10px] text-bolt-elements-textTertiary">
+              {result.files.length} {t('deploy.filesFrom')} {result.buildOutputDir}/
+            </span>
+          </div>,
+          { autoClose: 3000 },
+        );
+        return result.files;
+      }
+
+      // Build failed — fall back to raw source files
+      console.warn('[deploy] Build failed, falling back to raw source files:', result.error);
+      toast.warning(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">{t('deploy.buildFailed')}</span>
+          <span className="text-[10px] text-amber-300">{result.error}</span>
+          <span className="text-[10px] text-bolt-elements-textTertiary">{t('deploy.fallbackRaw')}</span>
+        </div>,
+        { autoClose: 8000 },
+      );
+
+      return getProjectFiles();
+    } catch (err) {
+      toast.dismiss('deploy-building');
+      console.warn('[deploy] Build error, falling back to raw source files:', err);
+
+      // Fall back to raw source files
+      return getProjectFiles();
+    }
+  };
+
   // ── PRIMARY DEPLOY: Cloudflare Pages (free, no API key) ──
   // If the project already has a projectName, re-deploy to the same site (same URL)
   const deployToCloudflare = async () => {
     setDeploying('cloudflare');
+    setDeployPhase('idle');
     setDeployResult(null);
     setOpen(false);
 
     try {
-      const fileList = await getProjectFiles();
+      // Build project first, then deploy the built output
+      const fileList = await getBuiltFiles();
+      setDeployPhase('deploying');
+
       const projectName = (settings?.name || project?.name || 'my-project')
         .toLowerCase()
         .replace(/[^a-z0-9-]/g, '-')
@@ -158,12 +227,14 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
+      setDeployPhase('idle');
     }
   };
 
   // ── Netlify Deploy (requires API key) ──
   const deployToNetlify = async () => {
     setDeploying('netlify');
+    setDeployPhase('deploying');
     setDeployResult(null);
     setOpen(false);
 
@@ -224,11 +295,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
+      setDeployPhase('idle');
     }
   };
 
   const deployToOmniBuilder = async () => {
     setDeploying('omnibuilder');
+    setDeployPhase('deploying');
     setDeployResult(null);
     setOpen(false);
 
@@ -284,11 +357,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
+      setDeployPhase('idle');
     }
   };
 
   const deployTo = async (provider: DeployProvider) => {
     setDeploying(provider);
+    setDeployPhase('deploying');
     setDeployResult(null);
     setOpen(false);
 
@@ -301,11 +376,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         case 'cloudflare': {
           // Use the shared deployToCloudflare logic
           setDeploying(null);
+          setDeployPhase('idle');
           return deployToCloudflare();
         }
         case 'netlify': {
           // Use the shared deployToNetlify logic
           setDeploying(null);
+          setDeployPhase('idle');
           return deployToNetlify();
         }
         case 'vercel': {
@@ -364,6 +441,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
+      setDeployPhase('idle');
     }
   };
 
@@ -412,7 +490,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             {isDeploying ? (
               <>
                 <div className="i-svg-spinners:90-ring-with-bg text-sm" />
-                {t('deploy.deploying')}
+                {deployPhase === 'building' ? t('deploy.building') : t('deploy.deploying')}
               </>
             ) : deployResult ? (
               <>
