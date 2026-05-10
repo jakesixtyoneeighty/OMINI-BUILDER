@@ -9,6 +9,7 @@ pages_build_output_dir = "./build/client"
 #   CLOUDFLARE_API_TOKEN  — API token with Pages Edit permission
 #   CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
 # Optional:
+#   LLM_FREE_API — API key for apifreellm.com (free LLM provider)
 #   NETLIFY_DEFAULT_API_KEY — Netlify API key (only if using Netlify as provider)
 # [vars]
 # CLOUDFLARE_ACCOUNT_ID = ""

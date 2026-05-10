@@ -22,6 +22,7 @@ const PROVIDER_LOGOS: Record<ProviderId, string> = {
   google: '/gemini.svg',
   openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
   anthropic: '/claude.svg',
+  freeapi: '/logos/freeapi.svg',
 };
 
 export function ModelPicker() {
@@ -35,11 +36,11 @@ export function ModelPicker() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  const configuredCount = (Object.keys(keys) as ProviderId[]).filter((p) => keys[p]).length;
+  const configuredCount = (Object.keys(keys) as ProviderId[]).filter((p) => keys[p] || p === 'freeapi').length;
 
   useEffect(() => {
     refreshAllConfiguredModels();
-  }, [keys.anthropic, keys.openrouter, keys.google]);
+  }, [keys.anthropic, keys.openrouter, keys.google, keys.freeapi]);
 
   // Calculate dropdown position based on button location
   const updatePosition = useCallback(() => {
@@ -91,7 +92,7 @@ export function ModelPicker() {
   const flat: FlatOption[] = useMemo(() => {
     const out: FlatOption[] = [];
     (Object.keys(allModels) as ProviderId[]).forEach((p) => {
-      if (!keys[p]) return;
+      if (!keys[p] && p !== 'freeapi') return;
       const models = Array.isArray(allModels[p]) ? allModels[p] : [];
       for (const m of models) out.push({ provider: p, id: m.id, label: m.label });
     });
@@ -107,7 +108,7 @@ export function ModelPicker() {
   }, [flat, filter]);
 
   const grouped = useMemo(() => {
-    const g: Record<ProviderId, FlatOption[]> = { anthropic: [], openrouter: [], google: [] };
+    const g: Record<ProviderId, FlatOption[]> = { anthropic: [], openrouter: [], google: [], freeapi: [] };
     for (const o of filtered) g[o.provider].push(o);
     return g;
   }, [filtered]);

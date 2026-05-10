@@ -47,7 +47,9 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     body.apiKey ||
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
-      : undefined);
+      : provider === 'freeapi'
+        ? (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API
+        : undefined);
 
   if (!apiKey) {
     throw new Response(
@@ -56,7 +58,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'gpt-4o-mini' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {

@@ -2,7 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 
-export type ProviderId = 'anthropic' | 'openrouter' | 'google';
+export type ProviderId = 'anthropic' | 'openrouter' | 'google' | 'freeapi';
 
 export function getModel(provider: ProviderId, modelId: string, apiKey: string) {
   switch (provider) {
@@ -27,6 +27,16 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey });
       return google(modelId);
+    }
+    case 'freeapi': {
+      const freeapi = createOpenAI({
+        apiKey,
+        baseURL: 'https://apifreellm.com/v1',
+        compatibility: 'compatible',
+      });
+      return freeapi(modelId, {
+        structuredOutputs: false,
+      });
     }
     default:
       throw new Error(`Unsupported provider: ${provider}`);

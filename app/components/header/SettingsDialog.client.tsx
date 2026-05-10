@@ -23,7 +23,15 @@ import { useT } from '~/lib/i18n/useT';
 
 type Tab = 'keys' | 'project' | 'security';
 
-const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpText: string }[] = [
+const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpText: string; badge?: string; badgeColor?: string }[] = [
+  {
+    id: 'freeapi',
+    placeholder: 'Sua chave ou deixe vazio (servidor já tem)',
+    helpUrl: 'https://apifreellm.com',
+    helpText: 'Modelos gratuitos via apifreellm.com — sem API key necessária!',
+    badge: 'GRÁTIS',
+    badgeColor: 'bg-emerald-500/20 text-emerald-400',
+  },
   {
     id: 'anthropic',
     placeholder: 'sk-ant-...',
@@ -61,7 +69,7 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('keys');
   const [drafts, setDrafts] = useState<Record<ProviderId, string>>(keys);
-  const [revealed, setRevealed] = useState<Record<ProviderId, boolean>>({ anthropic: false, openrouter: false, google: false });
+  const [revealed, setRevealed] = useState<Record<ProviderId, boolean>>({ anthropic: false, openrouter: false, google: false, freeapi: false });
   const [pName, setPName] = useState(active.name);
   const [pDesc, setPDesc] = useState(active.settings.description);
   const [pLogo, setPLogo] = useState(active.settings.logo);
@@ -166,13 +174,23 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
             {tab === 'keys' ? (
               <div className="p-5 space-y-4">
                 {PROVIDERS.map((p) => (
-                  <div key={p.id} className="border border-bolt-elements-borderColor rounded-md p-3 bg-bolt-elements-background-depth-1">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">{PROVIDER_LABELS[p.id]}</span>
+                  <div key={p.id} className={`border rounded-md p-3 bg-bolt-elements-background-depth-1 ${p.id === 'freeapi' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-bolt-elements-borderColor'}`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{PROVIDER_LABELS[p.id]}</span>
+                        {p.badge && (
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${p.badgeColor}`}>
+                            {p.badge}
+                          </span>
+                        )}
+                      </div>
                       <a href={p.helpUrl} target="_blank" className="text-xs underline">{t('settings.getKey')}</a>
                     </div>
+                    {p.id === 'freeapi' && (
+                      <p className="text-[10px] text-emerald-400 mb-2">{t('settings.freeApiHint')}</p>
+                    )}
                     <div className="flex gap-2">
-                      <input type="password" value={drafts[p.id]} onChange={(e) => setDrafts({...drafts, [p.id]: e.target.value})} className="flex-1 px-2 py-1 rounded text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor" />
+                      <input type="password" value={drafts[p.id] || ''} onChange={(e) => setDrafts({...drafts, [p.id]: e.target.value})} placeholder={p.placeholder} className="flex-1 px-2 py-1 rounded text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor" />
                       <button onClick={() => saveAndTest(p.id)} className="px-3 py-1 rounded text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.save')}</button>
                     </div>
                   </div>

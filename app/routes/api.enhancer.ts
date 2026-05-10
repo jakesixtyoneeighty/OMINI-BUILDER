@@ -26,7 +26,10 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) ||
         context.cloudflare.env.ANTHROPIC_API_KEY
-      : undefined);
+      : provider === 'freeapi'
+        ? (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) ||
+          context.cloudflare.env.LLM_FREE_API
+        : undefined);
 
   if (!apiKey) {
     return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}".` }), {
@@ -35,7 +38,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     });
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'gpt-4o-mini' : '');
 
   if (!model) {
     return new Response(JSON.stringify({ error: 'No model selected.' }), {
