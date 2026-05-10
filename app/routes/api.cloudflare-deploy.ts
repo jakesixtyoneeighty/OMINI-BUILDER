@@ -13,22 +13,46 @@ interface DeployBody {
 const CF_API = 'https://api.cloudflare.com/client/v4';
 
 /**
- * Build a multipart/form-data body for Cloudflare Pages Direct Upload.
- * Each file is added as a separate form field with its relative path.
- * Cloudflare Pages API expects:
- * - File contents as Blob/File entries with the key matching the file path
- * - The project name in the URL
+ * Compute SHA1 hash using Web Crypto API.
+ * Cloudflare Pages Direct Upload requires a manifest mapping
+ * file paths to their SHA1 hashes.
  */
-function buildMultipartBody(files: DeployFile[]): FormData {
+async function sha1(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Build the multipart/form-data body for Cloudflare Pages Direct Upload.
+ *
+ * The Cloudflare Pages API expects:
+ * - A "manifest" field: JSON string mapping file paths to their SHA1 hashes
+ *   e.g. {"index.html": "abc123...", "style.css": "def456..."}
+ * - File contents as form entries, where each entry's key is the file path
+ *   and the value is the file content as a Blob
+ *
+ * See: https://developers.cloudflare.com/pages/platform/direct-upload/
+ */
+async function buildMultipartBody(files: DeployFile[]): Promise<{ formData: FormData; manifest: Record<string, string> }> {
   const formData = new FormData();
+  const manifest: Record<string, string> = {};
 
   for (const f of files) {
     const cleanPath = f.path.replace(/^\/+/, '');
-    // Cloudflare Pages expects each file as a Blob with the path as the field name
-    formData.append('file', new Blob([f.content], { type: 'application/octet-stream' }), cleanPath);
+    const hash = await sha1(f.content);
+    manifest[cleanPath] = hash;
+
+    // Add file content as a Blob with the path as the field name
+    formData.append(cleanPath, new Blob([f.content], { type: 'application/octet-stream' }), cleanPath);
   }
 
-  return formData;
+  // The manifest must be a JSON string in a field called "manifest"
+  formData.append('manifest', JSON.stringify(manifest));
+
+  return { formData, manifest };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -56,7 +80,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json(
       {
         error:
-          'Cloudflare Pages deploy not configured on server. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID environment variables.',
+          'Cloudflare Pages deploy not configured on server. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID environment variables in the Cloudflare Pages dashboard.',
       },
       { status: 500 },
     );
@@ -138,11 +162,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
       });
     }
 
-    // ── Step 4: Deploy files via Direct Upload ──
-    // POST /accounts/{account_id}/pages/projects/{project_name}/deployments
-    // Body: multipart/form-data with all files
-    const formData = buildMultipartBody(allFiles);
+    // ── Step 4: Build multipart body with manifest + files ──
+    // Cloudflare Pages Direct Upload requires:
+    //   - "manifest" field: JSON mapping file_path -> sha1_hash
+    //   - File contents as separate form fields (key = file path)
+    const { formData } = await buildMultipartBody(allFiles);
 
+    // ── Step 5: Deploy files via Direct Upload ──
+    // POST /accounts/{account_id}/pages/projects/{project_name}/deployments
     const deployRes = await fetch(`${CF_API}/accounts/${accountId}/pages/projects/${name}/deployments`, {
       method: 'POST',
       headers: {
@@ -161,18 +188,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
         id?: string;
         url?: string;
         stages?: { name: string; status: string }[];
+        latest_stage?: { name: string; status: string };
       };
     };
 
     // Build the final URL
     // Cloudflare Pages URL format: https://<project-subdomain>.pages.dev
     const siteUrl = `https://${projectSubdomain}.pages.dev`;
-    const deployUrl = deployData.result?.url || siteUrl;
 
-    // ── Step 5: Wait for deployment to be ready (poll up to 60s) ──
+    // ── Step 6: Wait for deployment to be ready (poll up to 60s) ──
     let deployReady = false;
     let attempts = 0;
     const maxAttempts = 30; // 30 * 2s = 60s
+    const deployId = deployData.result?.id || '';
+
+    // Check if already ready from the initial response
+    const initialStage = deployData.result?.latest_stage;
+    if (initialStage?.name === 'deploy' && initialStage?.status === 'success') {
+      deployReady = true;
+    }
 
     while (attempts < maxAttempts && !deployReady) {
       await new Promise((r) => setTimeout(r, 2000));
@@ -180,7 +214,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
       try {
         const statusRes = await fetch(
-          `${CF_API}/accounts/${accountId}/pages/projects/${name}/deployments/${deployData.result?.id}`,
+          `${CF_API}/accounts/${accountId}/pages/projects/${name}/deployments/${deployId}`,
           {
             headers: { Authorization: `Bearer ${apiToken}` },
           },
@@ -211,8 +245,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
       projectName: name,
       subdomain: projectSubdomain,
       url: siteUrl,
-      deployUrl,
-      deployId: deployData.result?.id || '',
+      deployUrl: deployData.result?.url || siteUrl,
+      deployId,
       processing: !deployReady,
     });
   } catch (e) {
