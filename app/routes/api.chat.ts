@@ -42,23 +42,37 @@ interface ChatRequest {
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
-  const provider = (body.provider ?? 'anthropic') as ProviderId;
-  const apiKey =
+  let provider = (body.provider ?? 'freeapi') as ProviderId;
+  let apiKey =
     body.apiKey ||
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
       : provider === 'freeapi'
         ? (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API
-        : undefined);
+        : provider === 'openrouter'
+          ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
+          : provider === 'google'
+            ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
+            : undefined);
+
+  // Smart fallback: if no API key for the selected provider, fall back to freeapi (server has LLM_FREE_API)
+  if (!apiKey && provider !== 'freeapi') {
+    const freeApiKey = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API;
+    if (freeApiKey) {
+      console.log(`No API key for provider "${provider}", falling back to freeapi`);
+      provider = 'freeapi';
+      apiKey = freeApiKey;
+    }
+  }
 
   if (!apiKey) {
     throw new Response(
-      JSON.stringify({ error: `Missing API key for provider "${provider}". Configure it in Settings.` }),
+      JSON.stringify({ error: `Missing API key for provider "${provider}". Configure it in Settings or use the free model.` }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'gpt-4o-mini' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'gpt-4o-mini' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {

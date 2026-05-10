@@ -20,8 +20,8 @@ interface EnhancerRequest {
 
 async function enhancerAction({ context, request }: ActionFunctionArgs) {
   const body = await request.json<EnhancerRequest>();
-  const provider = (body.provider ?? 'anthropic') as ProviderId;
-  const apiKey =
+  let provider = (body.provider ?? 'freeapi') as ProviderId;
+  let apiKey =
     body.apiKey ||
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) ||
@@ -31,8 +31,17 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
           context.cloudflare.env.LLM_FREE_API
         : undefined);
 
+  // Smart fallback: if no API key for the selected provider, fall back to freeapi
+  if (!apiKey && provider !== 'freeapi') {
+    const freeApiKey = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || context.cloudflare.env.LLM_FREE_API;
+    if (freeApiKey) {
+      provider = 'freeapi';
+      apiKey = freeApiKey;
+    }
+  }
+
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}".` }), {
+    return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}". Use the free model instead.` }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
     });

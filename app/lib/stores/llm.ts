@@ -25,8 +25,8 @@ export interface LLMState {
 const STORAGE_KEY = 'bolt.llm.settings';
 
 const DEFAULT_STATE: LLMState = {
-  provider: 'anthropic',
-  model: 'claude-3-5-sonnet-20240620',
+  provider: 'freeapi',
+  model: 'gpt-4o-mini',
   keys: { anthropic: '', openrouter: '', google: '', freeapi: '' },
 };
 
@@ -36,11 +36,17 @@ function loadInitial(): LLMState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw);
-    return {
-      provider: parsed.provider ?? DEFAULT_STATE.provider,
-      model: parsed.model ?? DEFAULT_STATE.model,
-      keys: { ...DEFAULT_STATE.keys, ...(parsed.keys ?? {}) },
-    };
+    const provider = (parsed.provider as ProviderId) ?? DEFAULT_STATE.provider;
+    const model = parsed.model ?? DEFAULT_STATE.model;
+    const keys = { ...DEFAULT_STATE.keys, ...(parsed.keys ?? {}) };
+
+    // Migrate: if the stored provider has no key and it's not freeapi, fall back to freeapi
+    // This prevents "Not Found" errors for users who never configured an API key
+    if (provider !== 'freeapi' && !keys[provider]) {
+      return { provider: 'freeapi', model: 'gpt-4o-mini', keys };
+    }
+
+    return { provider, model, keys };
   } catch {
     return DEFAULT_STATE;
   }
