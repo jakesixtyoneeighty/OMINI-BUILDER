@@ -133,8 +133,19 @@ export function ModelPicker() {
 
       <div className="max-h-[300px] overflow-y-auto">
         {configuredCount === 0 ? (
-          <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-            {t('model.noApiKeys')}
+          <div className="p-4 text-center">
+            <div className="i-ph:key text-2xl text-bolt-elements-textTertiary mx-auto mb-2" />
+            <p className="text-xs text-bolt-elements-textTertiary mb-3">{t('model.noApiKeys')}</p>
+            <button
+              onClick={() => {
+                setOpen(false);
+                window.dispatchEvent(new CustomEvent('open-api-settings'));
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+            >
+              <div className="i-ph:gear text-sm" />
+              {t('model.configureApiKeys')}
+            </button>
           </div>
         ) : flat.length === 0 ? (
           <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">

@@ -18,6 +18,7 @@ import type { DetectedError } from '~/lib/stores/errors';
 import { chatWidthStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
+import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { inspectorStore, clearInspectorElements, removeInspectorElement, type InspectorElement } from '~/lib/stores/inspector';
 import { useT } from '~/lib/i18n/useT';
@@ -444,9 +445,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     {t('landing.subtitle')}
                   </p>
 
-                  {/* Model picker */}
-                  <div className="flex justify-center items-center gap-3 mb-8">
+                  {/* Model picker + API Settings */}
+                  <div className="flex justify-center items-center gap-2 mb-8">
                     <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+                    <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
                   </div>
                 </div>
 

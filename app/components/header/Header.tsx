@@ -272,6 +272,9 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
 
       {/* RIGHT: Navigation links */}
       <div className="flex items-center gap-1 px-4 shrink-0">
+        {/* API Settings button */}
+        <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
+
         {/* Docs link */}
         <a
           href="/docs"

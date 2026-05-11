@@ -137,49 +137,66 @@ export async function loadKeysFromSupabase() {
   const { user } = authStore.get();
 
   if (sb && user) {
-    const { data, error } = await sb
-      .from('profiles')
-      .select('anthropic_key, openrouter_key, google_key, last_provider, last_model')
-      .eq('id', user.id)
-      .single();
+    try {
+      const { data, error } = await sb
+        .from('profiles')
+        .select('anthropic_key, openrouter_key, google_key, last_provider, last_model')
+        .eq('id', user.id)
+        .single();
 
-    if (!error && data) {
-      const current = llmStore.get();
-      let restoredProvider = (data.last_provider as ProviderId) || current.provider;
-      let restoredModel = data.last_model || current.model;
-      const restoredKeys = {
-        anthropic: data.anthropic_key || current.keys.anthropic,
-        openrouter: data.openrouter_key || current.keys.openrouter,
-        google: data.google_key || current.keys.google,
-      };
+      if (!error && data) {
+        const current = llmStore.get();
+        let restoredProvider = (data.last_provider as ProviderId) || current.provider;
+        let restoredModel = data.last_model || current.model;
 
-      // Migrate: if the restored provider was 'freeapi', fall back to openrouter
-      if (restoredProvider === 'freeapi') {
-        restoredProvider = 'openrouter';
-        restoredModel = 'openrouter/free';
+        // Merge keys: prefer non-empty values (local or remote), never overwrite with empty
+        const restoredKeys = {
+          anthropic: data.anthropic_key || current.keys.anthropic,
+          openrouter: data.openrouter_key || current.keys.openrouter,
+          google: data.google_key || current.keys.google,
+        };
+
+        // If we have local keys that are NOT in Supabase, sync them up
+        const needsSync =
+          (current.keys.anthropic && !data.anthropic_key) ||
+          (current.keys.openrouter && !data.openrouter_key) ||
+          (current.keys.google && !data.google_key);
+
+        // Migrate: if the restored provider was 'freeapi', fall back to openrouter
+        if (restoredProvider === 'freeapi') {
+          restoredProvider = 'openrouter';
+          restoredModel = 'openrouter/free';
+        }
+
+        // Migrate: if the restored provider has no key and it's not openrouter, fall back to openrouter
+        if (restoredProvider !== 'openrouter' && !restoredKeys[restoredProvider]) {
+          llmStore.set({
+            provider: 'openrouter',
+            model: 'openrouter/free',
+            keys: restoredKeys,
+          });
+        } else if (restoredProvider === 'openrouter' && restoredModel === 'gpt-4o-mini') {
+          // Migrate: update old default model to new default
+          llmStore.set({
+            provider: 'openrouter',
+            model: 'openrouter/free',
+            keys: restoredKeys,
+          });
+        } else {
+          llmStore.set({
+            provider: restoredProvider,
+            model: restoredModel,
+            keys: restoredKeys,
+          });
+        }
+
+        // Sync local keys to Supabase if they were missing there
+        if (needsSync) {
+          syncKeysToSupabase().catch(() => {});
+        }
       }
-
-      // Migrate: if the restored provider has no key and it's not openrouter, fall back to openrouter
-      if (restoredProvider !== 'openrouter' && !restoredKeys[restoredProvider]) {
-        llmStore.set({
-          provider: 'openrouter',
-          model: 'openrouter/free',
-          keys: restoredKeys,
-        });
-      } else if (restoredProvider === 'openrouter' && restoredModel === 'gpt-4o-mini') {
-        // Migrate: update old default model to new default
-        llmStore.set({
-          provider: 'openrouter',
-          model: 'openrouter/free',
-          keys: restoredKeys,
-        });
-      } else {
-        llmStore.set({
-          provider: restoredProvider,
-          model: restoredModel,
-          keys: restoredKeys,
-        });
-      }
+    } catch (err) {
+      console.warn('[llm] Failed to load keys from Supabase, keeping localStorage keys:', err);
     }
   }
 }

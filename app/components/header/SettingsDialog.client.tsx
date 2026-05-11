@@ -71,6 +71,16 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
 
   const isProjectActive = projectId && projectId !== 'default';
 
+  // Listen for external open requests (e.g. from ModelPicker "Configure API Keys" button)
+  useEffect(() => {
+    const handler = () => {
+      setOpen(true);
+      setTab('keys');
+    };
+    window.addEventListener('open-api-settings', handler);
+    return () => window.removeEventListener('open-api-settings', handler);
+  }, []);
+
   useEffect(() => {
     if (open) {
       setDrafts(keys);
