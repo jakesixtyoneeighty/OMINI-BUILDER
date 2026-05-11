@@ -2,6 +2,7 @@ import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { StreamingTextResponse, parseStreamPart } from 'ai';
 import { streamText, type ModelSelection } from '~/lib/.server/llm/stream-text';
 import type { ProviderId } from '~/lib/.server/llm/model';
+import { DEFAULT_FREEAPI_BASE, type FreeApiConfig } from '~/lib/.server/llm/model';
 import { stripIndents } from '~/utils/stripIndent';
 
 const encoder = new TextEncoder();
@@ -20,20 +21,25 @@ interface EnhancerRequest {
 
 async function enhancerAction({ context, request }: ActionFunctionArgs) {
   const body = await request.json<EnhancerRequest>();
+  const env = context.cloudflare.env;
   let provider = (body.provider ?? 'freeapi') as ProviderId;
   let apiKey =
     body.apiKey ||
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) ||
-        context.cloudflare.env.ANTHROPIC_API_KEY
+        env.ANTHROPIC_API_KEY
       : provider === 'freeapi'
         ? (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) ||
-          context.cloudflare.env.LLM_FREE_API
-        : undefined);
+          env.LLM_FREE_API
+        : provider === 'openrouter'
+          ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
+          : provider === 'google'
+            ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
+            : undefined);
 
   // Smart fallback: if no API key for the selected provider, fall back to freeapi
   if (!apiKey && provider !== 'freeapi') {
-    const freeApiKey = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || context.cloudflare.env.LLM_FREE_API;
+    const freeApiKey = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API;
     if (freeApiKey) {
       provider = 'freeapi';
       apiKey = freeApiKey;
@@ -41,13 +47,22 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
   }
 
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}". Use the free model instead.` }), {
+    return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}". Set LLM_FREE_API env var or configure your own key in Settings. Get a free key at https://openrouter.ai` }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
     });
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'gpt-4o-mini' : '');
+  // Determine the freeapi base URL from env var
+  const freeApiBaseURL = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API_BASE : undefined) || env.LLM_FREE_API_BASE || DEFAULT_FREEAPI_BASE;
+  const freeApiModel = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API_MODEL : undefined) || env.LLM_FREE_API_MODEL;
+
+  let model: string;
+  if (provider === 'freeapi' && freeApiModel) {
+    model = freeApiModel;
+  } else {
+    model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'openrouter/free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  }
 
   if (!model) {
     return new Response(JSON.stringify({ error: 'No model selected.' }), {
@@ -56,7 +71,8 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     });
   }
 
-  const selection: ModelSelection = { provider, model, apiKey };
+  const freeApiConfig: FreeApiConfig = { baseURL: freeApiBaseURL };
+  const selection: ModelSelection = { provider, model, apiKey, freeApiConfig };
 
   try {
     const result = await streamText(
@@ -95,9 +111,15 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
     return new StreamingTextResponse(transformedStream);
   } catch (error) {
-    console.log(error);
+    console.error('[enhancer] Error:', error);
 
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }), {
+    let message = error instanceof Error ? error.message : 'Internal Server Error';
+
+    if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
+      message = `O modelo "${model}" nao foi encontrado. Verifique a configuracao do servidor LLM.`;
+    }
+
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
     });

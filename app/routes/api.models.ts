@@ -1,4 +1,5 @@
 import { type LoaderFunctionArgs, json } from '@remix-run/cloudflare';
+import { DEFAULT_FREEAPI_BASE } from '~/lib/.server/llm/model';
 
 interface ModelInfo {
   id: string;
@@ -13,10 +14,13 @@ const ANTHROPIC_FALLBACK: ModelInfo[] = [
 ];
 
 const FREEAPI_FALLBACK: ModelInfo[] = [
+  { id: 'openrouter/free', label: 'Free Models Router (auto)' },
+  { id: 'google/gemma-4-26b-a4b-it:free', label: 'Gemma 4 26B (free)' },
+  { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', label: 'Nemotron 3 Nano (free)' },
+  { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek Chat V3 (free)' },
+  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (free)' },
   { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
   { id: 'gpt-4o', label: 'GPT-4o' },
-  { id: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-  { id: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
   { id: 'claude-3-5-sonnet-20240620', label: 'Claude 3.5 Sonnet' },
   { id: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
   { id: 'deepseek-chat', label: 'DeepSeek Chat' },
@@ -72,9 +76,9 @@ async function fetchAnthropic(apiKey: string): Promise<ModelInfo[]> {
   }
 }
 
-async function fetchFreeApi(apiKey: string): Promise<ModelInfo[]> {
+async function fetchFreeApi(apiKey: string, baseURL: string): Promise<ModelInfo[]> {
   try {
-    const res = await fetch('https://apifreellm.com/v1/models', {
+    const res = await fetch(`${baseURL}/models`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) return FREEAPI_FALLBACK;
@@ -93,8 +97,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const provider = url.searchParams.get('provider');
   const apiKey = request.headers.get('x-api-key') || url.searchParams.get('apiKey') || '';
 
-  // For freeapi, also check the server-side LLM_FREE_API env var
   const env = (context as any)?.cloudflare?.env || {};
+
+  // For freeapi, also check the server-side LLM_FREE_API env var and use the configurable base URL
   const effectiveApiKey = provider === 'freeapi' && !apiKey ? (env.LLM_FREE_API || '') : apiKey;
 
   if (!provider) return json({ error: 'Missing provider' }, { status: 400 });
@@ -105,7 +110,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     if (provider === 'openrouter') models = await fetchOpenRouter(effectiveApiKey);
     else if (provider === 'google') models = await fetchGoogle(effectiveApiKey);
     else if (provider === 'anthropic') models = await fetchAnthropic(effectiveApiKey);
-    else if (provider === 'freeapi') models = await fetchFreeApi(effectiveApiKey);
+    else if (provider === 'freeapi') {
+      const baseURL = env.LLM_FREE_API_BASE || DEFAULT_FREEAPI_BASE;
+      models = await fetchFreeApi(effectiveApiKey, baseURL);
+    }
     else return json({ error: `Unsupported provider: ${provider}` }, { status: 400 });
 
     return json({ models });

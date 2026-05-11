@@ -184,6 +184,17 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         errorDetails = (error as any)?.stack || '';
       }
 
+      // Translate common API errors to user-friendly Portuguese messages
+      if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
+        errorMsg = 'Modelo LLM nao encontrado. O servidor pode estar com problema de configuracao. Tente novamente em instantes ou configure sua propria chave de API nas Configuracoes.';
+      } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API')) {
+        errorMsg = 'Chave de API ausente. Configure sua chave nas Configuracoes ou o servidor precisa da variavel LLM_FREE_API configurada.';
+      } else if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+        errorMsg = 'Chave de API invalida. Verifique sua chave nas Configuracoes.';
+      } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit')) {
+        errorMsg = 'Limite de requisicoes atingido. Aguarde um momento e tente novamente.';
+      }
+
       // Tentar extrair causa raiz de erros de API (fetch errors, etc.)
       const cause = (error as any)?.cause;
       if (cause) {

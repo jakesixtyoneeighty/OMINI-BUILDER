@@ -4,7 +4,14 @@ import { createOpenAI } from '@ai-sdk/openai';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google' | 'freeapi';
 
-export function getModel(provider: ProviderId, modelId: string, apiKey: string) {
+// Default base URL for the freeapi provider — configurable via LLM_FREE_API_BASE env var
+export const DEFAULT_FREEAPI_BASE = 'https://openrouter.ai/api/v1';
+
+export interface FreeApiConfig {
+  baseURL?: string;
+}
+
+export function getModel(provider: ProviderId, modelId: string, apiKey: string, freeApiConfig?: FreeApiConfig) {
   switch (provider) {
     case 'anthropic': {
       const anthropic = createAnthropic({ apiKey });
@@ -29,10 +36,15 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
       return google(modelId);
     }
     case 'freeapi': {
+      const baseURL = freeApiConfig?.baseURL || DEFAULT_FREEAPI_BASE;
       const freeapi = createOpenAI({
         apiKey,
-        baseURL: 'https://apifreellm.com/v1',
+        baseURL,
         compatibility: 'compatible',
+        headers: {
+          'HTTP-Referer': 'https://bolt.new',
+          'X-Title': 'Omni-Builder',
+        },
       });
       return freeapi(modelId, {
         structuredOutputs: false,

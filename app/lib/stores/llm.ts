@@ -8,7 +8,7 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Anthropic',
   openrouter: 'OpenRouter',
   google: 'Google Gemini',
-  freeapi: 'Free API (apifreellm.com)',
+  freeapi: 'Free API (OpenRouter)',
 };
 
 export interface ModelInfo {
@@ -26,7 +26,7 @@ const STORAGE_KEY = 'bolt.llm.settings';
 
 const DEFAULT_STATE: LLMState = {
   provider: 'freeapi',
-  model: 'gpt-4o-mini',
+  model: 'openrouter/free',
   keys: { anthropic: '', openrouter: '', google: '', freeapi: '' },
 };
 
@@ -43,7 +43,12 @@ function loadInitial(): LLMState {
     // Migrate: if the stored provider has no key and it's not freeapi, fall back to freeapi
     // This prevents "Not Found" errors for users who never configured an API key
     if (provider !== 'freeapi' && !keys[provider]) {
-      return { provider: 'freeapi', model: 'gpt-4o-mini', keys };
+      return { provider: 'freeapi', model: 'openrouter/free', keys };
+    }
+
+    // Migrate: if the stored model is the old default 'gpt-4o-mini' for freeapi, update to 'openrouter/free'
+    if (provider === 'freeapi' && model === 'gpt-4o-mini') {
+      return { provider: 'freeapi', model: 'openrouter/free', keys };
     }
 
     return { provider, model, keys };
@@ -94,7 +99,7 @@ if (typeof window !== 'undefined') {
       // Only update if different to avoid infinite loops
       if (current.provider !== newProvider || current.model !== newModel) {
         llmStore.setKey('provider', newProvider);
-        llmStore.setKey('model', newProvider === 'freeapi' && current.provider !== 'freeapi' ? 'gpt-4o-mini' : newModel);
+        llmStore.setKey('model', newProvider === 'freeapi' && current.provider !== 'freeapi' ? 'openrouter/free' : newModel);
       }
     }
   });
@@ -147,7 +152,14 @@ export async function loadKeysFromSupabase() {
       if (restoredProvider !== 'freeapi' && !restoredKeys[restoredProvider]) {
         llmStore.set({
           provider: 'freeapi',
-          model: 'gpt-4o-mini',
+          model: 'openrouter/free',
+          keys: restoredKeys,
+        });
+      } else if (restoredProvider === 'freeapi' && restoredModel === 'gpt-4o-mini') {
+        // Migrate: update old default model to new default
+        llmStore.set({
+          provider: 'freeapi',
+          model: 'openrouter/free',
           keys: restoredKeys,
         });
       } else {

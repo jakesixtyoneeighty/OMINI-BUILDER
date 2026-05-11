@@ -8,8 +8,11 @@ pages_build_output_dir = "./build/client"
 # Required env vars for Cloudflare Pages deploy (free, no user API key needed):
 #   CLOUDFLARE_API_TOKEN  — API token with Pages Edit permission
 #   CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
+# Free LLM provider (required for chat to work without user API keys):
+#   LLM_FREE_API       — API key for the free LLM provider (e.g. OpenRouter key from https://openrouter.ai)
+#   LLM_FREE_API_BASE  — Base URL for the free LLM provider (default: https://openrouter.ai/api/v1)
+#   LLM_FREE_API_MODEL — Default model for free LLM (default: openrouter/free which auto-routes to free models)
 # Optional:
-#   LLM_FREE_API — API key for apifreellm.com (free LLM provider)
 #   NETLIFY_DEFAULT_API_KEY — Netlify API key (only if using Netlify as provider)
 # [vars]
 # CLOUDFLARE_ACCOUNT_ID = ""
