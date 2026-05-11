@@ -4,6 +4,7 @@ import { atom } from 'nanostores';
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { activeProjectIdStore } from '~/lib/stores/project';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
 import type { ChatHistoryItem } from './db';
 
@@ -49,6 +50,11 @@ export function useChatHistory() {
   const [urlId, setUrlId] = useState<string | undefined>();
 
   useEffect(() => {
+    // Always set the active project ID from the URL so Chat.client.tsx can load it from Supabase
+    if (mixedId) {
+      activeProjectIdStore.set(mixedId);
+    }
+
     getDb().then((database) => {
       if (!database) {
         setReady(true);
@@ -69,13 +75,18 @@ export function useChatHistory() {
               description.set(storedMessages.description);
               chatId.set(storedMessages.id);
             } else {
-              navigate(`/`, { replace: true });
+              // Project not found in IndexedDB — it may be a cloud-only project
+              // Don't redirect to / — let Chat.client.tsx load it from Supabase
+              chatId.set(mixedId);
             }
 
             setReady(true);
           })
           .catch((error) => {
             toast.error(error.message);
+            // Still set ready so the chat UI renders (project may load from Supabase)
+            chatId.set(mixedId);
+            setReady(true);
           });
       } else {
         setReady(true);

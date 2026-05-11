@@ -36,7 +36,7 @@ export interface ProjectSettings {
   logo: string;
   envVars: EnvVar[];
   previewMode: PreviewMode;
-  provider: 'anthropic' | 'openrouter' | 'google';
+  provider: 'anthropic' | 'openrouter' | 'google' | 'freeapi';
   model: string;
   lastDeploy: {
     url: string;
@@ -92,8 +92,8 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   logo: '',
   envVars: [],
   previewMode: 'webcontainer',
-  provider: 'anthropic',
-  model: 'claude-3-5-sonnet-20240620',
+  provider: 'freeapi',
+  model: 'gpt-4o-mini',
   lastDeploy: { url: '', provider: '', siteId: '', deployedAt: '' },
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
@@ -270,8 +270,8 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
       logo: data.logo || '',
       customRules: data.custom_rules || '',
       previewMode: data.preview_mode || 'webcontainer',
-      provider: data.provider || 'anthropic',
-      model: data.model || 'claude-3-5-sonnet-20240620',
+      provider: data.provider || 'freeapi',
+      model: data.model || 'gpt-4o-mini',
       envVars: Array.isArray(data.env_vars) ? data.env_vars : [],
       lastDeploy: {
         url: data.last_deploy?.url || '',

@@ -437,12 +437,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     const _input = messageInput || input;
     if (_input.length === 0 || isLoading) return;
 
-    // Require login to create apps
-    const { user } = authStore.get();
-    if (!user) {
-      onAuthRequired?.();
-      return;
-    }
+    // Login is optional — users can chat without logging in
+    // Login is only needed for saving projects to the cloud (Supabase)
+    // const { user } = authStore.get();
+    // if (!user) {
+    //   onAuthRequired?.();
+    //   return;
+    // }
 
     await workbenchStore.saveAllFiles();
     const fileModifications = workbenchStore.getFileModifcations();
