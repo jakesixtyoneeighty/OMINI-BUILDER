@@ -273,7 +273,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       return tag;
     };
 
-    const handleSendWithAttachments = useCallback((event: React.UIEvent) => {
+    const handleSendWithAttachments = useCallback(async (event: React.UIEvent) => {
       if (isStreaming) {
         handleStop?.();
         return;
@@ -294,7 +294,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       setMentionState(null);
 
       // Send message with structured attachments - NO text prefix added
-      sendMessage?.(event, undefined, attachments.length > 0 ? attachments : undefined);
+      try {
+        await sendMessage?.(event, undefined, attachments.length > 0 ? attachments : undefined);
+      } catch (err) {
+        console.error('[BaseChat] Erro ao enviar mensagem:', err);
+      }
     }, [isStreaming, handleStop, sendMessage, buildAttachments, handleInputChange, textareaRef, user, attachedFiles, inspectorElements.length, mentionedFiles]);
 
     // Handle @ file mention selection
@@ -392,7 +396,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         event.preventDefault();
         handleSendWithAttachments(event);
       }
-    }, [sendMessage, mentionState]);
+    }, [handleSendWithAttachments, mentionState]);
 
     return (
       <div

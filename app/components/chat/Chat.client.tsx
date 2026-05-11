@@ -444,17 +444,26 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     }
 
     // Check project limit before creating a new project
-    const currentProjectId = activeProjectIdStore.get();
-    if (!currentProjectId || currentProjectId === 'default' || currentProjectId.length <= 10) {
-      const { getProjectCount, MAX_PROJECTS_PER_USER } = await import('~/lib/stores/project');
-      const count = await getProjectCount();
-      if (count >= MAX_PROJECTS_PER_USER) {
-        toast.error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`, { autoClose: 8000 });
-        return;
+    try {
+      const currentProjectId = activeProjectIdStore.get();
+      if (!currentProjectId || currentProjectId === 'default') {
+        const { getProjectCount, MAX_PROJECTS_PER_USER } = await import('~/lib/stores/project');
+        const count = await getProjectCount();
+        if (count >= MAX_PROJECTS_PER_USER) {
+          toast.error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`, { autoClose: 8000 });
+          return;
+        }
       }
+    } catch (err) {
+      console.warn('[sendMessage] Falha ao verificar limite de projetos, continuando:', err);
     }
 
-    await workbenchStore.saveAllFiles();
+    try {
+      await workbenchStore.saveAllFiles();
+    } catch (err) {
+      console.warn('[sendMessage] Falha ao salvar arquivos, continuando:', err);
+    }
+
     const fileModifications = workbenchStore.getFileModifcations();
     chatStore.setKey('aborted', false);
     runAnimation();
@@ -723,7 +732,7 @@ The database is ready to use. Please configure the project to connect to it and 
       const deployPrompt = `Faca o deploy deste projeto agora!
 
 Cloudflare Pages esta disponivel (gratis, sem API key, URL *.pages.dev com SSL automatico).
-${hasUserNetlifyToken ? 'Netlify tambem esta disponivel (token configurado).' : ''}
+${hasNetlify ? 'Netlify tambem esta disponivel (token configurado).' : ''}
 ${hasVercel ? 'Vercel tambem esta disponivel (token configurado).' : ''}
 
 Por favor:
