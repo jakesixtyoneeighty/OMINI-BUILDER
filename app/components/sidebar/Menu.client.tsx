@@ -139,8 +139,7 @@ export function Menu() {
     {
       icon: 'i-ph:book-open-text',
       label: t('sidebar.docsHelp'),
-      href: 'https://github.com/stackblitz/bolt.new',
-      external: true,
+      href: '/docs',
     },
   ];
 
@@ -574,16 +573,7 @@ export function Menu() {
           {!collapsed && (
             <>
               <a
-                href="https://discord.gg/stackblitz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-                title="Discord"
-              >
-                <div className="i-ph:discord-logo text-base" />
-              </a>
-              <a
-                href="https://linkedin.com/company/stackblitz"
+                href="https://www.linkedin.com/in/pedro-berbis-freire/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
@@ -592,16 +582,7 @@ export function Menu() {
                 <div className="i-ph:linkedin-logo text-base" />
               </a>
               <a
-                href="https://twitter.com/stackblitz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-                title="Twitter"
-              >
-                <div className="i-ph:x-logo text-base" />
-              </a>
-              <a
-                href="https://reddit.com/r/stackblitz"
+                href="https://www.reddit.com/user/Dangerous-Big6345/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center w-7 h-7 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"

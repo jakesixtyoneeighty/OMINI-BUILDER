@@ -272,13 +272,13 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
 
       {/* RIGHT: Navigation links */}
       <div className="flex items-center gap-1 px-4 shrink-0">
+        {/* Docs link */}
         <a
-          href="https://discord.gg/stackblitz"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/docs"
           className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
-          {t('header.community')}
+          <div className="i-ph:book-open-text text-sm mr-1.5" />
+          {t('header.documentation')}
         </a>
 
         {/* Language selector */}
@@ -320,12 +320,6 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           )}
         </div>
 
-        <a
-          href="#"
-          className="hidden md:flex items-center px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-        >
-          {t('header.enterprise')}
-        </a>
         <div ref={resourcesRef} className="relative hidden md:block">
           <button
             onClick={() => setResourcesOpen(!resourcesOpen)}
@@ -345,24 +339,12 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
                 {t('header.gallery')}
               </a>
               <a
-                href="https://github.com/stackblitz/bolt.new"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/docs"
                 onClick={() => setResourcesOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
               >
                 <div className="i-ph:book-open-text text-base" />
                 {t('header.documentation')}
-              </a>
-              <a
-                href="https://github.com/stackblitz/bolt.new"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setResourcesOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-              >
-                <div className="i-ph:github-logo text-base" />
-                GitHub
               </a>
             </div>
           )}
