@@ -943,13 +943,110 @@ The database is ready to use. Please configure the project to connect to it and 
       workbenchStore.setDocuments(currentFiles);
       workbenchStore.showWorkbench.set(true);
       runAnimation();
-      // Auto-save imported files to Supabase (cloud only, no cache)
-      workbenchStore.saveEntireProject().catch(() => {});
 
       if (written > 0) {
         toast.success(`${written} arquivo${written > 1 ? 's' : ''} importado${written > 1 ? 's' : ''} com sucesso!${failed > 0 ? ` (${failed} falharam)` : ''}`);
       } else {
         toast.error('Nenhum arquivo pôde ser escrito. Verifique o console para detalhes.');
+        return;
+      }
+
+      // Auto-save imported files to Supabase (cloud only, no cache)
+      workbenchStore.saveEntireProject().catch(() => {});
+
+      // Auto-run npm install and npm run dev if package.json exists
+      const hasPackageJson = result.files.some(
+        (f: any) => f.path === 'package.json' || f.path === '/package.json',
+      );
+
+      if (hasPackageJson) {
+        const packageJsonFile = result.files.find(
+          (f: any) => f.path === 'package.json' || f.path === '/package.json',
+        );
+
+        if (packageJsonFile) {
+          try {
+            const pkg = JSON.parse(packageJsonFile.content);
+            const hasDeps =
+              (pkg.dependencies && Object.keys(pkg.dependencies).length > 0) ||
+              (pkg.devDependencies && Object.keys(pkg.devDependencies).length > 0);
+
+            // Run npm install if there are dependencies
+            if (hasDeps) {
+              toast.info('Instalando dependências...', { autoClose: 15000 });
+              const installProcess = await wc.spawn('npm', ['install']);
+              const installExit = await installProcess.exit;
+
+              if (installExit !== 0) {
+                // Fallback: try with --legacy-peer-deps
+                console.warn('npm install failed, retrying with --legacy-peer-deps...');
+                const fallbackProcess = await wc.spawn('npm', ['install', '--legacy-peer-deps']);
+                const fallbackExit = await fallbackProcess.exit;
+
+                if (fallbackExit !== 0) {
+                  toast.warning('npm install falhou, mas tentando rodar mesmo assim...', { autoClose: 5000 });
+                } else {
+                  toast.success('Dependências instaladas!', { autoClose: 3000 });
+                }
+              } else {
+                toast.success('Dependências instaladas!', { autoClose: 3000 });
+              }
+            }
+
+            // Run the dev/start script
+            const startScript = pkg.scripts?.dev || pkg.scripts?.start;
+            if (startScript) {
+              const isDev = !!pkg.scripts?.dev;
+              toast.info(isDev ? 'Iniciando servidor de desenvolvimento...' : 'Iniciando servidor...', { autoClose: 5000 });
+
+              const runProcess = await wc.spawn('npm', ['run', isDev ? 'dev' : 'start']);
+
+              // Pipe output to console for debugging
+              runProcess.output.pipeTo(
+                new WritableStream({
+                  write(data) {
+                    console.log('[dev-server]', data);
+                  },
+                }),
+              ).catch(() => {});
+            } else if (pkg.devDependencies?.vite || pkg.dependencies?.vite) {
+              // No start script but has Vite — try npx vite
+              toast.info('Iniciando servidor Vite...', { autoClose: 5000 });
+              const viteProcess = await wc.spawn('npx', ['vite', '--host', '0.0.0.0']);
+              viteProcess.output.pipeTo(
+                new WritableStream({
+                  write(data) { console.log('[vite]', data); },
+                }),
+              ).catch(() => {});
+            } else if (hasDeps || pkg.main || pkg.scripts) {
+              // Generic Node project — try node index.js or node server.js
+              const hasServerJs = result.files.some((f: any) => f.path === 'server.js' || f.path === '/server.js');
+              const hasIndexJs = result.files.some((f: any) => f.path === 'index.js' || f.path === '/index.js');
+              if (hasServerJs) {
+                toast.info('Iniciando servidor Node...', { autoClose: 5000 });
+                const nodeProcess = await wc.spawn('node', ['server.js']);
+                nodeProcess.output.pipeTo(
+                  new WritableStream({
+                    write(data) { console.log('[node]', data); },
+                  }),
+                ).catch(() => {});
+              } else if (hasIndexJs) {
+                toast.info('Iniciando aplicação Node...', { autoClose: 5000 });
+                const nodeProcess = await wc.spawn('node', ['index.js']);
+                nodeProcess.output.pipeTo(
+                  new WritableStream({
+                    write(data) { console.log('[node]', data); },
+                  }),
+                ).catch(() => {});
+              }
+            }
+
+            // Show terminal so the user can see the install/dev output
+            workbenchStore.toggleTerminal(true);
+          } catch (pkgErr) {
+            console.warn('Failed to parse package.json or run install/dev:', pkgErr);
+          }
+        }
       }
     } catch (err) {
       console.error('Import error:', err);
