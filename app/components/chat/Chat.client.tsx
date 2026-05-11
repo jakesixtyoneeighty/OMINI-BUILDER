@@ -11,7 +11,7 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
-import { addRecentlyViewed, loadRecentlyViewedFromSupabase } from '~/lib/stores/recently-viewed';
+import { addRecentlyViewed } from '~/lib/stores/recently-viewed';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { languageStore } from '~/lib/stores/language';
@@ -263,8 +263,18 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         const { loadProjectFromSupabase } = await import('~/lib/stores/project');
         await loadProjectFromSupabase(projectId);
 
-        // Load project files from Supabase
+        // Load project files from Supabase (cloud only, no cache)
         await workbenchStore.loadProjectFiles(projectId);
+
+        // Set documents from loaded files
+        const currentFiles = workbenchStore.files.get();
+        if (Object.keys(currentFiles).length > 0) {
+          workbenchStore.setDocuments(currentFiles);
+          workbenchStore.showWorkbench.set(true);
+          if (!chatStarted) {
+            runAnimation();
+          }
+        }
 
         // Re-write .env file from saved project settings
         const current = projects[projectId];
@@ -277,25 +287,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
           }
         }
       }
-
-      // Restore files from localStorage cache on page load
-      const hasCachedFiles = workbenchStore.filesStore.loadFilesFromCache();
-      if (hasCachedFiles) {
-        const currentFiles = workbenchStore.files.get();
-        workbenchStore.setDocuments(currentFiles);
-        if (Object.keys(currentFiles).length > 0) {
-          workbenchStore.showWorkbench.set(true);
-          if (!chatStarted) {
-            runAnimation();
-          }
-        }
-      }
     };
 
     loadProject();
   }, []);
 
-  // Track recently viewed projects (local + Supabase)
+  // Track recently viewed projects (cloud only)
   useEffect(() => {
     if (!projectId || projectId === 'default') return;
 
@@ -306,7 +303,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         name: proj.name || 'Untitled',
         description: proj.settings?.description || '',
         logo: proj.settings?.logo || '',
-        source: 'local',
+        source: 'cloud',
       });
     } else {
       // Try to load from Supabase
@@ -334,13 +331,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     }
   }, [projectId]);
 
-  // Load recently viewed from Supabase when user logs in
-  useEffect(() => {
-    const { user } = authStore.get();
-    if (user) {
-      loadRecentlyViewedFromSupabase();
-    }
-  }, [authStore.get().user]);
+  // Recently viewed is now loaded from Supabase during auth init (see auth.ts)
 
   // Parse token usage from AI SDK data stream parts (code "2")
   useEffect(() => {
@@ -406,7 +397,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
             if (ok) console.log('[autosave] Project saved to Google Drive');
           });
 
-          // Auto-save files to Supabase after AI finishes
+          // Auto-save files to Supabase after AI finishes (cloud only, no cache)
           const currentProjectId = activeProjectIdStore.get();
           if (currentProjectId && currentProjectId !== 'default') {
             workbenchStore.saveEntireProject().then(() => {
@@ -415,9 +406,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
               console.warn('[autosave] Failed to save files to Supabase:', err);
             });
           }
-
-          // Also save files to localStorage cache
-          workbenchStore.filesStore.saveFilesToCache();
         }, 3000);
       }
     }
@@ -437,13 +425,23 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     const _input = messageInput || input;
     if (_input.length === 0 || isLoading) return;
 
-    // Login is optional — users can chat without logging in
-    // Login is only needed for saving projects to the cloud (Supabase)
-    // const { user } = authStore.get();
-    // if (!user) {
-    //   onAuthRequired?.();
-    //   return;
-    // }
+    // Login is required to use the chat
+    const { user } = authStore.get();
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
+
+    // Check project limit before creating a new project
+    const currentProjectId = activeProjectIdStore.get();
+    if (!currentProjectId || currentProjectId === 'default' || currentProjectId.length <= 10) {
+      const { getProjectCount, MAX_PROJECTS_PER_USER } = await import('~/lib/stores/project');
+      const count = await getProjectCount();
+      if (count >= MAX_PROJECTS_PER_USER) {
+        toast.error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`, { autoClose: 8000 });
+        return;
+      }
+    }
 
     await workbenchStore.saveAllFiles();
     const fileModifications = workbenchStore.getFileModifcations();
@@ -934,7 +932,8 @@ The database is ready to use. Please configure the project to connect to it and 
       workbenchStore.setDocuments(currentFiles);
       workbenchStore.showWorkbench.set(true);
       runAnimation();
-      workbenchStore.filesStore.saveFilesToCache();
+      // Auto-save imported files to Supabase (cloud only, no cache)
+      workbenchStore.saveEntireProject().catch(() => {});
 
       if (written > 0) {
         toast.success(`${written} arquivo${written > 1 ? 's' : ''} importado${written > 1 ? 's' : ''} com sucesso!${failed > 0 ? ` (${failed} falharam)` : ''}`);

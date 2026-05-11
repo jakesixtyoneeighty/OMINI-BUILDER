@@ -83,7 +83,6 @@ export interface ProjectRecord {
   settings: ProjectSettings;
 }
 
-const PROJECTS_KEY = 'bolt.project.records';
 const ACTIVE_PROJECT_KEY = 'bolt.project.active';
 
 const DEFAULT_SETTINGS: ProjectSettings = {
@@ -110,14 +109,8 @@ const DEFAULT_SETTINGS: ProjectSettings = {
 };
 
 function loadProjects(): Record<string, ProjectRecord> {
-  if (typeof localStorage === 'undefined') return {};
-  try {
-    const raw = localStorage.getItem(PROJECTS_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, ProjectRecord>;
-  } catch {
-    return {};
-  }
+  // Projects are loaded from Supabase (cloud only) — no localStorage persistence
+  return {};
 }
 
 function loadActiveProjectId(): string {
@@ -129,13 +122,9 @@ export const activeProjectIdStore = atom<string>(loadActiveProjectId());
 export const projectsStore = map<Record<string, ProjectRecord>>(loadProjects());
 
 if (typeof window !== 'undefined') {
-  projectsStore.subscribe((state) => {
-    try {
-      localStorage.setItem(PROJECTS_KEY, JSON.stringify(state));
-    } catch {
-      /* ignore */
-    }
-  });
+  // Projects are saved to Supabase (cloud only) — no localStorage persistence
+  // The projectsStore is populated from Supabase when the user logs in
+  // activeProjectId is still persisted locally for convenience (which project to open)
   activeProjectIdStore.subscribe((value) => {
     try {
       localStorage.setItem(ACTIVE_PROJECT_KEY, value);
@@ -237,6 +226,11 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     if (id !== 'default' && id.length > 10) {
       await sb.from('projects').upsert({ id, ...projectData });
     } else {
+      // New project creation — check the project limit first
+      const currentCount = await getProjectCount();
+      if (currentCount >= MAX_PROJECTS_PER_USER) {
+        throw new Error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`);
+      }
       const { data } = await sb.from('projects').insert(projectData).select().single();
       if (data) {
         activeProjectIdStore.set(data.id);
@@ -247,8 +241,111 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
 }
 
 /**
- * Load a project's full settings from Supabase and merge into local store
+ * Load all projects for the current user from Supabase and populate the local store.
+ * This replaces the old localStorage-based project loading.
  */
+export async function loadAllProjectsFromSupabase(): Promise<number> {
+  const sb = getSupabase();
+  const { user } = authStore.get();
+  if (!sb || !user) return 0;
+
+  try {
+    const { data, error } = await sb
+      .from('projects')
+      .select('*')
+      .eq('owner_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error || !data) return 0;
+
+    // Clear existing local projects and replace with Supabase data
+    const newProjects: Record<string, ProjectRecord> = {};
+
+    for (const p of data) {
+      const settings: ProjectSettings = {
+        name: p.name || '',
+        description: p.description || '',
+        logo: p.logo || '',
+        customRules: p.custom_rules || '',
+        previewMode: p.preview_mode || 'webcontainer',
+        provider: p.provider || 'freeapi',
+        model: p.model || 'gpt-4o-mini',
+        envVars: Array.isArray(p.env_vars) ? p.env_vars : [],
+        lastDeploy: {
+          url: p.last_deploy?.url || '',
+          provider: p.last_deploy?.provider || '',
+          siteId: p.last_deploy?.siteId || '',
+          deployedAt: p.last_deploy?.deployedAt || '',
+        },
+        github: {
+          token: p.github_token || '',
+          repo: p.github_repo || '',
+          branch: p.github_branch || 'main',
+        },
+        netlify: {
+          token: p.netlify_config?.token || '',
+          siteId: p.netlify_config?.siteId || '',
+        },
+        vercel: {
+          token: p.vercel_config?.token || '',
+          projectName: p.vercel_config?.projectName || '',
+          framework: p.vercel_config?.framework || 'vite',
+        },
+        cloudRun: {
+          projectId: p.cloudrun_config?.projectId || '',
+          region: p.cloudrun_config?.region || 'us-central1',
+          serviceAccountKey: p.cloudrun_config?.serviceAccountKey || '',
+          serviceName: p.cloudrun_config?.serviceName || '',
+          allowUnauthenticated: p.cloudrun_config?.allowUnauthenticated ?? true,
+        },
+        database: {
+          type: p.database_config?.type || 'none',
+          firebase: p.database_config?.firebase || { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
+          supabase: p.database_config?.supabase || { url: '', anonKey: '', serviceRoleKey: '' },
+          omni: p.database_config?.omni || { enabled: false, projectId: '' },
+        },
+        googleDrive: {
+          clientId: p.google_drive_config?.clientId || '',
+        },
+      };
+
+      newProjects[p.id] = {
+        id: p.id,
+        name: p.name || '',
+        settings,
+      };
+    }
+
+    projectsStore.set(newProjects);
+    return data.length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Get the count of projects for the current user from Supabase.
+ * Used to enforce the project limit.
+ */
+export async function getProjectCount(): Promise<number> {
+  const sb = getSupabase();
+  const { user } = authStore.get();
+  if (!sb || !user) return 0;
+
+  try {
+    const { count, error } = await sb
+      .from('projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', user.id);
+
+    if (error) return 0;
+    return count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export const MAX_PROJECTS_PER_USER = 10;
 export async function loadProjectFromSupabase(projectId: string): Promise<ProjectRecord | null> {
   const sb = getSupabase();
   const { user } = authStore.get();

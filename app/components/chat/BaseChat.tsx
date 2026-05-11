@@ -278,11 +278,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         handleStop?.();
         return;
       }
-      // Login is optional — users can chat without logging in
-      // if (!user) {
-      //   setAuthModalOpen(true);
-      //   return;
-      // }
+      // Login is required to use the chat
+      if (!user) {
+        setAuthModalOpen(true);
+        return;
+      }
 
       // Build structured attachments (sent alongside the message, NOT as text)
       const attachments = buildAttachments();

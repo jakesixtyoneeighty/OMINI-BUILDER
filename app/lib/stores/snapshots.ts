@@ -393,8 +393,8 @@ export async function restoreSnapshot(id: number): Promise<boolean> {
     // 5. Update editor documents so the editor shows the restored files
     workbenchStore.setDocuments(files);
 
-    // 6. Update file cache for persistence
-    workbenchStore.filesStore.saveFilesToCache();
+    // 6. Save restored files to Supabase (cloud only)
+    workbenchStore.saveEntireProject().catch(() => {});
 
     // 7. Clear unsaved changes
     workbenchStore.unsavedFiles.set(new Set());

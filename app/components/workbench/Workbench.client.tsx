@@ -59,14 +59,15 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     workbenchStore.setDocuments(files);
   }, [files]);
 
-  // Auto-save files to localStorage cache when files change (debounced)
+  // Auto-save files to Supabase when files change (debounced, cloud only)
   const prevFilesRef = useRef('');
   useEffect(() => {
     const currentFileKeys = JSON.stringify(Object.keys(files).sort());
     if (currentFileKeys !== prevFilesRef.current && currentFileKeys.length > 2) {
       prevFilesRef.current = currentFileKeys;
       const timeout = setTimeout(() => {
-        workbenchStore.filesStore.saveFilesToCache();
+        // Cloud save only (no localStorage cache)
+        workbenchStore.saveEntireProject().catch(() => {});
       }, 2000);
       return () => clearTimeout(timeout);
     }

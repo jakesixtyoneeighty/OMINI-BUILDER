@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
-import { deleteProject, renameProject, projectsStore, type ProjectRecord } from '~/lib/stores/project';
+import { deleteProject, renameProject, projectsStore, type ProjectRecord, MAX_PROJECTS_PER_USER } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
@@ -256,12 +256,13 @@ function ProjectsContent() {
           <div>
             <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('projects.title')}</h1>
             <p className="text-sm text-bolt-elements-textTertiary mt-1">
-              {projects.length} {t('projects.count')}
+              {projects.length}/{MAX_PROJECTS_PER_USER} {t('projects.count')}
             </p>
           </div>
           <button
             onClick={handleNewProject}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
+            disabled={projects.length >= MAX_PROJECTS_PER_USER}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <div className="i-ph:plus text-base" />
             {t('projects.newProject')}

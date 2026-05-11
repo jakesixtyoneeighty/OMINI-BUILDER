@@ -61,21 +61,8 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
       className="fixed inset-0 z-[200] flex items-center justify-center"
       onClick={() => !loading && onClose()}
     >
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-bolt-elements-bg-depth-1">
-        {/* Gradient orbs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/15 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/10 blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-[30%] right-[20%] w-[30%] h-[30%] rounded-full bg-pink-500/5 blur-[80px] animate-pulse" style={{ animationDelay: '2s' }} />
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-      </div>
+      {/* Backdrop overlay */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Content */}
       <div
@@ -85,13 +72,12 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
         {/* Close button */}
         <button
           onClick={() => !loading && onClose()}
-          className="absolute -top-16 right-0 flex items-center gap-1.5 text-sm text-bolt-elements-textTertiary hover:text-gray-300 transition-colors"
+          className="absolute -top-12 right-0 flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
         >
-          <span>{t('auth.close')}</span>
           <div className="i-ph:x text-lg" />
         </button>
 
-        <div className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 backdrop-blur-xl shadow-2xl shadow-purple-500/5 p-8 space-y-6">
+        <div className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 backdrop-blur-xl shadow-2xl shadow-black/20 p-8 space-y-6">
           {/* Logo + Title */}
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25">
@@ -216,10 +202,6 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
           </p>
         </div>
 
-        {/* Bottom branding */}
-        <p className="text-center text-[11px] text-bolt-elements-textTertiary mt-4">
-          Omni-Builder — Powered by Z.ai
-        </p>
       </div>
     </div>
   );

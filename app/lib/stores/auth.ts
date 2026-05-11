@@ -102,6 +102,12 @@ export async function initAuth() {
       await loadKeysFromSupabase();
       // Load profile data (avatar, display name) from profiles table
       await mergeProfile(data.session.user.id);
+      // Load all projects from Supabase (cloud-only storage)
+      const { loadAllProjectsFromSupabase } = await import('./project');
+      await loadAllProjectsFromSupabase();
+      // Load recently viewed from Supabase
+      const { loadRecentlyViewedFromSupabase } = await import('./recently-viewed');
+      await loadRecentlyViewedFromSupabase();
     }
     return;
   }
@@ -127,6 +133,12 @@ export async function initAuth() {
     await loadKeysFromSupabase();
     // Load profile data (avatar, display name) from profiles table
     await mergeProfile(data.session.user.id);
+    // Load all projects from Supabase (cloud-only storage)
+    const { loadAllProjectsFromSupabase } = await import('./project');
+    await loadAllProjectsFromSupabase();
+    // Load recently viewed from Supabase
+    const { loadRecentlyViewedFromSupabase } = await import('./recently-viewed');
+    await loadRecentlyViewedFromSupabase();
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
@@ -146,6 +158,9 @@ export async function initAuth() {
     if (event === 'SIGNED_OUT') {
       githubProviderTokenStore.set(null);
       googleProviderTokenStore.set(null);
+      // Clear projects from local store on sign out (cloud-only)
+      const { projectsStore } = await import('./project');
+      projectsStore.set({});
     }
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
       const { loadKeysFromSupabase } = await import('./llm');
@@ -154,6 +169,12 @@ export async function initAuth() {
       if (session?.user) {
         await mergeProfile(session.user.id);
       }
+      // Load all projects from Supabase (cloud-only storage)
+      const { loadAllProjectsFromSupabase } = await import('./project');
+      await loadAllProjectsFromSupabase();
+      // Load recently viewed from Supabase
+      const { loadRecentlyViewedFromSupabase } = await import('./recently-viewed');
+      await loadRecentlyViewedFromSupabase();
     }
   });
 }

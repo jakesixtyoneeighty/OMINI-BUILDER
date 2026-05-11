@@ -2,7 +2,6 @@ import { atom } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
 import { authStore } from './auth';
 
-const RECENTLY_VIEWED_KEY = 'omni-builder.recently-viewed';
 const MAX_ITEMS = 20;
 
 export interface RecentlyViewedItem {
@@ -15,35 +14,15 @@ export interface RecentlyViewedItem {
 }
 
 function loadRecentlyViewed(): RecentlyViewedItem[] {
-  if (typeof localStorage === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    // Validate each item has the required fields
-    return parsed.filter(
-      (item: any) =>
-        item &&
-        typeof item.id === 'string' &&
-        typeof item.name === 'string' &&
-        typeof item.timestamp === 'string'
-    ) as RecentlyViewedItem[];
-  } catch {
-    return [];
-  }
+  // Recently viewed is loaded from Supabase (cloud only) — no localStorage persistence
+  return [];
 }
 
 export const recentlyViewedStore = atom<RecentlyViewedItem[]>(loadRecentlyViewed());
 
 if (typeof window !== 'undefined') {
-  recentlyViewedStore.subscribe((items) => {
-    try {
-      localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(items));
-    } catch {
-      /* ignore */
-    }
-  });
+  // Recently viewed is saved to Supabase (cloud only) — no localStorage persistence
+  // The recentlyViewedStore is populated from Supabase when the user logs in
 }
 
 /**
