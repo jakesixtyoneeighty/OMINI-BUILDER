@@ -2,16 +2,9 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 
-export type ProviderId = 'anthropic' | 'openrouter' | 'google' | 'freeapi';
+export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
-// Default base URL for the freeapi provider — configurable via LLM_FREE_API_BASE env var
-export const DEFAULT_FREEAPI_BASE = 'https://openrouter.ai/api/v1';
-
-export interface FreeApiConfig {
-  baseURL?: string;
-}
-
-export function getModel(provider: ProviderId, modelId: string, apiKey: string, freeApiConfig?: FreeApiConfig) {
+export function getModel(provider: ProviderId, modelId: string, apiKey: string) {
   switch (provider) {
     case 'anthropic': {
       const anthropic = createAnthropic({ apiKey });
@@ -34,21 +27,6 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string, 
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey });
       return google(modelId);
-    }
-    case 'freeapi': {
-      const baseURL = freeApiConfig?.baseURL || DEFAULT_FREEAPI_BASE;
-      const freeapi = createOpenAI({
-        apiKey,
-        baseURL,
-        compatibility: 'compatible',
-        headers: {
-          'HTTP-Referer': 'https://bolt.new',
-          'X-Title': 'Omni-Builder',
-        },
-      });
-      return freeapi(modelId, {
-        structuredOutputs: false,
-      });
     }
     default:
       throw new Error(`Unsupported provider: ${provider}`);

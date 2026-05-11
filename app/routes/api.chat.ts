@@ -4,7 +4,6 @@ import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type ModelSelection, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { ProviderId } from '~/lib/.server/llm/model';
-import { DEFAULT_FREEAPI_BASE, type FreeApiConfig } from '~/lib/.server/llm/model';
 import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 
 export async function action(args: ActionFunctionArgs) {
@@ -43,47 +42,25 @@ interface ChatRequest {
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
-  let provider = (body.provider ?? 'freeapi') as ProviderId;
-  let apiKey =
+  const provider = (body.provider ?? 'openrouter') as ProviderId;
+  const apiKey =
     body.apiKey ||
     (provider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
-      : provider === 'freeapi'
-        ? (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API
-        : provider === 'openrouter'
-          ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
-          : provider === 'google'
-            ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
-            : undefined);
-
-  // Smart fallback: if no API key for the selected provider, fall back to freeapi (server has LLM_FREE_API)
-  if (!apiKey && provider !== 'freeapi') {
-    const freeApiKey = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API : undefined) || env.LLM_FREE_API;
-    if (freeApiKey) {
-      console.log(`No API key for provider "${provider}", falling back to freeapi`);
-      provider = 'freeapi';
-      apiKey = freeApiKey;
-    }
-  }
+      : provider === 'openrouter'
+        ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
+        : provider === 'google'
+          ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
+          : undefined);
 
   if (!apiKey) {
     throw new Response(
-      JSON.stringify({ error: `Missing API key for provider "${provider}". Configure it in Settings or set the LLM_FREE_API env var on the server. You can get a free API key at https://openrouter.ai` }),
+      JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes. Obtenha uma chave gratuita em https://openrouter.ai` }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  // Determine the freeapi base URL from env var (allows switching from apifreellm to OpenRouter etc.)
-  const freeApiBaseURL = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API_BASE : undefined) || env.LLM_FREE_API_BASE || DEFAULT_FREEAPI_BASE;
-  const freeApiModel = (typeof process !== 'undefined' ? process.env?.LLM_FREE_API_MODEL : undefined) || env.LLM_FREE_API_MODEL;
-
-  // Determine model — use env var override for freeapi, then body, then defaults
-  let model: string;
-  if (provider === 'freeapi' && freeApiModel) {
-    model = freeApiModel; // Server-side override takes precedence
-  } else {
-    model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'freeapi' ? 'openrouter/free' : provider === 'google' ? 'gemini-2.0-flash' : '');
-  }
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'openrouter/free' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {
@@ -92,11 +69,9 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     );
   }
 
-  const freeApiConfig: FreeApiConfig = { baseURL: freeApiBaseURL };
+  console.log(`[chat] provider=${provider} model=${model}`);
 
-  console.log(`[chat] provider=${provider} model=${model} baseURL=${freeApiBaseURL}`);
-
-  return { provider, model, apiKey, freeApiConfig };
+  return { provider, model, apiKey };
 }
 
 function resolveDbContext(config?: ClientDatabaseConfig): DatabaseContext | undefined {
@@ -216,9 +191,9 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     // Provide helpful error messages for common API failures
     if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
-      message = `O modelo "${selection.model}" nao foi encontrado no servidor LLM. Verifique se o LLM_FREE_API_BASE e LLM_FREE_API_MODEL estao configurados corretamente no servidor. Dica: use OpenRouter (https://openrouter.ai) para modelos gratuitos.`;
+      message = `O modelo "${selection.model}" nao foi encontrado no servidor LLM. Verifique se a chave de API esta correta e se o modelo esta disponivel.`;
     } else if (message.includes('401') || message.includes('Unauthorized') || message.includes('Authentication')) {
-      message = `Chave de API invalida para o provedor "${selection.provider}". Verifique sua chave nas Configuracoes ou configure LLM_FREE_API no servidor.`;
+      message = `Chave de API invalida para o provedor "${selection.provider}". Verifique sua chave nas Configuracoes.`;
     } else if (message.includes('429') || message.includes('rate') || message.includes('Rate')) {
       message = `Limite de requisicoes atingido para o provedor "${selection.provider}". Aguarde um momento e tente novamente.`;
     }

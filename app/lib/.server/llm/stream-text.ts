@@ -1,5 +1,5 @@
 import { streamText as _streamText, convertToCoreMessages, type CoreMessage } from 'ai';
-import { getModel, type ProviderId, type FreeApiConfig } from '~/lib/.server/llm/model';
+import { getModel, type ProviderId } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt, type DatabaseContext } from './prompts';
 import { buildTools } from './tools';
@@ -32,7 +32,6 @@ export interface ModelSelection {
   provider: ProviderId;
   model: string;
   apiKey: string;
-  freeApiConfig?: FreeApiConfig;
 }
 
 export function streamText(
@@ -61,7 +60,7 @@ export function streamText(
   const activeTools = buildTools(projectId, supabaseUrl, supabaseKey, serverOrigin);
 
   return _streamText({
-    model: getModel(selection.provider, selection.model, selection.apiKey, selection.freeApiConfig) as any,
+    model: getModel(selection.provider, selection.model, selection.apiKey) as any,
     system: getSystemPrompt(undefined, dbContext, planMode, customRules, language, serverOrigin),
     maxTokens: MAX_TOKENS,
     tools: activeTools,

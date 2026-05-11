@@ -2,13 +2,12 @@ import { atom, map } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
 import { activeProjectIdStore, projectsStore } from './project';
 
-export type ProviderId = 'anthropic' | 'openrouter' | 'google' | 'freeapi';
+export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
 export const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Anthropic',
   openrouter: 'OpenRouter',
   google: 'Google Gemini',
-  freeapi: 'Free API (OpenRouter)',
 };
 
 export interface ModelInfo {
@@ -25,9 +24,9 @@ export interface LLMState {
 const STORAGE_KEY = 'bolt.llm.settings';
 
 const DEFAULT_STATE: LLMState = {
-  provider: 'freeapi',
+  provider: 'openrouter',
   model: 'openrouter/free',
-  keys: { anthropic: '', openrouter: '', google: '', freeapi: '' },
+  keys: { anthropic: '', openrouter: '', google: '' },
 };
 
 function loadInitial(): LLMState {
@@ -36,19 +35,25 @@ function loadInitial(): LLMState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw);
-    const provider = (parsed.provider as ProviderId) ?? DEFAULT_STATE.provider;
-    const model = parsed.model ?? DEFAULT_STATE.model;
+    let provider = (parsed.provider as ProviderId) ?? DEFAULT_STATE.provider;
+    let model = parsed.model ?? DEFAULT_STATE.model;
     const keys = { ...DEFAULT_STATE.keys, ...(parsed.keys ?? {}) };
 
-    // Migrate: if the stored provider has no key and it's not freeapi, fall back to freeapi
-    // This prevents "Not Found" errors for users who never configured an API key
-    if (provider !== 'freeapi' && !keys[provider]) {
-      return { provider: 'freeapi', model: 'openrouter/free', keys };
+    // Migrate: if the stored provider was 'freeapi', fall back to openrouter
+    if (provider === 'freeapi') {
+      provider = 'openrouter';
+      model = 'openrouter/free';
     }
 
-    // Migrate: if the stored model is the old default 'gpt-4o-mini' for freeapi, update to 'openrouter/free'
-    if (provider === 'freeapi' && model === 'gpt-4o-mini') {
-      return { provider: 'freeapi', model: 'openrouter/free', keys };
+    // Migrate: if the stored provider has no key and it's not openrouter with free models, fall back to openrouter
+    if (provider !== 'openrouter' && !keys[provider]) {
+      return { provider: 'openrouter', model: 'openrouter/free', keys };
+    }
+
+    // Migrate: if the stored model is the old default 'gpt-4o-mini', update to 'openrouter/free'
+    if (model === 'gpt-4o-mini') {
+      model = 'openrouter/free';
+      provider = 'openrouter';
     }
 
     return { provider, model, keys };
@@ -63,14 +68,12 @@ export const modelsStore = map<Record<ProviderId, ModelInfo[]>>({
   anthropic: [],
   openrouter: [],
   google: [],
-  freeapi: [],
 });
 
 export const modelsLoadingStore = map<Record<ProviderId, boolean>>({
   anthropic: false,
   openrouter: false,
   google: false,
-  freeapi: false,
 });
 
 export const modelsErrorStore = atom<string | null>(null);
@@ -92,18 +95,22 @@ if (typeof window !== 'undefined') {
       const current = llmStore.get();
       let newProvider = (project.settings.provider as ProviderId) || current.provider;
       const newModel = project.settings.model || current.model;
-      // Migrate: if the project's saved provider has no key and it's not freeapi, fall back
-      if (newProvider !== 'freeapi' && !current.keys[newProvider]) {
-        newProvider = 'freeapi';
+      // Migrate: if the project's saved provider was freeapi, fall back to openrouter
+      if (newProvider === 'freeapi') {
+        newProvider = 'openrouter';
+      }
+      // Migrate: if the project's saved provider has no key and it's not openrouter, fall back
+      if (newProvider !== 'openrouter' && !current.keys[newProvider]) {
+        newProvider = 'openrouter';
       }
       // Only update if different to avoid infinite loops
       if (current.provider !== newProvider || current.model !== newModel) {
         llmStore.setKey('provider', newProvider);
-        llmStore.setKey('model', newProvider === 'freeapi' && current.provider !== 'freeapi' ? 'openrouter/free' : newModel);
+        llmStore.setKey('model', newProvider === 'openrouter' && current.provider !== 'openrouter' ? 'openrouter/free' : newModel);
       }
     }
   });
-} 
+}
 
 export async function syncKeysToSupabase() {
   const sb = getSupabase();
@@ -117,7 +124,6 @@ export async function syncKeysToSupabase() {
       anthropic_key: keys.anthropic,
       openrouter_key: keys.openrouter,
       google_key: keys.google,
-      freeapi_key: keys.freeapi,
       last_provider: provider,
       last_model: model,
       updated_at: new Date().toISOString(),
@@ -133,32 +139,37 @@ export async function loadKeysFromSupabase() {
   if (sb && user) {
     const { data, error } = await sb
       .from('profiles')
-      .select('anthropic_key, openrouter_key, google_key, freeapi_key, last_provider, last_model')
+      .select('anthropic_key, openrouter_key, google_key, last_provider, last_model')
       .eq('id', user.id)
       .single();
 
     if (!error && data) {
       const current = llmStore.get();
-      const restoredProvider = (data.last_provider as ProviderId) || current.provider;
-      const restoredModel = data.last_model || current.model;
+      let restoredProvider = (data.last_provider as ProviderId) || current.provider;
+      let restoredModel = data.last_model || current.model;
       const restoredKeys = {
         anthropic: data.anthropic_key || current.keys.anthropic,
         openrouter: data.openrouter_key || current.keys.openrouter,
         google: data.google_key || current.keys.google,
-        freeapi: (data as any).freeapi_key || current.keys.freeapi,
       };
 
-      // Migrate: if the restored provider has no key and it's not freeapi, fall back to freeapi
-      if (restoredProvider !== 'freeapi' && !restoredKeys[restoredProvider]) {
+      // Migrate: if the restored provider was 'freeapi', fall back to openrouter
+      if (restoredProvider === 'freeapi') {
+        restoredProvider = 'openrouter';
+        restoredModel = 'openrouter/free';
+      }
+
+      // Migrate: if the restored provider has no key and it's not openrouter, fall back to openrouter
+      if (restoredProvider !== 'openrouter' && !restoredKeys[restoredProvider]) {
         llmStore.set({
-          provider: 'freeapi',
+          provider: 'openrouter',
           model: 'openrouter/free',
           keys: restoredKeys,
         });
-      } else if (restoredProvider === 'freeapi' && restoredModel === 'gpt-4o-mini') {
+      } else if (restoredProvider === 'openrouter' && restoredModel === 'gpt-4o-mini') {
         // Migrate: update old default model to new default
         llmStore.set({
-          provider: 'freeapi',
+          provider: 'openrouter',
           model: 'openrouter/free',
           keys: restoredKeys,
         });
@@ -210,9 +221,7 @@ export function getChatBody() {
 
 export async function fetchModelsFor(provider: ProviderId): Promise<ModelInfo[]> {
   const key = llmStore.get().keys[provider];
-  // For freeapi, we can fetch models even without a user-provided key
-  // because the server has LLM_FREE_API env var
-  if (!key && provider !== 'freeapi') {
+  if (!key) {
     modelsStore.setKey(provider, []);
     return [];
   }
@@ -242,7 +251,7 @@ export async function refreshAllConfiguredModels() {
   const { keys } = llmStore.get();
   await Promise.all(
     (Object.keys(keys) as ProviderId[])
-      .filter((p) => keys[p] || p === 'freeapi') // Always try freeapi since server may have key
+      .filter((p) => keys[p])
       .map((p) => fetchModelsFor(p)),
   );
 }

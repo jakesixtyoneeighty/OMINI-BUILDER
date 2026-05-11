@@ -36,7 +36,7 @@ export interface ProjectSettings {
   logo: string;
   envVars: EnvVar[];
   previewMode: PreviewMode;
-  provider: 'anthropic' | 'openrouter' | 'google' | 'freeapi';
+  provider: 'anthropic' | 'openrouter' | 'google';
   model: string;
   lastDeploy: {
     url: string;
@@ -91,8 +91,8 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   logo: '',
   envVars: [],
   previewMode: 'webcontainer',
-  provider: 'freeapi',
-  model: 'gpt-4o-mini',
+  provider: 'openrouter',
+  model: 'openrouter/free',
   lastDeploy: { url: '', provider: '', siteId: '', deployedAt: '' },
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
@@ -268,7 +268,7 @@ export async function loadAllProjectsFromSupabase(): Promise<number> {
         logo: p.logo || '',
         customRules: p.custom_rules || '',
         previewMode: p.preview_mode || 'webcontainer',
-        provider: p.provider || 'freeapi',
+        provider: p.provider === 'freeapi' ? 'openrouter' : (p.provider || 'openrouter'),
         model: p.model || 'gpt-4o-mini',
         envVars: Array.isArray(p.env_vars) ? p.env_vars : [],
         lastDeploy: {
@@ -367,7 +367,7 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
       logo: data.logo || '',
       customRules: data.custom_rules || '',
       previewMode: data.preview_mode || 'webcontainer',
-      provider: data.provider || 'freeapi',
+      provider: data.provider === 'freeapi' ? 'openrouter' : (data.provider || 'openrouter'),
       model: data.model || 'gpt-4o-mini',
       envVars: Array.isArray(data.env_vars) ? data.env_vars : [],
       lastDeploy: {

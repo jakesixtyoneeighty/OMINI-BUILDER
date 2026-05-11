@@ -5,13 +5,13 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "./build/client"
 
 # Do NOT declare secrets here — they must be set in the Cloudflare Pages dashboard.
-# Required env vars for Cloudflare Pages deploy (free, no user API key needed):
+# Required env vars for Cloudflare Pages deploy:
 #   CLOUDFLARE_API_TOKEN  — API token with Pages Edit permission
 #   CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
-# Free LLM provider (required for chat to work without user API keys):
-#   LLM_FREE_API       — API key for the free LLM provider (e.g. OpenRouter key from https://openrouter.ai)
-#   LLM_FREE_API_BASE  — Base URL for the free LLM provider (default: https://openrouter.ai/api/v1)
-#   LLM_FREE_API_MODEL — Default model for free LLM (default: openrouter/free which auto-routes to free models)
+# LLM provider env vars (at least one required for chat to work):
+#   OPENROUTER_API_KEY           — OpenRouter API key (https://openrouter.ai) — supports 200+ models including free ones
+#   ANTHROPIC_API_KEY            — Anthropic API key (optional)
+#   GOOGLE_GENERATIVE_AI_API_KEY — Google Gemini API key (optional)
 # Optional:
 #   NETLIFY_DEFAULT_API_KEY — Netlify API key (only if using Netlify as provider)
 # [vars]
