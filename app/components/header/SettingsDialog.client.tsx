@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import {
   fetchModelsFor,
@@ -149,8 +150,8 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
         <div className="i-ph:gear text-base" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-[600px] max-w-[92vw] max-h-[90vh] overflow-y-auto rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl"
@@ -207,7 +208,8 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
