@@ -13,7 +13,7 @@ function getServerSupabase(context: any) {
 }
 
 interface DbAction {
-  action: 'init' | 'stats' | 'collections' | 'createCollection' | 'dropCollection' | 'getSchema' | 'query' | 'insert' | 'update' | 'delete' | 'count';
+  action: 'init' | 'stats' | 'collections' | 'createCollection' | 'dropCollection' | 'getSchema' | 'query' | 'insert' | 'update' | 'delete' | 'count' | 'authUsers' | 'authRegister' | 'authLogin';
   projectId: string;
   collection?: string;
   schema?: Record<string, { type: string; required?: boolean; unique?: boolean; default?: any }>;
@@ -25,6 +25,16 @@ interface DbAction {
   limit?: number;
   offset?: number;
   select?: string[];
+  password?: string;
+  email?: string;
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -68,7 +78,7 @@ async function dbAction({ context, request }: ActionFunctionArgs) {
     return json({ error: 'Invalid JSON body' }, { status: 400, headers: corsHeaders });
   }
 
-  const { action, projectId, collection, schema, data, rowId, where, orderBy, orderDir, limit, offset, select } = body;
+  const { action, projectId, collection, schema, data, rowId, where, orderBy, orderDir, limit, offset, select, email, password } = body;
 
   if (!projectId || !action) {
     return json({ error: 'Missing required fields: projectId, action' }, { status: 400, headers: corsHeaders });
@@ -532,6 +542,137 @@ async function dbAction({ context, request }: ActionFunctionArgs) {
         }
 
         return json({ success: true }, { headers: corsHeaders });
+      }
+
+      case 'authRegister': {
+        if (!email || !password) {
+          return json({ error: 'Missing email or password' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Ensure _auth collection exists
+        const authSchema = {
+          _id: { type: 'string', required: true, unique: true },
+          _createdAt: { type: 'string', required: true },
+          _updatedAt: { type: 'string', required: true },
+          email: { type: 'string', required: true, unique: true },
+          password_hash: { type: 'string', required: true },
+        };
+
+        // Upsert schema
+        const { data: existingSchema } = await sb
+          .from('app_db_schemas')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('collection_name', '_auth')
+          .single();
+
+        if (!existingSchema) {
+          await sb.from('app_db_schemas').insert({
+            project_id: projectId,
+            collection_name: '_auth',
+            schema_def: authSchema,
+          }).select().single();
+        }
+
+        // Check if email already exists
+        const { data: existingUser } = await sb
+          .from('app_db_data')
+          .select('row_id')
+          .eq('project_id', projectId)
+          .eq('collection_name', '_auth')
+          .eq('data->>email', email)
+          .single();
+
+        if (existingUser) {
+          return json({ error: 'Email already registered' }, { status: 409, headers: corsHeaders });
+        }
+
+        // Hash password and insert
+        const passwordHash = await hashPassword(password);
+        const newRowId = crypto.randomUUID();
+
+        const { data: inserted, error: insertError } = await sb
+          .from('app_db_data')
+          .insert({
+            project_id: projectId,
+            collection_name: '_auth',
+            row_id: newRowId,
+            data: { email, password_hash: passwordHash },
+          })
+          .select('row_id, data, created_at, updated_at')
+          .single();
+
+        if (insertError) {
+          return json({ error: `Registration failed: ${insertError.message}` }, { status: 500, headers: corsHeaders });
+        }
+
+        // Return user WITHOUT password
+        return json({
+          data: {
+            _id: inserted.row_id,
+            email,
+            _createdAt: inserted.created_at,
+            _updatedAt: inserted.updated_at,
+          },
+        }, { headers: corsHeaders });
+      }
+
+      case 'authLogin': {
+        if (!email || !password) {
+          return json({ error: 'Missing email or password' }, { status: 400, headers: corsHeaders });
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        const { data: user, error } = await sb
+          .from('app_db_data')
+          .select('row_id, data, created_at, updated_at')
+          .eq('project_id', projectId)
+          .eq('collection_name', '_auth')
+          .eq('data->>email', email)
+          .single();
+
+        if (error || !user) {
+          return json({ error: 'Invalid email or password' }, { status: 401, headers: corsHeaders });
+        }
+
+        const userData = user.data as Record<string, any>;
+        if (userData.password_hash !== passwordHash) {
+          return json({ error: 'Invalid email or password' }, { status: 401, headers: corsHeaders });
+        }
+
+        // Return user WITHOUT password
+        return json({
+          data: {
+            _id: user.row_id,
+            email: userData.email,
+            _createdAt: user.created_at,
+            _updatedAt: user.updated_at,
+          },
+        }, { headers: corsHeaders });
+      }
+
+      case 'authUsers': {
+        const { data: users, error } = await sb
+          .from('app_db_data')
+          .select('row_id, data, created_at, updated_at')
+          .eq('project_id', projectId)
+          .eq('collection_name', '_auth')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          return json({ error: `Failed to fetch auth users: ${error.message}` }, { status: 500, headers: corsHeaders });
+        }
+
+        // Return users WITHOUT password_hash
+        const safeUsers = (users || []).map((u: any) => ({
+          _id: u.row_id,
+          email: (u.data as Record<string, any>)?.email || '',
+          _createdAt: u.created_at,
+          _updatedAt: u.updated_at,
+        }));
+
+        return json({ data: safeUsers }, { headers: corsHeaders });
       }
 
       default:

@@ -4,7 +4,7 @@ import { atom } from 'nanostores';
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore } from '~/lib/stores/project';
+import { activeProjectIdStore, saveProjectMessages, loadProjectMessages } from '~/lib/stores/project';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
 import type { ChatHistoryItem } from './db';
 
@@ -50,63 +50,41 @@ export function useChatHistory() {
   const [urlId, setUrlId] = useState<string | undefined>();
 
   useEffect(() => {
-    // Always set the active project ID from the URL so Chat.client.tsx can load it from Supabase
     if (mixedId) {
       activeProjectIdStore.set(mixedId);
     }
 
-    getDb().then((database) => {
-      if (!database) {
-        setReady(true);
-
-        if (persistenceEnabled) {
-          toast.error(`Chat persistence is unavailable`);
-        }
-
-        return;
-      }
-
+    (async () => {
       if (mixedId) {
-        getMessages(database, mixedId)
-          .then((storedMessages) => {
-            if (storedMessages && storedMessages.messages.length > 0) {
-              setInitialMessages(storedMessages.messages);
-              setUrlId(storedMessages.urlId);
-              description.set(storedMessages.description);
-              chatId.set(storedMessages.id);
-            } else {
-              // Project not found in IndexedDB — it may be a cloud-only project
-              // Don't redirect to / — let Chat.client.tsx load it from Supabase
-              chatId.set(mixedId);
-            }
-
-            setReady(true);
-          })
-          .catch((error) => {
-            toast.error(error.message);
-            // Still set ready so the chat UI renders (project may load from Supabase)
+        try {
+          const messages = await loadProjectMessages(mixedId);
+          if (messages.length > 0) {
+            setInitialMessages(messages);
             chatId.set(mixedId);
-            setReady(true);
-          });
-      } else {
-        setReady(true);
+          } else {
+            chatId.set(mixedId);
+          }
+        } catch (error: any) {
+          toast.error(error.message);
+          chatId.set(mixedId);
+        }
       }
-    });
+      setReady(true);
+    })();
   }, []);
 
   return {
     ready: !mixedId || ready,
     initialMessages,
     storeMessageHistory: async (messages: Message[]) => {
+      if (messages.length === 0) return;
+
       const database = await getDb();
-      if (!database || messages.length === 0) {
-        return;
-      }
 
       const { firstArtifact } = workbenchStore;
 
       if (!urlId && firstArtifact?.id) {
-        const urlId = await getUrlId(database, firstArtifact.id);
+        const urlId = database ? await getUrlId(database, firstArtifact.id) : firstArtifact.id;
 
         navigateChat(urlId);
         setUrlId(urlId);
@@ -116,17 +94,29 @@ export function useChatHistory() {
         description.set(firstArtifact?.title);
       }
 
-      if (initialMessages.length === 0 && !chatId.get()) {
-        const nextId = await getNextId(database);
-
-        chatId.set(nextId);
-
-        if (!urlId) {
-          navigateChat(nextId);
+      const currentChatId = chatId.get();
+      if (!currentChatId) {
+        if (database) {
+          const nextId = await getNextId(database);
+          chatId.set(nextId);
+          if (!urlId) {
+            navigateChat(nextId);
+          }
         }
       }
 
-      await setMessages(database, chatId.get() as string, messages, urlId, description.get());
+      const id = chatId.get() as string;
+
+      // Save to IndexedDB (local cache)
+      if (database) {
+        await setMessages(database, id, messages, urlId, description.get());
+      }
+
+      // Save to Supabase (cloud)
+      const projectId = activeProjectIdStore.get();
+      if (projectId && projectId !== 'default') {
+        await saveProjectMessages(projectId, messages, description.get());
+      }
     },
   };
 }

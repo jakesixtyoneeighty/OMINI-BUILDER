@@ -1,6 +1,8 @@
 import { atom, map } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
 import { authStore } from './auth';
+import { getDb, getMessages, setMessages } from '~/lib/persistence';
+import type { Message } from 'ai';
 
 export interface EnvVar {
   key: string;
@@ -482,6 +484,96 @@ export async function renameProject(projectId: string, newName: string): Promise
 
 export function envVarsToFile(envVars: EnvVar[]): string {
   return envVars.filter((v) => v.key.trim()).map((v) => `${v.key.trim()}=${v.value}`).join('\n') + '\n';
+}
+
+/**
+ * Save messages for a project to Supabase.
+ * Also saves to IndexedDB as a local cache/fallback.
+ */
+export async function saveProjectMessages(projectId: string, messages: Message[], description?: string): Promise<void> {
+  // Always save to IndexedDB first (fast local cache)
+  try {
+    const database = await getDb();
+    if (database) {
+      await setMessages(database, projectId, messages, undefined, description);
+    }
+  } catch (err) {
+    console.warn('[saveProjectMessages] Failed to cache in IndexedDB:', err);
+  }
+
+  // Save to Supabase (cloud)
+  const sb = getSupabase();
+  const { user } = authStore.get();
+  if (!sb || !user) return;
+
+  try {
+    const update: Record<string, any> = {
+      messages: messages as any,
+      updated_at: new Date().toISOString(),
+    };
+    if (description) {
+      update.description = description;
+    }
+
+    const { error } = await sb
+      .from('projects')
+      .update(update)
+      .eq('id', projectId)
+      .eq('owner_id', user.id);
+
+    if (error) {
+      console.error('[saveProjectMessages] Supabase error:', error.message);
+    }
+  } catch (err) {
+    console.error('[saveProjectMessages] Failed to save to cloud:', err);
+  }
+}
+
+/**
+ * Load messages for a project from Supabase (cloud-first), falling back to IndexedDB.
+ */
+export async function loadProjectMessages(projectId: string): Promise<Message[]> {
+  // Try Supabase first
+  const sb = getSupabase();
+  const { user } = authStore.get();
+  if (sb && user) {
+    try {
+      const { data, error } = await sb
+        .from('projects')
+        .select('messages, description')
+        .eq('id', projectId)
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!error && data && Array.isArray(data.messages) && data.messages.length > 0) {
+        // Cache to IndexedDB for offline access
+        try {
+          const database = await getDb();
+          if (database) {
+            await setMessages(database, projectId, data.messages as Message[], undefined, data.description || undefined);
+          }
+        } catch {}
+        return data.messages as Message[];
+      }
+    } catch (err) {
+      console.warn('[loadProjectMessages] Supabase load failed, trying IndexedDB:', err);
+    }
+  }
+
+  // Fallback to IndexedDB
+  try {
+    const database = await getDb();
+    if (database) {
+      const stored = await getMessages(database, projectId);
+      if (stored && stored.messages.length > 0) {
+        return stored.messages;
+      }
+    }
+  } catch (err) {
+    console.warn('[loadProjectMessages] IndexedDB load failed:', err);
+  }
+
+  return [];
 }
 
 export async function writeEnvFile(envVars: EnvVar[]) {

@@ -121,7 +121,7 @@ function ProjectsContent() {
         try {
           const { data, error } = await sb
             .from('projects')
-            .select('id, name, description, logo, updated_at, created_at')
+            .select('id, name, description, logo, updated_at, created_at, messages')
             .eq('owner_id', currentUser.id)
             .order('updated_at', { ascending: false });
           if (!error && data) {
@@ -144,7 +144,7 @@ function ProjectsContent() {
                   description: p.description || '',
                   logo: p.logo || '',
                   timestamp: p.updated_at || p.created_at || '',
-                  messageCount: 0,
+                  messageCount: Array.isArray(p.messages) ? p.messages.length : 0,
                   source: 'cloud',
                 });
               }

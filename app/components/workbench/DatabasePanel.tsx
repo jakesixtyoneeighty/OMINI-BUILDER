@@ -49,6 +49,13 @@ export const DatabasePanel = memo(() => {
   const [showAddRow, setShowAddRow] = useState(false);
   const [newRowData, setNewRowData] = useState('');
 
+  // Auth state
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
+  const [authUsers, setAuthUsers] = useState<{ _id: string; email: string; _createdAt: string }[]>([]);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+
   // Local form state for editing
   const [editType, setEditType] = useState(dbType);
   const [editSupabase, setEditSupabase] = useState(supabaseConfig);
@@ -67,7 +74,7 @@ export const DatabasePanel = memo(() => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, projectId: activeId, ...extra }),
     });
-    const data = await res.json();
+    const data: any = await res.json();
     if (!res.ok) throw new Error(data.error || 'API call failed');
     return data;
   }, [activeId]);
@@ -216,6 +223,17 @@ export const DatabasePanel = memo(() => {
       try {
         await omniApiCall('init');
       } catch {}
+
+      // Auto-create _auth collection
+      try {
+        await omniApiCall('createCollection', {
+          collection: '_auth',
+          schema: {
+            email: { type: 'string', required: true, unique: true },
+            password_hash: { type: 'string', required: true },
+          },
+        });
+      } catch {}
       return;
     }
 
@@ -307,6 +325,60 @@ export const DatabasePanel = memo(() => {
       await loadOmniData();
     } catch (err: any) {
       toast.error(err.message || 'Erro ao excluir registro');
+    }
+  };
+
+  // Auth handlers
+  const loadAuthUsers = useCallback(async () => {
+    try {
+      const res = await omniApiCall('authUsers');
+      setAuthUsers(res.data || []);
+    } catch (err: any) {
+      console.error('Failed to load auth users:', err);
+    }
+  }, [omniApiCall]);
+
+  const handleAuthRegister = async () => {
+    if (!authEmail.trim() || !authPassword.trim()) {
+      toast.error('Email e senha são obrigatórios');
+      return;
+    }
+    try {
+      await omniApiCall('authRegister', { email: authEmail.trim(), password: authPassword });
+      toast.success('Usuário registrado com sucesso!');
+      setAuthEmail('');
+      setAuthPassword('');
+      await loadAuthUsers();
+      await loadOmniData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao registrar');
+    }
+  };
+
+  const handleAuthLogin = async () => {
+    if (!authEmail.trim() || !authPassword.trim()) {
+      toast.error('Email e senha são obrigatórios');
+      return;
+    }
+    try {
+      const res = await omniApiCall('authLogin', { email: authEmail.trim(), password: authPassword });
+      toast.success(`Login OK! User ID: ${res.data?._id?.slice(0, 8)}...`);
+      setAuthEmail('');
+      setAuthPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Login falhou');
+    }
+  };
+
+  const handleDeleteAuthUser = async (userId: string) => {
+    if (!confirm('Excluir este usuário?')) return;
+    try {
+      await omniApiCall('delete', { collection: '_auth', rowId: userId });
+      toast.success('Usuário excluído');
+      await loadAuthUsers();
+      await loadOmniData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir');
     }
   };
 
@@ -558,7 +630,7 @@ export const DatabasePanel = memo(() => {
                   onClick={loadOmniData}
                   className="text-[10px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors flex items-center gap-1"
                 >
-                  <div className={classNames('i-ph:arrow-clockwise text-xs', loading && 'animate-spin')} />
+                  <div className={classNames('i-ph:arrow-clockwise text-xs', loading ? 'animate-spin' : '')} />
                   {t('workbench.refresh')}
                 </button>
               </div>
@@ -614,9 +686,115 @@ export const DatabasePanel = memo(() => {
               </div>
             )}
 
+            {/* Auth collection - special entry */}
+            {tables.some(t => t.name === '_auth') && (
+              <div
+                className={classNames(
+                  'flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all group cursor-pointer mb-1',
+                  showAuthPanel
+                    ? 'bg-blue-500/15 text-blue-400'
+                    : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary',
+                )}
+                onClick={() => { setShowAuthPanel(!showAuthPanel); if (!showAuthPanel) loadAuthUsers(); }}
+              >
+                <div className="i-ph:shield-check text-sm shrink-0 text-blue-400" />
+                <span className="font-mono font-medium">Auth</span>
+                <span className="text-[10px] text-bolt-elements-textTertiary shrink-0">
+                  {authUsers.length > 0 ? authUsers.length : tables.find(t => t.name === '_auth')?.rowCount || 0}
+                </span>
+                <div className="i-ph:caret-right text-xs ml-auto transition-transform" style={{ transform: showAuthPanel ? 'rotate(90deg)' : '' }} />
+              </div>
+            )}
+
+            {/* Auth Panel */}
+            {showAuthPanel && (
+              <div className="mb-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="i-ph:shield-check text-lg text-blue-400" />
+                  <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Auth</h3>
+                  <span className="text-[10px] text-bolt-elements-textTertiary">Autenticação de usuários</span>
+                </div>
+
+                {/* Register/Login Form */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => setAuthMode('register')}
+                      className={classNames(
+                        'text-xs px-3 py-1.5 rounded-lg font-medium transition-all',
+                        authMode === 'register' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary'
+                      )}
+                    >
+                      Registrar
+                    </button>
+                    <button
+                      onClick={() => setAuthMode('login')}
+                      className={classNames(
+                        'text-xs px-3 py-1.5 rounded-lg font-medium transition-all',
+                        authMode === 'login' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary'
+                      )}
+                    >
+                      Login
+                    </button>
+                  </div>
+                  <input
+                    type="email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="Senha"
+                    className="w-full px-3 py-2 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                  <button
+                    onClick={authMode === 'register' ? handleAuthRegister : handleAuthLogin}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-all"
+                  >
+                    {authMode === 'register' ? 'Registrar Usuário' : 'Testar Login'}
+                  </button>
+                </div>
+
+                {/* Users List */}
+                <div>
+                  <h4 className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider mb-2">
+                    Usuários Registrados ({authUsers.length})
+                  </h4>
+                  {authUsers.length === 0 ? (
+                    <p className="text-[10px] text-bolt-elements-textTertiary text-center py-4">Nenhum usuário registrado</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {authUsers.map((u) => (
+                        <div key={u._id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-xs group">
+                          <div className="i-ph:user-circle text-blue-400 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-bolt-elements-textPrimary truncate">{u.email}</div>
+                            <div className="text-[9px] text-bolt-elements-textTertiary">
+                              ID: {u._id.slice(0, 8)}... · Criado: {new Date(u._createdAt).toLocaleDateString('pt-BR')}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteAuthUser(u._id)}
+                            className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all shrink-0"
+                            title="Excluir usuário"
+                          >
+                            <div className="i-ph:trash text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {tables.length > 0 && (
               <div className="space-y-1">
-                {tables.map((table) => (
+                {tables.filter(t => t.name !== '_auth').map((table) => (
                   <div
                     key={table.name}
                     className={classNames(
@@ -754,7 +932,7 @@ export const DatabasePanel = memo(() => {
                   onClick={fetchTables}
                   className="text-[10px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors flex items-center gap-1"
                 >
-                  <div className={classNames('i-ph:arrow-clockwise text-xs', loading && 'animate-spin')} />
+                  <div className={classNames('i-ph:arrow-clockwise text-xs', loading ? 'animate-spin' : '')} />
                   {t('workbench.refresh')}
                 </button>
               </div>
