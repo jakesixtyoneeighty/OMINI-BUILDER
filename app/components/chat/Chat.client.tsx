@@ -1067,6 +1067,13 @@ The database is ready to use. Please configure the project to connect to it and 
     chatStore.setKey('planMode', !planMode);
   }, [planMode]);
 
+  const handleProceed = useCallback(() => {
+    // Switch off plan mode so the AI starts building
+    chatStore.setKey('planMode', false);
+    // Send the approval message so the AI proceeds with implementation
+    append({ role: 'user', content: 'Proceed with the plan. Implement all the steps now.' });
+  }, [append]);
+
   const handleCloneSite = useCallback(async (url: string) => {
     if (!chatStarted) {
       runAnimation();
@@ -1124,6 +1131,7 @@ The database is ready to use. Please configure the project to connect to it and 
         enhancePrompt={() => enhancePrompt(input, setInput)}
         planMode={planMode}
         onTogglePlanMode={handleTogglePlanMode}
+        onProceed={handleProceed}
         tokenUsage={tokenUsage}
         userQuestions={userQuestions}
         answeredQuestions={answeredQuestions}

@@ -63,6 +63,7 @@ interface BaseChatProps {
   onCloneSite?: (url: string) => void | Promise<void>;
   planMode?: boolean;
   onTogglePlanMode?: () => void;
+  onProceed?: () => void;
   tokenUsage?: Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>;
   userQuestions?: Record<number, any>;
   answeredQuestions?: Set<number>;
@@ -93,6 +94,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       onCloneSite,
       planMode = false,
       onTogglePlanMode,
+      onProceed,
       tokenUsage,
       userQuestions,
       answeredQuestions,
@@ -704,6 +706,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           userQuestions={userQuestions}
                           answeredQuestions={answeredQuestions}
                           onQuestionAnswer={onQuestionAnswer}
+                          planMode={planMode}
+                          onProceed={onProceed}
                         />
                       </>
                     )}

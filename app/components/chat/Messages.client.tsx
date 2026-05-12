@@ -4,6 +4,7 @@ import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { UserQuestionCard, type UserQuestionData } from './UserQuestionCard';
+import { useT } from '~/lib/i18n/useT';
 
 interface MessagesProps {
   id?: string;
@@ -14,10 +15,22 @@ interface MessagesProps {
   userQuestions?: Record<number, UserQuestionData>;
   answeredQuestions?: Set<number>;
   onQuestionAnswer?: (msgIndex: number, answer: string) => void;
+  planMode?: boolean;
+  onProceed?: () => void;
 }
 
 export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: MessagesProps, ref) => {
-  const { id, isStreaming = false, messages = [], tokenUsage, userQuestions, answeredQuestions, onQuestionAnswer } = props;
+  const { id, isStreaming = false, messages = [], tokenUsage, userQuestions, answeredQuestions, onQuestionAnswer, planMode, onProceed } = props;
+  const t = useT();
+
+  // Find the last assistant message index when in plan mode and not streaming
+  const lastAssistantIndex = React.useMemo(() => {
+    if (!planMode || isStreaming || messages.length === 0) return -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return i;
+    }
+    return -1;
+  }, [planMode, isStreaming, messages]);
 
   return (
     <div id={id} ref={ref} className={props.className}>
@@ -55,6 +68,22 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                           onAnswer={(answer) => onQuestionAnswer?.(index, answer)}
                           answered={answeredQuestions?.has(index)}
                         />
+                      )}
+                      {/* Proceed button: shows after the last assistant message in plan mode when not streaming */}
+                      {planMode && !isStreaming && index === lastAssistantIndex && onProceed && (
+                        <div className="mt-4 flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={onProceed}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-bolt-elements-item-contentAccent text-white hover:brightness-110 shadow-md hover:shadow-lg transition-all active:scale-[0.97]"
+                          >
+                            <div className="i-ph:play-fill text-base" />
+                            {t('plan.proceed')}
+                          </button>
+                          <span className="text-xs text-bolt-elements-textTertiary">
+                            {t('plan.proceedHint')}
+                          </span>
+                        </div>
                       )}
                     </>
                   )}
