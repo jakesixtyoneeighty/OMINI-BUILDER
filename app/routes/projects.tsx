@@ -1,7 +1,8 @@
 import { json, type MetaFunction } from '@remix-run/cloudflare';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { toast } from 'react-toastify';
+import { useStore } from '@nanostores/react';
 import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
@@ -82,6 +83,10 @@ function ProjectsContent() {
   const [dialogContent, setDialogContent] = useState<{ type: 'delete'; project: ProjectCard } | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
+  // Subscribe to auth state reactively
+  const { user } = useStore(authStore);
+  const userIdRef = useRef<string | null>(null);
+
   const loadProjects = useCallback(() => {
     async function load() {
       setLoading(true);
@@ -109,15 +114,15 @@ function ProjectsContent() {
         console.error('Failed to load from IndexedDB:', error);
       }
 
-      // Load from Supabase (cloud projects)
+      // Load from Supabase (cloud projects) — use reactive user from hook
       const sb = getSupabase();
-      const { user } = authStore.get();
-      if (sb && user) {
+      const currentUser = user || authStore.get().user;
+      if (sb && currentUser) {
         try {
           const { data, error } = await sb
             .from('projects')
             .select('id, name, description, logo, updated_at, created_at')
-            .eq('owner_id', user.id)
+            .eq('owner_id', currentUser.id)
             .order('updated_at', { ascending: false });
           if (!error && data) {
             for (const p of data) {
@@ -144,10 +149,14 @@ function ProjectsContent() {
                 });
               }
             }
+          } else if (error) {
+            console.error('Supabase query error:', error.message);
           }
         } catch (error) {
           console.error('Failed to load from Supabase:', error);
         }
+      } else if (!sb) {
+        console.warn('[Projects] Supabase not configured — cloud projects will not appear. Set SUPABASE_URL and SUPABASE_ANON_KEY.');
       }
 
       // Sort by timestamp descending
@@ -161,11 +170,21 @@ function ProjectsContent() {
       setLoading(false);
     }
     load();
-  }, []);
+  }, [user, t]);
 
+  // Reload when user changes (login/logout)
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    if (currentUserId !== userIdRef.current) {
+      userIdRef.current = currentUserId;
+      loadProjects();
+    }
+  }, [user, loadProjects]);
+
+  // Initial load
   useEffect(() => {
     loadProjects();
-  }, [loadProjects]);
+  }, []);
 
   const filtered = search
     ? projects.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))

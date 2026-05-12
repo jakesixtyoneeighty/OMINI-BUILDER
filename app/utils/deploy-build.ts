@@ -114,9 +114,10 @@ async function hasRootIndexHtml(wc: WebContainer): Promise<boolean> {
  * Run a build command in the WebContainer and wait for completion.
  */
 async function runBuildCommand(wc: WebContainer, command: string): Promise<{ exitCode: number; log: string }> {
-  const process = await wc.spawn('jsh', ['-c', command], {
-    env: { npm_config_yes: 'true', NODE_ENV: 'production' },
-  });
+  // NOTE: Do NOT pass a custom `env` object — it replaces (not merges) the entire
+  // environment, which wipes out PATH and causes "exit code 127" (command not found).
+  // Instead, we prefix the command with the env vars we need.
+  const process = await wc.spawn('jsh', ['-c', `npm_config_yes=true NODE_ENV=production ${command}`]);
 
   let log = '';
   process.output.pipeTo(
