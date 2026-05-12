@@ -3,6 +3,8 @@ import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
 interface DeployFile {
   path: string;
   content: string;
+  /** If true, content is base64-encoded binary data */
+  binary?: boolean;
 }
 
 interface DeployBody {
@@ -11,19 +13,6 @@ interface DeployBody {
 }
 
 const CF_API = 'https://api.cloudflare.com/client/v4';
-
-/**
- * Compute SHA1 hash using Web Crypto API.
- * Cloudflare Pages Direct Upload requires a manifest mapping
- * file paths to their SHA1 hashes.
- */
-async function sha1(content: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(content);
-  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 /**
  * Build the multipart/form-data body for Cloudflare Pages Direct Upload.
@@ -42,11 +31,27 @@ async function buildMultipartBody(files: DeployFile[]): Promise<{ formData: Form
 
   for (const f of files) {
     const cleanPath = f.path.replace(/^\/+/, '');
-    const hash = await sha1(f.content);
+
+    let fileData: Uint8Array;
+    if (f.binary) {
+      // Decode base64 content back to binary
+      const binaryStr = atob(f.content);
+      fileData = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        fileData[i] = binaryStr.charCodeAt(i);
+      }
+    } else {
+      fileData = new TextEncoder().encode(f.content);
+    }
+
+    // Compute SHA1 from the actual file bytes (not the base64 string)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', fileData);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     manifest[cleanPath] = hash;
 
     // Add file content as a Blob with the path as the field name
-    formData.append(cleanPath, new Blob([f.content], { type: 'application/octet-stream' }), cleanPath);
+    formData.append(cleanPath, new Blob([fileData], { type: 'application/octet-stream' }), cleanPath);
   }
 
   // The manifest must be a JSON string in a field called "manifest"
@@ -196,7 +201,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     // Build the final URL
     // Cloudflare Pages URL format: https://<project-subdomain>.pages.dev
-    const siteUrl = `https://${projectSubdomain}.pages.dev`;
+    // NOTE: The Cloudflare API's `subdomain` field may already include ".pages.dev"
+    // (e.g., "my-project.pages.dev"), so we must avoid duplicating it.
+    const cleanSubdomain = projectSubdomain.replace(/\.pages\.dev$/i, '');
+    const siteUrl = `https://${cleanSubdomain}.pages.dev`;
 
     // ── Step 6: Wait for deployment to be ready (poll up to 60s) ──
     let deployReady = false;
@@ -242,11 +250,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
     }
 
+    // Prefer the URL returned by the Cloudflare deploy API as it is guaranteed correct.
+    // Fall back to our constructed siteUrl only if the API doesn't provide one.
+    const finalUrl = deployData.result?.url || siteUrl;
+
     return json({
       success: true,
       projectName: name,
-      subdomain: projectSubdomain,
-      url: siteUrl,
+      subdomain: cleanSubdomain,
+      url: finalUrl,
+      siteUrl,
       deployUrl: deployData.result?.url || siteUrl,
       deployId,
       processing: !deployReady,

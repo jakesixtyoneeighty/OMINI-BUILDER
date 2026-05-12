@@ -12,6 +12,8 @@ import { webcontainer } from '~/lib/webcontainer';
 export interface BuildFile {
   path: string;
   content: string;
+  /** If true, content is base64-encoded binary data */
+  binary?: boolean;
 }
 
 export interface BuildResult {
@@ -134,6 +136,18 @@ async function runBuildCommand(wc: WebContainer, command: string): Promise<{ exi
 }
 
 /**
+ * Convert a Uint8Array to a base64 string.
+ */
+function arrayBufferToBase64(buffer: Uint8Array): string {
+  let binary = '';
+  const len = buffer.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(buffer[i]);
+  }
+  return btoa(binary);
+}
+
+/**
  * Recursively read all files from a directory in the WebContainer.
  */
 async function readDirectoryRecursive(wc: WebContainer, dir: string, basePath: string = ''): Promise<BuildFile[]> {
@@ -157,12 +171,44 @@ async function readDirectoryRecursive(wc: WebContainer, dir: string, basePath: s
       const subFiles = await readDirectoryRecursive(wc, fullPath, relativePath);
       files.push(...subFiles);
     } else if (entry.isFile()) {
+      // Determine if the file is likely text or binary based on extension
+      const textExtensions = new Set([
+        '.html', '.htm', '.css', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx',
+        '.json', '.xml', '.svg', '.md', '.txt', '.yaml', '.yml', '.toml',
+        '.map', '.webmanifest', '.appcache', '.ics', '.csv', '.ini',
+        '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
+        '.py', '.rb', '.go', '.rs', '.java', '.kt', '.c', '.cpp', '.h',
+        '.graphql', '.gql', '.vue', '.svelte', '.astro',
+        '.less', '.scss', '.sass', '.styl',
+        '.conf', '.cfg', '.env', '.properties',
+        '_redirects', '_headers',
+      ]);
+      const ext = relativePath.includes('.') ? '.' + relativePath.split('.').pop()!.toLowerCase() : '';
+      const isText = textExtensions.has(ext) || ext === '' /* no extension — try text first */;
+
       try {
-        const content = await wc.fs.readFile(fullPath, 'utf8');
-        files.push({ path: relativePath, content });
+        if (isText) {
+          const content = await wc.fs.readFile(fullPath, 'utf8');
+          files.push({ path: relativePath, content, binary: false });
+        } else {
+          // Binary file: read as Uint8Array and base64-encode
+          const raw = await wc.fs.readFile(fullPath);
+          const base64 = arrayBufferToBase64(raw);
+          files.push({ path: relativePath, content: base64, binary: true });
+        }
       } catch {
-        // Binary file or read error — skip
-        console.warn(`[deploy-build] Skipping binary/unreadable file: ${fullPath}`);
+        // If text read failed, try binary
+        if (isText) {
+          try {
+            const raw = await wc.fs.readFile(fullPath);
+            const base64 = arrayBufferToBase64(raw);
+            files.push({ path: relativePath, content: base64, binary: true });
+          } catch {
+            console.warn(`[deploy-build] Skipping unreadable file: ${fullPath}`);
+          }
+        } else {
+          console.warn(`[deploy-build] Skipping unreadable file: ${fullPath}`);
+        }
       }
     }
   }
