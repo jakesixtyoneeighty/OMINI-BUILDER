@@ -21,13 +21,24 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   const currentProject = projects[activeId];
-  const isActive = !!(activeId && activeId !== 'default');
+
+  // Don't render if user is not logged in (no point showing save button)
 
   // The actual save function used by both manual and auto save
   const doSave = useCallback(async () => {
     const pid = activeProjectIdStore.get();
-    if (pid === 'default') return;
-    const proj = projectsStore.get()[pid];
+
+    // If project is still "default", create it in Supabase first
+    if (pid === 'default') {
+      const proj = projectsStore.get()[pid];
+      const projectName = proj?.name || t('projectName.untitledProject');
+      await updateActiveProjectSettings({ name: projectName });
+      // After this, activeProjectIdStore should now have a UUID
+    }
+
+    const newPid = activeProjectIdStore.get();
+    if (newPid === 'default') return;
+    const proj = projectsStore.get()[newPid];
     if (!proj) return;
 
     const settings = {
@@ -48,7 +59,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
 
   // Auto-save timer: runs only when logged in + toggle on
   useEffect(() => {
-    if (!user || !autoSaveOn || !activeId || activeId === 'default') {
+    if (!user || !autoSaveOn) {
       if (autoSaveTimerRef.current) {
         clearInterval(autoSaveTimerRef.current);
         autoSaveTimerRef.current = null;
@@ -70,7 +81,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
     return () => {
       if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
-  }, [user, autoSaveOn, activeId, doSave]);
+  }, [user, autoSaveOn, doSave]);
 
   const handleSave = useCallback(async () => {
     if (!user && supabaseEnabled) {
@@ -94,8 +105,8 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
     }
   }, [user, doSave]);
 
-  // Don't render if no project active — AFTER all hooks
-  if (!isActive) {
+  // Don't render if no user — AFTER all hooks
+  if (!user) {
     return null;
   }
 

@@ -4,7 +4,7 @@ import { atom } from 'nanostores';
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore, saveProjectMessages, loadProjectMessages } from '~/lib/stores/project';
+import { activeProjectIdStore, saveProjectMessages, loadProjectMessages, updateActiveProjectSettings } from '~/lib/stores/project';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
 import type { ChatHistoryItem } from './db';
 
@@ -40,6 +40,9 @@ export const db = undefined as IDBDatabase | undefined;
 
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
+
+// Track whether we're in the process of creating a project in Supabase
+let _creatingProject = false;
 
 export function useChatHistory() {
   const navigate = useNavigate();
@@ -112,8 +115,27 @@ export function useChatHistory() {
         await setMessages(database, id, messages, urlId, description.get());
       }
 
+      // If the project is still "default", create it in Supabase first
+      let projectId = activeProjectIdStore.get();
+      if (projectId === 'default' || !projectId) {
+        if (!_creatingProject) {
+          _creatingProject = true;
+          try {
+            // Extract a project name from the first user message or artifact title
+            const projectName = firstArtifact?.title || description.get() || 'Untitled Project';
+            await updateActiveProjectSettings({ name: projectName });
+            // After updateActiveProjectSettings, the activeProjectIdStore should now have a UUID
+            projectId = activeProjectIdStore.get();
+            console.log('[useChatHistory] Project created in Supabase:', projectId);
+          } catch (err) {
+            console.error('[useChatHistory] Failed to create project in Supabase:', err);
+          } finally {
+            _creatingProject = false;
+          }
+        }
+      }
+
       // Save to Supabase (cloud)
-      const projectId = activeProjectIdStore.get();
       if (projectId && projectId !== 'default') {
         await saveProjectMessages(projectId, messages, description.get());
       }
