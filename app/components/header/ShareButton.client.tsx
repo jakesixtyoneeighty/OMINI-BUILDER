@@ -169,6 +169,13 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
       return;
     }
 
+    // Validate that projectId is a valid UUID (saved to Supabase)
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!projectId || projectId === 'default' || !UUID_REGEX.test(projectId)) {
+      toast.error('You need to save your project first before sharing it. Send a message in the chat to save the project.');
+      return;
+    }
+
     if (shareType === 'collaborative' && !collaboratorEmail.trim()) {
       toast.error(t('share.emailRequired'));
       return;

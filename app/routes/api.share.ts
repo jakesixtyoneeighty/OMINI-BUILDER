@@ -1,6 +1,11 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { createClient } from '@supabase/supabase-js';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUUID(value: string): boolean {
+  return UUID_REGEX.test(value);
+}
+
 function getServerSupabase(context: any) {
   let env: Record<string, any> = {};
   if (context?.cloudflare?.env) {
@@ -38,6 +43,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // Get shared project data by share ID (for basic share link)
   if (shareId) {
+    if (!isUUID(shareId)) {
+      return json({ error: 'Invalid share ID format' }, { status: 400 });
+    }
+
     const { data: share, error } = await supabase
       .from('project_shares')
       .select('id, project_id, share_type, share_token, created_at')
@@ -102,6 +111,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // Get shares for a specific project
   if (projectId) {
+    if (!isUUID(projectId)) {
+      return json({ shares: [] });
+    }
+
     const { data: shares, error } = await supabase
       .from('project_shares')
       .select('id, share_type, collaborator_email, share_token, status, created_at')
@@ -133,6 +146,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (shareAction === 'create') {
     if (!projectId) {
       return json({ error: 'projectId is required' }, { status: 400 });
+    }
+    if (!isUUID(projectId)) {
+      return json({ error: 'Project must be saved to Supabase before sharing. Please save your project first.' }, { status: 400 });
     }
     if (!shareType || !['collaborative', 'basic'].includes(shareType)) {
       return json({ error: 'shareType must be "collaborative" or "basic"' }, { status: 400 });

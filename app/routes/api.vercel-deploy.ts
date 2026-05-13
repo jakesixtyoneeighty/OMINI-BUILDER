@@ -12,7 +12,9 @@ interface DeployBody {
   files: DeployFile[];
 }
 
-const VERCEL_API = 'https://api.vercel.com/v13';
+const VERCEL_API = 'https://api.vercel.com';
+// Vercel REST API uses different versions per endpoint:
+// v2 = user, teams | v9 = projects | v13 = deployments
 
 function encodeFile(content: string): string {
   if (typeof Buffer !== 'undefined') {
@@ -48,7 +50,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   try {
     // Validate token by fetching user info
-    const meRes = await fetch(`${VERCEL_API}/user`, {
+    const meRes = await fetch(`${VERCEL_API}/v2/user`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!meRes.ok) {
@@ -57,14 +59,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     // Get or list teams
-    const teamsRes = await fetch(`${VERCEL_API}/teams`, {
+    const teamsRes = await fetch(`${VERCEL_API}/v2/teams`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     let teamId = '';
     if (teamsRes.ok) {
-      const teams = (await teamsRes.json()) as { id: string }[];
-      if (teams.length > 0) {
-        teamId = teams[0].id;
+      const teamsData = (await teamsRes.json()) as { teams?: { id: string }[] };
+      if (teamsData.teams && teamsData.teams.length > 0) {
+        teamId = teamsData.teams[0].id;
       }
     }
 
@@ -80,7 +82,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       framework: framework || 'vite',
     };
 
-    const createRes = await fetch(`${VERCEL_API}/projects${teamQuery}`, {
+    const createRes = await fetch(`${VERCEL_API}/v9/projects${teamQuery}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(createProjectBody),
@@ -96,11 +98,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
       projectUrl = `https://${projectSlug}.vercel.app`;
     } else {
       // Project might already exist — try to get it
-      const listRes = await fetch(`${VERCEL_API}/projects${teamQuery}`, {
+      const listRes = await fetch(`${VERCEL_API}/v9/projects${teamQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (listRes.ok) {
-        const projectList = (await listRes.json()) as { id: string; name: string; alias?: string[] }[];
+        const listData = (await listRes.json()) as { projects?: { id: string; name: string; alias?: string[] }[] };
+        const projectList = listData.projects || [];
         const existing = projectList.find((p) => p.name === projectSlug);
         if (existing) {
           projectId = existing.id;
@@ -125,7 +128,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
     }
 
-    const deployRes = await fetch(`${VERCEL_API}/deployments${teamQuery}`, {
+    const deployRes = await fetch(`${VERCEL_API}/v13/deployments${teamQuery}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
