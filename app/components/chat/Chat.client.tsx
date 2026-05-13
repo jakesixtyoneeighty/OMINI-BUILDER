@@ -751,6 +751,39 @@ Por favor:
     return () => window.removeEventListener('deploy-requested', handleDeployRequest as EventListener);
   }, [append, chatStarted]);
 
+  // Listen for "Fix with AI" requests from DeployButton (build/deploy errors)
+  useEffect(() => {
+    const handleFixRequest = (event: Event) => {
+      const { error, type } = (event as CustomEvent).detail || {};
+      if (!error) return;
+
+      if (!chatStarted) {
+        runAnimation();
+      }
+
+      const fixPrompt = `Ocorreu um erro de ${type === 'build' ? 'build' : 'deploy'} ao tentar fazer deploy do projeto:
+
+\`\`\`
+${error}
+\`\`\`
+
+Por favor, analise o erro acima e corrija os arquivos necessarios para que o deploy funcione. Verifique:
+1. Se ha erros de sintaxe nos arquivos
+2. Se as dependencias estao corretas no package.json
+3. Se os imports estao corretos
+4. Se falta alguma configuracao necessaria
+
+Apos corrigir, tente fazer o deploy novamente.`;
+
+      setTimeout(() => {
+        append({ role: 'user', content: fixPrompt });
+      }, 300);
+    };
+
+    window.addEventListener('ai-fix-requested', handleFixRequest as EventListener);
+    return () => window.removeEventListener('ai-fix-requested', handleFixRequest as EventListener);
+  }, [append, chatStarted]);
+
   // Listen for security test requests from SettingsDialog
   useEffect(() => {
     const handleSecurityTest = (event: CustomEvent) => {

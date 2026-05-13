@@ -8,7 +8,7 @@ import { useT } from '~/lib/i18n/useT';
 import { buildProjectForDeploy, type BuildFile } from '~/utils/deploy-build';
 
 type DeployProvider = 'cloudflare' | 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
-type DeployPhase = 'idle' | 'building' | 'deploying';
+type DeployPhase = 'idle' | 'building' | 'deploying' | 'success' | 'error';
 
 interface DeployButtonProps {
   onOpenSettings: () => void;
@@ -19,6 +19,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const [deploying, setDeploying] = useState<DeployProvider | null>(null);
   const [deployPhase, setDeployPhase] = useState<DeployPhase>('idle');
   const [deployResult, setDeployResult] = useState<{ url: string; provider: string } | null>(null);
+  const [buildError, setBuildError] = useState<string | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
@@ -36,9 +38,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
   const configuredProviders = useMemo(() => {
     const list: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
-    // Vercel is the PRIMARY deploy provider (default, uses VERCEL_TOKEN)
     if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
-    // Cloudflare Pages is always available (free, no API key, server handles it)
     list.push({ key: 'cloudflare', label: 'Cloudflare Pages', logo: '/logos/cloudflare.svg', color: 'text-orange-400' });
     if (hasUserNetlifyToken) list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
     if (hasCloudRun) list.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
@@ -67,36 +67,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  // Default deploy: Vercel (if token available), otherwise Cloudflare Pages
-  const defaultDeploy = useCallback(() => {
-    if (hasVercel) {
-      return deployTo('vercel');
-    }
-    return deployToCloudflare();
-  }, [hasVercel]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Listen for AI deploy trigger — when the AI calls the deploy tool,
-  // it dispatches 'ai-deploy-trigger' and we automatically deploy
-  useEffect(() => {
-    const handleAiDeploy = (event: Event) => {
-      const { projectName } = (event as CustomEvent).detail || {};
-      // If a project name is provided by the AI, update settings first
-      if (projectName) {
-        updateActiveProjectSettings({
-          vercel: { projectName, token: vercelToken, framework: settings?.vercel?.framework || 'vite' },
-        });
-      }
-      // Trigger the default deploy
-      defaultDeploy();
-    };
-
-    window.addEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
-    return () => window.removeEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
-  }, [hasVercel, vercelToken]); // eslint-disable-line react-hooks/exhaustive-deps
-
   /**
    * Get raw source files from the workbench store.
-   * Used as fallback when build fails or for providers that handle building server-side.
    */
   const getProjectFiles = async () => {
     await workbenchStore.saveAllFiles();
@@ -108,27 +80,15 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
   /**
    * Build the project in the WebContainer and return the built output files.
-   * This is needed because Cloudflare Pages Direct Upload doesn't run
-   * a build step — it serves files as-is. So we must send pre-built
-   * files (HTML, JS, CSS) instead of raw source (TSX, etc.).
+   * On build failure, sets buildError so the "Fix with AI" button appears.
    */
-  const getBuiltFiles = async (): Promise<BuildFile[]> => {
+  const getBuiltFiles = async (): Promise<BuildFile[] | null> => {
     await workbenchStore.saveAllFiles();
-
-    // Show build phase to the user
     setDeployPhase('building');
-    toast.info(
-      <div className="flex items-center gap-2">
-        <div className="i-svg-spinners:90-ring-with-bg text-sm animate-spin" />
-        <span>{t('deploy.building')}</span>
-      </div>,
-      { autoClose: false, toastId: 'deploy-building' },
-    );
+    setBuildError(null);
 
     try {
       const result = await buildProjectForDeploy();
-
-      toast.dismiss('deploy-building');
 
       if (result.success && result.files.length > 0) {
         toast.success(
@@ -138,43 +98,87 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               {result.files.length} {t('deploy.filesFrom')} {result.buildOutputDir}/
             </span>
           </div>,
-          { autoClose: 3000 },
+          { autoClose: 3000, toastId: 'deploy-build' },
         );
         return result.files;
       }
 
-      // Build failed — fall back to raw source files
-      console.warn('[deploy] Build failed, falling back to raw source files:', result.error);
-      toast.warning(
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">{t('deploy.buildFailed')}</span>
-          <span className="text-[10px] text-amber-300">{result.error}</span>
-          <span className="text-[10px] text-bolt-elements-textTertiary">{t('deploy.fallbackRaw')}</span>
-        </div>,
-        { autoClose: 8000 },
-      );
-
-      return getProjectFiles();
-    } catch (err) {
+      // Build failed — show error + "Fix with AI" button
+      setBuildError(result.error || 'Build failed');
+      setDeployPhase('error');
       toast.dismiss('deploy-building');
-      console.warn('[deploy] Build error, falling back to raw source files:', err);
 
-      // Fall back to raw source files
-      return getProjectFiles();
+      return null;
+    } catch (err) {
+      setBuildError(err instanceof Error ? err.message : 'Build failed');
+      setDeployPhase('error');
+      toast.dismiss('deploy-building');
+
+      return null;
     }
   };
 
-  // ── PRIMARY DEPLOY: Cloudflare Pages (free, no API key) ──
-  // If the project already has a projectName, re-deploy to the same site (same URL)
+  /**
+   * Send the build/deploy error to the AI chat so it can fix it.
+   */
+  const fixWithAI = useCallback(() => {
+    const errorMsg = buildError || deployError || '';
+    if (!errorMsg) return;
+
+    // Send error to the chat as a user message
+    window.dispatchEvent(
+      new CustomEvent('ai-fix-requested', {
+        detail: {
+          error: errorMsg,
+          type: buildError ? 'build' : 'deploy',
+        },
+      }),
+    );
+
+    // Clear errors and reset
+    setBuildError(null);
+    setDeployError(null);
+    setDeployPhase('idle');
+    setDeploying(null);
+  }, [buildError, deployError]);
+
+  // Default deploy: Vercel (if token available), otherwise Cloudflare Pages
+  const defaultDeploy = useCallback(() => {
+    if (hasVercel) {
+      return deployTo('vercel');
+    }
+    return deployToCloudflare();
+  }, [hasVercel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen for AI deploy trigger
+  useEffect(() => {
+    const handleAiDeploy = (event: Event) => {
+      const { projectName } = (event as CustomEvent).detail || {};
+      if (projectName) {
+        updateActiveProjectSettings({
+          vercel: { projectName, token: vercelToken, framework: settings?.vercel?.framework || 'vite' },
+        });
+      }
+      defaultDeploy();
+    };
+
+    window.addEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
+    return () => window.removeEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
+  }, [hasVercel, vercelToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Cloudflare Pages deploy (reuses same project name = same URL) ──
   const deployToCloudflare = async () => {
     setDeploying('cloudflare');
-    setDeployPhase('idle');
+    setDeployPhase('building');
     setDeployResult(null);
+    setBuildError(null);
+    setDeployError(null);
     setOpen(false);
 
     try {
-      // Build project first, then deploy the built output
       const fileList = await getBuiltFiles();
+      if (fileList === null) return; // Build failed, error state is set
+
       setDeployPhase('deploying');
 
       const projectName = (settings?.name || project?.name || 'my-project')
@@ -184,7 +188,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         .replace(/^-|-$/g, '')
         .substring(0, 28);
 
-      // Use existing project name if available, or generate a new one
+      // Always reuse existing project name (same site / same URL)
       const deployProjectName = cloudflareProject || projectName;
 
       const res = await fetch('/api/cloudflare-deploy', {
@@ -203,8 +207,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       }
 
       setDeployResult({ url: data.url, provider: 'Cloudflare Pages' });
+      setDeployPhase('success');
 
-      // Save the projectName AND lastDeploy so the deploy state persists
       updateActiveProjectSettings({
         cloudflare: {
           projectName: data.projectName || deployProjectName,
@@ -220,12 +224,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.success(
         <div className="flex flex-col gap-1">
           <span className="font-semibold">{t('deploy.successCloudflare')}</span>
-          <a
-            href={data.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
-          >
+          <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">
             {data.url}
           </a>
           {data.processing && <span className="text-[9px] text-amber-400">{t('deploy.processing')}</span>}
@@ -234,18 +233,21 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 12000 },
       );
     } catch (err) {
+      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      setDeployPhase('error');
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
-      setDeployPhase('idle');
     }
   };
 
-  // ── Netlify Deploy (requires API key) ──
+  // ── Netlify Deploy ──
   const deployToNetlify = async () => {
     setDeploying('netlify');
     setDeployPhase('deploying');
     setDeployResult(null);
+    setBuildError(null);
+    setDeployError(null);
     setOpen(false);
 
     try {
@@ -260,6 +262,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       const token = settings?.netlify?.token || '';
       const netlifySiteId = settings?.netlify?.siteId || '';
 
+      // Reuse existing site ID (same URL)
       const res = await fetch('/api/netlify-deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -272,12 +275,10 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Deploy failed');
-      }
+      if (!res.ok) throw new Error(data.error || 'Deploy failed');
 
       setDeployResult({ url: data.url, provider: 'Netlify' });
+      setDeployPhase('success');
 
       updateActiveProjectSettings({
         netlify: {
@@ -295,17 +296,16 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       toast.success(
         <div className="flex flex-col gap-1">
           <span className="font-semibold">{t('deploy.successNetlify')}</span>
-          <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">
-            {data.url}
-          </a>
+          <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.url}</a>
         </div>,
         { autoClose: 12000 },
       );
     } catch (err) {
+      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      setDeployPhase('error');
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
-      setDeployPhase('idle');
     }
   };
 
@@ -313,6 +313,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     setDeploying('omnibuilder');
     setDeployPhase('deploying');
     setDeployResult(null);
+    setBuildError(null);
+    setDeployError(null);
     setOpen(false);
 
     try {
@@ -323,22 +325,16 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       const res = await fetch('/api/deploy-view', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          name: projectName,
-          description: projectDesc,
-          files: fileList,
-        }),
+        body: JSON.stringify({ action: 'create', name: projectName, description: projectDesc, files: fileList }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         if (data.migrationNeeded) {
           toast.error(
             <div className="flex flex-col gap-1">
               <span className="font-semibold">Database migration needed</span>
-              <span className="text-xs">Run the SQL in supabase_deploy_migration.sql to create the deployed_projects table</span>
+              <span className="text-xs">Run the SQL in supabase_deploy_migration.sql</span>
             </div>,
             { autoClose: 12000 },
           );
@@ -348,67 +344,76 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       }
 
       setDeployResult({ url: data.viewUrl, provider: 'Omni Builder' });
+      setDeployPhase('success');
 
       toast.success(
         <div className="flex flex-col gap-1">
           <span className="font-semibold">{t('deploy.successOmni')}</span>
-          <a
-            href={data.viewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
-          >
-            {data.viewUrl}
-          </a>
+          <a href={data.viewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.viewUrl}</a>
         </div>,
         { autoClose: 12000 },
       );
     } catch (err) {
+      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      setDeployPhase('error');
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
-      setDeployPhase('idle');
     }
   };
 
+  // ── Generic deployTo (Vercel, CloudRun) ──
   const deployTo = async (provider: DeployProvider) => {
     setDeploying(provider);
-    setDeployPhase('deploying');
+    setDeployPhase('building');
     setDeployResult(null);
+    setBuildError(null);
+    setDeployError(null);
     setOpen(false);
 
     try {
-      const fileList = await getProjectFiles();
-      let res: Response;
-      let data: any;
+      let fileList: BuildFile[] | { path: string; content: string }[] | null;
 
       switch (provider) {
         case 'cloudflare': {
-          // Use the shared deployToCloudflare logic
           setDeploying(null);
           setDeployPhase('idle');
           return deployToCloudflare();
         }
         case 'netlify': {
-          // Use the shared deployToNetlify logic
           setDeploying(null);
           setDeployPhase('idle');
           return deployToNetlify();
         }
         case 'vercel': {
+          // Vercel handles building server-side, so we can send raw source files
+          fileList = await getProjectFiles();
+          if (!fileList) return;
+
+          setDeployPhase('deploying');
+
           const token = vercelToken;
+          // Always reuse the existing projectName (same Vercel project = same URL)
           const projectName = settings?.vercel?.projectName || '';
+          const vercelProjectId = settings?.lastDeploy?.siteId || ''; // Vercel project ID stored in lastDeploy.siteId
           const framework = settings?.vercel?.framework || 'vite';
-          res = await fetch('/api/vercel-deploy', {
+
+          const res = await fetch('/api/vercel-deploy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, projectName: projectName || undefined, framework, files: fileList }),
+            body: JSON.stringify({ token, projectName: projectName || undefined, projectId: vercelProjectId || undefined, framework, files: fileList }),
           });
-          if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
-          data = await res.json();
-          setDeployResult({ url: data.url, provider: 'Vercel' });
 
-          // Save the Vercel project info after successful deploy
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error || 'Deploy failed');
+          }
+
+          setDeployResult({ url: data.url, provider: 'Vercel' });
+          setDeployPhase('success');
+
+          // Always save Vercel project info so next deploy goes to same site
           updateActiveProjectSettings({
             vercel: {
               token: vercelToken,
@@ -422,11 +427,24 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               deployedAt: new Date().toISOString(),
             },
           });
+
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">{t('deploy.successGeneric')}</span>
+              <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.url}</a>
+            </div>,
+            { autoClose: 12000 },
+          );
           break;
         }
         case 'cloudrun': {
+          fileList = await getProjectFiles();
+          if (!fileList) return;
+
+          setDeployPhase('deploying');
+
           const cr = settings?.cloudRun || {};
-          res = await fetch('/api/cloudrun-deploy', {
+          const res = await fetch('/api/cloudrun-deploy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -438,43 +456,35 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               files: fileList,
             }),
           });
-          if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
-          data = await res.json();
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Deploy failed');
+
           setDeployResult({ url: data.url, provider: 'Cloud Run' });
+          setDeployPhase('success');
+
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">{t('deploy.successGeneric')}</span>
+              <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.url}</a>
+            </div>,
+            { autoClose: 12000 },
+          );
           break;
         }
       }
-
-      const providerLabel = provider === 'cloudflare' ? 'Cloudflare Pages' : provider === 'netlify' ? 'Netlify' : provider === 'vercel' ? 'Vercel' : provider === 'cloudrun' ? 'Cloud Run' : provider;
-      toast.success(
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">{t('deploy.successGeneric')}</span>
-          {data?.url && (
-            <a
-              href={data.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 underline text-xs hover:text-blue-300 break-all"
-            >
-              {data.url}
-            </a>
-          )}
-        </div>,
-        { autoClose: 12000 },
-      );
     } catch (err) {
+      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      setDeployPhase('error');
       toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
     } finally {
       setDeploying(null);
-      setDeployPhase('idle');
     }
   };
 
   const deployWithAI = useCallback(() => {
     setOpen(false);
-
     const providerInfo = configuredProviders.map((p) => p.label).join(', ');
-
     window.dispatchEvent(
       new CustomEvent('deploy-requested', {
         detail: {
@@ -494,32 +504,40 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   }, [configuredProviders, hasUserNetlifyToken, hasVercel, hasCloudRun, cloudflareProject]);
 
   const isDeploying = deploying !== null;
+  const isInProgress = isDeploying || deployPhase === 'building' || deployPhase === 'deploying';
+  const hasError = deployPhase === 'error';
 
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Main button — PRIMARY: Deploy to Vercel (default) or Cloudflare Pages */}
         <div className="flex">
+          {/* Main deploy button — shows spinner during entire process */}
           <button
-            onClick={defaultDeploy}
-            disabled={isDeploying}
+            onClick={hasError ? fixWithAI : defaultDeploy}
             className={classNames(
               'flex items-center gap-2 px-3 py-1.5 rounded-l-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
-              isDeploying
-                ? 'bg-gray-600/80 text-white cursor-wait'
-                : deployResult
-                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
-                  : hasVercel
-                    ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 hover:shadow-md active:scale-[0.97]'
-                    : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
+              hasError
+                ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white hover:from-red-500 hover:to-orange-500'
+                : isInProgress
+                  ? 'bg-gray-600/80 text-white cursor-wait'
+                  : deployResult && deployPhase === 'success'
+                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
+                    : hasVercel
+                      ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 hover:shadow-md active:scale-[0.97]'
+                      : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
             )}
           >
-            {isDeploying ? (
+            {hasError ? (
+              <>
+                <div className="i-ph:wand text-sm" />
+                {t('deploy.fixWithAI')}
+              </>
+            ) : isInProgress ? (
               <>
                 <div className="i-svg-spinners:90-ring-with-bg text-sm" />
                 {deployPhase === 'building' ? t('deploy.building') : t('deploy.deploying')}
               </>
-            ) : deployResult ? (
+            ) : deployResult && deployPhase === 'success' ? (
               <>
                 <div className="i-ph:check-circle-fill text-sm" />
                 {t('deploy.deployed')}
@@ -531,12 +549,14 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               </>
             )}
           </button>
+
+          {/* Dropdown toggle */}
           <button
             onClick={() => setOpen(!open)}
-            disabled={isDeploying}
+            disabled={isInProgress}
             className={classNames(
               'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-white/10',
-              isDeploying
+              isInProgress
                 ? 'bg-gray-600/80 text-white cursor-wait'
                 : hasVercel
                   ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700'
@@ -547,8 +567,32 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           </button>
         </div>
 
+        {/* Build/Deploy error banner with Fix with AI button */}
+        {hasError && !open && (buildError || deployError) && (
+          <div className="absolute right-0 top-full mt-2 min-w-[280px] p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-2xl z-[100]">
+            <div className="flex items-start gap-2">
+              <div className="i-ph:warning-circle-fill text-red-400 text-base mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-red-400 mb-1">
+                  {buildError ? t('deploy.buildFailed') : t('deploy.deployFailed')}
+                </p>
+                <p className="text-[10px] text-bolt-elements-textTertiary break-all line-clamp-4">
+                  {buildError || deployError}
+                </p>
+                <button
+                  onClick={fixWithAI}
+                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-[10px] font-semibold hover:from-purple-500 hover:to-blue-500 transition-all"
+                >
+                  <div className="i-ph:wand text-xs" />
+                  {t('deploy.fixWithAI')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dropdown */}
-        {open && !isDeploying && (
+        {open && !isInProgress && (
           <div className="absolute right-0 top-full mt-2 w-72 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
             <div className="px-4 py-3 border-b border-bolt-elements-borderColor bg-gradient-to-r from-orange-500/10 to-amber-500/10">
@@ -559,7 +603,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 <div>
                   <p className="text-sm font-semibold text-bolt-elements-textPrimary">{t('deploy.projectDeploy')}</p>
                   <p className="text-[10px] text-bolt-elements-textTertiary">
-                    {cloudflareProject ? t('deploy.updateCloudflare') : t('deploy.publishCloudflare')}
+                    {settings?.lastDeploy?.url ? t('deploy.updateExisting') : t('deploy.publishNew')}
                   </p>
                 </div>
               </div>
@@ -639,7 +683,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 </div>
               </button>
 
-              {/* Separator — Other external providers */}
+              {/* Separator */}
               {(hasUserNetlifyToken || hasCloudRun) && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
@@ -648,7 +692,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 </div>
               )}
 
-              {/* Netlify (only if user has configured a token) */}
               {hasUserNetlifyToken && (
                 <button
                   onClick={deployToNetlify}
@@ -661,7 +704,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                 </button>
               )}
 
-              {/* Cloud Run (only if configured) */}
               {hasCloudRun && (
                 <button
                   onClick={() => deployTo('cloudrun')}
@@ -675,19 +717,14 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               )}
 
               {/* Deploy result card */}
-              {deployResult && (
+              {deployResult && deployPhase === 'success' && (
                 <div className="mx-1 mt-1 p-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className="i-ph:check-circle-fill text-emerald-400 text-sm" />
                     <span className="text-[10px] font-semibold text-emerald-400">{t('deploy.lastDeploy')}: {deployResult.provider}</span>
                   </div>
                   {deployResult.url && (
-                    <a
-                      href={deployResult.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-blue-400 hover:text-blue-300 underline break-all block"
-                    >
+                    <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:text-blue-300 underline break-all block">
                       {deployResult.url}
                     </a>
                   )}
@@ -695,7 +732,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               )}
             </div>
 
-            {/* Footer — configure */}
+            {/* Footer */}
             <div className="px-2 py-2 border-t border-bolt-elements-borderColor">
               <button
                 onClick={() => { setOpen(false); onOpenSettings(); }}
@@ -709,8 +746,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         )}
       </div>
 
-      {/* Deploy result toast-like banner */}
-      {deployResult && !open && !isDeploying && (
+      {/* Success mini-banner */}
+      {deployResult && deployPhase === 'success' && !open && !isInProgress && !hasError && (
         <div className="absolute right-0 top-full mt-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 whitespace-nowrap z-50 shadow-lg">
           <div className="i-ph:check-circle-fill text-xs mr-1" />
           {deployResult.provider}

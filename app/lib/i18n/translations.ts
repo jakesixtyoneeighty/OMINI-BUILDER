@@ -349,6 +349,10 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.publishOnVercel': 'Publicar na Vercel',
     'deploy.vercelDefault': 'Padrao — deploy rapido com Vercel',
     'deploy.successVercel': 'Deploy na Vercel realizado!',
+    'deploy.fixWithAI': 'Corrigir com IA',
+    'deploy.deployFailed': 'Falha no deploy',
+    'deploy.updateExisting': 'Atualizar site existente',
+    'deploy.publishNew': 'Publicar novo site',
 
     // === Share ===
     'share.button': 'Compartilhar',
@@ -1376,6 +1380,10 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.publishOnVercel': 'Publish on Vercel',
     'deploy.vercelDefault': 'Default — fast deploy with Vercel',
     'deploy.successVercel': 'Deployed to Vercel!',
+    'deploy.fixWithAI': 'Fix with AI',
+    'deploy.deployFailed': 'Deploy failed',
+    'deploy.updateExisting': 'Update existing site',
+    'deploy.publishNew': 'Publish new site',
 
     // === Share ===
     'share.button': 'Share',
@@ -2401,6 +2409,10 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.publishOnVercel': 'Publicar en Vercel',
     'deploy.vercelDefault': 'Predeterminado — deploy rapido con Vercel',
     'deploy.successVercel': 'Deploy en Vercel realizado!',
+    'deploy.fixWithAI': 'Corregir con IA',
+    'deploy.deployFailed': 'Error en el deploy',
+    'deploy.updateExisting': 'Actualizar sitio existente',
+    'deploy.publishNew': 'Publicar nuevo sitio',
 
     // === Share ===
     'share.button': 'Compartir',
@@ -3426,6 +3438,10 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'deploy.publishOnVercel': '发布到 Vercel',
     'deploy.vercelDefault': '默认 — 使用 Vercel 快速部署',
     'deploy.successVercel': '已部署到 Vercel！',
+    'deploy.fixWithAI': '用AI修复',
+    'deploy.deployFailed': '部署失败',
+    'deploy.updateExisting': '更新现有站点',
+    'deploy.publishNew': '发布新站点',
 
     // === Share ===
     'share.button': '分享',

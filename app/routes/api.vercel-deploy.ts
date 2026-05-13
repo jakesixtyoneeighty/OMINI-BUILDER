@@ -8,6 +8,7 @@ interface DeployFile {
 interface DeployBody {
   token: string;
   projectName?: string;
+  projectId?: string;
   framework?: string;
   files: DeployFile[];
 }
@@ -43,7 +44,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   else if (typeof process !== 'undefined' && process.env) env = process.env;
 
   const token = body.token || env.VERCEL_TOKEN || '';
-  const { projectName, framework, files } = body;
+  const { projectName, projectId: existingProjectId, framework, files } = body;
 
   if (!token) return json({ error: 'Vercel token is required. Set VERCEL_TOKEN env var or provide in settings.' }, { status: 400 });
   if (!Array.isArray(files) || files.length === 0) return json({ error: 'No files to deploy' }, { status: 400 });
@@ -72,32 +73,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     const teamQuery = teamId ? `?teamId=${teamId}` : '';
 
-    // Create a new project
-    const projectSlug = projectName
-      ? projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 60)
-      : `omni-builder-${Date.now().toString(36)}`;
-
-    const createProjectBody: Record<string, unknown> = {
-      name: projectSlug,
-      framework: framework || 'vite',
-    };
-
-    const createRes = await fetch(`${VERCEL_API}/v9/projects${teamQuery}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(createProjectBody),
-    });
-
-    let projectId = '';
+    let vercelProjectId = existingProjectId || '';
     let projectUrl = '';
+    let projectSlug = '';
 
-    if (createRes.ok) {
-      const projectData = (await createRes.json()) as { id: string; alias?: string[] };
-      projectId = projectData.id;
-      // Vercel URLs are typically <project-name>.vercel.app
-      projectUrl = `https://${projectSlug}.vercel.app`;
-    } else {
-      // Project might already exist — try to get it
+    // ── If we already have a project ID, verify it exists and reuse it ──
+    if (vercelProjectId) {
+      const getRes = await fetch(`${VERCEL_API}/v9/projects/${vercelProjectId}${teamQuery}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (getRes.ok) {
+        const projectData = (await getRes.json()) as { id: string; name: string; alias?: string[] };
+        projectSlug = projectData.name;
+        projectUrl = `https://${projectSlug}.vercel.app`;
+      } else {
+        // Project ID no longer valid, clear it and create new
+        vercelProjectId = '';
+      }
+    }
+
+    // ── If we have a project name but no ID, try to find the existing project ──
+    if (!vercelProjectId && projectName) {
+      projectSlug = projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 60);
+
+      // Try to find existing project by name
       const listRes = await fetch(`${VERCEL_API}/v9/projects${teamQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -106,18 +105,40 @@ export async function action({ request, context }: ActionFunctionArgs) {
         const projectList = listData.projects || [];
         const existing = projectList.find((p) => p.name === projectSlug);
         if (existing) {
-          projectId = existing.id;
+          vercelProjectId = existing.id;
           projectUrl = existing.alias?.[0] || `https://${projectSlug}.vercel.app`;
         }
       }
     }
 
-    if (!projectId) {
-      const t = await createRes.text();
-      return json({ error: `Failed to create Vercel project: ${t}` }, { status: createRes.status });
+    // ── If still no project, create a new one ──
+    if (!vercelProjectId) {
+      projectSlug = projectName
+        ? projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 60)
+        : `omni-builder-${Date.now().toString(36)}`;
+
+      const createProjectBody: Record<string, unknown> = {
+        name: projectSlug,
+        framework: framework || 'vite',
+      };
+
+      const createRes = await fetch(`${VERCEL_API}/v9/projects${teamQuery}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(createProjectBody),
+      });
+
+      if (createRes.ok) {
+        const projectData = (await createRes.json()) as { id: string; alias?: string[] };
+        vercelProjectId = projectData.id;
+        projectUrl = `https://${projectSlug}.vercel.app`;
+      } else {
+        const t = await createRes.text();
+        return json({ error: `Failed to create Vercel project: ${t}` }, { status: createRes.status });
+      }
     }
 
-    // Upload files as a deployment
+    // ── Upload files as a deployment ──
     const vercelFiles: Record<string, { file: string; data: string; encoding: string }> = {};
     for (const f of files) {
       const cleanPath = f.path.replace(/^\/+/, '');
@@ -133,7 +154,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: projectSlug,
-        project: projectId,
+        project: vercelProjectId,
         files: Object.values(vercelFiles),
         target: 'production',
       }),
@@ -148,7 +169,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     return json({
       success: true,
-      projectId,
+      projectId: vercelProjectId,
       projectName: projectSlug,
       deployId: deployData.id,
       url: deployData.url || projectUrl,
