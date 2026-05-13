@@ -27,21 +27,23 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const project = projects[projectId] ?? getActiveProject();
   const settings = project?.settings;
 
-  // Cloudflare Pages is always available — free, no API key needed by user
+  // Vercel is the default deploy provider — uses VERCEL_TOKEN env var or user-configured token
+  const vercelToken = settings?.vercel?.token || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VERCEL_TOKEN || '' : '');
+  const hasVercel = !!vercelToken;
   const cloudflareProject = settings?.cloudflare?.projectName || '';
   const hasUserNetlifyToken = !!(settings?.netlify?.token);
-  const hasVercel = !!(settings?.vercel?.token);
   const hasCloudRun = !!(settings?.cloudRun?.serviceAccountKey && settings?.cloudRun?.projectId);
 
   const configuredProviders = useMemo(() => {
     const list: { key: DeployProvider; label: string; logo: string; color: string }[] = [];
+    // Vercel is the PRIMARY deploy provider (default, uses VERCEL_TOKEN)
+    if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
     // Cloudflare Pages is always available (free, no API key, server handles it)
     list.push({ key: 'cloudflare', label: 'Cloudflare Pages', logo: '/logos/cloudflare.svg', color: 'text-orange-400' });
     if (hasUserNetlifyToken) list.push({ key: 'netlify', label: 'Netlify', logo: '/logos/netlify.svg', color: 'text-teal-400' });
-    if (hasVercel) list.push({ key: 'vercel', label: 'Vercel', logo: '/logos/vercel.svg', color: 'text-white' });
     if (hasCloudRun) list.push({ key: 'cloudrun', label: 'Google Cloud', logo: '/logos/google-cloud.svg', color: 'text-blue-400' });
     return list;
-  }, [hasUserNetlifyToken, hasVercel, hasCloudRun]);
+  }, [hasVercel, hasUserNetlifyToken, hasCloudRun]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,24 +67,32 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
+  // Default deploy: Vercel (if token available), otherwise Cloudflare Pages
+  const defaultDeploy = useCallback(() => {
+    if (hasVercel) {
+      return deployTo('vercel');
+    }
+    return deployToCloudflare();
+  }, [hasVercel]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Listen for AI deploy trigger — when the AI calls the deploy tool,
-  // it dispatches 'ai-deploy-trigger' and we automatically deploy to Cloudflare Pages
+  // it dispatches 'ai-deploy-trigger' and we automatically deploy
   useEffect(() => {
     const handleAiDeploy = (event: Event) => {
       const { projectName } = (event as CustomEvent).detail || {};
       // If a project name is provided by the AI, update settings first
       if (projectName) {
         updateActiveProjectSettings({
-          cloudflare: { projectName },
+          vercel: { projectName, token: vercelToken, framework: settings?.vercel?.framework || 'vite' },
         });
       }
-      // Trigger the Cloudflare Pages deploy
-      deployToCloudflare();
+      // Trigger the default deploy
+      defaultDeploy();
     };
 
     window.addEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
     return () => window.removeEventListener('ai-deploy-trigger', handleAiDeploy as EventListener);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasVercel, vercelToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Get raw source files from the workbench store.
@@ -386,7 +396,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           return deployToNetlify();
         }
         case 'vercel': {
-          const token = settings?.vercel?.token || '';
+          const token = vercelToken;
           const projectName = settings?.vercel?.projectName || '';
           const framework = settings?.vercel?.framework || 'vite';
           res = await fetch('/api/vercel-deploy', {
@@ -397,6 +407,21 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error((err as any).error || 'Deploy failed'); }
           data = await res.json();
           setDeployResult({ url: data.url, provider: 'Vercel' });
+
+          // Save the Vercel project info after successful deploy
+          updateActiveProjectSettings({
+            vercel: {
+              token: vercelToken,
+              projectName: data.projectName || projectName || '',
+              framework,
+            },
+            lastDeploy: {
+              url: data.url,
+              provider: 'vercel',
+              siteId: data.projectId || '',
+              deployedAt: new Date().toISOString(),
+            },
+          });
           break;
         }
         case 'cloudrun': {
@@ -473,18 +498,20 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Main button — PRIMARY: Deploy to Cloudflare Pages (free, no API key) */}
+        {/* Main button — PRIMARY: Deploy to Vercel (default) or Cloudflare Pages */}
         <div className="flex">
           <button
-            onClick={deployToCloudflare}
+            onClick={defaultDeploy}
             disabled={isDeploying}
             className={classNames(
               'flex items-center gap-2 px-3 py-1.5 rounded-l-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
               isDeploying
-                ? 'bg-orange-600/80 text-white cursor-wait'
+                ? 'bg-gray-600/80 text-white cursor-wait'
                 : deployResult
                   ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
-                  : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
+                  : hasVercel
+                    ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 hover:shadow-md active:scale-[0.97]'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
             )}
           >
             {isDeploying ? (
@@ -499,8 +526,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               </>
             ) : (
               <>
-                <div className="i-ph:rocket-launch-duotone text-sm" />
-                {t('deploy.button')}
+                <div className={hasVercel ? 'i-ph:triangle text-sm' : 'i-ph:rocket-launch-duotone text-sm'} />
+                {hasVercel ? 'Vercel' : t('deploy.button')}
               </>
             )}
           </button>
@@ -510,8 +537,10 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             className={classNames(
               'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-white/10',
               isDeploying
-                ? 'bg-orange-600/80 text-white cursor-wait'
-                : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400',
+                ? 'bg-gray-600/80 text-white cursor-wait'
+                : hasVercel
+                  ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700'
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400',
             )}
           >
             <div className="i-ph:caret-down text-[10px] opacity-70" />
@@ -537,7 +566,30 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             </div>
 
             <div className="p-2 space-y-1">
-              {/* PRIMARY: Deploy to Cloudflare Pages (free, no API key) */}
+              {/* PRIMARY: Deploy to Vercel (default provider) */}
+              {hasVercel && (
+                <button
+                  onClick={() => deployTo('vercel')}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-gray-500/20 bg-gray-500/5"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-600/20 flex items-center justify-center shrink-0 group-hover:from-gray-500/30 group-hover:to-gray-600/30 transition-colors">
+                    <div className="i-ph:triangle-fill text-white text-base" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-bolt-elements-textPrimary">
+                      {settings?.vercel?.projectName ? `Update on Vercel` : t('deploy.publishOnVercel')}
+                    </p>
+                    <p className="text-[10px] text-bolt-elements-textTertiary truncate">
+                      {settings?.vercel?.projectName ? t('deploy.sameUrlUpdate') : t('deploy.vercelDefault')}
+                    </p>
+                  </div>
+                  <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-gray-500/20 text-white uppercase tracking-wider">
+                    {t('deploy.default')}
+                  </div>
+                </button>
+              )}
+
+              {/* Cloudflare Pages (free, no API key) */}
               <button
                 onClick={deployToCloudflare}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-orange-500/20 bg-orange-500/5"
@@ -588,7 +640,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               </button>
 
               {/* Separator — Other external providers */}
-              {(hasUserNetlifyToken || hasVercel || hasCloudRun) && (
+              {(hasUserNetlifyToken || hasCloudRun) && (
                 <div className="flex items-center gap-2 px-3 py-1">
                   <div className="flex-1 h-px bg-bolt-elements-borderColor" />
                   <span className="text-[9px] text-bolt-elements-textTertiary uppercase tracking-wider font-medium">{t('deploy.others')}</span>
@@ -606,19 +658,6 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                     <img src="/logos/netlify.svg" alt="Netlify" className="w-5 h-5 object-contain" />
                   </div>
                   <span className="text-xs text-bolt-elements-textSecondary font-medium">Netlify</span>
-                </button>
-              )}
-
-              {/* Vercel (only if configured) */}
-              {hasVercel && (
-                <button
-                  onClick={() => deployTo('vercel')}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundActive flex items-center justify-center shrink-0 overflow-hidden">
-                    <img src="/logos/vercel.svg" alt="Vercel" className="w-5 h-5 object-contain" />
-                  </div>
-                  <span className="text-xs text-bolt-elements-textSecondary font-medium">Vercel</span>
                 </button>
               )}
 

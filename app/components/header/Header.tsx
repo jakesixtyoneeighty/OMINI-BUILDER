@@ -8,6 +8,7 @@ import { AuthButton } from './AuthButton.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { AppSettingsDialog } from './AppSettingsDialog.client';
 import { DeployButton } from './DeployButton.client';
+import { ShareButton } from './ShareButton.client';
 import { EditableProjectName } from './EditableProjectName.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
 import { SaveToDrive } from '~/components/chat/SaveToDrive.client';
@@ -106,7 +107,10 @@ export function Header() {
                   {/* Deploy button */}
                   <DeployButton onOpenSettings={openDeploySettings} />
 
-                  {/* Publish / Share */}
+                  {/* Share button */}
+                  <ShareButton onOpenSettings={openDeploySettings} />
+
+                  {/* Publish / Gallery */}
                   <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
                 </>
               )}

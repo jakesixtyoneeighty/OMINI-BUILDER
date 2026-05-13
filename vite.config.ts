@@ -7,7 +7,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig((config) => {
   return {
-    envPrefix: ['VITE_', 'SUPABASE_', 'WEBCONTAINER_'],
+    envPrefix: ['VITE_', 'SUPABASE_', 'WEBCONTAINER_', 'VERCEL_TOKEN'],
     server: {
       host: '0.0.0.0',
       port: 5000,

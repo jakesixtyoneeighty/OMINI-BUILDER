@@ -24,7 +24,7 @@ function encodeFile(content: string): string {
   return btoa(bin);
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
 
   let body: DeployBody;
@@ -34,9 +34,16 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { token, projectName, framework, files } = body;
+  // Use token from request body, or fall back to VERCEL_TOKEN env var
+  let env: Record<string, any> = {};
+  if ((context as any)?.cloudflare?.env) env = (context as any).cloudflare.env;
+  else if ((context as any)?.env) env = (context as any).env;
+  else if (typeof process !== 'undefined' && process.env) env = process.env;
 
-  if (!token) return json({ error: 'Vercel token is required' }, { status: 400 });
+  const token = body.token || env.VERCEL_TOKEN || '';
+  const { projectName, framework, files } = body;
+
+  if (!token) return json({ error: 'Vercel token is required. Set VERCEL_TOKEN env var or provide in settings.' }, { status: 400 });
   if (!Array.isArray(files) || files.length === 0) return json({ error: 'No files to deploy' }, { status: 400 });
 
   try {
@@ -139,6 +146,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({
       success: true,
       projectId,
+      projectName: projectSlug,
       deployId: deployData.id,
       url: deployData.url || projectUrl,
     });
