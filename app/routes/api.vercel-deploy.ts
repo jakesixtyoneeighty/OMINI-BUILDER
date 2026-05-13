@@ -1,8 +1,10 @@
-import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs, type LoaderFunctionArgs, json } from '@remix-run/cloudflare';
 
 interface DeployFile {
   path: string;
   content: string;
+  /** If true, content is already base64-encoded binary data */
+  binary?: boolean;
 }
 
 interface DeployBody {
@@ -25,6 +27,69 @@ function encodeFile(content: string): string {
   let bin = '';
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin);
+}
+
+/**
+ * GET handler: Poll Vercel deployment status
+ * Query params: deployId, token, teamId (optional)
+ */
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const deployId = url.searchParams.get('deployId');
+  const tokenParam = url.searchParams.get('token');
+  const teamId = url.searchParams.get('teamId') || '';
+
+  if (!deployId || !tokenParam) {
+    return json({ error: 'Missing deployId or token' }, { status: 400 });
+  }
+
+  // Fall back to env var for token
+  let env: Record<string, any> = {};
+  if ((context as any)?.cloudflare?.env) env = (context as any).cloudflare.env;
+  else if ((context as any)?.env) env = (context as any).env;
+  else if (typeof process !== 'undefined' && process.env) env = process.env;
+
+  const token = tokenParam || env.VERCEL_TOKEN || '';
+  const teamQuery = teamId ? `&teamId=${teamId}` : '';
+
+  try {
+    const checkRes = await fetch(`${VERCEL_API}/v13/deployments/${deployId}?${teamQuery}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!checkRes.ok) {
+      const t = await checkRes.text();
+      return json({ error: `Failed to check deployment: ${t}` }, { status: checkRes.status });
+    }
+
+    const deployData = (await checkRes.json()) as {
+      id: string;
+      state: string;
+      readyState?: string;
+      url?: string;
+      alias?: string[];
+      building?: boolean;
+      error?: { message?: string };
+    };
+
+    // Vercel deployment states: BUILDING, READY, ERROR, QUEUED, CANCELED, INITIALIZING
+    const state = deployData.state || deployData.readyState || '';
+    const isReady = state === 'READY';
+    const isError = state === 'ERROR' || state === 'CANCELED';
+    const isBuilding = state === 'BUILDING' || state === 'QUEUED' || state === 'INITIALIZING';
+
+    return json({
+      id: deployData.id,
+      state,
+      isReady,
+      isError,
+      isBuilding,
+      url: deployData.url ? `https://${deployData.url}` : (deployData.alias?.[0] || ''),
+      errorMessage: deployData.error?.message || '',
+    });
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : 'Unknown error checking deployment' }, { status: 500 });
+  }
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -142,9 +207,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const vercelFiles: Record<string, { file: string; data: string; encoding: string }> = {};
     for (const f of files) {
       const cleanPath = f.path.replace(/^\/+/, '');
+      // If the file is already base64-encoded (binary), use the content directly.
+      // Otherwise, encode it from UTF-8 text to base64.
+      const base64Data = f.binary ? f.content : encodeFile(f.content);
       vercelFiles[cleanPath] = {
         file: cleanPath,
-        data: encodeFile(f.content),
+        data: base64Data,
         encoding: 'base64',
       };
     }
@@ -172,7 +240,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
       projectId: vercelProjectId,
       projectName: projectSlug,
       deployId: deployData.id,
-      url: deployData.url || projectUrl,
+      teamId,
+      url: deployData.url ? `https://${deployData.url}` : projectUrl,
     });
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Unknown deploy error' }, { status: 500 });

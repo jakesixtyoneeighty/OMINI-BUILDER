@@ -5,7 +5,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
 import { useT } from '~/lib/i18n/useT';
-import { buildProjectForDeploy, type BuildFile } from '~/utils/deploy-build';
+import { buildProjectForDeploy, getRawSourceFiles, type BuildFile } from '~/utils/deploy-build';
 
 type DeployProvider = 'cloudflare' | 'netlify' | 'vercel' | 'cloudrun' | 'omnibuilder';
 type DeployPhase = 'idle' | 'building' | 'deploying' | 'success' | 'error';
@@ -68,14 +68,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   }, [open]);
 
   /**
-   * Get raw source files from the workbench store.
+   * Get ALL raw source files from the WebContainer filesystem.
+   * This reads files directly from the container (not the store) to ensure
+   * all files including binary ones are included with correct relative paths.
    */
-  const getProjectFiles = async () => {
+  const getProjectFiles = async (): Promise<BuildFile[]> => {
     await workbenchStore.saveAllFiles();
-    const files = workbenchStore.files.get();
-    return Object.entries(files)
-      .filter(([, f]) => f?.type === 'file' && !f.isBinary)
-      .map(([path, f]) => ({ path: path.replace(/^\/+/, ''), content: (f as any).content }));
+    return getRawSourceFiles();
   };
 
   /**
@@ -116,6 +115,49 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
       return null;
     }
+  };
+
+  /**
+   * Poll Vercel deployment status until it's ready or fails.
+   * Keeps the spinner running until the deployment actually completes.
+   * Returns the final URL if successful, or throws on build error.
+   */
+  const pollVercelDeploy = async (deployId: string, token: string, teamId: string, fallbackUrl: string): Promise<string> => {
+    const MAX_POLLS = 120; // 120 * 5s = 10 minutes max
+    const POLL_INTERVAL = 5000; // 5 seconds
+
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+
+      try {
+        const params = new URLSearchParams({ deployId, token });
+        if (teamId) params.set('teamId', teamId);
+        const checkRes = await fetch(`/api/vercel-deploy?${params.toString()}`);
+        const checkData: any = await checkRes.json();
+
+        if (checkData.isReady) {
+          return checkData.url || fallbackUrl;
+        }
+
+        if (checkData.isError) {
+          const errMsg = checkData.errorMessage || 'Vercel build failed';
+          setBuildError(errMsg);
+          throw new Error(errMsg);
+        }
+
+        // Still building — keep spinning
+      } catch (err) {
+        // If it's our own thrown error (build failed), re-throw
+        if (err instanceof Error && err.message !== 'Failed to fetch') {
+          throw err;
+        }
+        // Network error — keep trying
+        console.warn('[DeployButton] Poll error, retrying...', err);
+      }
+    }
+
+    // Timeout — but don't fail, just return the URL (deployment might still be building)
+    return fallbackUrl;
   };
 
   /**
@@ -318,7 +360,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     setOpen(false);
 
     try {
-      const fileList = await getProjectFiles();
+      const allFiles = await getProjectFiles();
+      // OmniBuilder preview only supports text files (no binary images/assets)
+      const fileList = allFiles.filter((f) => !f.binary).map((f) => ({ path: f.path, content: f.content }));
       const projectName = settings?.name || project?.name || 'My Project';
       const projectDesc = settings?.description || '';
 
@@ -372,7 +416,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     setOpen(false);
 
     try {
-      let fileList: BuildFile[] | { path: string; content: string }[] | null;
+      let fileList: BuildFile[] | null;
 
       switch (provider) {
         case 'cloudflare': {
@@ -386,17 +430,32 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           return deployToNetlify();
         }
         case 'vercel': {
-          // Vercel handles building server-side, so we can send raw source files
+          // Vercel handles building server-side, so we send raw source files
           fileList = await getProjectFiles();
-          if (!fileList) return;
+          if (!fileList || fileList.length === 0) return;
 
           setDeployPhase('deploying');
 
+          // Ensure project is saved to Supabase before deploying (so Vercel settings can be persisted)
+          let currentProjectId = activeProjectIdStore.get();
+          const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
+            const proj = projectsStore.get()[currentProjectId || 'default'];
+            const projectName = proj?.name || project?.name || 'Untitled Project';
+            await updateActiveProjectSettings({ name: projectName });
+            await workbenchStore.saveEntireProject();
+            currentProjectId = activeProjectIdStore.get();
+          }
+
+          // Read the LATEST settings from the store (they may have updated after project creation)
+          const latestProject = projectsStore.get()[activeProjectIdStore.get()] ?? getActiveProject();
+          const latestSettings = latestProject?.settings;
+
           const token = vercelToken;
           // Always reuse the existing projectName (same Vercel project = same URL)
-          const projectName = settings?.vercel?.projectName || '';
-          const vercelProjectId = settings?.lastDeploy?.siteId || ''; // Vercel project ID stored in lastDeploy.siteId
-          const framework = settings?.vercel?.framework || 'vite';
+          const projectName = latestSettings?.vercel?.projectName || '';
+          const vercelProjectId = latestSettings?.lastDeploy?.siteId || '';
+          const framework = latestSettings?.vercel?.framework || 'vite';
 
           const res = await fetch('/api/vercel-deploy', {
             method: 'POST',
@@ -410,10 +469,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             throw new Error(data.error || 'Deploy failed');
           }
 
-          setDeployResult({ url: data.url, provider: 'Vercel' });
-          setDeployPhase('success');
-
-          // Always save Vercel project info so next deploy goes to same site
+          // Save project info immediately so next deploy reuses the same site
           updateActiveProjectSettings({
             vercel: {
               token: vercelToken,
@@ -427,6 +483,16 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               deployedAt: new Date().toISOString(),
             },
           });
+
+          // ── Poll deployment status until ready or error ──
+          if (data.deployId) {
+            const finalUrl = await pollVercelDeploy(data.deployId, token, data.teamId, data.url);
+            setDeployResult({ url: finalUrl || data.url, provider: 'Vercel' });
+          } else {
+            setDeployResult({ url: data.url, provider: 'Vercel' });
+          }
+
+          setDeployPhase('success');
 
           toast.success(
             <div className="flex flex-col gap-1">

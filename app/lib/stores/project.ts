@@ -55,6 +55,9 @@ export interface ProjectSettings {
     projectName: string;
     framework: string;
   };
+  cloudflare: {
+    projectName: string;
+  };
   cloudRun: {
     projectId: string;
     region: string;
@@ -98,6 +101,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   lastDeploy: { url: '', provider: '', siteId: '', deployedAt: '' },
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
+  cloudflare: { projectName: '' },
   cloudRun: { projectId: '', region: 'us-central1', serviceAccountKey: '', serviceName: '', allowUnauthenticated: true },
   github: { token: '', repo: '', branch: 'main' },
   database: {
@@ -161,6 +165,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
     netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
     vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
+    cloudflare: { ...DEFAULT_SETTINGS.cloudflare, ...current.settings.cloudflare, ...(patch.cloudflare ?? {}) },
     cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
     database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) }, omni: { ...DEFAULT_SETTINGS.database.omni, ...current.settings.database.omni, ...(patch.database?.omni ?? {}) } },
     googleDrive: { ...DEFAULT_SETTINGS.googleDrive, ...current.settings.googleDrive, ...(patch.googleDrive ?? {}) },
@@ -205,6 +210,9 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
         token: updatedSettings.vercel.token,
         projectName: updatedSettings.vercel.projectName,
         framework: updatedSettings.vercel.framework,
+      },
+      cloudflare_config: {
+        projectName: updatedSettings.cloudflare.projectName,
       },
       cloudrun_config: {
         projectId: updatedSettings.cloudRun.projectId,
@@ -292,6 +300,9 @@ export async function loadAllProjectsFromSupabase(): Promise<number> {
           token: p.vercel_config?.token || '',
           projectName: p.vercel_config?.projectName || '',
           framework: p.vercel_config?.framework || 'vite',
+        },
+        cloudflare: {
+          projectName: p.cloudflare_config?.projectName || '',
         },
         cloudRun: {
           projectId: p.cloudrun_config?.projectId || '',
@@ -391,6 +402,9 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
         token: data.vercel_config?.token || '',
         projectName: data.vercel_config?.projectName || '',
         framework: data.vercel_config?.framework || 'vite',
+      },
+      cloudflare: {
+        projectName: data.cloudflare_config?.projectName || '',
       },
       cloudRun: {
         projectId: data.cloudrun_config?.projectId || '',

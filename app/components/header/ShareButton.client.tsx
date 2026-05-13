@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { projectsStore, activeProjectIdStore, getActiveProject } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { authStore } from '~/lib/stores/auth';
 import { chatStore } from '~/lib/stores/chat';
@@ -71,14 +71,18 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
 
   // Load existing shares when dropdown opens
   useEffect(() => {
-    if (!open || !projectId || projectId === 'default') return;
+    if (!open) return;
+    const pid = activeProjectIdStore.get();
+    if (!pid || pid === 'default') return;
     loadShares();
   }, [open, projectId]);
 
   const loadShares = async () => {
+    const pid = activeProjectIdStore.get();
+    if (!pid || pid === 'default') return;
     setLoadingShares(true);
     try {
-      const res = await fetch(`/api/share?projectId=${projectId}`);
+      const res = await fetch(`/api/share?projectId=${pid}`);
       const data: any = await res.json();
       if (data.shares) {
         setShares(data.shares);
@@ -169,12 +173,32 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
       return;
     }
 
-    // Validate that projectId is a valid UUID (saved to Supabase)
+    // If the project is still "default", auto-create it in Supabase first
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!projectId || projectId === 'default' || !UUID_REGEX.test(projectId)) {
-      toast.error('You need to save your project first before sharing it. Send a message in the chat to save the project.');
-      return;
+    let currentProjectId = activeProjectIdStore.get();
+
+    if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
+      try {
+        const proj = projectsStore.get()[currentProjectId || 'default'];
+        const projectName = proj?.name || project?.name || 'Untitled Project';
+        await updateActiveProjectSettings({ name: projectName });
+        currentProjectId = activeProjectIdStore.get();
+
+        if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
+          toast.error('Failed to create project. Please try saving first.');
+          return;
+        }
+
+        // Save all files to Supabase for the new project
+        await workbenchStore.saveEntireProject();
+      } catch (err) {
+        console.error('[ShareButton] Failed to auto-create project:', err);
+        toast.error('Failed to create project in cloud. Please try saving first.');
+        return;
+      }
     }
+
+    const shareProjectId = currentProjectId;
 
     if (shareType === 'collaborative' && !collaboratorEmail.trim()) {
       toast.error(t('share.emailRequired'));
@@ -191,7 +215,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          projectId,
+          projectId: shareProjectId,
           shareType,
           collaboratorEmail: shareType === 'collaborative' ? collaboratorEmail.trim() : undefined,
           userId: user.id,
@@ -215,7 +239,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
       }
 
       // Copy share link to clipboard
-      const shareUrl = `${window.location.origin}/chat/${projectId}?share=${data.share?.id}`;
+      const shareUrl = `${window.location.origin}/chat/${shareProjectId}?share=${data.share?.id}`;
       await navigator.clipboard.writeText(shareUrl);
 
       if (shareType === 'collaborative') {

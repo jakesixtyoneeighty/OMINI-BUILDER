@@ -3,6 +3,8 @@ import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
 interface DeployFile {
   path: string;
   content: string;
+  /** If true, content is base64-encoded binary data */
+  binary?: boolean;
 }
 
 interface DeployBody {
@@ -93,7 +95,9 @@ async function buildTarGz(files: DeployFile[]): Promise<ArrayBuffer> {
     if (!path || path.endsWith('/')) continue;
 
     const nameBytes = new TextEncoder().encode(path);
-    const contentBytes = new TextEncoder().encode(file.content);
+    const contentBytes = file.binary
+      ? Uint8Array.from(atob(file.content), (c) => c.charCodeAt(0))
+      : new TextEncoder().encode(file.content);
     const size = contentBytes.length;
 
     // Tar header (512 bytes)

@@ -3,6 +3,8 @@ import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
 interface DeployFile {
   path: string;
   content: string;
+  /** If true, content is base64-encoded binary data */
+  binary?: boolean;
 }
 
 interface DeployBody {
@@ -120,14 +122,27 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // ── Step 1: Compute SHA1 hashes for all files ──
     // Netlify's deploy API requires SHA1 hashes to determine which files
     // need uploading (files already on the site with matching hashes are skipped)
-    const fileEntries: { path: string; content: string; hash: string }[] = [];
+    const fileEntries: { path: string; content: string; hash: string; binary?: boolean }[] = [];
     const filesMap: Record<string, string> = {}; // hash -> path (for quick lookup)
     const filesObject: Record<string, string> = {}; // path -> hash (for deploy creation)
 
     for (const f of allFiles) {
       const cleanPath = f.path.replace(/^\/+/, '');
-      const hash = await sha1(f.content);
-      fileEntries.push({ path: cleanPath, content: f.content, hash });
+      // For binary files, decode base64 to binary first, then hash the raw bytes
+      let dataToHash: Uint8Array;
+      if (f.binary) {
+        const binaryStr = atob(f.content);
+        dataToHash = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          dataToHash[i] = binaryStr.charCodeAt(i);
+        }
+      } else {
+        dataToHash = new TextEncoder().encode(f.content);
+      }
+      const hashBuffer = await crypto.subtle.digest('SHA-1', dataToHash);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+      fileEntries.push({ path: cleanPath, content: f.content, hash, binary: f.binary });
       filesMap[hash] = cleanPath;
       filesObject[cleanPath] = hash;
     }
@@ -165,13 +180,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
       // Upload each required file
       for (const entry of filesToUpload) {
+        let uploadBody: ArrayBuffer | string;
+        let contentType: string;
+
+        if (entry.binary) {
+          // Decode base64 to binary for upload
+          const binaryStr = atob(entry.content);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          uploadBody = bytes.buffer;
+          contentType = 'application/octet-stream';
+        } else {
+          uploadBody = entry.content;
+          contentType = 'application/octet-stream';
+        }
+
         const uploadRes = await fetch(`${NETLIFY_API}/deploys/${deployData.id}/files/${entry.hash}`, {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/octet-stream',
+            'Content-Type': contentType,
           },
-          body: entry.content,
+          body: uploadBody,
         });
 
         if (!uploadRes.ok) {
