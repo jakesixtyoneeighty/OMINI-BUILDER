@@ -191,9 +191,9 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
 
         // Save all files to Supabase for the new project
         await workbenchStore.saveEntireProject();
-      } catch (err) {
+      } catch (err: any) {
         console.error('[ShareButton] Failed to auto-create project:', err);
-        toast.error('Failed to create project in cloud. Please try saving first.');
+        toast.error(err?.message || 'Failed to create project in cloud. Please try saving first.');
         return;
       }
     }

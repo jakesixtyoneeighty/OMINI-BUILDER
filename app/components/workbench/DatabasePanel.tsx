@@ -239,19 +239,23 @@ export const DatabasePanel = memo(() => {
 
   const handleSaveDb = async () => {
     if (editType === 'omni') {
+      // Ensure project exists in Supabase first (auto-create if needed)
+      const realProjectId = await ensureProjectInSupabase();
+      if (!realProjectId) return; // Error toast already shown
+
       // Enable Omni DB
       await updateActiveProjectSettings({
         database: {
           type: 'omni',
           firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
           supabase: { url: '', anonKey: '', serviceRoleKey: '' },
-          omni: { enabled: true, projectId: activeId },
+          omni: { enabled: true, projectId: realProjectId },
         },
       });
 
-      // Dispatch event for AI auto-configuration
+      // Dispatch event for AI auto-configuration (use the REAL project ID)
       window.dispatchEvent(new CustomEvent('database-config-changed', {
-        detail: { type: 'omni', config: { enabled: true, projectId: activeId } },
+        detail: { type: 'omni', config: { enabled: true, projectId: realProjectId } },
       }));
 
       setEditingDb(false);

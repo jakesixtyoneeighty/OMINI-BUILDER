@@ -198,7 +198,16 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
   const sb = getSupabase();
   const { user } = authStore.get();
 
-  if (sb && user) {
+  if (!sb || !user) {
+    console.warn('[project] Cannot save to Supabase:', !sb ? 'no Supabase client' : 'no user');
+    // If we need to create the project but can't connect to Supabase, throw
+    if (id === 'default' || id.length <= 10) {
+      throw new Error(!user ? 'Faça login para salvar projetos na nuvem.' : 'Banco de dados não configurado. Verifique as variáveis SUPABASE_URL e SUPABASE_ANON_KEY.');
+    }
+    return; // For existing projects, just save locally
+  }
+
+  {
     const projectData = {
       owner_id: user.id,
       name: updatedProject.name || 'Untitled Project',
@@ -250,17 +259,33 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     };
 
     if (id !== 'default' && id.length > 10) {
-      await sb.from('projects').upsert({ id, ...projectData });
+      const { error: upsertError } = await sb.from('projects').upsert({ id, ...projectData });
+      if (upsertError) {
+        console.error('[project] Failed to upsert project:', upsertError.message);
+      }
     } else {
       // New project creation — check the project limit first
       const currentCount = await getProjectCount();
       if (currentCount >= MAX_PROJECTS_PER_USER) {
         throw new Error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`);
       }
-      const { data } = await sb.from('projects').insert(projectData).select().single();
+      const { data, error: insertError } = await sb.from('projects').insert(projectData).select().single();
+      if (insertError) {
+        console.error('[project] Failed to insert project:', insertError.message, insertError.details, insertError.code);
+        throw new Error(`Falha ao criar projeto: ${insertError.message}`);
+      }
       if (data) {
+        console.log('[project] Project created in Supabase:', data.id);
         activeProjectIdStore.set(data.id);
         projectsStore.setKey(data.id, { ...updatedProject, id: data.id });
+        // Clean up the old "default" key
+        if (projectsStore.get()['default']) {
+          const { 'default': _, ...rest } = projectsStore.get();
+          projectsStore.set(rest);
+        }
+      } else {
+        console.error('[project] Insert returned no data');
+        throw new Error('Falha ao criar projeto: servidor não retornou dados.');
       }
     }
   }

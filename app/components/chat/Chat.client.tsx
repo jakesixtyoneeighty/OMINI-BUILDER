@@ -864,12 +864,36 @@ Apos corrigir, tente fazer o deploy novamente.`;
 
     if (type === 'omni') {
       const { updateActiveProjectSettings } = await import('~/lib/stores/project');
+
+      // Ensure project exists in Supabase before activating Omni DB
+      // (if projectId is "default", updateActiveProjectSettings will auto-create)
+      let realProjectId = projectId;
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (!realProjectId || realProjectId === 'default' || !UUID_REGEX.test(realProjectId)) {
+        try {
+          const proj = projectsStore.get()[realProjectId || 'default'];
+          const projectName = proj?.name || 'Untitled Project';
+          await updateActiveProjectSettings({ name: projectName });
+          realProjectId = activeProjectIdStore.get();
+
+          if (!realProjectId || realProjectId === 'default' || !UUID_REGEX.test(realProjectId)) {
+            toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
+            return;
+          }
+        } catch (err: any) {
+          console.error('[Chat] Failed to auto-create project for Omni DB:', err);
+          toast.error(err?.message || 'Falha ao criar projeto na nuvem.');
+          return;
+        }
+      }
+
       updateActiveProjectSettings({
         database: {
           type: 'omni',
           firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '', measurementId: '' },
           supabase: { url: '', anonKey: '', serviceRoleKey: '' },
-          omni: { enabled: true, projectId },
+          omni: { enabled: true, projectId: realProjectId },
         },
       });
 
@@ -878,18 +902,18 @@ Apos corrigir, tente fazer o deploy novamente.`;
         await fetch('/api/db', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'init', projectId }),
+          body: JSON.stringify({ action: 'init', projectId: realProjectId }),
         });
       } catch {}
 
       append({
         role: 'user',
-        content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
+        content: `I just activated the Omni DB built-in database for this project. The project ID is "${realProjectId}".
 
 Please:
 1. FIRST: Use the omni_db tool to create all necessary collections with their schemas (this makes them appear in the Database panel immediately)
 2. Create a lib/omni-db.js file with the OmniDB SDK class
-3. Initialize the database with: const db = new OmniDB('${projectId}');
+3. Initialize the database with: const db = new OmniDB('${realProjectId}');
 4. Generate all the CRUD operations and hooks needed for the app
 5. Make sure all components that need data use this database instance
 
