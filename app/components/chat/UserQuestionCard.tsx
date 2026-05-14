@@ -42,37 +42,39 @@ export function UserQuestionCard({ data, onAnswer, answered }: UserQuestionCardP
         <p className="text-sm text-bolt-elements-textPrimary font-medium">{data.question}</p>
       </div>
 
-      {/* Options */}
-      <div className="px-4 pb-2 space-y-1.5">
-        {data.options.map((option, i) => {
-          const isSelected = selectedAnswer === option.label;
-          return (
-            <button
-              key={i}
-              onClick={() => handleSelect(option.label)}
-              disabled={answered}
-              className={`w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 group ${
-                isSelected
-                  ? 'bg-purple-500/20 border border-purple-500/40 text-purple-200'
-                  : answered
-                    ? 'bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor/50 text-bolt-elements-textTertiary cursor-default'
-                    : 'bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-300 cursor-pointer'
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+      {/* Options (only if there are descriptive options) */}
+      {data.options.length > 0 && (
+        <div className="px-4 pb-2 space-y-1.5">
+          {data.options.map((option, i) => {
+            const isSelected = selectedAnswer === option.label;
+            return (
+              <button
+                key={i}
+                onClick={() => handleSelect(option.label)}
+                disabled={answered}
+                className={`w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 group ${
                   isSelected
-                    ? 'border-purple-400 bg-purple-500'
-                    : 'border-bolt-elements-borderColor group-hover:border-purple-500/50'
+                    ? 'bg-purple-500/20 border border-purple-500/40 text-purple-200'
+                    : answered
+                      ? 'bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor/50 text-bolt-elements-textTertiary cursor-default'
+                      : 'bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-300 cursor-pointer'
                 }`}
               >
-                {isSelected && <div className="i-ph:check-bold text-white text-[10px]" />}
-              </div>
-              <span className="flex-1">{option.label}</span>
-            </button>
-          );
-        })}
-      </div>
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                    isSelected
+                      ? 'border-purple-400 bg-purple-500'
+                      : 'border-bolt-elements-borderColor group-hover:border-purple-500/50'
+                  }`}
+                >
+                  {isSelected && <div className="i-ph:check-bold text-white text-[10px]" />}
+                </div>
+                <span className="flex-1">{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Custom answer input */}
       {!answered && (

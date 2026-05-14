@@ -644,12 +644,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
             return labelMatch?.[1] || '';
           })
           .filter(Boolean);
-        // Show question card even with 1 option (user can still type custom answer)
-        if (question && optionsRaw.length >= 1) {
-          setUserQuestions(prev => ({ ...prev, [i]: { question, options: optionsRaw.map(l => ({ label: l })) } }));
-        } else if (question) {
-          // No options parsed but question exists — show as Yes/No
-          setUserQuestions(prev => ({ ...prev, [i]: { question, options: [{ label: 'Yes' }, { label: 'No' }] } }));
+        // Show question card — always allow custom text input
+        if (question) {
+          // Filter out yes/no options — they are not helpful, user can type custom answer
+          const filteredOptions = optionsRaw
+            .map(l => ({ label: l }))
+            .filter(o => !/^(yes|no|sim|nao|não)$/i.test(o.label.trim()));
+          setUserQuestions(prev => ({ ...prev, [i]: { question, options: filteredOptions } }));
         }
       }
     }

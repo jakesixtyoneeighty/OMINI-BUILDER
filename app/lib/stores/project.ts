@@ -150,7 +150,23 @@ export function setActiveProject(id: string, name = '') {
   activeProjectIdStore.set(id);
   const projects = projectsStore.get();
   if (!projects[id]) {
-    projectsStore.setKey(id, { id, name, settings: DEFAULT_SETTINGS });
+    // Inherit the current LLM provider/model so new projects don't reset the selection
+    const currentLlm = typeof window !== 'undefined' ? (() => {
+      try {
+        const raw = localStorage.getItem('bolt.llm.settings');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return { provider: parsed.provider || 'openrouter', model: parsed.model || 'openrouter/free' };
+        }
+      } catch {}
+      return null;
+    })() : null;
+
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      ...(currentLlm ? { provider: currentLlm.provider, model: currentLlm.model } : {}),
+    };
+    projectsStore.setKey(id, { id, name, settings });
   }
 }
 

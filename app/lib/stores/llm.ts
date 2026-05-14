@@ -88,26 +88,39 @@ if (typeof window !== 'undefined') {
   });
 
   // Sync project-specific provider/model when switching projects
+  // BUT: only switch if the project has a REAL saved model (not the default placeholder)
   projectsStore.subscribe((projects) => {
     const projectId = activeProjectIdStore.get();
     const project = projects[projectId];
-    if (project?.settings?.provider || project?.settings?.model) {
-      const current = llmStore.get();
-      let newProvider = (project.settings.provider as ProviderId) || current.provider;
-      const newModel = project.settings.model || current.model;
-      // Migrate: if the project's saved provider was freeapi, fall back to openrouter
-      if (newProvider === 'freeapi') {
-        newProvider = 'openrouter';
-      }
-      // Migrate: if the project's saved provider has no key and it's not openrouter, fall back
-      if (newProvider !== 'openrouter' && !current.keys[newProvider]) {
-        newProvider = 'openrouter';
-      }
-      // Only update if different to avoid infinite loops
-      if (current.provider !== newProvider || current.model !== newModel) {
-        llmStore.setKey('provider', newProvider);
-        llmStore.setKey('model', newProvider === 'openrouter' && current.provider !== 'openrouter' ? 'openrouter/free' : newModel);
-      }
+    if (!project?.settings) return;
+
+    const savedProvider = project.settings.provider;
+    const savedModel = project.settings.model;
+    const current = llmStore.get();
+
+    // Skip if the project's model is still the default — this means it's a new/unsaved project
+    // that hasn't been configured yet. We should keep whatever model the user was using.
+    const isDefaultModel = (savedProvider === 'openrouter' && savedModel === 'openrouter/free') ||
+                           (savedModel === 'gpt-4o-mini') ||
+                           (!savedProvider && !savedModel);
+
+    if (isDefaultModel) return; // Keep the current model selection
+
+    let newProvider = (savedProvider as ProviderId) || current.provider;
+    const newModel = savedModel || current.model;
+
+    // Migrate: if the project's saved provider was freeapi, fall back to openrouter
+    if (newProvider === 'freeapi') {
+      newProvider = 'openrouter';
+    }
+    // Migrate: if the project's saved provider has no key and it's not openrouter, fall back
+    if (newProvider !== 'openrouter' && !current.keys[newProvider]) {
+      newProvider = 'openrouter';
+    }
+    // Only update if different to avoid infinite loops
+    if (current.provider !== newProvider || current.model !== newModel) {
+      llmStore.setKey('provider', newProvider);
+      llmStore.setKey('model', newProvider === 'openrouter' && current.provider !== 'openrouter' ? 'openrouter/free' : newModel);
     }
   });
 }
