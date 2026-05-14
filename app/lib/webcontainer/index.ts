@@ -31,27 +31,32 @@ if (!import.meta.env.SSR) {
             const { auth } = await import('@webcontainer/api');
 
             // Initialize auth with the provided API key as clientId
-            // This enables authenticated WebContainer with access to private packages
-            // Note: scope must match what the WebContainer API accepts
-            const result = auth.init({
-              clientId: apiToken,
-              scope: 'api',
-            });
+            // Note: We try auth first, but if it fails (e.g. invalid_scope),
+            // we continue without auth — the WebContainer still works, just
+            // without access to private npm packages.
+            try {
+              const result = auth.init({
+                clientId: apiToken,
+                scope: 'api',
+              });
 
-            if (result.status === 'need-auth') {
-              console.log('[WebContainer] API key configured, starting auth flow...');
+              if (result.status === 'need-auth') {
+                console.log('[WebContainer] API key configured, starting auth flow...');
 
-              // Start the OAuth flow (redirects to StackBlitz for authorization)
-              // After authorization, the user is redirected back with an auth code
-              auth.startAuthFlow({ popup: false });
+                // Start the OAuth flow (redirects to StackBlitz for authorization)
+                auth.startAuthFlow({ popup: false });
 
-              // Wait for the user to authorize
-              await auth.loggedIn();
-              console.log('[WebContainer] Authenticated successfully');
-            } else if (result.status === 'authorized') {
-              console.log('[WebContainer] Already authorized with API key');
-            } else if ((result as any).status === 'auth-failed') {
-              console.warn('[WebContainer] Auth failed:', (result as any).error, (result as any).description);
+                // Wait for the user to authorize
+                await auth.loggedIn();
+                console.log('[WebContainer] Authenticated successfully');
+              } else if (result.status === 'authorized') {
+                console.log('[WebContainer] Already authorized with API key');
+              }
+            } catch (authFlowError: any) {
+              // Auth flow can fail with "invalid_scope" if the API token
+              // is not a valid StackBlitz OAuth clientId. That's OK — we
+              // just continue without auth.
+              console.warn('[WebContainer] Auth flow failed (continuing without auth):', authFlowError?.message || authFlowError);
             }
           } catch (authError) {
             console.warn('[WebContainer] Auth initialization failed, continuing without auth:', authError);

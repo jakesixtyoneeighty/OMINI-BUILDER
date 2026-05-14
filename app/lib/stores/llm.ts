@@ -1,6 +1,6 @@
 import { atom, map } from 'nanostores';
 import { getSupabase } from '~/lib/supabase';
-import { activeProjectIdStore, projectsStore } from './project';
+import { activeProjectIdStore, projectsStore, isValidUUID } from './project';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
@@ -132,7 +132,7 @@ export async function syncKeysToSupabase() {
   const { keys, provider, model } = llmStore.get();
 
   if (sb && user) {
-    await sb.from('profiles').upsert({
+    const { error } = await sb.from('profiles').upsert({
       id: user.id,
       anthropic_key: keys.anthropic,
       openrouter_key: keys.openrouter,
@@ -141,6 +141,10 @@ export async function syncKeysToSupabase() {
       last_model: model,
       updated_at: new Date().toISOString(),
     });
+    if (error) {
+      // Columns may not exist yet if migration hasn't been run — log silently
+      console.warn('[llm] Could not sync keys to Supabase (migration may not be run yet):', error.message);
+    }
   }
 }
 
@@ -157,7 +161,13 @@ export async function loadKeysFromSupabase() {
         .eq('id', user.id)
         .single();
 
-      if (!error && data) {
+      // If the columns don't exist yet (migration not run), fall back gracefully
+      if (error) {
+        console.warn('[llm] Could not load keys from Supabase (migration may not be run yet):', error.message);
+        return;
+      }
+
+      if (data) {
         const current = llmStore.get();
         let restoredProvider = (data.last_provider as ProviderId) || current.provider;
         let restoredModel = data.last_model || current.model;
@@ -228,7 +238,7 @@ export function selectProviderModel(provider: ProviderId, model: string) {
 
   // Save to active project settings so each project remembers its model
   const projectId = activeProjectIdStore.get();
-  if (projectId && projectId !== 'default') {
+  if (isValidUUID(projectId)) {
     import('./project').then(({ updateActiveProjectSettings }) => {
       updateActiveProjectSettings({ provider, model });
     });

@@ -4,18 +4,11 @@ import { atom } from 'nanostores';
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore, saveProjectMessages, loadProjectMessages, updateActiveProjectSettings } from '~/lib/stores/project';
+import { activeProjectIdStore, saveProjectMessages, loadProjectMessages, updateActiveProjectSettings, isValidUUID } from '~/lib/stores/project';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
 import type { ChatHistoryItem } from './db';
 
 const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
-
-// UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isValidUUID(id: string | undefined | null): id is string {
-  return !!id && UUID_REGEX.test(id);
-}
 
 // Lazy-init the database to avoid top-level await which breaks Cloudflare Pages Functions
 let _db: IDBDatabase | undefined;
@@ -145,9 +138,9 @@ export function useChatHistory() {
         await setMessages(database, id, messages, urlId, description.get());
       }
 
-      // If the project is still "default", create it in Supabase first
+      // If the project doesn't have a valid UUID yet, create it in Supabase first
       let projectId = activeProjectIdStore.get();
-      if (projectId === 'default' || !projectId) {
+      if (!isValidUUID(projectId)) {
         if (!_creatingProject) {
           _creatingProject = true;
           try {

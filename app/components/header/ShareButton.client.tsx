@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings, isValidUUID } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { authStore } from '~/lib/stores/auth';
 import { chatStore } from '~/lib/stores/chat';
@@ -173,19 +173,18 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
       return;
     }
 
-    // If the project is still "default", auto-create it in Supabase first
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    // If the project is not a valid UUID, auto-create it in Supabase first
     let currentProjectId = activeProjectIdStore.get();
 
-    if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
+    if (!isValidUUID(currentProjectId)) {
       try {
         const proj = projectsStore.get()[currentProjectId || 'default'];
         const projectName = proj?.name || project?.name || 'Untitled Project';
         await updateActiveProjectSettings({ name: projectName });
         currentProjectId = activeProjectIdStore.get();
 
-        if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
-          toast.error('Failed to create project. Please try saving first.');
+        if (!isValidUUID(currentProjectId)) {
+          toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
           return;
         }
 
@@ -193,7 +192,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
         await workbenchStore.saveEntireProject();
       } catch (err: any) {
         console.error('[ShareButton] Failed to auto-create project:', err);
-        toast.error(err?.message || 'Failed to create project in cloud. Please try saving first.');
+        toast.error(err?.message || 'Falha ao criar projeto na nuvem. Tente salvar primeiro.');
         return;
       }
     }

@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getSupabase } from '~/lib/supabase';
 import { authStore } from '~/lib/stores/auth';
-import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, getActiveProject } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, getActiveProject, isValidUUID } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { useT } from '~/lib/i18n/useT';
@@ -68,12 +68,11 @@ export const DatabasePanel = memo(() => {
     setEditFirebase(firebaseConfig);
   }, [dbType, supabaseConfig.url, supabaseConfig.anonKey, firebaseConfig.apiKey]);
 
-  // Ensure project exists in Supabase (auto-create if still "default")
+  // Ensure project exists in Supabase (auto-create if not a valid UUID)
   const ensureProjectInSupabase = useCallback(async (): Promise<string | null> => {
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let currentId = activeProjectIdStore.get();
 
-    if (currentId && currentId !== 'default' && UUID_REGEX.test(currentId)) {
+    if (isValidUUID(currentId)) {
       return currentId; // Already a valid UUID
     }
 
@@ -84,7 +83,7 @@ export const DatabasePanel = memo(() => {
       await updateActiveProjectSettings({ name: projectName });
       currentId = activeProjectIdStore.get();
 
-      if (!currentId || currentId === 'default' || !UUID_REGEX.test(currentId)) {
+      if (!isValidUUID(currentId)) {
         toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
         return null;
       }

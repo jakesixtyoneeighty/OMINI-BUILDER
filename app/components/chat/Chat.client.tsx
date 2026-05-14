@@ -10,7 +10,7 @@ import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll, useEr
 import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore, projectsStore, getActiveProject } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, getActiveProject, isValidUUID } from '~/lib/stores/project';
 import { addRecentlyViewed } from '~/lib/stores/recently-viewed';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
@@ -269,7 +269,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
     // Load project settings from Supabase if available, then restore files
     const loadProject = async () => {
-      if (projectId && projectId !== 'default') {
+      // Only query Supabase if projectId is a real UUID — slug IDs like
+      // "elon-musk-portfolio-setup" come from AI artifact IDs and are NOT
+      // valid Supabase project IDs.  They would cause 400 Bad Request.
+      if (isValidUUID(projectId)) {
         // Load project settings from Supabase first
         const { loadProjectFromSupabase } = await import('~/lib/stores/project');
         await loadProjectFromSupabase(projectId);
@@ -303,9 +306,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     loadProject();
   }, []);
 
-  // Track recently viewed projects (cloud only)
+  // Track recently viewed projects (cloud only — requires valid UUID)
   useEffect(() => {
-    if (!projectId || projectId === 'default') return;
+    if (!isValidUUID(projectId)) return;
 
     const proj = projects[projectId];
     if (proj) {
@@ -317,7 +320,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         source: 'cloud',
       });
     } else {
-      // Try to load from Supabase
+      // Try to load from Supabase (projectId is already validated as UUID)
       const sb = getSupabase();
       if (sb) {
         sb.from('projects')
@@ -411,8 +414,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
           // Auto-save files to Supabase after AI finishes (cloud only, no cache)
           // Only save if the project ID is a valid UUID (slugs like "my-project" will fail)
           const currentProjectId = activeProjectIdStore.get();
-          const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (currentProjectId && currentProjectId !== 'default' && UUID_REGEX.test(currentProjectId)) {
+          if (isValidUUID(currentProjectId)) {
             workbenchStore.saveEntireProject().then(() => {
               console.log('[autosave] Files saved to Supabase');
             }).catch((err) => {
@@ -868,18 +870,17 @@ Apos corrigir, tente fazer o deploy novamente.`;
       const { updateActiveProjectSettings } = await import('~/lib/stores/project');
 
       // Ensure project exists in Supabase before activating Omni DB
-      // (if projectId is "default", updateActiveProjectSettings will auto-create)
+      // (if projectId is not a valid UUID, updateActiveProjectSettings will auto-create)
       let realProjectId = projectId;
-      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-      if (!realProjectId || realProjectId === 'default' || !UUID_REGEX.test(realProjectId)) {
+      if (!isValidUUID(realProjectId)) {
         try {
           const proj = projectsStore.get()[realProjectId || 'default'];
           const projectName = proj?.name || 'Untitled Project';
           await updateActiveProjectSettings({ name: projectName });
           realProjectId = activeProjectIdStore.get();
 
-          if (!realProjectId || realProjectId === 'default' || !UUID_REGEX.test(realProjectId)) {
+          if (!isValidUUID(realProjectId)) {
             toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
             return;
           }

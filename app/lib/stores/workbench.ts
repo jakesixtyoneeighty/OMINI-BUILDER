@@ -10,7 +10,7 @@ import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import { getSupabase } from '~/lib/supabase';
-import { activeProjectIdStore } from './project';
+import { activeProjectIdStore, isValidUUID } from './project';
 import { WORK_DIR } from '~/utils/constants';
 import * as nodePath from 'node:path';
 
@@ -127,7 +127,8 @@ export class WorkbenchStore {
   }
 
   async loadProjectFiles(projectId: string) {
-    if (!projectId || projectId === 'default') return;
+    // Only query Supabase with valid UUIDs — slug IDs cause 400 errors
+    if (!isValidUUID(projectId)) return;
     
     const sb = getSupabase();
     if (!sb) return;
@@ -235,8 +236,7 @@ export class WorkbenchStore {
     const projectId = activeProjectIdStore.get();
 
     // Only save to Supabase if projectId is a valid UUID
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (sb && UUID_REGEX.test(projectId)) {
+    if (sb && isValidUUID(projectId)) {
       await sb.from('project_files').upsert({
         project_id: projectId,
         path: filePath,
@@ -289,8 +289,7 @@ export class WorkbenchStore {
     const sb = getSupabase();
     const projectId = activeProjectIdStore.get();
     // Only save to Supabase if projectId is a valid UUID (slugs will cause 400 errors)
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!sb || !UUID_REGEX.test(projectId)) return;
+    if (!sb || !isValidUUID(projectId)) return;
 
     const files = this.files.get();
     const fileEntries = Object.entries(files).filter(([_, dirent]) => dirent?.type === 'file');

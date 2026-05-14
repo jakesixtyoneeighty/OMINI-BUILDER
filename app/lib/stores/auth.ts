@@ -58,25 +58,50 @@ export async function initAuth() {
     try {
       // Try with both columns first, fall back to just display_name if avatar_url doesn't exist
       let profile: any = null;
-      try {
-        const { data } = await sb
-          .from('profiles')
-          .select('display_name, avatar_url')
-          .eq('id', userId)
-          .single();
-        profile = data;
-      } catch {
-        // Fallback: try without avatar_url column (may not exist in older schemas)
-        try {
-          const { data } = await sb
-            .from('profiles')
-            .select('display_name')
-            .eq('id', userId)
-            .single();
-          profile = data;
-        } catch {
-          // Profiles table might not exist at all, that's fine
+      const { data, error } = await sb
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        // PGRST116 = no row found — auto-create the profile row
+        if (error.code === 'PGRST116') {
+          try {
+            const current = authStore.get();
+            const meta = current.user?.user_metadata || {};
+            await sb.from('profiles').upsert({
+              id: userId,
+              email: current.user?.email || '',
+              full_name: meta.full_name || meta.name || '',
+              display_name: meta.full_name || meta.name || '',
+              avatar_url: meta.avatar_url || '',
+            });
+            // Try loading again after creation
+            const { data: newData } = await sb
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('id', userId)
+              .single();
+            profile = newData;
+          } catch {
+            // Profile creation failed, that's OK
+          }
+        } else {
+          // Other error (e.g. missing columns) — try with just display_name
+          try {
+            const { data } = await sb
+              .from('profiles')
+              .select('display_name')
+              .eq('id', userId)
+              .single();
+            profile = data;
+          } catch {
+            // Profiles table might not exist at all, that's fine
+          }
         }
+      } else {
+        profile = data;
       }
       if (profile) {
         const current = authStore.get();

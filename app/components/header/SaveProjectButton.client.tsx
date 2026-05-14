@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { projectsStore, activeProjectIdStore, updateActiveProjectSettings } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore, updateActiveProjectSettings, isValidUUID } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { authStore, supabaseEnabled } from '~/lib/stores/auth';
 import { autosaveDbEnabled, toggleAutosaveDb } from '~/lib/stores/auto-save';
@@ -28,16 +28,16 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
   const doSave = useCallback(async () => {
     const pid = activeProjectIdStore.get();
 
-    // If project is still "default", create it in Supabase first
-    if (pid === 'default') {
-      const proj = projectsStore.get()[pid];
+    // If project doesn't have a valid UUID yet, create it in Supabase first
+    if (!isValidUUID(pid)) {
+      const proj = projectsStore.get()[pid || 'default'];
       const projectName = proj?.name || t('projectName.untitledProject');
       await updateActiveProjectSettings({ name: projectName });
       // After this, activeProjectIdStore should now have a UUID
     }
 
     const newPid = activeProjectIdStore.get();
-    if (newPid === 'default') return;
+    if (!isValidUUID(newPid)) return;
     const proj = projectsStore.get()[newPid];
     if (!proj) return;
 

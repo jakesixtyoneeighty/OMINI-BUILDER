@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
-import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings } from '~/lib/stores/project';
+import { projectsStore, activeProjectIdStore, getActiveProject, updateActiveProjectSettings, isValidUUID } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { classNames } from '~/utils/classNames';
@@ -438,8 +438,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
           // Ensure project is saved to Supabase before deploying (so Vercel settings can be persisted)
           let currentProjectId = activeProjectIdStore.get();
-          const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (!currentProjectId || currentProjectId === 'default' || !UUID_REGEX.test(currentProjectId)) {
+          if (!isValidUUID(currentProjectId)) {
             const proj = projectsStore.get()[currentProjectId || 'default'];
             const projectName = proj?.name || project?.name || 'Untitled Project';
             await updateActiveProjectSettings({ name: projectName });

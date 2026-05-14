@@ -90,6 +90,12 @@ export interface ProjectRecord {
 
 const ACTIVE_PROJECT_KEY = 'bolt.project.active';
 
+// UUID validation regex — used across the codebase to distinguish real Supabase IDs from slugs
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function isValidUUID(id: string | undefined | null): id is string {
+  return !!id && UUID_REGEX.test(id);
+}
+
 const DEFAULT_SETTINGS: ProjectSettings = {
   name: '',
   description: '',
@@ -201,7 +207,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
   if (!sb || !user) {
     console.warn('[project] Cannot save to Supabase:', !sb ? 'no Supabase client' : 'no user');
     // If we need to create the project but can't connect to Supabase, throw
-    if (id === 'default' || id.length <= 10) {
+    if (!isValidUUID(id)) {
       throw new Error(!user ? 'Faça login para salvar projetos na nuvem.' : 'Banco de dados não configurado. Verifique as variáveis SUPABASE_URL e SUPABASE_ANON_KEY.');
     }
     return; // For existing projects, just save locally
@@ -258,7 +264,8 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       updated_at: new Date().toISOString(),
     };
 
-    if (id !== 'default' && id.length > 10) {
+    if (isValidUUID(id)) {
+      // Existing project with a real UUID — upsert to update
       const { error: upsertError } = await sb.from('projects').upsert({ id, ...projectData });
       if (upsertError) {
         console.error('[project] Failed to upsert project:', upsertError.message);
@@ -276,11 +283,12 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       }
       if (data) {
         console.log('[project] Project created in Supabase:', data.id);
+        const oldId = id; // could be 'default' or a slug like 'elon-musk-portfolio-setup'
         activeProjectIdStore.set(data.id);
         projectsStore.setKey(data.id, { ...updatedProject, id: data.id });
-        // Clean up the old "default" key
-        if (projectsStore.get()['default']) {
-          const { 'default': _, ...rest } = projectsStore.get();
+        // Clean up the old non-UUID key from the store (e.g. 'default' or a slug)
+        if (oldId !== data.id && projectsStore.get()[oldId]) {
+          const { [oldId]: _, ...rest } = projectsStore.get();
           projectsStore.set(rest);
         }
       } else {
@@ -559,8 +567,7 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
   // Save to Supabase (cloud) — only if projectId is a valid UUID
   const sb = getSupabase();
   const { user } = authStore.get();
-  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!sb || !user || !UUID_REGEX.test(projectId)) return;
+  if (!sb || !user || !isValidUUID(projectId)) return;
 
   try {
     const update: Record<string, any> = {
@@ -590,10 +597,9 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
  */
 export async function loadProjectMessages(projectId: string): Promise<Message[]> {
   // Try Supabase first — only if projectId is a valid UUID
-  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const sb = getSupabase();
   const { user } = authStore.get();
-  if (sb && user && UUID_REGEX.test(projectId)) {
+  if (sb && user && isValidUUID(projectId)) {
     try {
       const { data, error } = await sb
         .from('projects')
