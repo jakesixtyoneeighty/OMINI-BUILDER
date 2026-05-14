@@ -56,11 +56,28 @@ export async function initAuth() {
   // Helper to load profile from profiles table and merge into user_metadata
   const mergeProfile = async (userId: string) => {
     try {
-      const { data: profile } = await sb
-        .from('profiles')
-        .select('display_name, avatar_url')
-        .eq('id', userId)
-        .single();
+      // Try with both columns first, fall back to just display_name if avatar_url doesn't exist
+      let profile: any = null;
+      try {
+        const { data } = await sb
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('id', userId)
+          .single();
+        profile = data;
+      } catch {
+        // Fallback: try without avatar_url column (may not exist in older schemas)
+        try {
+          const { data } = await sb
+            .from('profiles')
+            .select('display_name')
+            .eq('id', userId)
+            .single();
+          profile = data;
+        } catch {
+          // Profiles table might not exist at all, that's fine
+        }
+      }
       if (profile) {
         const current = authStore.get();
         if (current.user) {

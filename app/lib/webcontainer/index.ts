@@ -32,9 +32,10 @@ if (!import.meta.env.SSR) {
 
             // Initialize auth with the provided API key as clientId
             // This enables authenticated WebContainer with access to private packages
+            // Note: scope must match what the WebContainer API accepts
             const result = auth.init({
               clientId: apiToken,
-              scope: 'read write',
+              scope: 'api',
             });
 
             if (result.status === 'need-auth') {

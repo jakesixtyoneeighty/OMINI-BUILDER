@@ -556,10 +556,11 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
     console.warn('[saveProjectMessages] Failed to cache in IndexedDB:', err);
   }
 
-  // Save to Supabase (cloud)
+  // Save to Supabase (cloud) — only if projectId is a valid UUID
   const sb = getSupabase();
   const { user } = authStore.get();
-  if (!sb || !user) return;
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!sb || !user || !UUID_REGEX.test(projectId)) return;
 
   try {
     const update: Record<string, any> = {
@@ -588,10 +589,11 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
  * Load messages for a project from Supabase (cloud-first), falling back to IndexedDB.
  */
 export async function loadProjectMessages(projectId: string): Promise<Message[]> {
-  // Try Supabase first
+  // Try Supabase first — only if projectId is a valid UUID
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const sb = getSupabase();
   const { user } = authStore.get();
-  if (sb && user) {
+  if (sb && user && UUID_REGEX.test(projectId)) {
     try {
       const { data, error } = await sb
         .from('projects')

@@ -10,6 +10,13 @@ import type { ChatHistoryItem } from './db';
 
 const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string | undefined | null): id is string {
+  return !!id && UUID_REGEX.test(id);
+}
+
 // Lazy-init the database to avoid top-level await which breaks Cloudflare Pages Functions
 let _db: IDBDatabase | undefined;
 let _dbPromise: Promise<IDBDatabase | undefined> | undefined;
@@ -53,8 +60,14 @@ export function useChatHistory() {
   const [urlId, setUrlId] = useState<string | undefined>();
 
   useEffect(() => {
+    // If the URL contains a valid UUID, use it as the active project ID.
+    // If it's a slug (non-UUID), we still load messages from it (IndexedDB key)
+    // but we do NOT set it as activeProjectIdStore — that should only hold UUIDs or "default".
     if (mixedId) {
-      activeProjectIdStore.set(mixedId);
+      if (isValidUUID(mixedId)) {
+        activeProjectIdStore.set(mixedId);
+      }
+      // For slugs, we'll resolve to the real UUID after loading from Supabase/IndexedDB
     }
 
     (async () => {
@@ -66,6 +79,23 @@ export function useChatHistory() {
             chatId.set(mixedId);
           } else {
             chatId.set(mixedId);
+          }
+
+          // If mixedId is a slug (not a UUID), try to resolve the real project UUID
+          // by looking up the project in IndexedDB or Supabase
+          if (!isValidUUID(mixedId)) {
+            // Try to find the real project UUID in the projects store
+            const { projectsStore } = await import('~/lib/stores/project');
+            const projects = projectsStore.get();
+            // Look for a project that matches this slug in its URL ID mapping
+            // If not found, the slug stays as the chatId (for IndexedDB) but
+            // activeProjectIdStore remains "default" until a Supabase project is created
+            const matchingProject = Object.values(projects).find(
+              p => p.id !== 'default' && isValidUUID(p.id)
+            );
+            if (matchingProject) {
+              activeProjectIdStore.set(matchingProject.id);
+            }
           }
         } catch (error: any) {
           toast.error(error.message);
@@ -135,8 +165,8 @@ export function useChatHistory() {
         }
       }
 
-      // Save to Supabase (cloud)
-      if (projectId && projectId !== 'default') {
+      // Save to Supabase (cloud) — only if projectId is a valid UUID
+      if (isValidUUID(projectId)) {
         await saveProjectMessages(projectId, messages, description.get());
       }
     },

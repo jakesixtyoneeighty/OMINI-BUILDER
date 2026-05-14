@@ -250,6 +250,15 @@ export function getChatBody() {
 }
 
 export async function fetchModelsFor(provider: ProviderId): Promise<ModelInfo[]> {
+  // Migrate: freeapi no longer exists, redirect to openrouter
+  if (provider === 'freeapi' as any) {
+    provider = 'openrouter';
+    const current = llmStore.get();
+    if (current.provider === 'freeapi' as any) {
+      llmStore.set({ ...current, provider: 'openrouter', model: 'openrouter/free' });
+    }
+  }
+
   const key = llmStore.get().keys[provider];
   if (!key) {
     modelsStore.setKey(provider, []);

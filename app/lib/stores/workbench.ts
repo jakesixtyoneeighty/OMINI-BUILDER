@@ -234,7 +234,9 @@ export class WorkbenchStore {
     const sb = getSupabase();
     const projectId = activeProjectIdStore.get();
 
-    if (sb && projectId !== 'default') {
+    // Only save to Supabase if projectId is a valid UUID
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (sb && UUID_REGEX.test(projectId)) {
       await sb.from('project_files').upsert({
         project_id: projectId,
         path: filePath,
@@ -286,7 +288,9 @@ export class WorkbenchStore {
   async saveEntireProject() {
     const sb = getSupabase();
     const projectId = activeProjectIdStore.get();
-    if (!sb || projectId === 'default') return;
+    // Only save to Supabase if projectId is a valid UUID (slugs will cause 400 errors)
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!sb || !UUID_REGEX.test(projectId)) return;
 
     const files = this.files.get();
     const fileEntries = Object.entries(files).filter(([_, dirent]) => dirent?.type === 'file');

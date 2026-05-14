@@ -409,8 +409,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
           });
 
           // Auto-save files to Supabase after AI finishes (cloud only, no cache)
+          // Only save if the project ID is a valid UUID (slugs like "my-project" will fail)
           const currentProjectId = activeProjectIdStore.get();
-          if (currentProjectId && currentProjectId !== 'default') {
+          const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (currentProjectId && currentProjectId !== 'default' && UUID_REGEX.test(currentProjectId)) {
             workbenchStore.saveEntireProject().then(() => {
               console.log('[autosave] Files saved to Supabase');
             }).catch((err) => {
