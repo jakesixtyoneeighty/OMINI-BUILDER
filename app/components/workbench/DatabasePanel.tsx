@@ -3,7 +3,8 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getSupabase } from '~/lib/supabase';
 import { authStore } from '~/lib/stores/auth';
-import { activeProjectIdStore, projectsStore, updateActiveProjectSettings } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, updateActiveProjectSettings, getActiveProject } from '~/lib/stores/project';
+import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { useT } from '~/lib/i18n/useT';
 
@@ -67,21 +68,58 @@ export const DatabasePanel = memo(() => {
     setEditFirebase(firebaseConfig);
   }, [dbType, supabaseConfig.url, supabaseConfig.anonKey, firebaseConfig.apiKey]);
 
+  // Ensure project exists in Supabase (auto-create if still "default")
+  const ensureProjectInSupabase = useCallback(async (): Promise<string | null> => {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let currentId = activeProjectIdStore.get();
+
+    if (currentId && currentId !== 'default' && UUID_REGEX.test(currentId)) {
+      return currentId; // Already a valid UUID
+    }
+
+    // Need to create the project in Supabase
+    try {
+      const proj = getActiveProject();
+      const projectName = proj?.name || 'Untitled Project';
+      await updateActiveProjectSettings({ name: projectName });
+      currentId = activeProjectIdStore.get();
+
+      if (!currentId || currentId === 'default' || !UUID_REGEX.test(currentId)) {
+        toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
+        return null;
+      }
+
+      // Save all files for the new project
+      try { await workbenchStore.saveEntireProject(); } catch {}
+
+      return currentId;
+    } catch (err) {
+      console.error('[DatabasePanel] Failed to auto-create project:', err);
+      toast.error('Falha ao criar projeto na nuvem. Tente salvar primeiro.');
+      return null;
+    }
+  }, []);
+
   // Omni DB API calls
   const omniApiCall = useCallback(async (action: string, extra: Record<string, any> = {}) => {
+    // Ensure we have a valid project UUID before calling the API
+    const projectId = await ensureProjectInSupabase();
+    if (!projectId) {
+      throw new Error('Projeto não salvo. Envie uma mensagem no chat para salvar.');
+    }
+
     const res = await fetch('/api/db', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, projectId: activeId, ...extra }),
+      body: JSON.stringify({ action, projectId, ...extra }),
     });
     const data: any = await res.json();
     if (!res.ok) throw new Error(data.error || 'API call failed');
     return data;
-  }, [activeId]);
+  }, [ensureProjectInSupabase]);
 
   // Load Omni DB collections and quota
   const loadOmniData = useCallback(async () => {
-    if (!activeId || activeId === 'default') return;
     setLoading(true);
     try {
       // Init quota if not exists
@@ -97,7 +135,7 @@ export const DatabasePanel = memo(() => {
     } finally {
       setLoading(false);
     }
-  }, [omniApiCall, activeId]);
+  }, [omniApiCall]);
 
   // Load Omni DB data when type is omni
   useEffect(() => {
