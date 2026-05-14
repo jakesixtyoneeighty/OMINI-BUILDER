@@ -249,6 +249,68 @@ export const DatabasePanel = memo(() => {
     toast.success(t('databasePanel.databaseConfigSaved'));
   };
 
+  // Parse schema from various flexible formats
+  const parseSchema = (input: string): Record<string, any> | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return {};
+
+    // 1) Try strict JSON first
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {}
+
+    // 2) Try lenient JSON (fix common mistakes: single quotes, unquoted keys, trailing commas)
+    try {
+      let fixed = trimmed
+        .replace(/'/g, '"')                    // single → double quotes
+        .replace(/(\w+)\s*:/g, '"$1":')        // unquoted keys → quoted
+        .replace(/,\s*([}\]])/g, '$1')         // trailing commas
+        .replace(/:\s*"([^"]*?)"\s*([,}])/g, ':"$1"$2'); // fix spacing
+      const parsed = JSON.parse(fixed);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {}
+
+    // 3) Try simple format: "name: string, email: string, age: number"
+    //    Also handles multi-line: "name: string\nemail: string"
+    try {
+      const schema: Record<string, any> = {};
+      // Split by comma or newline
+      const parts = trimmed.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+      for (const part of parts) {
+        // Match patterns like: "name: string", "name string", "name: string required", "name: string required unique"
+        const match = part.match(/^(\w+)\s*:\s*(\w+)(?:\s+(required|unique|required\s+unique|unique\s+required))?$/i);
+        if (match) {
+          const fieldName = match[1];
+          const fieldType = match[2].toLowerCase();
+          const modifiers = (match[3] || '').toLowerCase();
+
+          // Validate type
+          const validTypes = ['string', 'number', 'boolean', 'date', 'object', 'array'];
+          const resolvedType = validTypes.includes(fieldType) ? fieldType : 'string';
+
+          const fieldDef: Record<string, any> = { type: resolvedType };
+          if (modifiers.includes('required')) fieldDef.required = true;
+          if (modifiers.includes('unique')) fieldDef.unique = true;
+
+          schema[fieldName] = fieldDef;
+        } else {
+          // If any part doesn't match the simple format, fail
+          return null;
+        }
+      }
+      if (Object.keys(schema).length > 0) {
+        return schema;
+      }
+    } catch {}
+
+    return null;
+  };
+
   // Create collection
   const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) {
@@ -257,15 +319,15 @@ export const DatabasePanel = memo(() => {
     }
 
     try {
-      // Parse schema from JSON or default to empty
+      // Parse schema from flexible format or default to empty
       let schema: Record<string, any> = {};
       if (newCollectionSchema.trim()) {
-        try {
-          schema = JSON.parse(newCollectionSchema);
-        } catch {
-          toast.error('Schema inválido. Use formato JSON: {"campo": {"type": "string", "required": true}}');
+        const parsed = parseSchema(newCollectionSchema);
+        if (parsed === null) {
+          toast.error('Schema inválido. Use um dos formatos:\n• Simples: name: string, email: string\n• JSON: {"name": {"type": "string", "required": true}}');
           return;
         }
+        schema = parsed;
       }
 
       await omniApiCall('createCollection', { collection: newCollectionName.trim(), schema });
@@ -650,7 +712,7 @@ export const DatabasePanel = memo(() => {
                   <textarea
                     value={newCollectionSchema}
                     onChange={(e) => setNewCollectionSchema(e.target.value)}
-                    placeholder='Schema JSON (opcional): {"name": {"type": "string", "required": true}, "email": {"type": "string", "required": true, "unique": true}}'
+                    placeholder={'Simples: name: string, email: string required\nou JSON: {"name": {"type": "string", "required": true}}'}
                     className="w-full px-3 py-2 rounded-lg text-xs font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/30 min-h-[80px] resize-y"
                   />
                   <div className="flex gap-2">
