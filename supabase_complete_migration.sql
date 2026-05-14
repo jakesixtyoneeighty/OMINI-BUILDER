@@ -37,6 +37,12 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
+-- LLM API keys and last used provider/model (for persistence across devices)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS anthropic_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS openrouter_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS google_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_provider TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_model TEXT;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 

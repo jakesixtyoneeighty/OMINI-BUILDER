@@ -8,6 +8,12 @@ create table if not exists public.profiles (
   avatar_url text,
   provider text,
   github_token text,
+  plan text not null default 'free',
+  anthropic_key text not null default '',
+  openrouter_key text not null default '',
+  google_key text not null default '',
+  last_provider text,
+  last_model text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

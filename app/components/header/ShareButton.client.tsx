@@ -73,13 +73,13 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
   useEffect(() => {
     if (!open) return;
     const pid = activeProjectIdStore.get();
-    if (!pid || pid === 'default') return;
+    if (!isValidUUID(pid)) return;
     loadShares();
   }, [open, projectId]);
 
   const loadShares = async () => {
     const pid = activeProjectIdStore.get();
-    if (!pid || pid === 'default') return;
+    if (!isValidUUID(pid)) return;
     setLoadingShares(true);
     try {
       const res = await fetch(`/api/share?projectId=${pid}`);
@@ -97,7 +97,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
   // Set up real-time collaboration when the project has active collaborative shares
   useEffect(() => {
     const sb = getSupabase();
-    if (!sb || !projectId || projectId === 'default') return;
+    if (!sb || !isValidUUID(projectId)) return;
 
     // Subscribe to a collaboration channel for this project
     const channel = sb.channel(`project-collab:${projectId}`, {

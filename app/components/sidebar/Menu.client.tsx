@@ -8,7 +8,7 @@ import { AccountSettingsDialog } from '~/components/header/AccountSettingsDialog
 import { getDb, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore, projectsStore, type ProjectRecord } from '~/lib/stores/project';
+import { activeProjectIdStore, projectsStore, type ProjectRecord, isValidUUID } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
 import { starredProjectsStore } from '~/lib/stores/starred';
 import { recentlyViewedStore, addRecentlyViewed, loadRecentlyViewedFromSupabase, type RecentlyViewedItem } from '~/lib/stores/recently-viewed';
@@ -113,7 +113,7 @@ export function Menu() {
   const starredProjectEntries = Array.from(starred)
     .map((id) => {
       const proj = projects[id];
-      if (!proj || id === 'default') return null;
+      if (!proj || !isValidUUID(id)) return null;
       return {
         id,
         name: proj.name || t('sidebar.untitled'),

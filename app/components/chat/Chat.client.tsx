@@ -450,7 +450,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     // Check project limit before creating a new project
     try {
       const currentProjectId = activeProjectIdStore.get();
-      if (!currentProjectId || currentProjectId === 'default') {
+      if (!isValidUUID(currentProjectId)) {
         const { getProjectCount, MAX_PROJECTS_PER_USER } = await import('~/lib/stores/project');
         const count = await getProjectCount();
         if (count >= MAX_PROJECTS_PER_USER) {

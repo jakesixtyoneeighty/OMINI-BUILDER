@@ -22,47 +22,47 @@ if (!import.meta.env.SSR) {
     import.meta.hot?.data.webcontainer ??
     Promise.resolve()
       .then(async () => {
-        // Read the WebContainer API key (StackBlitz OAuth clientId) from environment variable
-        // This is configured via WEBCONTAINER_API in .env or Cloudflare Pages env vars
+        // WebContainer auth flow:
+        // The StackBlitz OAuth is ONLY needed to access private npm packages.
+        // Most users don't need this, so we skip the auth flow entirely
+        // to avoid forcing a StackBlitz login redirect on every page load.
+        //
+        // If you need private npm package access, set WEBCONTAINER_API
+        // to a valid StackBlitz OAuth clientId and the scope below to
+        // a valid scope (e.g. 'read'). Then uncomment the auth block.
+        //
+        // NOTE: The previous scope 'api' was invalid and caused
+        // "invalid_scope" errors + unwanted login redirects.
+
+        const enableAuth = import.meta.env.WEBCONTAINER_AUTH === 'true';
         const apiToken = import.meta.env.WEBCONTAINER_API as string | undefined;
 
-        if (apiToken) {
+        if (enableAuth && apiToken) {
           try {
             const { auth } = await import('@webcontainer/api');
 
-            // Initialize auth with the provided API key as clientId
-            // Note: We try auth first, but if it fails (e.g. invalid_scope),
-            // we continue without auth — the WebContainer still works, just
-            // without access to private npm packages.
             try {
               const result = auth.init({
                 clientId: apiToken,
-                scope: 'api',
+                scope: 'read',
               });
 
               if (result.status === 'need-auth') {
-                console.log('[WebContainer] API key configured, starting auth flow...');
-
-                // Start the OAuth flow (redirects to StackBlitz for authorization)
-                auth.startAuthFlow({ popup: false });
-
-                // Wait for the user to authorize
+                console.log('[WebContainer] Starting StackBlitz auth flow (popup)...');
+                auth.startAuthFlow({ popup: true });
                 await auth.loggedIn();
                 console.log('[WebContainer] Authenticated successfully');
               } else if (result.status === 'authorized') {
-                console.log('[WebContainer] Already authorized with API key');
+                console.log('[WebContainer] Already authorized');
               }
             } catch (authFlowError: any) {
-              // Auth flow can fail with "invalid_scope" if the API token
-              // is not a valid StackBlitz OAuth clientId. That's OK — we
-              // just continue without auth.
               console.warn('[WebContainer] Auth flow failed (continuing without auth):', authFlowError?.message || authFlowError);
             }
           } catch (authError) {
             console.warn('[WebContainer] Auth initialization failed, continuing without auth:', authError);
           }
         } else {
-          console.log('[WebContainer] No WEBCONTAINER_API key set, running without authentication');
+          console.log('[WebContainer] Running without StackBlitz auth (set WEBCONTAINER_AUTH=true and WEBCONTAINER_API to enable)');
         }
 
         return WebContainer.boot({
