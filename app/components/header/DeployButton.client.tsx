@@ -22,6 +22,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const [buildError, setBuildError] = useState<string | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastDeployStackRef = useRef<string>('');
   const t = useT();
 
   const projectId = useStore(activeProjectIdStore);
@@ -162,16 +163,24 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
   /**
    * Send the build/deploy error to the AI chat so it can fix it.
+   * Includes the complete error details (stack trace) for better AI diagnosis.
    */
   const fixWithAI = useCallback(() => {
     const errorMsg = buildError || deployError || '';
     if (!errorMsg) return;
 
+    // Include full error details for AI diagnosis
+    const fullError = [
+      `Erro de ${buildError ? 'build' : 'deploy'}:`,
+      errorMsg,
+      lastDeployStackRef.current ? `\nStack trace completo:\n${lastDeployStackRef.current}` : '',
+    ].filter(Boolean).join('\n');
+
     // Send error to the chat as a user message
     window.dispatchEvent(
       new CustomEvent('ai-fix-requested', {
         detail: {
-          error: errorMsg,
+          error: fullError,
           type: buildError ? 'build' : 'deploy',
         },
       }),
@@ -182,6 +191,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
     setDeployError(null);
     setDeployPhase('idle');
     setDeploying(null);
+    lastDeployStackRef.current = '';
   }, [buildError, deployError]);
 
   // Default deploy: Vercel (if token available), otherwise Cloudflare Pages
@@ -275,9 +285,24 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 12000 },
       );
     } catch (err) {
-      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      const errMsg = err instanceof Error ? err.message : t('deploy.failed');
+      const errStack = err instanceof Error ? err.stack : '';
+      lastDeployStackRef.current = errStack || errMsg;
+      setDeployError(errMsg);
       setDeployPhase('error');
-      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
+      toast.error(
+        <div className="max-w-[450px]">
+          <div className="font-semibold text-sm mb-1">{t('deploy.failed')}</div>
+          <div className="text-xs text-red-300 break-all">{errMsg}</div>
+          {errStack && (
+            <details className="mt-2">
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
+            </details>
+          )}
+        </div>,
+        { autoClose: false, closeOnClick: false },
+      );
     } finally {
       setDeploying(null);
     }
@@ -343,9 +368,24 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 12000 },
       );
     } catch (err) {
-      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      const errMsg = err instanceof Error ? err.message : t('deploy.failed');
+      const errStack = err instanceof Error ? err.stack : '';
+      lastDeployStackRef.current = errStack || errMsg;
+      setDeployError(errMsg);
       setDeployPhase('error');
-      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
+      toast.error(
+        <div className="max-w-[450px]">
+          <div className="font-semibold text-sm mb-1">{t('deploy.failed')}</div>
+          <div className="text-xs text-red-300 break-all">{errMsg}</div>
+          {errStack && (
+            <details className="mt-2">
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
+            </details>
+          )}
+        </div>,
+        { autoClose: false, closeOnClick: false },
+      );
     } finally {
       setDeploying(null);
     }
@@ -398,9 +438,24 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         { autoClose: 12000 },
       );
     } catch (err) {
-      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      const errMsg = err instanceof Error ? err.message : t('deploy.failed');
+      const errStack = err instanceof Error ? err.stack : '';
+      lastDeployStackRef.current = errStack || errMsg;
+      setDeployError(errMsg);
       setDeployPhase('error');
-      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
+      toast.error(
+        <div className="max-w-[450px]">
+          <div className="font-semibold text-sm mb-1">{t('deploy.failed')}</div>
+          <div className="text-xs text-red-300 break-all">{errMsg}</div>
+          {errStack && (
+            <details className="mt-2">
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
+            </details>
+          )}
+        </div>,
+        { autoClose: false, closeOnClick: false },
+      );
     } finally {
       setDeploying(null);
     }
@@ -539,9 +594,25 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         }
       }
     } catch (err) {
-      setDeployError(err instanceof Error ? err.message : t('deploy.failed'));
+      const errMsg = err instanceof Error ? err.message : t('deploy.failed');
+      const errStack = err instanceof Error ? err.stack : '';
+      const providerLabel = deploying === 'vercel' ? 'Vercel' : deploying === 'cloudrun' ? 'Cloud Run' : String(deploying);
+      lastDeployStackRef.current = errStack || errMsg;
+      setDeployError(errMsg);
       setDeployPhase('error');
-      toast.error(err instanceof Error ? err.message : t('deploy.failed'), { autoClose: 8000 });
+      toast.error(
+        <div className="max-w-[450px]">
+          <div className="font-semibold text-sm mb-1">{t('deploy.failed')} — {providerLabel}</div>
+          <div className="text-xs text-red-300 break-all">{errMsg}</div>
+          {errStack && (
+            <details className="mt-2">
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
+            </details>
+          )}
+        </div>,
+        { autoClose: false, closeOnClick: false },
+      );
     } finally {
       setDeploying(null);
     }
@@ -632,9 +703,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           </button>
         </div>
 
-        {/* Build/Deploy error banner with Fix with AI button */}
+        {/* Build/Deploy error banner with Fix with AI button and close button */}
         {hasError && !open && (buildError || deployError) && (
-          <div className="absolute right-0 top-full mt-2 min-w-[280px] p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-2xl z-[100]">
+          <div className="absolute right-0 top-full mt-2 min-w-[280px] max-w-[400px] p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-2xl z-[100]">
             <div className="flex items-start gap-2">
               <div className="i-ph:warning-circle-fill text-red-400 text-base mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
@@ -652,6 +723,13 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   {t('deploy.fixWithAI')}
                 </button>
               </div>
+              <button
+                onClick={() => { setBuildError(null); setDeployError(null); setDeployPhase('idle'); }}
+                className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-white/10 transition-all"
+                title={t('error.dismiss')}
+              >
+                <div className="i-ph:x text-sm" />
+              </button>
             </div>
           </div>
         )}

@@ -268,6 +268,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     chatStore.setKey('started', initialMessages.length > 0);
 
     // Load project settings from Supabase if available, then restore files
+    let cancelled = false;
     const loadProject = async () => {
       // Only query Supabase if projectId is a real UUID — slug IDs like
       // "elon-musk-portfolio-setup" come from AI artifact IDs and are NOT
@@ -275,12 +276,15 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       if (isValidUUID(projectId)) {
         // Load project settings from Supabase first
         const { loadProjectFromSupabase } = await import('~/lib/stores/project');
+        if (cancelled) return;
         await loadProjectFromSupabase(projectId);
+        if (cancelled) return;
 
         // Load project files from Supabase (cloud only, no cache)
         await workbenchStore.loadProjectFiles(projectId);
+        if (cancelled) return;
 
-        // Set documents from loaded files
+        // Set documents from loaded files (this syncs files to the editor)
         const currentFiles = workbenchStore.files.get();
         if (Object.keys(currentFiles).length > 0) {
           workbenchStore.setDocuments(currentFiles);
@@ -304,6 +308,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     };
 
     loadProject();
+    return () => { cancelled = true; };
   }, []);
 
   // Track recently viewed projects (cloud only — requires valid UUID)
@@ -1154,12 +1159,13 @@ The database is ready to use. Please configure the project to connect to it and 
         `Mensagem: ${error.message}`,
         error.source ? `Fonte: ${error.source}` : '',
         error.filePath ? `Arquivo: ${error.filePath}` : '',
-        error.details ? `Detalhes:\n${error.details}` : '',
+        error.details ? `Detalhes completos do erro:\n${error.details}` : '',
+        `Timestamp: ${new Date(error.timestamp).toISOString()}`,
       ]
         .filter(Boolean)
         .join('\n');
 
-      const fixPrompt = `Corrija o seguinte erro no projeto:\n\n${errorContext}\n\nAnalise o erro, identifique a causa raiz e corrija o código. Se o erro for em um arquivo específico, reescreva o arquivo com a correção. Se necessario, instale dependencias que estejam faltando.`;
+      const fixPrompt = `Corrija o seguinte erro no projeto:\n\n${errorContext}\n\nAnalise o erro completo acima, identifique a causa raiz e corrija o código. Se o erro for em um arquivo específico, reescreva o arquivo com a correção. Se necessario, instale dependencias que estejam faltando. NAO omita nenhuma parte do erro - use todas as informacoes disponiveis para fazer a correção.`;
 
       if (!chatStarted) {
         runAnimation();

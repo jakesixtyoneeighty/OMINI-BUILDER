@@ -55,13 +55,34 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     }
   }, [hasPreview]);
 
+  // Sync files to editor documents only when files actually change content (not just reference)
+  const prevFilesContentRef = useRef('');
   useEffect(() => {
-    workbenchStore.setDocuments(files);
+    const currentContent = JSON.stringify(
+      Object.entries(files)
+        .filter(([, f]) => f?.type === 'file')
+        .map(([path, f]) => [path, (f as any).content])
+        .sort(([a], [b]) => a.localeCompare(b))
+    );
+    if (currentContent !== prevFilesContentRef.current) {
+      prevFilesContentRef.current = currentContent;
+      workbenchStore.setDocuments(files);
+    }
   }, [files]);
 
   // Auto-save files to Supabase when files change (debounced, cloud only)
+  // Track content changes, not just key changes, to avoid unnecessary saves
   const prevFilesRef = useRef('');
+  const isInitialLoad = useRef(true);
   useEffect(() => {
+    // Skip auto-save during initial project load to prevent race conditions
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      const currentFileKeys = JSON.stringify(Object.keys(files).sort());
+      prevFilesRef.current = currentFileKeys;
+      return;
+    }
+
     const currentFileKeys = JSON.stringify(Object.keys(files).sort());
     if (currentFileKeys !== prevFilesRef.current && currentFileKeys.length > 2) {
       prevFilesRef.current = currentFileKeys;

@@ -144,9 +144,11 @@ export async function initAuth() {
       await loadKeysFromSupabase();
       // Load profile data (avatar, display name) from profiles table
       await mergeProfile(data.session.user.id);
-      // Load all projects from Supabase (cloud-only storage)
-      const { loadAllProjectsFromSupabase } = await import('./project');
-      await loadAllProjectsFromSupabase();
+      // Load all projects from Supabase (cloud-only storage) — only if store is empty
+      const { projectsStore, loadAllProjectsFromSupabase } = await import('./project');
+      if (Object.keys(projectsStore.get()).length === 0) {
+        await loadAllProjectsFromSupabase();
+      }
       // Load recently viewed from Supabase
       const { loadRecentlyViewedFromSupabase } = await import('./recently-viewed');
       await loadRecentlyViewedFromSupabase();
@@ -204,7 +206,7 @@ export async function initAuth() {
       const { projectsStore } = await import('./project');
       projectsStore.set({});
     }
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+    if (event === 'SIGNED_IN') {
       const { loadKeysFromSupabase } = await import('./llm');
       await loadKeysFromSupabase();
       // Load profile data from profiles table after sign in
@@ -218,6 +220,8 @@ export async function initAuth() {
       const { loadRecentlyViewedFromSupabase } = await import('./recently-viewed');
       await loadRecentlyViewedFromSupabase();
     }
+    // Skip INITIAL_SESSION event to avoid duplicate loading —
+    // projects are already loaded during the first initAuth() call above
   });
 }
 
