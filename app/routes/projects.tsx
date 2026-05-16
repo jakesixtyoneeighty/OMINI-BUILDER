@@ -115,7 +115,7 @@ function ProjectsContent() {
               });
             }
           } else if (error) {
-            console.error('Supabase query error:', error.message);
+            console.error('[Projects] Supabase query error:', error.message, 'for user:', currentUser.id);
           }
         } catch (error) {
           console.error('Failed to load from Supabase:', error);
@@ -177,6 +177,15 @@ function ProjectsContent() {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Retry loading cloud projects after auth is fully initialized
+  useEffect(() => {
+    if (!user) return;
+    const timeout = setTimeout(() => {
+      loadProjects();
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [user]);
 
   const filtered = search
     ? projects.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))

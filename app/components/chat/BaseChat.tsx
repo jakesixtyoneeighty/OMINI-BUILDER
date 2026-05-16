@@ -983,7 +983,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           <div className={classNames(
             _mobile && chatStarted
               ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden')
-              : '',
+              : 'flex-1 min-w-0',
           )}>
             <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
           </div>

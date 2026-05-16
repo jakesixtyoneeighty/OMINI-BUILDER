@@ -122,8 +122,8 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   return (
     <div
       className={classNames(
-        'flex-1 min-w-0 h-full transition-all duration-200 overflow-hidden',
-        showWorkbench ? 'opacity-100' : 'w-0 h-0 opacity-0 pointer-events-none overflow-hidden',
+        'flex-1 min-w-0 h-full overflow-hidden',
+        showWorkbench ? 'opacity-100' : 'w-0 h-0 opacity-0 pointer-events-none',
       )}
     >
       <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden m-0.5">

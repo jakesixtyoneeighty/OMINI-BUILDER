@@ -87,7 +87,7 @@ export function Header() {
       <div className="w-px h-5 bg-bolt-elements-borderColor hidden sm:block" />
 
       {/* Model Picker */}
-      <div className="hidden md:block">
+      <div>
         <ClientOnly>{() => <ModelPicker />}</ClientOnly>
       </div>
 
@@ -187,17 +187,18 @@ export function Header() {
                       </div>
 
                       <button
-                        onClick={() => { setAppSettingsOpen(true); setMoreMenuOpen(false); }}
+                        onClick={() => { window.dispatchEvent(new CustomEvent('open-api-settings')); setMoreMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:gear-six text-base" />
                         <span>{t('header.apiKeysSettings')}</span>
                       </button>
+                      <div className="border-t border-bolt-elements-borderColor my-1" />
                       <button
                         onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); setMoreMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
-                        <div className="i-ph:sliders-horizontal text-base" />
+                        <div className="i-ph:folder-open text-base" />
                         <span>{t('header.projectSettings')}</span>
                       </button>
                       <a

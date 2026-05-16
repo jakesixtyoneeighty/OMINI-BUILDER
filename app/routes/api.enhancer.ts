@@ -32,7 +32,10 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
           ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
 
-  if (!apiKey) {
+  // For the free model, use the server's OPENROUTER_API_KEY
+  const isFreeModel = provider === 'openrouter' && (body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
+
+  if (!apiKey && !isFreeModel) {
     return new Response(JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes.` }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
