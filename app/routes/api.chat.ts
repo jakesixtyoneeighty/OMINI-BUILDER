@@ -144,6 +144,9 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const url = new URL(request.url);
   const serverOrigin = `${url.protocol}//${url.host}`;
 
+  // Pass the request's abort signal so the LLM stream cancels when the client disconnects
+  const abortSignal = request.signal;
+
   const stream = new SwitchableStream();
 
   try {
@@ -175,13 +178,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin);
+        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin);
+    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
 
     stream.switchSource(result.toAIStream());
 
@@ -201,12 +204,20 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     let message = error instanceof Error ? error.message : 'Internal Server Error';
 
     // Provide helpful error messages for common API failures
-    if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
+    if (abortSignal.aborted) {
+      // Client disconnected — no need to send error response
+      console.log('[chat] Client disconnected (abort signal)');
+      return new Response(null, { status: 499 });
+    } else if (message.includes('abort') || message.includes('cancel') || message.includes('Timeout') || message.includes('ETIMEDOUT') || message.includes('timed out')) {
+      message = `O modelo demorou demais para responder. Isso pode acontecer com modelos gratuitos ou quando o servidor esta sobrecarregado. Tente novamente em alguns segundos.`;
+    } else if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
       message = `O modelo "${selection.model}" nao foi encontrado no servidor LLM. Verifique se a chave de API esta correta e se o modelo esta disponivel.`;
     } else if (message.includes('401') || message.includes('Unauthorized') || message.includes('Authentication')) {
       message = `Chave de API invalida para o provedor "${selection.provider}". Verifique sua chave nas Configuracoes.`;
     } else if (message.includes('429') || message.includes('rate') || message.includes('Rate')) {
       message = `Limite de requisicoes atingido para o provedor "${selection.provider}". Aguarde um momento e tente novamente.`;
+    } else if (message.includes('503') || message.includes('Service Unavailable') || message.includes('Overloaded')) {
+      message = `O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Tente novamente em alguns segundos.`;
     }
 
     throw new Response(JSON.stringify({ error: message }), {

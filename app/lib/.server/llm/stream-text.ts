@@ -45,6 +45,7 @@ export function streamText(
   supabaseUrl?: string,
   supabaseKey?: string,
   serverOrigin?: string,
+  abortSignal?: AbortSignal,
 ) {
   const extra: { headers?: Record<string, string> } = {};
 
@@ -64,6 +65,7 @@ export function streamText(
     system: getSystemPrompt(undefined, dbContext, planMode, customRules, language, serverOrigin),
     maxTokens: MAX_TOKENS,
     tools: activeTools,
+    abortSignal,
     ...extra,
     messages: coreMessages,
     ...options,

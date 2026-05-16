@@ -4,10 +4,13 @@ import { createOpenAI } from '@ai-sdk/openai';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
+// Timeout for LLM API requests (5 minutes — large models can take a while to start streaming)
+const LLM_TIMEOUT_MS = 5 * 60 * 1000;
+
 export function getModel(provider: ProviderId, modelId: string, apiKey: string) {
   switch (provider) {
     case 'anthropic': {
-      const anthropic = createAnthropic({ apiKey });
+      const anthropic = createAnthropic({ apiKey, timeout: LLM_TIMEOUT_MS });
       return anthropic(modelId);
     }
     case 'openrouter': {
@@ -15,6 +18,7 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
         apiKey,
         baseURL: 'https://openrouter.ai/api/v1',
         compatibility: 'compatible',
+        timeout: LLM_TIMEOUT_MS,
         headers: {
           'HTTP-Referer': 'https://bolt.new',
           'X-Title': 'Omni-Builder',
@@ -25,7 +29,7 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
       });
     }
     case 'google': {
-      const google = createGoogleGenerativeAI({ apiKey });
+      const google = createGoogleGenerativeAI({ apiKey, timeout: LLM_TIMEOUT_MS });
       return google(modelId);
     }
     default:

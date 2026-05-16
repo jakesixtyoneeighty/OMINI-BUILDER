@@ -138,6 +138,25 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',
     body: chatBody,
+    // Custom fetch with timeout to prevent indefinite hanging
+    fetch: async (input, init) => {
+      const controller = new AbortController();
+      // 5 minute timeout — large models can take a while to start streaming
+      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+      // If there's an existing signal, chain it
+      const existingSignal = init?.signal;
+      if (existingSignal) {
+        existingSignal.addEventListener('abort', () => controller.abort());
+      }
+
+      try {
+        const response = await fetch(input, { ...init, signal: controller.signal });
+        return response;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    },
     onToolCall: async ({ toolCall }) => {
       // When the AI calls the "deploy" tool, trigger the client-side deploy
       if (toolCall.toolName === 'deploy') {
@@ -185,7 +204,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       }
 
       // Translate common API errors to user-friendly Portuguese messages
-      if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
+      if (errorMsg.includes('abort') || errorMsg.includes('AbortError') || errorMsg.includes('The user aborted a request') || errorMsg.includes('The operation was aborted')) {
+        errorMsg = 'A requisicao foi cancelada. O modelo pode ter demorado demais para responder. Tente novamente em alguns segundos.';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout') || errorMsg.includes('ETIMEDOUT') || errorMsg.includes('timed out')) {
+        errorMsg = 'O modelo demorou demais para responder. Isso pode acontecer com modelos gratuitos ou servidores sobrecarregados. Tente novamente em alguns segundos.';
+      } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('Network request failed')) {
+        errorMsg = 'Erro de conexao com o servidor. Verifique sua internet e tente novamente. Se o problema persistir, o servidor pode estar temporariamente indisponivel.';
+      } else if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
         errorMsg = 'Modelo LLM nao encontrado. O servidor pode estar com problema de configuracao. Tente novamente em instantes ou configure sua propria chave de API nas Configuracoes.';
       } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API')) {
         errorMsg = 'Chave de API ausente. Configure sua chave nas Configuracoes ou o servidor precisa da variavel LLM_FREE_API configurada.';
@@ -193,6 +218,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         errorMsg = 'Chave de API invalida. Verifique sua chave nas Configuracoes.';
       } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit')) {
         errorMsg = 'Limite de requisicoes atingido. Aguarde um momento e tente novamente.';
+      } else if (errorMsg.includes('503') || errorMsg.includes('Service Unavailable') || errorMsg.includes('Overloaded')) {
+        errorMsg = 'O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Tente novamente em alguns segundos.';
       }
 
       // Tentar extrair causa raiz de erros de API (fetch errors, etc.)
