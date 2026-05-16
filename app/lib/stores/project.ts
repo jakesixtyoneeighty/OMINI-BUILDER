@@ -566,7 +566,16 @@ export function envVarsToFile(envVars: EnvVar[]): string {
 /**
  * Save messages for a project to Supabase.
  * Also saves to IndexedDB as a local cache/fallback.
+ * Throttled to prevent spamming the API on rapid message saves.
  */
+
+// Throttle: minimum 3 seconds between Supabase saves for the same project
+const _lastSaveTime: Record<string, number> = {};
+const SAVE_THROTTLE_MS = 3000;
+
+// Track if the 'messages' column is missing so we don't spam errors
+let _messagesColumnMissing = false;
+
 export async function saveProjectMessages(projectId: string, messages: Message[], description?: string): Promise<void> {
   // Always save to IndexedDB first (fast local cache)
   try {
@@ -582,6 +591,16 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
   const sb = getSupabase();
   const { user } = authStore.get();
   if (!sb || !user || !isValidUUID(projectId)) return;
+
+  // If the 'messages' column is missing from the schema, skip Supabase saves entirely
+  if (_messagesColumnMissing) return;
+
+  // Throttle: skip if we saved this project too recently
+  const now = Date.now();
+  if (_lastSaveTime[projectId] && now - _lastSaveTime[projectId] < SAVE_THROTTLE_MS) {
+    return;
+  }
+  _lastSaveTime[projectId] = now;
 
   try {
     const update: Record<string, any> = {
@@ -599,6 +618,12 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
       .eq('owner_id', user.id);
 
     if (error) {
+      // If the 'messages' column is missing, mark it so we stop trying
+      if (error.message?.includes('messages') && error.message?.includes('column')) {
+        console.warn('[saveProjectMessages] The "messages" column is missing from the projects table. Run: ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS messages jsonb DEFAULT \'[]\'::jsonb;');
+        _messagesColumnMissing = true;
+        return;
+      }
       console.error('[saveProjectMessages] Supabase error:', error.message);
     }
   } catch (err) {

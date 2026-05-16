@@ -32,32 +32,39 @@ export async function refreshStorageUsage() {
 
   if (sb && user) {
     try {
-      // Query total content length from project_files
+      // Try the RPC function first
       const { data, error } = await sb.rpc('get_user_storage_usage', { user_id: user.id });
 
       if (!error && data !== null) {
         totalBytes = Number(data) || 0;
-      } else {
-        // Fallback: manually estimate by querying projects and their file sizes
-        const { data: projects } = await sb
-          .from('projects')
-          .select('id')
-          .eq('owner_id', user.id);
+      } else if (error) {
+        // RPC function doesn't exist or failed — use manual estimation fallback
+        console.warn('[storage] get_user_storage_usage RPC not available, using fallback estimation');
 
-        if (projects && projects.length > 0) {
-          const projectIds = projects.map((p) => p.id);
+        try {
+          const { data: projects } = await sb
+            .from('projects')
+            .select('id')
+            .eq('owner_id', user.id);
 
-          // Get file count and estimate size
-          const { data: files } = await sb
-            .from('project_files')
-            .select('content')
-            .in('project_id', projectIds);
+          if (projects && projects.length > 0) {
+            // Estimate from messages JSONB size (simpler than project_files which may not exist)
+            const { data: projectData } = await sb
+              .from('projects')
+              .select('messages')
+              .eq('owner_id', user.id);
 
-          if (files) {
-            for (const file of files) {
-              totalBytes += new Blob([file.content || '']).size;
+            if (projectData) {
+              for (const p of projectData) {
+                if (p.messages) {
+                  totalBytes += new Blob([JSON.stringify(p.messages)]).size;
+                }
+              }
             }
           }
+        } catch (fallbackErr) {
+          // Even fallback failed, just show 0
+          console.warn('[storage] Fallback estimation failed:', fallbackErr);
         }
       }
     } catch {

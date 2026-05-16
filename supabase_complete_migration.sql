@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
   cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb,
+  messages JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -106,6 +107,45 @@ ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS google_drive_config JSONB N
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS messages JSONB DEFAULT '[]'::jsonb;
+
+-- ==========================================
+-- 2b. RPC Functions
+-- ==========================================
+
+-- Function: get_user_storage_usage — returns total bytes used by a user
+-- Estimates storage from project messages, deployed files, and gallery files
+CREATE OR REPLACE FUNCTION public.get_user_storage_usage(user_id UUID)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  total BIGINT := 0;
+BEGIN
+  -- Messages storage (JSONB size)
+  SELECT COALESCE(SUM(pg_column_size(messages)), 0) INTO total
+  FROM public.projects
+  WHERE owner_id = user_id;
+
+  -- Deployed project files
+  SELECT total + COALESCE(SUM(LENGTH(content)), 0) INTO total
+  FROM public.deployed_project_files f
+  INNER JOIN public.deployed_projects d ON d.id = f.deploy_id
+  WHERE d.owner_id = user_id;
+
+  -- Gallery project files
+  SELECT total + COALESCE(SUM(LENGTH(content)), 0) INTO total
+  FROM public.gallery_project_files gf
+  INNER JOIN public.gallery_projects gp ON gp.id = gf.gallery_id
+  WHERE gp.owner_id = user_id;
+
+  RETURN total;
+END;
+$$;
+
+-- Grant execute to authenticated users
+GRANT EXECUTE ON FUNCTION public.get_user_storage_usage(UUID) TO authenticated;
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
