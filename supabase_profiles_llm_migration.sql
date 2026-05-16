@@ -10,3 +10,6 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_model text NOT NULL DE
 
 -- Add cloudflare_config column to projects if missing
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS cloudflare_config jsonb NOT NULL DEFAULT '{}'::jsonb;
+
+-- Add omnibuilder_config column to projects if missing (stores deploy ID for reuse)
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS omnibuilder_config jsonb NOT NULL DEFAULT '{}'::jsonb;

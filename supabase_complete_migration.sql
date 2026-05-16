@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS public.projects (
   cloudrun_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   database_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   google_drive_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -101,6 +103,8 @@ ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS vercel_config JSONB NOT NUL
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS cloudrun_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS database_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS google_drive_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;

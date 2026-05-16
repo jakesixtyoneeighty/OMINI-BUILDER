@@ -406,14 +406,63 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
       const projectName = settings?.name || project?.name || 'My Project';
       const projectDesc = settings?.description || '';
 
+      // Check if we have an existing deploy to reuse (same URL)
+      const existingDeployId = settings?.omnibuilder?.deployId || '';
+
       const res = await fetch('/api/deploy-view', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', name: projectName, description: projectDesc, files: fileList }),
+        body: JSON.stringify(
+          existingDeployId
+            ? { action: 'update', deployId: existingDeployId, name: projectName, description: projectDesc, files: fileList }
+            : { action: 'create', name: projectName, description: projectDesc, files: fileList },
+        ),
       });
 
       const data = await res.json();
       if (!res.ok) {
+        // If update failed because deploy was deleted, try creating a new one
+        if (existingDeployId && (data.error?.includes('not found') || res.status === 404)) {
+          const retryRes = await fetch('/api/deploy-view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'create', name: projectName, description: projectDesc, files: fileList }),
+          });
+          const retryData = await retryRes.json();
+          if (!retryRes.ok) {
+            if (retryData.migrationNeeded) {
+              toast.error(
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold">Database migration needed</span>
+                  <span className="text-xs">Run the SQL in supabase_deploy_migration.sql</span>
+                </div>,
+                { autoClose: 12000 },
+              );
+              return;
+            }
+            throw new Error(retryData.error || 'Deploy failed');
+          }
+          // New deploy created after old one was gone — save new deploy ID
+          updateActiveProjectSettings({
+            omnibuilder: { deployId: retryData.deployId },
+            lastDeploy: {
+              url: retryData.viewUrl,
+              provider: 'omnibuilder',
+              siteId: retryData.deployId,
+              deployedAt: new Date().toISOString(),
+            },
+          });
+          setDeployResult({ url: retryData.viewUrl, provider: 'Omni Builder' });
+          setDeployPhase('success');
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">{t('deploy.successOmni')}</span>
+              <a href={retryData.viewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{retryData.viewUrl}</a>
+            </div>,
+            { autoClose: 12000 },
+          );
+          return;
+        }
         if (data.migrationNeeded) {
           toast.error(
             <div className="flex flex-col gap-1">
@@ -427,12 +476,23 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         throw new Error(data.error || 'Deploy failed');
       }
 
+      // Save deploy ID and last deploy info to project settings
+      updateActiveProjectSettings({
+        omnibuilder: { deployId: data.deployId },
+        lastDeploy: {
+          url: data.viewUrl,
+          provider: 'omnibuilder',
+          siteId: data.deployId,
+          deployedAt: new Date().toISOString(),
+        },
+      });
+
       setDeployResult({ url: data.viewUrl, provider: 'Omni Builder' });
       setDeployPhase('success');
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">{t('deploy.successOmni')}</span>
+          <span className="font-semibold">{existingDeployId ? t('deploy.siteUpdated') || 'Site atualizado!' : t('deploy.successOmni')}</span>
           <a href={data.viewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.viewUrl}</a>
         </div>,
         { autoClose: 12000 },

@@ -76,6 +76,9 @@ export interface ProjectSettings {
     supabase: SupabaseConfig;
     omni: OmniDBConfig;
   };
+  omnibuilder: {
+    deployId: string;
+  };
   googleDrive: {
     clientId: string;
   };
@@ -108,6 +111,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
   cloudflare: { projectName: '' },
+  omnibuilder: { deployId: '' },
   cloudRun: { projectId: '', region: 'us-central1', serviceAccountKey: '', serviceName: '', allowUnauthenticated: true },
   github: { token: '', repo: '', branch: 'main' },
   database: {
@@ -188,6 +192,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     netlify: { ...DEFAULT_SETTINGS.netlify, ...current.settings.netlify, ...(patch.netlify ?? {}) },
     vercel: { ...DEFAULT_SETTINGS.vercel, ...current.settings.vercel, ...(patch.vercel ?? {}) },
     cloudflare: { ...DEFAULT_SETTINGS.cloudflare, ...current.settings.cloudflare, ...(patch.cloudflare ?? {}) },
+    omnibuilder: { ...DEFAULT_SETTINGS.omnibuilder, ...current.settings.omnibuilder, ...(patch.omnibuilder ?? {}) },
     cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
     database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) }, omni: { ...DEFAULT_SETTINGS.database.omni, ...current.settings.database.omni, ...(patch.database?.omni ?? {}) } },
     googleDrive: { ...DEFAULT_SETTINGS.googleDrive, ...current.settings.googleDrive, ...(patch.googleDrive ?? {}) },
@@ -244,6 +249,9 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       },
       cloudflare_config: {
         projectName: updatedSettings.cloudflare.projectName,
+      },
+      omnibuilder_config: {
+        deployId: updatedSettings.omnibuilder.deployId,
       },
       cloudrun_config: {
         projectId: updatedSettings.cloudRun.projectId,
@@ -353,6 +361,9 @@ export async function loadAllProjectsFromSupabase(): Promise<number> {
         cloudflare: {
           projectName: p.cloudflare_config?.projectName || '',
         },
+        omnibuilder: {
+          deployId: (p as any).omnibuilder_config?.deployId || '',
+        },
         cloudRun: {
           projectId: p.cloudrun_config?.projectId || '',
           region: p.cloudrun_config?.region || 'us-central1',
@@ -454,6 +465,9 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
       },
       cloudflare: {
         projectName: data.cloudflare_config?.projectName || '',
+      },
+      omnibuilder: {
+        deployId: (data as any).omnibuilder_config?.deployId || '',
       },
       cloudRun: {
         projectId: data.cloudrun_config?.projectId || '',
