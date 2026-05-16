@@ -334,7 +334,7 @@ function ProjectsContent() {
             {filtered.map((project) => (
               <div
                 key={project.id}
-                className={`group rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-bolt-elements-borderColorActive hover:shadow-lg transition-all duration-200 relative ${menuOpenId === project.id ? 'z-50 overflow-visible' : 'overflow-hidden'}`}
+                className={`group rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-bolt-elements-borderColorActive hover:shadow-lg transition-all duration-200 relative ${menuOpenId === project.id ? 'z-[10000] overflow-visible' : 'overflow-hidden'}`}
               >
                 {/* Card visual header */}
                 <a href={`/chat/${project.id}`} className="block">
@@ -374,9 +374,10 @@ function ProjectsContent() {
 
                 {/* Dropdown menu */}
                 {menuOpenId === project.id && (
-                  <div className="absolute top-0 right-2 z-[9999] w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden">
+                  <div className="absolute top-0 right-2 z-[9999] w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setMenuOpenId(null);
                         setEditingId(project.id);
                         setEditName(project.name);
@@ -387,7 +388,8 @@ function ProjectsContent() {
                       {t('projects.rename')}
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setMenuOpenId(null);
                         navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
                         toast.success(t('projects.linkCopied'));
@@ -398,7 +400,8 @@ function ProjectsContent() {
                       {t('projects.copyLink')}
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setMenuOpenId(null);
                         setDialogContent({ type: 'delete', project });
                       }}
