@@ -101,6 +101,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     // === Settings Dialog (Simple) ===
     'settings.title': 'Configuracoes',
     'settings.apiKeys': 'Chaves API',
+    'settings.apiKeysSubtitle': 'Configure suas chaves de API para acessar modelos de IA. O servidor ja possui uma chave OpenRouter padrao para o modelo Free.',
     'settings.project': 'Projeto',
     'settings.security': 'Seguranca',
     'settings.getKey': 'Obter chave',
@@ -133,6 +134,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'appSettings.deployDesc': 'Configure provedores e tokens de deploy',
     'appSettings.databaseDesc': 'Conecte Firebase ou Supabase para acesso ao banco',
     'appSettings.envVarsDesc': 'Gerencie variaveis de ambiente do projeto',
+    'appSettings.securityDesc': 'Teste a seguranca do seu projeto',
     'appSettings.snapshotsDesc': 'Salve e restaure snapshots do projeto',
     'appSettings.aiRulesDesc': 'Configure instrucoes personalizadas para a IA',
     'appSettings.projectName': 'Nome do Projeto',
@@ -1132,6 +1134,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     // === Settings Dialog (Simple) ===
     'settings.title': 'Settings',
     'settings.apiKeys': 'API Keys',
+    'settings.apiKeysSubtitle': 'Configure your API keys to access AI models. The server already has a default OpenRouter key for the Free model.',
     'settings.project': 'Project',
     'settings.security': 'Security',
     'settings.getKey': 'Get key',
@@ -1164,6 +1167,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'appSettings.deployDesc': 'Configure deployment providers and tokens',
     'appSettings.databaseDesc': 'Connect Firebase or Supabase for database access',
     'appSettings.envVarsDesc': 'Manage environment variables for your project',
+    'appSettings.securityDesc': 'Test your project security',
     'appSettings.snapshotsDesc': 'Save and restore project snapshots',
     'appSettings.aiRulesDesc': 'Configure custom instructions for the AI assistant',
     'appSettings.projectName': 'Project Name',
@@ -2161,6 +2165,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     // === Settings Dialog (Simple) ===
     'settings.title': 'Configuracion',
     'settings.apiKeys': 'Claves API',
+    'settings.apiKeysSubtitle': 'Configura tus claves API para acceder a modelos de IA. El servidor ya tiene una clave OpenRouter predeterminada para el modelo Free.',
     'settings.project': 'Proyecto',
     'settings.security': 'Seguridad',
     'settings.getKey': 'Obtener clave',
@@ -2193,6 +2198,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'appSettings.deployDesc': 'Configura proveedores y tokens de deploy',
     'appSettings.databaseDesc': 'Conecta Firebase o Supabase para acceso a la base de datos',
     'appSettings.envVarsDesc': 'Administra variables de entorno de tu proyecto',
+    'appSettings.securityDesc': 'Prueba la seguridad de tu proyecto',
     'appSettings.snapshotsDesc': 'Guarda y restaura snapshots del proyecto',
     'appSettings.aiRulesDesc': 'Configura instrucciones personalizadas para la IA',
     'appSettings.projectName': 'Nombre del Proyecto',
@@ -3190,6 +3196,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     // === Settings Dialog (Simple) ===
     'settings.title': '设置',
     'settings.apiKeys': 'API 密钥',
+    'settings.apiKeysSubtitle': '配置您的 API 密钥以访问 AI 模型。服务器已为 Free 模型配置了默认的 OpenRouter 密钥。',
     'settings.project': '项目',
     'settings.security': '安全',
     'settings.getKey': '获取密钥',
@@ -3222,6 +3229,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'appSettings.deployDesc': '配置部署提供商和令牌',
     'appSettings.databaseDesc': '连接 Firebase 或 Supabase 以访问数据库',
     'appSettings.envVarsDesc': '管理项目的环境变量',
+    'appSettings.securityDesc': '测试项目安全性',
     'appSettings.snapshotsDesc': '保存和恢复项目快照',
     'appSettings.aiRulesDesc': '配置AI助手的自定义指令',
     'appSettings.projectName': '项目名称',

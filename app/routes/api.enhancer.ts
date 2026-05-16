@@ -39,7 +39,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     });
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'openrouter/free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'nvidia/nemotron-3-super-120b-a12b:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     return new Response(JSON.stringify({ error: 'No model selected.' }), {

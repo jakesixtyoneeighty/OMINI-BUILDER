@@ -213,7 +213,7 @@ export function Header() {
                 )}
               </div>
 
-              <ClientOnly>{() => <SettingsDialog isStreaming={chat.started} />}</ClientOnly>
+              <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
               <AppSettingsDialog open={appSettingsOpen} onClose={closeSettings} defaultTab={settingsTab} />
               <AuthButton />
             </>

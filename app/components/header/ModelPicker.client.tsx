@@ -8,6 +8,9 @@ import {
   PROVIDER_LABELS,
   refreshAllConfiguredModels,
   selectProviderModel,
+  FREE_MODEL_ID,
+  FREE_MODEL_LABEL,
+  FREE_PROVIDER,
   type ProviderId,
 } from '~/lib/stores/llm';
 import { useT } from '~/lib/i18n/useT';
@@ -36,6 +39,8 @@ export function ModelPicker() {
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const configuredCount = (Object.keys(keys) as ProviderId[]).filter((p) => keys[p]).length;
+  // Free model is always available via server's OPENROUTER_API_KEY
+  const hasAnyModel = configuredCount > 0 || model === FREE_MODEL_ID;
 
   useEffect(() => {
     refreshAllConfiguredModels();
@@ -90,10 +95,16 @@ export function ModelPicker() {
 
   const flat: FlatOption[] = useMemo(() => {
     const out: FlatOption[] = [];
+    // Always include the built-in Free model at the top
+    out.push({ provider: FREE_PROVIDER, id: FREE_MODEL_ID, label: FREE_MODEL_LABEL });
     (Object.keys(allModels) as ProviderId[]).forEach((p) => {
       if (!keys[p]) return;
       const models = Array.isArray(allModels[p]) ? allModels[p] : [];
-      for (const m of models) out.push({ provider: p, id: m.id, label: m.label });
+      for (const m of models) {
+        // Skip the free model if it appears in the API results (we already added it)
+        if (m.id === FREE_MODEL_ID) return;
+        out.push({ provider: p, id: m.id, label: m.label });
+      }
     });
     return out;
   }, [allModels, keys]);
@@ -107,13 +118,22 @@ export function ModelPicker() {
   }, [flat, filter]);
 
   const grouped = useMemo(() => {
-    const g: Record<ProviderId, FlatOption[]> = { anthropic: [], openrouter: [], google: [] };
-    for (const o of filtered) g[o.provider].push(o);
+    const g: Record<string, FlatOption[]> = { omini: [], anthropic: [], openrouter: [], google: [] };
+    for (const o of filtered) {
+      // Put the free model in the "omini" group
+      if (o.id === FREE_MODEL_ID) {
+        g['omini'].push(o);
+      } else {
+        g[o.provider].push(o);
+      }
+    }
     return g;
   }, [filtered]);
 
   const isAnyLoading = Object.values(loading).some(Boolean);
-  const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || t('model.selectModel');
+  const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label
+    || (model === FREE_MODEL_ID ? FREE_MODEL_LABEL : model)
+    || t('model.selectModel');
 
   const dropdownContent = open ? (
     <div
@@ -132,35 +152,24 @@ export function ModelPicker() {
       </div>
 
       <div className="max-h-[300px] overflow-y-auto">
-        {configuredCount === 0 ? (
-          <div className="p-4 text-center">
-            <div className="i-ph:key text-2xl text-bolt-elements-textTertiary mx-auto mb-2" />
-            <p className="text-xs text-bolt-elements-textTertiary mb-3">{t('model.noApiKeys')}</p>
-            <button
-              onClick={() => {
-                setOpen(false);
-                window.dispatchEvent(new CustomEvent('open-api-settings'));
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
-            >
-              <div className="i-ph:gear text-sm" />
-              {t('model.configureApiKeys')}
-            </button>
-          </div>
-        ) : flat.length === 0 ? (
+        {flat.length === 0 ? (
           <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
             {isAnyLoading ? t('model.loadingModels') : t('model.noModelsLoaded')}
           </div>
         ) : (
-          (Object.keys(grouped) as ProviderId[]).map((p) => {
+          (Object.keys(grouped) as string[]).map((p) => {
             const items = grouped[p];
             if (items.length === 0) return null;
+            const isOmini = p === 'omini';
+            const groupLabel = isOmini ? 'Omini' : PROVIDER_LABELS[p as ProviderId] || p;
+            const groupLogo = isOmini ? '/omni-builder-logo.svg' : PROVIDER_LOGOS[p as ProviderId];
             return (
               <div key={p}>
                 <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img src={PROVIDER_LOGOS[p]} alt={p} className="w-3 h-3 object-contain" />
-                    <span>{PROVIDER_LABELS[p]}</span>
+                    <img src={groupLogo} alt={p} className="w-3 h-3 object-contain" />
+                    <span>{groupLabel}</span>
+                    {isOmini && <span className="text-[8px] px-1 py-0 rounded bg-green-500/20 text-green-400 font-bold">FREE</span>}
                   </div>
                   <span>{items.length}</span>
                 </div>
@@ -190,13 +199,24 @@ export function ModelPicker() {
 
       <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
         <span>{flat.length} {t('model.models')}</span>
-        <button
-          onClick={() => refreshAllConfiguredModels()}
-          disabled={isAnyLoading || configuredCount === 0}
-          className="hover:text-bolt-elements-textPrimary disabled:opacity-50"
-        >
-          {isAnyLoading ? t('model.refreshing') : t('model.refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setOpen(false);
+              window.dispatchEvent(new CustomEvent('open-api-settings'));
+            }}
+            className="hover:text-bolt-elements-item-contentAccent transition-colors"
+          >
+            <div className="i-ph:gear text-sm" />
+          </button>
+          <button
+            onClick={() => refreshAllConfiguredModels()}
+            disabled={isAnyLoading || configuredCount === 0}
+            className="hover:text-bolt-elements-textPrimary disabled:opacity-50"
+          >
+            {isAnyLoading ? t('model.refreshing') : t('model.refresh')}
+          </button>
+        </div>
       </div>
     </div>
   ) : null;

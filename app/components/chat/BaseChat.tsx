@@ -418,7 +418,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted }, _mobile && chatStarted ? 'flex-col' : '')}>
           {/* Chat panel - resizable */}
           <div
-            className={classNames(styles.Chat, 'flex flex-col h-full', chatStarted ? 'shrink-0' : 'flex-1', _mobile && chatStarted ? 'w-full' : '', _mobile && chatStarted && mobileView === 'workbench' ? 'hidden' : '')}
+            className={classNames(styles.Chat, 'flex flex-col h-full',
+              _mobile && chatStarted
+                ? (mobileView === 'chat' ? 'flex-1 w-full min-h-0' : 'hidden')
+                : (chatStarted ? 'shrink-0' : 'flex-1'),
+            )}
             style={chatStarted && !_mobile ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
           >
 
@@ -976,7 +980,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           )}
 
           {/* Workbench panel - on mobile show full width when active */}
-          <div className={classNames(_mobile && chatStarted ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden') : '')}>
+          <div className={classNames(
+            _mobile && chatStarted
+              ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden')
+              : '',
+          )}>
             <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
           </div>
 

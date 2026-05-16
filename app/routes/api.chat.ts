@@ -53,14 +53,25 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
           ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
 
-  if (!apiKey) {
+  // For the free model, the server provides the API key via OPENROUTER_API_KEY (a.k.a. OPENROUTER_DEFAULT_API)
+  // Users can use the free model without providing their own key
+  const isFreeModel = provider === 'openrouter' && (body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
+
+  if (!apiKey && !isFreeModel) {
     throw new Response(
       JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes. Obtenha uma chave gratuita em https://openrouter.ai` }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'openrouter/free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  if (!apiKey && isFreeModel) {
+    throw new Response(
+      JSON.stringify({ error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Contate o administrador.' }),
+      { status: 400, headers: { 'content-type': 'application/json' } },
+    );
+  }
+
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'nvidia/nemotron-3-super-120b-a12b:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {

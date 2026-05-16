@@ -11,6 +11,7 @@ import {
   type SupabaseConfig,
 } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { SecurityTestTab } from '~/components/chat/SecurityTestTab';
 import { useT } from '~/lib/i18n/useT';
 
 const TABS = [
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'preview' as const, label: 'Preview', icon: 'i-ph:eye' },
   { id: 'deploy' as const, label: 'Deploy', icon: 'i-ph:rocket-launch-duotone' },
   { id: 'database' as const, label: 'Database', icon: 'i-ph:database-duotone' },
+  { id: 'security' as const, label: 'Security', icon: 'i-ph:shield-check' },
   { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
   { id: 'versions' as const, label: 'Snapshots', icon: 'i-ph:clock-counter-clockwise' },
   { id: 'rules' as const, label: 'AI Rules', icon: 'i-ph:brain-duotone' },
@@ -498,6 +500,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                 {tab === 'deploy' && t('appSettings.deployDesc')}
                 {tab === 'database' && t('appSettings.databaseDesc')}
                 {tab === 'env' && t('appSettings.envVarsDesc')}
+                {tab === 'security' && t('appSettings.securityDesc')}
                 {tab === 'versions' && t('appSettings.snapshotsDesc')}
                 {tab === 'rules' && t('appSettings.aiRulesDesc')}
               </p>
@@ -971,6 +974,17 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
                   </div>
                 </div>
  </div>
+            )}
+
+            {/* ====== SECURITY TAB ====== */}
+            {tab === 'security' && (
+              <SecurityTestTab
+                onRunTest={(prompt) => {
+                  window.dispatchEvent(new CustomEvent('security-test-requested', { detail: { prompt } }));
+                  onClose();
+                  toast.info(t('settings.securityTestSent'));
+                }}
+              />
             )}
 
             {/* ====== AI RULES TAB ====== */}

@@ -10,6 +10,11 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   google: 'Google Gemini',
 };
 
+// Built-in free model that uses the server's OPENROUTER_API_KEY
+export const FREE_MODEL_ID = 'nvidia/nemotron-3-super-120b-a12b:free';
+export const FREE_MODEL_LABEL = 'Free';
+export const FREE_PROVIDER: ProviderId = 'openrouter';
+
 export interface ModelInfo {
   id: string;
   label: string;
@@ -25,7 +30,7 @@ const STORAGE_KEY = 'bolt.llm.settings';
 
 const DEFAULT_STATE: LLMState = {
   provider: 'openrouter',
-  model: 'openrouter/free',
+  model: FREE_MODEL_ID,
   keys: { anthropic: '', openrouter: '', google: '' },
 };
 
@@ -42,17 +47,17 @@ function loadInitial(): LLMState {
     // Migrate: if the stored provider was 'freeapi', fall back to openrouter
     if (provider === 'freeapi') {
       provider = 'openrouter';
-      model = 'openrouter/free';
+      model = FREE_MODEL_ID;
     }
 
     // Migrate: if the stored provider has no key and it's not openrouter with free models, fall back to openrouter
     if (provider !== 'openrouter' && !keys[provider]) {
-      return { provider: 'openrouter', model: 'openrouter/free', keys };
+      return { provider: 'openrouter', model: FREE_MODEL_ID, keys };
     }
 
-    // Migrate: if the stored model is the old default 'gpt-4o-mini', update to 'openrouter/free'
-    if (model === 'gpt-4o-mini') {
-      model = 'openrouter/free';
+    // Migrate: if the stored model is the old default 'gpt-4o-mini' or 'openrouter/free', update to new free model
+    if (model === 'gpt-4o-mini' || model === 'openrouter/free') {
+      model = FREE_MODEL_ID;
       provider = 'openrouter';
     }
 
@@ -100,7 +105,7 @@ if (typeof window !== 'undefined') {
 
     // Skip if the project's model is still the default — this means it's a new/unsaved project
     // that hasn't been configured yet. We should keep whatever model the user was using.
-    const isDefaultModel = (savedProvider === 'openrouter' && savedModel === 'openrouter/free') ||
+    const isDefaultModel = (savedProvider === 'openrouter' && (savedModel === FREE_MODEL_ID || savedModel === 'openrouter/free')) ||
                            (savedModel === 'gpt-4o-mini') ||
                            (!savedProvider && !savedModel);
 
@@ -120,7 +125,7 @@ if (typeof window !== 'undefined') {
     // Only update if different to avoid infinite loops
     if (current.provider !== newProvider || current.model !== newModel) {
       llmStore.setKey('provider', newProvider);
-      llmStore.setKey('model', newProvider === 'openrouter' && current.provider !== 'openrouter' ? 'openrouter/free' : newModel);
+      llmStore.setKey('model', newProvider === 'openrouter' && current.provider !== 'openrouter' ? FREE_MODEL_ID : newModel);
     }
   });
 }
@@ -188,21 +193,21 @@ export async function loadKeysFromSupabase() {
         // Migrate: if the restored provider was 'freeapi', fall back to openrouter
         if (restoredProvider === 'freeapi') {
           restoredProvider = 'openrouter';
-          restoredModel = 'openrouter/free';
+          restoredModel = FREE_MODEL_ID;
         }
 
         // Migrate: if the restored provider has no key and it's not openrouter, fall back to openrouter
         if (restoredProvider !== 'openrouter' && !restoredKeys[restoredProvider]) {
           llmStore.set({
             provider: 'openrouter',
-            model: 'openrouter/free',
+            model: FREE_MODEL_ID,
             keys: restoredKeys,
           });
-        } else if (restoredProvider === 'openrouter' && restoredModel === 'gpt-4o-mini') {
-          // Migrate: update old default model to new default
+        } else if (restoredProvider === 'openrouter' && (restoredModel === 'gpt-4o-mini' || restoredModel === 'openrouter/free')) {
+          // Migrate: update old default model to new free model
           llmStore.set({
             provider: 'openrouter',
-            model: 'openrouter/free',
+            model: FREE_MODEL_ID,
             keys: restoredKeys,
           });
         } else {
@@ -265,7 +270,7 @@ export async function fetchModelsFor(provider: ProviderId): Promise<ModelInfo[]>
     provider = 'openrouter';
     const current = llmStore.get();
     if (current.provider === 'freeapi' as any) {
-      llmStore.set({ ...current, provider: 'openrouter', model: 'openrouter/free' });
+      llmStore.set({ ...current, provider: 'openrouter', model: FREE_MODEL_ID });
     }
   }
 

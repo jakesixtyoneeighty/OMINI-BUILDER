@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { getDb, getAll, type ChatHistoryItem } from '~/lib/persistence';
-import { deleteProject, renameProject, projectsStore, type ProjectRecord, MAX_PROJECTS_PER_USER } from '~/lib/stores/project';
+import { deleteProject, renameProject, projectsStore, loadAllProjectsFromSupabase, type ProjectRecord, MAX_PROJECTS_PER_USER } from '~/lib/stores/project';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
@@ -92,29 +92,7 @@ function ProjectsContent() {
       setLoading(true);
       const cardMap = new Map<string, ProjectCard>();
 
-      // Load from IndexedDB (chat history)
-      try {
-        const database = await getDb();
-        if (database) {
-          const list = await getAll(database);
-          const filtered = list.filter((item) => item.urlId && item.description);
-          for (const item of filtered) {
-            cardMap.set(item.urlId || item.id, {
-              id: item.urlId || item.id,
-              name: item.description || t('projects.untitled'),
-              description: '',
-              logo: '',
-              timestamp: item.timestamp,
-              messageCount: item.messages?.length || 0,
-              source: 'local',
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load from IndexedDB:', error);
-      }
-
-      // Load from Supabase (cloud projects) — use reactive user from hook
+      // Load from Supabase (cloud projects) FIRST — this is the primary source
       const sb = getSupabase();
       const currentUser = user || authStore.get().user;
       if (sb && currentUser) {
@@ -126,28 +104,15 @@ function ProjectsContent() {
             .order('updated_at', { ascending: false });
           if (!error && data) {
             for (const p of data) {
-              const existing = cardMap.get(p.id);
-              if (existing) {
-                // Merge: Supabase data takes precedence for name/logo/description
-                cardMap.set(p.id, {
-                  ...existing,
-                  name: p.name || existing.name,
-                  description: p.description || existing.description,
-                  logo: p.logo || existing.logo,
-                  timestamp: p.updated_at || existing.timestamp,
-                  source: 'cloud',
-                });
-              } else {
-                cardMap.set(p.id, {
-                  id: p.id,
-                  name: p.name || t('projects.untitled'),
-                  description: p.description || '',
-                  logo: p.logo || '',
-                  timestamp: p.updated_at || p.created_at || '',
-                  messageCount: Array.isArray(p.messages) ? p.messages.length : 0,
-                  source: 'cloud',
-                });
-              }
+              cardMap.set(p.id, {
+                id: p.id,
+                name: p.name || t('projects.untitled'),
+                description: p.description || '',
+                logo: p.logo || '',
+                timestamp: p.updated_at || p.created_at || '',
+                messageCount: Array.isArray(p.messages) ? p.messages.length : 0,
+                source: 'cloud',
+              });
             }
           } else if (error) {
             console.error('Supabase query error:', error.message);
@@ -155,8 +120,31 @@ function ProjectsContent() {
         } catch (error) {
           console.error('Failed to load from Supabase:', error);
         }
-      } else if (!sb) {
-        console.warn('[Projects] Supabase not configured — cloud projects will not appear. Set SUPABASE_URL and SUPABASE_ANON_KEY.');
+      }
+
+      // Load from IndexedDB (chat history) — merge with cloud data
+      try {
+        const database = await getDb();
+        if (database) {
+          const list = await getAll(database);
+          const filtered = list.filter((item) => item.urlId && item.description);
+          for (const item of filtered) {
+            const existing = cardMap.get(item.urlId || item.id);
+            if (!existing) {
+              cardMap.set(item.urlId || item.id, {
+                id: item.urlId || item.id,
+                name: item.description || t('projects.untitled'),
+                description: '',
+                logo: '',
+                timestamp: item.timestamp,
+                messageCount: item.messages?.length || 0,
+                source: 'local',
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load from IndexedDB:', error);
       }
 
       // Sort by timestamp descending
@@ -177,6 +165,10 @@ function ProjectsContent() {
     const currentUserId = user?.id || null;
     if (currentUserId !== userIdRef.current) {
       userIdRef.current = currentUserId;
+      // Also populate the projectsStore for sidebar
+      if (currentUserId) {
+        loadAllProjectsFromSupabase().catch(() => {});
+      }
       loadProjects();
     }
   }, [user, loadProjects]);

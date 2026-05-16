@@ -5,24 +5,11 @@ import { toast } from 'react-toastify';
 import {
   fetchModelsFor,
   llmStore,
-  modelsStore,
-  modelsLoadingStore,
   PROVIDER_LABELS,
   setApiKey,
   type ProviderId,
 } from '~/lib/stores/llm';
-import {
-  activeProjectIdStore,
-  getActiveProject,
-  projectsStore,
-  updateActiveProjectSettings,
-  writeEnvFile,
-  type EnvVar,
-} from '~/lib/stores/project';
-import { SecurityTestTab } from '~/components/chat/SecurityTestTab';
 import { useT } from '~/lib/i18n/useT';
-
-type Tab = 'keys' | 'project' | 'security';
 
 const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpText: string; badge?: string; badgeColor?: string }[] = [
   {
@@ -47,31 +34,13 @@ const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpTex
   },
 ];
 
-interface SettingsDialogProps {
-  onSecurityTest?: (prompt: string) => void;
-  isStreaming?: boolean;
-}
-
-export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogProps) {
+export function SettingsDialog() {
   const { keys } = useStore(llmStore);
   const t = useT();
-  const models = useStore(modelsStore);
-  const loading = useStore(modelsLoadingStore);
-  const projectId = useStore(activeProjectIdStore);
-  const projects = useStore(projectsStore);
-  const active = projects[projectId] ?? getActiveProject();
 
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('keys');
   const [drafts, setDrafts] = useState<Record<ProviderId, string>>(keys);
   const [revealed, setRevealed] = useState<Record<ProviderId, boolean>>({ anthropic: false, openrouter: false, google: false });
-  const [pName, setPName] = useState(active.name);
-  const [pDesc, setPDesc] = useState(active.settings.description);
-  const [pLogo, setPLogo] = useState(active.settings.logo);
-  const [pEnv, setPEnv] = useState<EnvVar[]>(active.settings.envVars);
-
-  const isProjectActive = projectId && projectId !== 'default';
-
   // Listen for external open requests (e.g. from ModelPicker "Configure API Keys" button)
   useEffect(() => {
     const handler = () => {
@@ -85,13 +54,8 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
   useEffect(() => {
     if (open) {
       setDrafts(keys);
-      const current = projects[projectId] ?? getActiveProject();
-      setPName(current.name);
-      setPDesc(current.settings.description);
-      setPLogo(current.settings.logo);
-      setPEnv(current.settings.envVars.length ? current.settings.envVars : []);
     }
-  }, [open, keys, projectId, projects]);
+  }, [open, keys]);
 
   async function saveAndTest(provider: ProviderId) {
     const value = drafts[provider].trim();
@@ -108,37 +72,7 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
     }
   }
 
-  async function saveProject() {
-    const cleanedEnv = pEnv.filter((v) => v.key.trim());
-    updateActiveProjectSettings({
-      name: pName,
-      description: pDesc,
-      logo: pLogo,
-      envVars: cleanedEnv,
-    });
-    if (cleanedEnv.length > 0) {
-      try {
-        await writeEnvFile(cleanedEnv);
-        toast.success(t('settings.projectSaved'));
-      } catch (err) {
-        toast.error(`${t('settings.failedWriteEnv')} ${err instanceof Error ? err.message : err}`);
-      }
-    } else {
-      toast.success(t('settings.projectSettingsSaved'));
-    }
-  }
 
-  const handleSecurityTest = (prompt: string) => {
-    if (onSecurityTest) {
-      onSecurityTest(prompt);
-      setOpen(false);
-    } else {
-      // Dispatch a custom event that Chat.client.tsx listens for
-      window.dispatchEvent(new CustomEvent('security-test-requested', { detail: { prompt } }));
-      setOpen(false);
-      toast.info(t('settings.securityTestSent'));
-    }
-  };
 
   return (
     <>
@@ -163,50 +97,31 @@ export function SettingsDialog({ onSecurityTest, isStreaming }: SettingsDialogPr
               </button>
             </div>
 
-            <div className="flex gap-1 px-5 mt-4 border-b border-bolt-elements-borderColor">
-              <button onClick={() => setTab('keys')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'keys' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>{t('settings.apiKeys')}</button>
-              {isProjectActive && (
-                <button onClick={() => setTab('project')} className={`px-3 py-2 text-sm border-b-2 ${tab === 'project' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>{t('settings.project')}</button>
-              )}
-              {isProjectActive && (
-                <button onClick={() => setTab('security')} className={`px-3 py-2 text-sm border-b-2 flex items-center gap-1.5 ${tab === 'security' ? 'border-bolt-elements-item-contentAccent text-bolt-elements-textPrimary' : 'border-transparent text-bolt-elements-textTertiary'}`}>
-                  <div className="i-ph:shield-check text-sm" />
-                  {t('settings.security')}
-                </button>
-              )}
+            <div className="px-5 mt-4 mb-2">
+              <span className="text-sm text-bolt-elements-textTertiary">{t('settings.apiKeysSubtitle')}</span>
             </div>
 
-            {tab === 'keys' ? (
-              <div className="p-5 space-y-4">
-                {PROVIDERS.map((p) => (
-                  <div key={p.id} className={`border rounded-md p-3 bg-bolt-elements-background-depth-1 ${p.id === 'openrouter' ? 'border-blue-500/30 bg-blue-500/5' : 'border-bolt-elements-borderColor'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{PROVIDER_LABELS[p.id]}</span>
-                        {p.badge && (
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${p.badgeColor}`}>
-                            {p.badge}
-                          </span>
-                        )}
-                      </div>
-                      <a href={p.helpUrl} target="_blank" className="text-xs underline">{t('settings.getKey')}</a>
+            <div className="p-5 space-y-4">
+              {PROVIDERS.map((p) => (
+                <div key={p.id} className={`border rounded-md p-3 bg-bolt-elements-background-depth-1 ${p.id === 'openrouter' ? 'border-blue-500/30 bg-blue-500/5' : 'border-bolt-elements-borderColor'}`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{PROVIDER_LABELS[p.id]}</span>
+                      {p.badge && (
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${p.badgeColor}`}>
+                          {p.badge}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <input type="password" value={drafts[p.id] || ''} onChange={(e) => setDrafts({...drafts, [p.id]: e.target.value})} placeholder={p.placeholder} className="flex-1 px-2 py-1 rounded text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor" />
-                      <button onClick={() => saveAndTest(p.id)} className="px-3 py-1 rounded text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.save')}</button>
-                    </div>
+                    <a href={p.helpUrl} target="_blank" className="text-xs underline">{t('settings.getKey')}</a>
                   </div>
-                ))}
-              </div>
-            ) : tab === 'security' ? (
-              <SecurityTestTab onRunTest={handleSecurityTest} isStreaming={isStreaming} />
-            ) : (
-              <div className="p-5 space-y-4">
-                <input type="text" value={pName} onChange={(e) => setPName(e.target.value)} placeholder={t('settings.projectName')} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
-                <textarea value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder={t('settings.description')} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor" />
-                <button onClick={saveProject} className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.saveProject')}</button>
-              </div>
-            )}
+                  <div className="flex gap-2">
+                    <input type="password" value={drafts[p.id] || ''} onChange={(e) => setDrafts({...drafts, [p.id]: e.target.value})} placeholder={p.placeholder} className="flex-1 px-2 py-1 rounded text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor" />
+                    <button onClick={() => saveAndTest(p.id)} className="px-3 py-1 rounded text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent">{t('settings.save')}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>,
         document.body,
