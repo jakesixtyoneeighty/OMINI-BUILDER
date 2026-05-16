@@ -17,7 +17,7 @@ interface WorkbenchTabsProps<T extends string> {
 
 export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSelected }: WorkbenchTabsProps<T>) => {
   return (
-    <div className="flex items-center gap-0.5 bg-bolt-elements-background-depth-1 overflow-hidden rounded-full p-1">
+    <div className="flex items-center gap-0.5 bg-bolt-elements-background-depth-1 overflow-hidden rounded-full p-0.5 sm:p-1">
       {options.map((option) => {
         const isSelected = selected === option.value;
 
@@ -26,16 +26,16 @@ export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSel
             key={option.value}
             onClick={() => setSelected(option.value)}
             className={classNames(
-              'relative flex items-center gap-1.5 text-sm px-3 py-1 rounded-full transition-colors',
+              'relative flex items-center gap-1 sm:gap-1.5 text-sm px-2 sm:px-3 py-1 rounded-full transition-colors',
               isSelected
                 ? 'text-bolt-elements-item-contentAccent'
                 : 'text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive',
             )}
             title={option.label}
           >
-            <span className="relative z-10 flex items-center gap-1.5">
+            <span className="relative z-10 flex items-center gap-1 sm:gap-1.5">
               <div className={classNames(option.icon, 'text-base')} />
-              <span className="text-xs font-medium">{option.label}</span>
+              <span className="text-xs font-medium hidden sm:inline">{option.label}</span>
             </span>
             {isSelected && (
               <motion.span

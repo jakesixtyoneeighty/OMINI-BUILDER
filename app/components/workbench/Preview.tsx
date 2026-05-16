@@ -398,7 +398,7 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'webcontainer') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
           <IconButton
@@ -412,11 +412,11 @@ export const Preview = memo(function Preview() {
             title={t('workbench.newTab')}
             disabled={!activePreview?.baseUrl}
           />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium shrink-0">
             <div className="i-ph:cube-duotone text-sm" />
-            {t('appSettings.webcontainer')}
+            <span className="hidden sm:inline">{t('appSettings.webcontainer')}</span>
           </div>
-          <div className="flex-1 flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate">
+          <div className="flex-1 hidden sm:flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate">
             {activePreview?.baseUrl || t('preview.noPreviewAvailable')}
           </div>
           {/* Inspector toggle */}
@@ -525,14 +525,14 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'sandpack') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-medium shrink-0">
             <div className="i-ph:browser-duotone text-sm" />
-            {t('appSettings.sandpack')}
+            <span className="hidden sm:inline">{t('appSettings.sandpack')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.reactVueHtmlPreview')}
           </div>
           {/* Inspector toggle */}
@@ -554,14 +554,14 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'iframe') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-medium shrink-0">
             <div className="i-ph:code-duotone text-sm" />
-            {t('appSettings.iframe')}
+            <span className="hidden sm:inline">{t('appSettings.iframe')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.iframeReactSupported')}
           </div>
           {/* Inspector toggle */}
@@ -583,14 +583,14 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'reactlive') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 text-xs font-medium shrink-0">
             <div className="i-ph:atom-duotone text-sm" />
-            {t('appSettings.reactlive')}
+            <span className="hidden sm:inline">{t('appSettings.reactlive')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.liveReactComponentPreview')}
           </div>
         </div>
@@ -605,13 +605,13 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'playcode') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium shrink-0">
             <div className="i-ph:code-block-duotone text-sm" />
-            {t('appSettings.playcode')}
+            <span className="hidden sm:inline">{t('appSettings.playcode')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.codeSandboxApiEmbed')}
           </div>
         </div>
@@ -626,12 +626,12 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'piston') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium shrink-0">
             <div className="i-ph:rocket-duotone text-sm" />
-            {t('appSettings.piston')}
+            <span className="hidden sm:inline">{t('appSettings.piston')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.remoteCodeExecution')}
           </div>
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
@@ -647,12 +647,12 @@ export const Preview = memo(function Preview() {
   if (previewMode === 'newtab') {
     return (
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-3 py-1.5 flex items-center gap-2 border-b border-bolt-elements-borderColor shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink-500/10 text-pink-400 text-xs font-medium">
+        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink-500/10 text-pink-400 text-xs font-medium shrink-0">
             <div className="i-ph:arrow-square-out-duotone text-sm" />
-            {t('appSettings.newtab')}
+            <span className="hidden sm:inline">{t('appSettings.newtab')}</span>
           </div>
-          <div className="flex-1 text-xs text-bolt-elements-textTertiary truncate">
+          <div className="flex-1 hidden sm:block text-xs text-bolt-elements-textTertiary truncate">
             {t('preview.opensInNewBrowserTab')}
           </div>
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />

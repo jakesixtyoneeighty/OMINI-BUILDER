@@ -264,3 +264,13 @@
   --bolt-elements-terminal-color-brightCyan: var(--bolt-terminal-brightCyan);
   --bolt-elements-terminal-color-brightWhite: var(--bolt-terminal-brightWhite);
 }
+
+/* Mobile responsive overrides */
+@media (max-width: 767px) {
+  :root {
+    --header-height: 48px;
+    --sidebar-width: 0px;
+    --chat-min-width: 0px;
+    --chat-max-width: 100%;
+  }
+}

@@ -20,7 +20,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { WORK_DIR } from '~/utils/constants';
 import { renderLogger } from '~/utils/logger';
-import { isMobile } from '~/utils/mobile';
+import { isMobile, useIsMobile } from '~/utils/mobile';
 import { FileBreadcrumb } from './FileBreadcrumb';
 import { FileTree } from './FileTree';
 import { Terminal, type TerminalRef } from './terminal/Terminal';
@@ -124,7 +124,9 @@ export const EditorPanel = memo(
     const projects = useStore(projectsStore);
     const previewMode = projects[activeId]?.settings?.previewMode || 'webcontainer';
     const isPistonMode = previewMode === 'piston';
+    const _mobile = useIsMobile();
 
+    const fileTreePanelRef = useRef<ImperativePanelHandle>(null);
     const terminalRefs = useRef<Array<TerminalRef | null>>([]);
     const terminalPanelRef = useRef<ImperativePanelHandle>(null);
     const terminalToggledByShortcut = useRef(false);
@@ -143,6 +145,13 @@ export const EditorPanel = memo(
     const activeFileUnsaved = useMemo(() => {
       return editorDocument !== undefined && unsavedFiles?.has(editorDocument.filePath);
     }, [editorDocument, unsavedFiles]);
+
+    useEffect(() => {
+      // On mobile, collapse the FileTree panel by default
+      if (_mobile && fileTreePanelRef.current) {
+        fileTreePanelRef.current.collapse();
+      }
+    }, [_mobile]);
 
     useEffect(() => {
       const unsubscribeFromEventEmitter = shortcutEventEmitter.on('toggleTerminal', () => {
@@ -190,7 +199,7 @@ export const EditorPanel = memo(
       <PanelGroup direction="vertical">
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
           <PanelGroup direction="horizontal">
-            <Panel defaultSize={20} minSize={10} collapsible>
+            <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
               <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
                 <PanelHeader>
                   <div className="i-ph:tree-structure-duotone shrink-0" />

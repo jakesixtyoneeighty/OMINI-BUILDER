@@ -126,7 +126,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
       )}
     >
       <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden m-0.5">
-        <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
+        <div className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border-b border-bolt-elements-borderColor">
           <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
           <div className="ml-auto" />
           {selectedView === 'code' && (
@@ -137,7 +137,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
               }}
             >
               <div className="i-ph:terminal" />
-              {t('workbench.toggleTerminal')}
+              <span className="hidden sm:inline">{t('workbench.toggleTerminal')}</span>
             </PanelHeaderButton>
           )}
           <IconButton

@@ -22,3 +22,7 @@ if (typeof window !== 'undefined') {
     } catch {}
   });
 }
+
+// Mobile view: 'chat' | 'workbench'
+export type MobileView = 'chat' | 'workbench';
+export const mobileViewStore = atom<MobileView>('chat');

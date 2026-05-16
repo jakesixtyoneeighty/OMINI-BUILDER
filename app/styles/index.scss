@@ -221,3 +221,21 @@ body {
   padding: 6px 12px;
   font-size: 12px;
 }
+
+/* Mobile responsive utilities */
+@media (max-width: 767px) {
+  /* Prevent pull-to-refresh on mobile */
+  html, body {
+    overscroll-behavior-y: contain;
+  }
+
+  /* Make scrollable areas touch-friendly */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure inputs don't zoom on iOS */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

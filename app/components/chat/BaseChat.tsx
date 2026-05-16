@@ -15,13 +15,14 @@ import { FileMentionDropdown } from './FileMentionDropdown.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
 import { authStore } from '~/lib/stores/auth';
 import type { DetectedError } from '~/lib/stores/errors';
-import { chatWidthStore } from '~/lib/stores/layout';
+import { chatWidthStore, mobileViewStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { inspectorStore, clearInspectorElements, removeInspectorElement, type InspectorElement } from '~/lib/stores/inspector';
 import { useT } from '~/lib/i18n/useT';
+import { useIsMobile } from '~/utils/mobile';
 
 import styles from './BaseChat.module.scss';
 
@@ -123,6 +124,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const chatWidthPct = useStore(chatWidthStore);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isResizing, setIsResizing] = useState(false);
+
+    // Mobile responsive state
+    const _mobile = useIsMobile();
+    const mobileView = useStore(mobileViewStore);
 
     // Resize handle logic
     const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -410,11 +415,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         )}
         data-chat-visible={showChat}
       >
-        <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted })}>
+        <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted }, _mobile && chatStarted ? 'flex-col' : '')}>
           {/* Chat panel - resizable */}
           <div
-            className={classNames(styles.Chat, 'flex flex-col h-full', chatStarted ? 'shrink-0' : 'flex-1')}
-            style={chatStarted ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
+            className={classNames(styles.Chat, 'flex flex-col h-full', chatStarted ? 'shrink-0' : 'flex-1', _mobile && chatStarted ? 'w-full' : '', _mobile && chatStarted && mobileView === 'workbench' ? 'hidden' : '')}
+            style={chatStarted && !_mobile ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
           >
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
@@ -585,7 +590,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       <div className="mx-4 border-t border-bolt-elements-borderColor" />
 
                       {/* Toolbar row with build modes + Build now button */}
-                      <div className="flex items-center justify-between px-3 py-2.5">
+                      <div className="flex items-center justify-between px-2 sm:px-3 py-2.5 gap-1 flex-wrap sm:flex-nowrap">
                         {/* Left group: + button + mode options */}
                         <div className="flex items-center gap-1.5">
                           {/* + file upload */}
@@ -608,7 +613,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:code text-sm" />
-                            {t('landing.standard')}
+                            <span className="hidden sm:inline">{t('landing.standard')}</span>
                           </button>
 
                           {/* Design System mode */}
@@ -623,7 +628,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:palette text-sm" />
-                            {t('landing.designSystem')}
+                            <span className="hidden sm:inline">{t('landing.designSystem')}</span>
                           </button>
 
                           {/* Plan mode */}
@@ -641,7 +646,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             )}
                           >
                             <div className="i-ph:list-checks text-sm" />
-                            {t('landing.plan')}
+                            <span className="hidden sm:inline">{t('landing.plan')}</span>
                           </button>
                         </div>
 
@@ -954,8 +959,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             )}
           </div>
 
-          {/* Resize handle - only visible when chat is started */}
-          {chatStarted && (
+          {/* Resize handle - only visible when chat is started and not mobile */}
+          {chatStarted && !_mobile && (
             <div
               onMouseDown={handleResizeStart}
               className={classNames(
@@ -970,8 +975,38 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             </div>
           )}
 
-          {/* Workbench panel - takes remaining space */}
-          <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
+          {/* Workbench panel - on mobile show full width when active */}
+          <div className={classNames(_mobile && chatStarted ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden') : '')}>
+            <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
+          </div>
+
+          {/* Mobile bottom tab bar - only when chat started */}
+          {_mobile && chatStarted && (
+            <div className="flex items-center shrink-0 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 h-12">
+              <button
+                type="button"
+                onClick={() => mobileViewStore.set('chat')}
+                className={classNames(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
+                  mobileView === 'chat' ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary',
+                )}
+              >
+                <div className="i-ph:chat-circle-dots text-base" />
+                Chat
+              </button>
+              <button
+                type="button"
+                onClick={() => mobileViewStore.set('workbench')}
+                className={classNames(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
+                  mobileView === 'workbench' ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary',
+                )}
+              >
+                <div className="i-ph:eye text-base" />
+                Preview
+              </button>
+            </div>
+          )}
         </div>
         {/* @ File Mention Dropdown */}
         {mentionState?.active && (

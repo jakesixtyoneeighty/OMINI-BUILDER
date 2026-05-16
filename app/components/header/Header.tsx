@@ -84,31 +84,37 @@ export function Header() {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-bolt-elements-borderColor" />
+      <div className="w-px h-5 bg-bolt-elements-borderColor hidden sm:block" />
 
       {/* Model Picker */}
-      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+      <div className="hidden md:block">
+        <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+      </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-bolt-elements-borderColor" />
+      <div className="w-px h-5 bg-bolt-elements-borderColor hidden sm:block" />
 
       {/* CENTER: Editable project name */}
-      <div className="flex-1 flex items-center justify-center px-3 min-w-0">
+      <div className="flex-1 hidden sm:flex items-center justify-center px-3 min-w-0">
         <ClientOnly>{() => <EditableProjectName />}</ClientOnly>
       </div>
 
       {/* RIGHT: Action buttons */}
-      <div className="flex items-center gap-1 px-2 shrink-0 relative z-[50]">
+      <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 shrink-0 relative z-[50]">
         <ClientOnly>
           {() => (
             <>
               {chat.started && (
                 <>
                   {/* Deploy button */}
-                  <DeployButton onOpenSettings={openDeploySettings} />
+                  <div className="hidden sm:block">
+                    <DeployButton onOpenSettings={openDeploySettings} />
+                  </div>
 
                   {/* Share button */}
-                  <ShareButton onOpenSettings={openDeploySettings} />
+                  <div className="hidden sm:block">
+                    <ShareButton onOpenSettings={openDeploySettings} />
+                  </div>
 
                   {/* Publish / Gallery */}
                   <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
@@ -253,10 +259,10 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo */}
-      <div className="flex items-center gap-2.5 px-4 shrink-0">
+      <div className="flex items-center gap-2.5 px-2 sm:px-4 shrink-0">
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-9 w-9 omni-logo-themed" />
-          <span className="text-base font-bold text-bolt-elements-textPrimary">Omni Builder</span>
+          <span className="text-base font-bold text-bolt-elements-textPrimary hidden sm:inline">Omni Builder</span>
         </a>
       </div>
 
