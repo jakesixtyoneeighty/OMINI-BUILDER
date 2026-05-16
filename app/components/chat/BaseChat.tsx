@@ -996,7 +996,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               </button>
               <button
                 type="button"
-                onClick={() => mobileViewStore.set('workbench')}
+                onClick={() => {
+                  mobileViewStore.set('workbench');
+                  workbenchStore.showWorkbench.set(true);
+                }}
                 className={classNames(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
                   mobileView === 'workbench' ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary',

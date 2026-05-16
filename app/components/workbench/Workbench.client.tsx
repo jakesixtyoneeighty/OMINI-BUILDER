@@ -11,6 +11,7 @@ import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
 import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
 import { useT } from '~/lib/i18n/useT';
 import { projectsStore, activeProjectIdStore } from '~/lib/stores/project';
+import { mobileViewStore } from '~/lib/stores/layout';
 import { classNames } from '~/utils/classNames';
 import { renderLogger } from '~/utils/logger';
 import { EditorPanel } from './EditorPanel';
@@ -146,6 +147,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             size="xl"
             onClick={() => {
               workbenchStore.showWorkbench.set(false);
+              mobileViewStore.set('chat');
             }}
           />
         </div>
