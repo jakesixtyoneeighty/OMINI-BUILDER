@@ -128,6 +128,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     // Mobile responsive state
     const _mobile = useIsMobile();
     const mobileView = useStore(mobileViewStore);
+    const showWorkbench = useStore(workbenchStore.showWorkbench);
 
     // Resize handle logic
     const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -979,11 +980,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             </div>
           )}
 
-          {/* Workbench panel - on mobile show full width when active */}
+          {/* Workbench panel - hidden on landing page, on mobile show full width when active */}
           <div className={classNames(
-            _mobile && chatStarted
+            !chatStarted ? 'hidden' :
+            _mobile
               ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden')
-              : 'flex-1 min-w-0',
+              : (showWorkbench ? 'flex-1 min-w-0' : 'w-0 min-w-0 overflow-hidden'),
           )}>
             <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
           </div>
