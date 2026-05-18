@@ -164,6 +164,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
         const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/');
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
@@ -174,7 +176,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               name: file.name,
               type: file.type,
               size: file.size,
-              preview: isImage ? result : '',
+              preview: isImage ? result : isVideo ? 'video' : isAudio ? 'audio' : '',
               content: result,
             },
           ]);
@@ -190,6 +192,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     const getFileIcon = (type: string, name: string) => {
       if (type.startsWith('image/')) return 'i-ph:image';
+      if (type.startsWith('video/')) return 'i-ph:video-camera';
+      if (type.startsWith('audio/')) return 'i-ph:music-note';
       if (type.includes('pdf')) return 'i-ph:file-pdf';
       if (type.includes('json')) return 'i-ph:brackets-curly';
       if (name.endsWith('.zip')) return 'i-ph:archive';
@@ -422,9 +426,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             className={classNames(styles.Chat, 'flex flex-col h-full',
               _mobile && chatStarted
                 ? (mobileView === 'chat' ? 'flex-1 w-full min-h-0' : 'hidden')
-                : (chatStarted ? 'shrink-0' : 'flex-1'),
+                : (chatStarted && showWorkbench ? 'shrink-0' : 'flex-1'),
             )}
-            style={chatStarted && !_mobile ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
+            style={chatStarted && !_mobile && showWorkbench ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
           >
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
@@ -518,6 +522,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                     alt={file.name}
                                     className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
                                   />
+                                ) : file.type.startsWith('video/') ? (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                    <div className="i-ph:video-camera text-base text-purple-400" />
+                                  </div>
+                                ) : file.type.startsWith('audio/') ? (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                                    <div className="i-ph:music-note text-base text-pink-400" />
+                                  </div>
                                 ) : (
                                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
                                     <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
@@ -772,6 +784,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                     alt={file.name}
                                     className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
                                   />
+                                ) : file.type.startsWith('video/') ? (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                    <div className="i-ph:video-camera text-base text-purple-400" />
+                                  </div>
+                                ) : file.type.startsWith('audio/') ? (
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                                    <div className="i-ph:music-note text-base text-pink-400" />
+                                  </div>
                                 ) : (
                                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
                                     <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />

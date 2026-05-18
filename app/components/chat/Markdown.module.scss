@@ -144,6 +144,17 @@ $code-font-size: 13px;
   img {
     max-width: 100%;
     box-sizing: border-box;
+    border-radius: 8px;
+  }
+
+  video {
+    max-width: 100%;
+    border-radius: 8px;
+    background-color: #000;
+  }
+
+  audio {
+    max-width: 100%;
   }
 
   hr {

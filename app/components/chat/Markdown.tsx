@@ -1,4 +1,5 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import type { BundledLanguage } from 'shiki';
 import { createScopedLogger } from '~/utils/logger';
@@ -14,6 +15,63 @@ interface MarkdownProps {
   children: string;
   html?: boolean;
   limitedMarkdown?: boolean;
+}
+
+/**
+ * Image lightbox for markdown images — click to view full size.
+ */
+function MarkdownImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm cursor-zoom-out"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-10"
+      >
+        <div className="i-ph:x text-xl" />
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-[92vw] max-h-[92vh] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * Markdown image with click-to-zoom lightbox support.
+ * Separate component so it can use its own state.
+ */
+function MarkdownImage({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { node?: any }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-full rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity my-2"
+        onClick={() => setLightboxOpen(true)}
+        loading="lazy"
+        {...props}
+      />
+      {lightboxOpen && src && (
+        <MarkdownImageLightbox
+          src={src}
+          alt={alt || ''}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+    </>
+  );
 }
 
 export const Markdown = memo(({ children, html = false, limitedMarkdown = false }: MarkdownProps) => {
@@ -183,6 +241,34 @@ export const Markdown = memo(({ children, html = false, limitedMarkdown = false 
         }
 
         return <pre {...rest}>{children}</pre>;
+      },
+      img: (props) => {
+        return <MarkdownImage {...props} />;
+      },
+      video: (props) => {
+        const { children, ...rest } = props;
+        return (
+          <div className="my-2 rounded-xl overflow-hidden border border-bolt-elements-borderColor max-w-[500px]">
+            <video controls preload="metadata" className="w-full" {...rest}>
+              {children}
+            </video>
+          </div>
+        );
+      },
+      audio: (props) => {
+        const { children, ...rest } = props;
+        return (
+          <div className="my-2 flex items-center gap-3 p-2.5 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 max-w-[400px]">
+            <div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
+              <div className="i-ph:music-note text-sm text-purple-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <audio controls preload="metadata" className="w-full h-8" {...rest}>
+                {children}
+              </audio>
+            </div>
+          </div>
+        );
       },
     } satisfies Components;
   }, []);

@@ -69,6 +69,12 @@ export const allowedHTMLElements = [
   'abbr',
   'progress',
   'meter',
+  // Media elements for image, video, audio rendering
+  'img',
+  'video',
+  'audio',
+  'source',
+  'track',
 ];
 
 // Allowed CSS properties for style attributes in omni-visual blocks
@@ -262,6 +268,12 @@ const rehypeSanitizeOptions: RehypeSanitizeOptions = {
     colgroup: ['span', 'style'],
     mark: ['style'],
     abbr: ['title'],
+    // Media element attributes
+    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'style'],
+    video: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'width', 'height', 'poster', 'style'],
+    audio: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'style'],
+    source: ['src', 'type', 'media'],
+    track: ['kind', 'src', 'srclang', 'label', 'default'],
   },
   strip: [],
 };
