@@ -35,10 +35,12 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
   // For the free model, use the server's OPENROUTER_API_KEY
   const isFreeModel = provider === 'openrouter' && (
     body.model === 'qwen/qwen3-coder:free' ||
-    body.model === 'deepseek/deepseek-chat:free' ||
-    body.model === 'deepseek/deepseek-r1:free' ||
     body.model === 'deepseek/deepseek-v4-flash:free' ||
+    body.model === 'meta-llama/llama-3.3-70b-instruct:free' ||
+    body.model === 'google/gemma-4-31b-it:free' ||
+    body.model === 'qwen/qwen3-next-80b-a3b-instruct:free' ||
     body.model === 'nvidia/nemotron-3-super-120b-a12b:free' ||
+    body.model === 'deepseek/deepseek-chat:free' ||
     body.model === 'openrouter/free'
   );
 

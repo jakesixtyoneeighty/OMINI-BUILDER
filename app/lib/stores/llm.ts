@@ -15,14 +15,14 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 export const AGENT_OMINI_MODEL_ID = 'qwen/qwen3-coder:free';
 export const AGENT_OMINI_LABEL = 'Agent Omini';
 
-// Other free models available on OpenRouter
+// Other free models available on OpenRouter (verified as of 2025-05)
 export const FREE_MODELS = [
   { id: 'qwen/qwen3-coder:free', label: 'Agent Omini' },
-  { id: 'deepseek/deepseek-chat:free', label: 'DeepSeek V3 (Free)' },
-  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (Free)' },
-  { id: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (Free)' },
-  { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (Free)' },
-  { id: 'qwen/qwen-2.5-72b-instruct:free', label: 'Qwen 2.5 72B (Free)' },
+  { id: 'deepseek/deepseek-v4-flash:free', label: 'DeepSeek V4 Flash (Free)' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B (Free)' },
+  { id: 'google/gemma-4-31b-it:free', label: 'Gemma 4 31B (Free)' },
+  { id: 'qwen/qwen3-next-80b-a3b-instruct:free', label: 'Qwen3 Next 80B (Free)' },
+  { id: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'Nemotron 3 Super (Free)' },
 ];
 
 export const FREE_MODEL_ID = AGENT_OMINI_MODEL_ID;
@@ -36,9 +36,8 @@ export function isFreeModel(modelId: string): boolean {
   return FREE_MODELS.some((m) => m.id === modelId) ||
     modelId === AGENT_OMINI_MODEL_ID ||
     // Also match old free model IDs that may be stored in localStorage
-    modelId === 'deepseek/deepseek-v4-flash:free' ||
     modelId === 'deepseek/deepseek-chat:free' ||
-    modelId === 'nvidia/nemotron-3-super-120b-a12b:free' ||
+    modelId === 'deepseek/deepseek-r1:free' ||
     modelId === 'openrouter/free';
 }
 
@@ -82,8 +81,8 @@ function loadInitial(): LLMState {
       return { provider: 'openrouter', model: FREE_MODEL_ID, keys };
     }
 
-    // Migrate: if the stored model is the old default, update to new free model
-    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-v4-flash:free' || model === 'deepseek/deepseek-chat:free' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
+    // Migrate: if the stored model is the old default, update to Agent Omini
+    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-chat:free' || model === 'deepseek/deepseek-r1:free' || model === 'openrouter/free') {
       model = FREE_MODEL_ID;
       provider = 'openrouter';
     }

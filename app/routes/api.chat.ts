@@ -9,17 +9,17 @@ import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 // Known free model IDs on OpenRouter (must match llm.ts FREE_MODELS)
 const KNOWN_FREE_MODELS = [
   'qwen/qwen3-coder:free',
-  'deepseek/deepseek-chat:free',
-  'deepseek/deepseek-r1:free',
-  'google/gemma-2-9b-it:free',
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'qwen/qwen-2.5-72b-instruct:free',
+  'deepseek/deepseek-v4-flash:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'google/gemma-4-31b-it:free',
+  'qwen/qwen3-next-80b-a3b-instruct:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
 ];
 
 function isFreeModelId(modelId: string): boolean {
   return KNOWN_FREE_MODELS.includes(modelId) ||
-    modelId === 'deepseek/deepseek-v4-flash:free' ||
-    modelId === 'nvidia/nemotron-3-super-120b-a12b:free' ||
+    modelId === 'deepseek/deepseek-chat:free' ||
+    modelId === 'deepseek/deepseek-r1:free' ||
     modelId === 'openrouter/free';
 }
 

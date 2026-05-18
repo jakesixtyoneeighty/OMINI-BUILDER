@@ -233,9 +233,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('Network request failed')) {
         errorMsg = 'Erro de conexao com o servidor. Verifique sua internet e tente novamente. Se o problema persistir, o servidor pode estar temporariamente indisponivel.';
       } else if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
-        errorMsg = 'Modelo LLM nao encontrado. O servidor pode estar com problema de configuracao. Tente novamente em instantes ou configure sua propria chave de API nas Configuracoes.';
-      } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API')) {
-        errorMsg = 'Chave de API ausente. Configure sua chave nas Configuracoes ou o servidor precisa da variavel LLM_FREE_API configurada.';
+        errorMsg = 'Modelo LLM nao encontrado. Tente selecionar outro modelo no seletor acima, ou configure sua propria chave de API nas Configuracoes.';
+      } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API') || errorMsg.includes('OPENROUTER_API_KEY')) {
+        errorMsg = 'Chave de API ausente. Para usar o Agent Omini, adicione sua chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai';
       } else if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
         errorMsg = 'Chave de API invalida. Verifique sua chave nas Configuracoes.';
       } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit')) {
