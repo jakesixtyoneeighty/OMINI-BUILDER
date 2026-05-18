@@ -45,7 +45,6 @@ export function SettingsDialog() {
   useEffect(() => {
     const handler = () => {
       setOpen(true);
-      setTab('keys');
     };
     window.addEventListener('open-api-settings', handler);
     return () => window.removeEventListener('open-api-settings', handler);

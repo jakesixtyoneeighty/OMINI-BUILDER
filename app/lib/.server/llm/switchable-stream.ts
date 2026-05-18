@@ -4,12 +4,15 @@ export default class SwitchableStream extends TransformStream {
   private _switches = 0;
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _idleTimeoutMs: number;
+  private _receivedFirstChunk = false;
 
   /**
    * @param idleTimeoutMs If no chunk is received within this time (ms),
-   * the stream is force-closed. Default: 60s. Set to 0 to disable.
+   * the stream is force-closed. Default: 120s. Set to 0 to disable.
+   * The timer only starts AFTER the first chunk is received, so slow
+   * model start-up won't trigger a premature close.
    */
-  constructor(idleTimeoutMs = 60_000) {
+  constructor(idleTimeoutMs = 120_000) {
     let controllerRef: TransformStreamDefaultController | undefined;
 
     super({
@@ -30,7 +33,9 @@ export default class SwitchableStream extends TransformStream {
     if (this._idleTimer) {
       clearTimeout(this._idleTimer);
     }
-    if (this._idleTimeoutMs > 0) {
+    // Only start the idle timer after we've received at least one chunk
+    // This prevents premature close during slow model start-up
+    if (this._idleTimeoutMs > 0 && this._receivedFirstChunk) {
       this._idleTimer = setTimeout(() => {
         console.warn(`[SwitchableStream] No data received for ${this._idleTimeoutMs / 1000}s, force-closing stream`);
         this.close();
@@ -43,10 +48,10 @@ export default class SwitchableStream extends TransformStream {
       await this._currentReader.cancel();
     }
 
-    this._currentReader = newStream.getReader();
+    // Reset first-chunk flag for new source
+    this._receivedFirstChunk = false;
 
-    // Reset idle timer when switching source
-    this._resetIdleTimer();
+    this._currentReader = newStream.getReader();
 
     this._pumpStream();
 
@@ -65,6 +70,9 @@ export default class SwitchableStream extends TransformStream {
         if (done) {
           break;
         }
+
+        // Mark that we've received at least one chunk
+        this._receivedFirstChunk = true;
 
         // Reset idle timer on each chunk received
         this._resetIdleTimer();

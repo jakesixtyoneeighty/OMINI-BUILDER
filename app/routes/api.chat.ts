@@ -147,7 +147,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   // Pass the request's abort signal so the LLM stream cancels when the client disconnects
   const abortSignal = request.signal;
 
-  const stream = new SwitchableStream(60_000); // 60s idle timeout — force-close if no chunks arrive
+  const stream = new SwitchableStream(120_000); // 120s idle timeout — force-close if no chunks arrive
 
   try {
     const options: StreamingOptions = {
