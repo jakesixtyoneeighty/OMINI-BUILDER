@@ -6,6 +6,23 @@ import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { ProviderId } from '~/lib/.server/llm/model';
 import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 
+// Known free model IDs on OpenRouter (must match llm.ts FREE_MODELS)
+const KNOWN_FREE_MODELS = [
+  'deepseek/deepseek-chat:free',
+  'deepseek/deepseek-r1:free',
+  'google/gemma-2-9b-it:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'qwen/qwen-2.5-72b-instruct:free',
+  'mistralai/mistral-7b-instruct:free',
+];
+
+function isFreeModelId(modelId: string): boolean {
+  return KNOWN_FREE_MODELS.includes(modelId) ||
+    modelId === 'deepseek/deepseek-v4-flash:free' ||
+    modelId === 'nvidia/nemotron-3-super-120b-a12b:free' ||
+    modelId === 'openrouter/free';
+}
+
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
 }
@@ -53,9 +70,9 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
           ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
 
-  // For the free model, the server provides the API key via OPENROUTER_API_KEY (a.k.a. OPENROUTER_DEFAULT_API)
-  // Users can use the free model without providing their own key
-  const isFreeModel = provider === 'openrouter' && (body.model === 'deepseek/deepseek-v4-flash:free' || body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
+  // For free models, the server provides the API key via OPENROUTER_API_KEY
+  // Users can use free models without providing their own key, OR use their own key
+  const isFreeModel = provider === 'openrouter' && isFreeModelId(body.model || '');
 
   if (!apiKey && !isFreeModel) {
     throw new Response(
@@ -66,12 +83,12 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
 
   if (!apiKey && isFreeModel) {
     throw new Response(
-      JSON.stringify({ error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Contate o administrador.' }),
+      JSON.stringify({ error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Voce pode adicionar sua propria chave nas Configuracoes > API Keys > OpenRouter.' }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'deepseek/deepseek-v4-flash:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? KNOWN_FREE_MODELS[0] : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {

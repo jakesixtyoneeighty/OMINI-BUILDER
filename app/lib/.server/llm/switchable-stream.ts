@@ -4,6 +4,8 @@ export default class SwitchableStream extends TransformStream {
   private _switches = 0;
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _idleTimeoutMs: number;
+  private _initialTimer: ReturnType<typeof setTimeout> | null = null;
+  private _initialTimeoutMs: number;
   private _receivedFirstChunk = false;
 
   /**
@@ -11,8 +13,12 @@ export default class SwitchableStream extends TransformStream {
    * the stream is force-closed. Default: 120s. Set to 0 to disable.
    * The timer only starts AFTER the first chunk is received, so slow
    * model start-up won't trigger a premature close.
+   * @param initialTimeoutMs If no chunk is received within this time (ms)
+   * after the FIRST source is switched, the stream is force-closed.
+   * Default: 60s. This prevents indefinite hanging when the API never responds.
+   * Set to 0 to disable.
    */
-  constructor(idleTimeoutMs = 120_000) {
+  constructor(idleTimeoutMs = 120_000, initialTimeoutMs = 60_000) {
     let controllerRef: TransformStreamDefaultController | undefined;
 
     super({
@@ -27,6 +33,7 @@ export default class SwitchableStream extends TransformStream {
 
     this._controller = controllerRef;
     this._idleTimeoutMs = idleTimeoutMs;
+    this._initialTimeoutMs = initialTimeoutMs;
   }
 
   private _resetIdleTimer() {
@@ -43,6 +50,32 @@ export default class SwitchableStream extends TransformStream {
     }
   }
 
+  private _startInitialTimer() {
+    if (this._initialTimer) {
+      clearTimeout(this._initialTimer);
+    }
+    // Start the initial connection timer — if no data is received within this time,
+    // force-close the stream to prevent indefinite hanging
+    if (this._initialTimeoutMs > 0 && !this._receivedFirstChunk) {
+      this._initialTimer = setTimeout(() => {
+        console.warn(`[SwitchableStream] No initial data received for ${this._initialTimeoutMs / 1000}s, force-closing stream`);
+        // Inject an error message into the stream before closing
+        if (this._controller) {
+          const errorMsg = JSON.stringify({ error: 'O modelo demorou demais para comecar a responder. Tente novamente ou escolha outro modelo.' });
+          this._controller.enqueue(new TextEncoder().encode(errorMsg + '\n'));
+        }
+        this.close();
+      }, this._initialTimeoutMs);
+    }
+  }
+
+  private _clearInitialTimer() {
+    if (this._initialTimer) {
+      clearTimeout(this._initialTimer);
+      this._initialTimer = null;
+    }
+  }
+
   async switchSource(newStream: ReadableStream) {
     if (this._currentReader) {
       await this._currentReader.cancel();
@@ -52,6 +85,9 @@ export default class SwitchableStream extends TransformStream {
     this._receivedFirstChunk = false;
 
     this._currentReader = newStream.getReader();
+
+    // Start initial connection timer (will be cleared when first chunk arrives)
+    this._startInitialTimer();
 
     this._pumpStream();
 
@@ -74,6 +110,9 @@ export default class SwitchableStream extends TransformStream {
         // Mark that we've received at least one chunk
         this._receivedFirstChunk = true;
 
+        // Clear the initial connection timer on first data
+        this._clearInitialTimer();
+
         // Reset idle timer on each chunk received
         this._resetIdleTimer();
 
@@ -83,11 +122,12 @@ export default class SwitchableStream extends TransformStream {
       console.log(error);
       this._controller.error(error);
     } finally {
-      // Clear idle timer when pump ends
+      // Clear idle timer and initial timer when pump ends
       if (this._idleTimer) {
         clearTimeout(this._idleTimer);
         this._idleTimer = null;
       }
+      this._clearInitialTimer();
     }
   }
 
@@ -102,6 +142,7 @@ export default class SwitchableStream extends TransformStream {
       clearTimeout(this._idleTimer);
       this._idleTimer = null;
     }
+    this._clearInitialTimer();
 
     if (this._currentReader) {
       this._currentReader.cancel();

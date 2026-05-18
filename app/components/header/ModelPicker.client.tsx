@@ -8,9 +8,11 @@ import {
   PROVIDER_LABELS,
   refreshAllConfiguredModels,
   selectProviderModel,
+  FREE_MODELS,
   FREE_MODEL_ID,
   FREE_MODEL_LABEL,
   FREE_PROVIDER,
+  isFreeModel,
   type ProviderId,
 } from '~/lib/stores/llm';
 import { useT } from '~/lib/i18n/useT';
@@ -39,8 +41,8 @@ export function ModelPicker() {
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const configuredCount = (Object.keys(keys) as ProviderId[]).filter((p) => keys[p]).length;
-  // Free model is always available via server's OPENROUTER_API_KEY
-  const hasAnyModel = configuredCount > 0 || model === FREE_MODEL_ID;
+  // Free models are always available via server's OPENROUTER_API_KEY
+  const hasAnyModel = configuredCount > 0 || isFreeModel(model);
 
   useEffect(() => {
     refreshAllConfiguredModels();
@@ -95,14 +97,16 @@ export function ModelPicker() {
 
   const flat: FlatOption[] = useMemo(() => {
     const out: FlatOption[] = [];
-    // Always include the built-in Free model at the top
-    out.push({ provider: FREE_PROVIDER, id: FREE_MODEL_ID, label: FREE_MODEL_LABEL });
+    // Always include all built-in Free models at the top
+    for (const fm of FREE_MODELS) {
+      out.push({ provider: FREE_PROVIDER, id: fm.id, label: fm.label });
+    }
     (Object.keys(allModels) as ProviderId[]).forEach((p) => {
       if (!keys[p]) return;
       const models = Array.isArray(allModels[p]) ? allModels[p] : [];
       for (const m of models) {
-        // Skip the free model if it appears in the API results (we already added it)
-        if (m.id === FREE_MODEL_ID) return;
+        // Skip free models if they appear in the API results (we already added them)
+        if (isFreeModel(m.id)) return;
         out.push({ provider: p, id: m.id, label: m.label });
       }
     });
@@ -120,8 +124,8 @@ export function ModelPicker() {
   const grouped = useMemo(() => {
     const g: Record<string, FlatOption[]> = { omini: [], anthropic: [], openrouter: [], google: [] };
     for (const o of filtered) {
-      // Put the free model in the "omini" group
-      if (o.id === FREE_MODEL_ID) {
+      // Put all free models in the "omini" group
+      if (isFreeModel(o.id)) {
         g['omini'].push(o);
       } else {
         g[o.provider].push(o);
@@ -132,7 +136,7 @@ export function ModelPicker() {
 
   const isAnyLoading = Object.values(loading).some(Boolean);
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label
-    || (model === FREE_MODEL_ID ? FREE_MODEL_LABEL : model)
+    || (isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Free' : model)
     || t('model.selectModel');
 
   const dropdownContent = open ? (

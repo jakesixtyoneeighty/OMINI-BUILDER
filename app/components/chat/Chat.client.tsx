@@ -142,11 +142,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     // Custom fetch with timeout to prevent indefinite hanging
     fetch: async (input, init) => {
       const controller = new AbortController();
-      // 3 minute timeout for the initial connection (reduced from 5 min)
+      // 2 minute timeout for the initial connection
+      // The server has a 60s initial timeout + 120s idle timeout, so 2 min is plenty
       const timeoutId = setTimeout(() => {
         console.warn('[Chat] Fetch timeout — aborting request');
         controller.abort();
-      }, 3 * 60 * 1000);
+      }, 2 * 60 * 1000);
 
       // If there's an existing signal, chain it
       const existingSignal = init?.signal;
@@ -156,6 +157,23 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
 
       try {
         const response = await fetch(input, { ...init, signal: controller.signal });
+
+        // Check for non-200 responses that indicate server errors
+        if (!response.ok) {
+          // Try to extract the error message from the response body
+          try {
+            const errorData = await response.clone().json();
+            if (errorData.error) {
+              throw new Error(errorData.error);
+            }
+          } catch (jsonErr) {
+            if (jsonErr instanceof Error && jsonErr.message !== 'Unexpected end of JSON input') {
+              throw jsonErr;
+            }
+          }
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+
         return response;
       } finally {
         clearTimeout(timeoutId);
@@ -467,16 +485,17 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     }
   }, [messages, isLoading, parseMessages]);
 
-  // Safety net: if isLoading stays true for more than 4 minutes, force stop
+  // Safety net: if isLoading stays true for more than 3 minutes, force stop
   // This prevents the UI from getting permanently stuck in loading state
+  // Server has 60s initial timeout + 120s idle timeout + 2 max segments = ~3 min max
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (isLoading) {
       loadingTimeoutRef.current = setTimeout(() => {
-        console.warn('[Chat] Loading state stuck for 4 minutes — force stopping');
+        console.warn('[Chat] Loading state stuck for 3 minutes — force stopping');
         chatStore.setKey('aborted', true);
         stop();
-      }, 4 * 60 * 1000);
+      }, 3 * 60 * 1000);
     } else {
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);

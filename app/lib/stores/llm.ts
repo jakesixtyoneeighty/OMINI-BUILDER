@@ -10,10 +10,31 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   google: 'Google Gemini',
 };
 
-// Built-in free model that uses the server's OPENROUTER_API_KEY
-export const FREE_MODEL_ID = 'deepseek/deepseek-v4-flash:free';
-export const FREE_MODEL_LABEL = 'Free';
+// Built-in free models that use the server's OPENROUTER_API_KEY
+// Listed in priority order — the first one is the default
+export const FREE_MODELS = [
+  { id: 'deepseek/deepseek-chat:free', label: 'DeepSeek V3 (Free)' },
+  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (Free)' },
+  { id: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (Free)' },
+  { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (Free)' },
+  { id: 'qwen/qwen-2.5-72b-instruct:free', label: 'Qwen 2.5 72B (Free)' },
+  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Free)' },
+];
+
+export const FREE_MODEL_ID = FREE_MODELS[0].id;
+export const FREE_MODEL_LABEL = FREE_MODELS[0].label;
 export const FREE_PROVIDER: ProviderId = 'openrouter';
+
+/**
+ * Check if a model ID is one of the known free models
+ */
+export function isFreeModel(modelId: string): boolean {
+  return FREE_MODELS.some((m) => m.id === modelId) ||
+    // Also match old free model IDs that may be stored in localStorage
+    modelId === 'deepseek/deepseek-v4-flash:free' ||
+    modelId === 'nvidia/nemotron-3-super-120b-a12b:free' ||
+    modelId === 'openrouter/free';
+}
 
 export interface ModelInfo {
   id: string;
@@ -55,8 +76,8 @@ function loadInitial(): LLMState {
       return { provider: 'openrouter', model: FREE_MODEL_ID, keys };
     }
 
-    // Migrate: if the stored model is the old default 'gpt-4o-mini' or 'openrouter/free' or 'nvidia/nemotron-3-super-120b-a12b:free', update to new free model
-    if (model === 'gpt-4o-mini' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
+    // Migrate: if the stored model is the old default, update to new free model
+    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-v4-flash:free' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
       model = FREE_MODEL_ID;
       provider = 'openrouter';
     }
@@ -105,7 +126,7 @@ if (typeof window !== 'undefined') {
 
     // Skip if the project's model is still the default — this means it's a new/unsaved project
     // that hasn't been configured yet. We should keep whatever model the user was using.
-    const isDefaultModel = (savedProvider === 'openrouter' && (savedModel === FREE_MODEL_ID || savedModel === 'openrouter/free' || savedModel === 'nvidia/nemotron-3-super-120b-a12b:free')) ||
+    const isDefaultModel = (savedProvider === 'openrouter' && isFreeModel(savedModel || '')) ||
                            (savedModel === 'gpt-4o-mini') ||
                            (!savedProvider && !savedModel);
 
@@ -203,7 +224,7 @@ export async function loadKeysFromSupabase() {
             model: FREE_MODEL_ID,
             keys: restoredKeys,
           });
-        } else if (restoredProvider === 'openrouter' && (restoredModel === 'gpt-4o-mini' || restoredModel === 'openrouter/free' || restoredModel === 'nvidia/nemotron-3-super-120b-a12b:free')) {
+        } else if (restoredProvider === 'openrouter' && isFreeModel(restoredModel)) {
           // Migrate: update old default model to new free model
           llmStore.set({
             provider: 'openrouter',

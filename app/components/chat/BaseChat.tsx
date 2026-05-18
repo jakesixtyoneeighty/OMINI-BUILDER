@@ -428,7 +428,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 ? (mobileView === 'chat' ? 'flex-1 w-full min-h-0' : 'hidden')
                 : (chatStarted && showWorkbench ? 'shrink-0' : 'flex-1'),
             )}
-            style={chatStarted && !_mobile && showWorkbench ? { width: `${chatWidthPct}%`, minWidth: '280px' } : undefined}
+            style={chatStarted && !_mobile ? { width: showWorkbench ? `${chatWidthPct}%` : '100%', minWidth: '280px' } : undefined}
           >
 
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
