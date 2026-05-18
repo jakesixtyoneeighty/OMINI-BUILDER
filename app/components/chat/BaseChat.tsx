@@ -984,8 +984,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             )}
           </div>
 
-          {/* Resize handle - only visible when chat is started and not mobile */}
-          {chatStarted && !_mobile && (
+          {/* Resize handle - only visible when chat is started, workbench is open, and not mobile */}
+          {chatStarted && !_mobile && showWorkbench && (
             <div
               onMouseDown={handleResizeStart}
               className={classNames(

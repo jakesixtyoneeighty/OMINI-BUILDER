@@ -16,18 +16,27 @@ import {
   tooltips,
   type Tooltip,
 } from '@codemirror/view';
-import { memo, useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { memo, useEffect, useRef, useState, useCallback, type MutableRefObject } from 'react';
 import type { Theme } from '~/types/theme';
 import { classNames } from '~/utils/classNames';
 import { debounce } from '~/utils/debounce';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
-import { BinaryContent } from './BinaryContent';
-import { getTheme, reconfigureTheme } from './cm-theme';
+import { MediaPreview } from './MediaPreview';
+import { getTheme, reconfigureTheme, type EditorSettings } from './cm-theme';
 export type { EditorSettings } from './cm-theme';
 import { indentKeyBinding } from './indent';
 import { getLanguage } from './languages';
 
 const logger = createScopedLogger('CodeMirrorEditor');
+
+/**
+ * Check if a text file (non-binary) should be previewable as an image.
+ * SVGs are text files but should be previewable as images.
+ */
+function isPreviewableTextFile(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  return ext === 'svg';
+}
 
 export interface EditorDocument {
   value: string;
@@ -138,6 +147,19 @@ export const CodeMirrorEditor = memo(
     const onChangeRef = useRef(onChange);
     const onSaveRef = useRef(onSave);
 
+    // Preview toggle for text files that are also previewable (SVG)
+    const [showPreview, setShowPreview] = useState(false);
+    const isPreviewable = doc?.filePath ? isPreviewableTextFile(doc.filePath) : false;
+
+    // Reset preview state when file changes
+    useEffect(() => {
+      setShowPreview(false);
+    }, [doc?.filePath]);
+
+    const togglePreview = useCallback(() => {
+      setShowPreview((prev) => !prev);
+    }, []);
+
     /**
      * This effect is used to avoid side effects directly in the render function
      * and instead the refs are updated after each render.
@@ -219,6 +241,8 @@ export const CodeMirrorEditor = memo(
       }
 
       if (doc.isBinary) {
+        // MediaPreview is rendered below in the JSX
+        // Don't populate the CodeMirror editor for binary files
         return;
       }
 
@@ -248,10 +272,49 @@ export const CodeMirrorEditor = memo(
       );
     }, [doc?.value, editable, doc?.filePath, autoFocusOnDocumentChange]);
 
+    const isBinaryPreview = doc?.isBinary === true;
+    const isTextPreview = !doc?.isBinary && isPreviewable && showPreview;
+
     return (
       <div className={classNames('relative h-full', className)}>
-        {doc?.isBinary && <BinaryContent />}
-        <div className="h-full overflow-hidden" ref={containerRef} />
+        {/* Preview toggle button for SVG-like text files */}
+        {isPreviewable && !doc?.isBinary && (
+          <div className="absolute top-2 right-2 z-20 flex gap-1">
+            <button
+              type="button"
+              onClick={togglePreview}
+              className={classNames(
+                'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all z-20',
+                showPreview
+                  ? 'bg-bolt-elements-item-contentAccent text-white'
+                  : 'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary border border-bolt-elements-borderColor',
+              )}
+              title={showPreview ? 'Show Code' : 'Show Preview'}
+            >
+              {showPreview ? (
+                <>
+                  <div className="i-ph:code text-xs" />
+                  Code
+                </>
+              ) : (
+                <>
+                  <div className="i-ph:image text-xs" />
+                  Preview
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Media preview for binary files or text preview mode */}
+        {isBinaryPreview && <MediaPreview filePath={doc!.filePath} />}
+        {isTextPreview && <MediaPreview filePath={doc!.filePath} textContent={doc!.value} />}
+
+        {/* CodeMirror editor container - hidden when showing preview */}
+        <div
+          className={classNames('h-full overflow-hidden', (isBinaryPreview || isTextPreview) ? 'invisible h-0' : '')}
+          ref={containerRef}
+        />
       </div>
     );
   },
