@@ -19,6 +19,9 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
         baseURL: 'https://openrouter.ai/api/v1',
         compatibility: 'compatible',
         timeout: LLM_TIMEOUT_MS,
+        // Disable automatic retries so errors surface immediately instead of
+        // "Failed after 3 attempts. Last error: Provider returned error"
+        maxRetries: 0,
         headers: {
           'HTTP-Referer': 'https://bolt.new',
           'X-Title': 'Omni-Builder',

@@ -60,6 +60,8 @@ export function streamText(
   const projectId = dbContext?.type === 'omni' ? dbContext.omni?.projectId : undefined;
   const activeTools = buildTools(projectId, supabaseUrl, supabaseKey, serverOrigin);
 
+  console.log(`[streamText] provider=${selection.provider} model=${selection.model} hasApiKey=${!!selection.apiKey} messages=${coreMessages.length}`);
+
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
     system: getSystemPrompt(undefined, dbContext, planMode, customRules, language, serverOrigin),

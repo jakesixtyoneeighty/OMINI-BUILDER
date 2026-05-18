@@ -234,14 +234,18 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         errorMsg = 'Erro de conexao com o servidor. Verifique sua internet e tente novamente. Se o problema persistir, o servidor pode estar temporariamente indisponivel.';
       } else if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
         errorMsg = 'Modelo LLM nao encontrado. Tente selecionar outro modelo no seletor acima, ou configure sua propria chave de API nas Configuracoes.';
-      } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API') || errorMsg.includes('OPENROUTER_API_KEY')) {
+      } else if (errorMsg.includes('Missing API key') || errorMsg.includes('Missing API') || errorMsg.includes('OPENROUTER_API_KEY') || errorMsg.includes('MISSING_API_KEY')) {
         errorMsg = 'Chave de API ausente. Para usar o Agent Omini, adicione sua chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai';
-      } else if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
-        errorMsg = 'Chave de API invalida. Verifique sua chave nas Configuracoes.';
-      } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit')) {
-        errorMsg = 'Limite de requisicoes atingido. Aguarde um momento e tente novamente.';
-      } else if (errorMsg.includes('503') || errorMsg.includes('Service Unavailable') || errorMsg.includes('Overloaded')) {
-        errorMsg = 'O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Tente novamente em alguns segundos.';
+      } else if (errorMsg.includes('Provider returned error') || errorMsg.includes('Failed after') || errorMsg.includes('PROVIDER_ERROR')) {
+        errorMsg = 'O modelo retornou um erro. Possiveis causas: (1) Chave OpenRouter invalida no servidor, (2) Modelo gratuito temporariamente indisponivel, (3) Limite de uso atingido. Adicione sua propria chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai';
+      } else if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('AUTH_ERROR')) {
+        errorMsg = 'Chave de API invalida ou expirada. Adicione sua chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai';
+      } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit') || errorMsg.includes('RATE_LIMITED')) {
+        errorMsg = 'Limite de requisicoes atingido. Modelos gratuitos tem limites de uso. Aguarde alguns segundos e tente novamente.';
+      } else if (errorMsg.includes('503') || errorMsg.includes('Service Unavailable') || errorMsg.includes('Overloaded') || errorMsg.includes('SERVICE_UNAVAILABLE')) {
+        errorMsg = 'O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Modelos gratuitos podem ter disponibilidade limitada. Tente novamente em alguns segundos.';
+      } else if (errorMsg.includes('Insufficient') || errorMsg.includes('credits') || errorMsg.includes('balance') || errorMsg.includes('INSUFFICIENT_CREDITS')) {
+        errorMsg = 'Saldo insuficiente na conta OpenRouter. Modelos gratuitos nao exigem saldo. Adicione sua propria chave gratuita nas Configuracoes > API Keys > OpenRouter.';
       }
 
       // Tentar extrair causa raiz de erros de API (fetch errors, etc.)

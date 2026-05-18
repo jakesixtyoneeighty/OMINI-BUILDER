@@ -83,7 +83,10 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
 
   if (!apiKey && isFreeModel) {
     throw new Response(
-      JSON.stringify({ error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Voce pode adicionar sua propria chave nas Configuracoes > API Keys > OpenRouter.' }),
+      JSON.stringify({
+        error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Modelos gratuitos (como Agent Omini) precisam de uma chave OpenRouter para funcionar. Voce pode: (1) adicionar sua propria chave gratuita nas Configuracoes > API Keys > OpenRouter, ou (2) o administrador precisa configurar OPENROUTER_API_KEY no servidor. Obtenha uma chave gratuita em https://openrouter.ai',
+        errorType: 'MISSING_API_KEY',
+      }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
@@ -97,7 +100,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     );
   }
 
-  console.log(`[chat] provider=${provider} model=${model}`);
+  console.log(`[chat] provider=${provider} model=${model} hasApiKey=${!!apiKey} isFreeModel=${isFreeModel} clientKey=${!!body.apiKey} envKey=${!!(typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || !!env.OPENROUTER_API_KEY}`);
 
   return { provider, model, apiKey };
 }
@@ -217,8 +220,26 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     }
 
     console.error('[chat] Error:', error);
+    // Log the full error structure for debugging (hide API keys)
+    if (error instanceof Error) {
+      console.error('[chat] Error name:', error.name);
+      console.error('[chat] Error message:', error.message);
+      // The Vercel AI SDK wraps provider errors — check the cause chain
+      let cause: any = (error as any).cause;
+      let depth = 0;
+      while (cause && depth < 5) {
+        console.error(`[chat] Cause[${depth}]:`, typeof cause === 'object' ? JSON.stringify(cause, null, 2).substring(0, 2000) : cause);
+        cause = cause?.cause;
+        depth++;
+      }
+    }
 
     let message = error instanceof Error ? error.message : 'Internal Server Error';
+    let errorType = 'UNKNOWN';
+
+    // Extract HTTP status from AI SDK errors
+    const statusCode = (error as any)?.statusCode || (error as any)?.status || (error as any)?.cause?.statusCode || (error as any)?.cause?.status;
+    console.error('[chat] Extracted statusCode:', statusCode);
 
     // Provide helpful error messages for common API failures
     if (abortSignal.aborted) {
@@ -227,17 +248,39 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       return new Response(null, { status: 499 });
     } else if (message.includes('abort') || message.includes('cancel') || message.includes('Timeout') || message.includes('ETIMEDOUT') || message.includes('timed out')) {
       message = `O modelo demorou demais para responder. Isso pode acontecer com modelos gratuitos ou quando o servidor esta sobrecarregado. Tente novamente em alguns segundos.`;
-    } else if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
-      message = `O modelo "${selection.model}" nao foi encontrado no servidor LLM. Verifique se a chave de API esta correta e se o modelo esta disponivel.`;
-    } else if (message.includes('401') || message.includes('Unauthorized') || message.includes('Authentication')) {
-      message = `Chave de API invalida para o provedor "${selection.provider}". Verifique sua chave nas Configuracoes.`;
-    } else if (message.includes('429') || message.includes('rate') || message.includes('Rate')) {
-      message = `Limite de requisicoes atingido para o provedor "${selection.provider}". Aguarde um momento e tente novamente.`;
-    } else if (message.includes('503') || message.includes('Service Unavailable') || message.includes('Overloaded')) {
-      message = `O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Tente novamente em alguns segundos.`;
+      errorType = 'TIMEOUT';
+    } else if (message.includes('Not Found') || message.includes('"error":"Not Found"') || statusCode === 404) {
+      message = `O modelo "${selection.model}" nao foi encontrado no OpenRouter. Pode ser que este modelo tenha sido descontinuado ou renomeado. Tente selecionar outro modelo.`;
+      errorType = 'MODEL_NOT_FOUND';
+    } else if (message.includes('401') || message.includes('Unauthorized') || message.includes('Authentication') || statusCode === 401) {
+      message = `Chave de API invalida ou expirada para o OpenRouter. Se voce esta usando o Agent Omini (modelo gratuito), o servidor precisa de uma chave valida. Voce pode adicionar sua propria chave gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai`;
+      errorType = 'AUTH_ERROR';
+    } else if (message.includes('403') || statusCode === 403) {
+      message = `Acesso negado pelo OpenRouter. Sua chave de API pode nao ter permissao para usar o modelo "${selection.model}". Verifique sua chave nas Configuracoes.`;
+      errorType = 'FORBIDDEN';
+    } else if (message.includes('429') || message.includes('rate') || message.includes('Rate') || statusCode === 429) {
+      message = `Limite de requisicoes atingido para o OpenRouter. Modelos gratuitos tem limites de uso. Aguarde alguns segundos e tente novamente.`;
+      errorType = 'RATE_LIMITED';
+    } else if (message.includes('503') || message.includes('Service Unavailable') || message.includes('Overloaded') || statusCode === 503) {
+      message = `O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Modelos gratuitos podem ter disponibilidade limitada. Tente novamente em alguns segundos.`;
+      errorType = 'SERVICE_UNAVAILABLE';
+    } else if (message.includes('Provider returned error') || message.includes('Failed after')) {
+      // This is the generic AI SDK error — try to give a more helpful message
+      if (isFreeModelId(selection.model)) {
+        message = `O modelo "${selection.model}" retornou um erro. Possiveis causas: (1) A chave OpenRouter do servidor esta invalida ou expirada, (2) O modelo gratuito esta temporariamente indisponivel, (3) Limite de uso atingido. Voce pode adicionar sua propria chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai`;
+      } else {
+        message = `O provedor retornou um erro ao processar sua requisicao. Verifique se sua chave de API e modelo estao corretos nas Configuracoes.`;
+      }
+      errorType = 'PROVIDER_ERROR';
+    } else if (message.includes('Invalid') && message.includes('API key')) {
+      message = `Chave de API invalida para o OpenRouter. Obtenha uma chave gratuita em https://openrouter.ai e adicione nas Configuracoes.`;
+      errorType = 'INVALID_KEY';
+    } else if (message.includes('Insufficient') || message.includes('credits') || message.includes('balance')) {
+      message = `Saldo insuficiente na conta OpenRouter. Modelos gratuitos nao exigem saldo, mas sua chave pode estar vinculada a uma conta sem acesso aos modelos gratuitos.`;
+      errorType = 'INSUFFICIENT_CREDITS';
     }
 
-    throw new Response(JSON.stringify({ error: message }), {
+    throw new Response(JSON.stringify({ error: message, errorType }), {
       status: 500,
       headers: { 'content-type': 'application/json' } },
     );
