@@ -21,6 +21,7 @@ import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
+import { isMediaExtension } from '~/utils/media-types';
 import { BaseChat } from './BaseChat';
 import { EnvRequestModal, type EnvVarRequest } from './EnvRequestModal';
 import { DbRequestModal, type DbFieldRequest } from './DbRequestModal';
@@ -141,8 +142,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     // Custom fetch with timeout to prevent indefinite hanging
     fetch: async (input, init) => {
       const controller = new AbortController();
-      // 5 minute timeout for the initial connection
-      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+      // 3 minute timeout for the initial connection (reduced from 5 min)
+      const timeoutId = setTimeout(() => {
+        console.warn('[Chat] Fetch timeout — aborting request');
+        controller.abort();
+      }, 3 * 60 * 1000);
 
       // If there's an existing signal, chain it
       const existingSignal = init?.signal;
@@ -462,6 +466,29 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
       }
     }
   }, [messages, isLoading, parseMessages]);
+
+  // Safety net: if isLoading stays true for more than 4 minutes, force stop
+  // This prevents the UI from getting permanently stuck in loading state
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (isLoading) {
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('[Chat] Loading state stuck for 4 minutes — force stopping');
+        chatStore.setKey('aborted', true);
+        stop();
+      }, 4 * 60 * 1000);
+    } else {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = undefined;
+      }
+    }
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [isLoading, stop]);
 
   const runAnimation = async () => {
     if (chatStarted) return;
@@ -1037,8 +1064,10 @@ The database is ready to use. Please configure the project to connect to it and 
 
       for (const f of result.files) {
         try {
+          // Detect binary files by extension
+          const isBinary = isMediaExtension(f.path);
           await wc.fs.writeFile(f.path, f.content);
-          workbenchStore.files.setKey(f.path, { type: 'file', content: f.content, isBinary: false });
+          workbenchStore.files.setKey(f.path, { type: 'file', content: isBinary ? '' : f.content, isBinary });
           written++;
         } catch (err) {
           console.error('Failed to write', f.path, err);

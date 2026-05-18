@@ -21,6 +21,7 @@ import type { Theme } from '~/types/theme';
 import { classNames } from '~/utils/classNames';
 import { debounce } from '~/utils/debounce';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
+import { isMediaExtension } from '~/utils/media-types';
 import { MediaPreview } from './MediaPreview';
 import { getTheme, reconfigureTheme, type EditorSettings } from './cm-theme';
 export type { EditorSettings } from './cm-theme';
@@ -30,12 +31,13 @@ import { getLanguage } from './languages';
 const logger = createScopedLogger('CodeMirrorEditor');
 
 /**
- * Check if a text file (non-binary) should be previewable as an image.
+ * Check if a text file (non-binary) should be previewable as media.
  * SVGs are text files but should be previewable as images.
  */
 function isPreviewableTextFile(filePath: string): boolean {
   const ext = filePath.split('.').pop()?.toLowerCase() || '';
-  return ext === 'svg';
+  const previewableText = ['svg'];
+  return previewableText.includes(ext);
 }
 
 export interface EditorDocument {
@@ -240,9 +242,11 @@ export const CodeMirrorEditor = memo(
         return;
       }
 
-      if (doc.isBinary) {
+      // Check both isBinary flag and file extension (safety net for cloud-loaded files)
+      const isMediaExt = isMediaExtension(doc.filePath);
+      if (doc.isBinary || isMediaExt) {
         // MediaPreview is rendered below in the JSX
-        // Don't populate the CodeMirror editor for binary files
+        // Don't populate the CodeMirror editor for binary/media files
         return;
       }
 
@@ -272,13 +276,14 @@ export const CodeMirrorEditor = memo(
       );
     }, [doc?.value, editable, doc?.filePath, autoFocusOnDocumentChange]);
 
-    const isBinaryPreview = doc?.isBinary === true;
-    const isTextPreview = !doc?.isBinary && isPreviewable && showPreview;
+    // Use both isBinary flag and extension check (safety net)
+    const isBinaryPreview = doc?.isBinary === true || (doc?.filePath ? isMediaExtension(doc.filePath) : false);
+    const isTextPreview = !isBinaryPreview && isPreviewable && showPreview;
 
     return (
       <div className={classNames('relative h-full', className)}>
         {/* Preview toggle button for SVG-like text files */}
-        {isPreviewable && !doc?.isBinary && (
+        {isPreviewable && !isBinaryPreview && (
           <div className="absolute top-2 right-2 z-20 flex gap-1">
             <button
               type="button"
@@ -306,8 +311,8 @@ export const CodeMirrorEditor = memo(
           </div>
         )}
 
-        {/* Media preview for binary files or text preview mode */}
-        {isBinaryPreview && <MediaPreview filePath={doc!.filePath} />}
+        {/* Media preview for binary/media files or text preview mode */}
+        {isBinaryPreview && <MediaPreview filePath={doc!.filePath} textContent={doc?.isBinary ? undefined : doc?.value} />}
         {isTextPreview && <MediaPreview filePath={doc!.filePath} textContent={doc!.value} />}
 
         {/* CodeMirror editor container - hidden when showing preview */}

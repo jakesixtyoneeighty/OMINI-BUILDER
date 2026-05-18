@@ -9,6 +9,8 @@ import { computeFileModifications } from '~/utils/diff';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 
+import { isMediaExtension } from '~/utils/media-types';
+
 const logger = createScopedLogger('FilesStore');
 
 const utf8TextDecoder = new TextDecoder('utf8', { fatal: true });
@@ -160,7 +162,7 @@ export class FilesStore {
            * The reason we do this is because we don't want to display binary files
            * in the editor nor allow to edit them.
            */
-          const isBinary = isBinaryFile(buffer);
+          const isBinary = isBinaryFile(buffer, sanitizedPath);
 
           if (!isBinary) {
             content = this.#decodeFileContent(buffer);
@@ -218,7 +220,12 @@ export class FilesStore {
   }
 }
 
-function isBinaryFile(buffer: Uint8Array | undefined) {
+function isBinaryFile(buffer: Uint8Array | undefined, filePath?: string) {
+  // Check by file extension first — media files should always be treated as binary
+  if (filePath && isMediaExtension(filePath)) {
+    return true;
+  }
+
   if (buffer === undefined) {
     return false;
   }

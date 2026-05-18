@@ -46,6 +46,7 @@ type NavItem = {
   active?: boolean;
   external?: boolean;
   onClick?: () => void;
+  svgIcon?: JSX.Element;
 };
 
 const COLLAPSED_KEY = 'omni-builder.sidebar.collapsed';
@@ -132,9 +133,37 @@ export function Menu() {
 
   // Navigation items
   const navItems: NavItem[] = [
-    { icon: 'i-ph:house', label: t('sidebar.home'), onClick: handleNewChat, active: !chatStarted },
-    { icon: 'i-ph:folder-open', label: t('sidebar.projects'), href: '/projects' },
-    { icon: 'i-ph:star', label: t('sidebar.starred'), onClick: () => setNavSection('starred') },
+    {
+      icon: 'i-ph:house',
+      label: t('sidebar.home'),
+      onClick: handleNewChat,
+      active: !chatStarted,
+      svgIcon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className={collapsed ? 'w-5 h-5' : 'w-4 h-4'} fill="currentColor">
+          <path d="M304 70.1C313.1 61.9 326.9 61.9 336 70.1L568 278.1C577.9 286.9 578.7 302.1 569.8 312C560.9 321.9 545.8 322.7 535.9 313.8L527.9 306.6L527.9 511.9C527.9 547.2 499.2 575.9 463.9 575.9L175.9 575.9C140.6 575.9 111.9 547.2 111.9 511.9L111.9 306.6L103.9 313.8C94 322.6 78.9 321.8 70 312C61.1 302.2 62 287 71.8 278.1L304 70.1zM320 120.2L160 263.7L160 512C160 520.8 167.2 528 176 528L224 528L224 424C224 384.2 256.2 352 296 352L344 352C383.8 352 416 384.2 416 424L416 528L464 528C472.8 528 480 520.8 480 512L480 263.7L320 120.3zM272 528L368 528L368 424C368 410.7 357.3 400 344 400L296 400C282.7 400 272 410.7 272 424L272 528z" />
+        </svg>
+      ),
+    },
+    {
+      icon: 'i-ph:folder-open',
+      label: t('sidebar.projects'),
+      href: '/projects',
+      svgIcon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className={collapsed ? 'w-5 h-5' : 'w-4 h-4'} fill="currentColor">
+          <path d="M128 464L512 464C520.8 464 528 456.8 528 448L528 208C528 199.2 520.8 192 512 192L362.7 192C345.4 192 328.5 186.4 314.7 176L276.3 147.2C273.5 145.1 270.2 144 266.7 144L128 144C119.2 144 112 151.2 112 160L112 448C112 456.8 119.2 464 128 464zM512 512L128 512C92.7 512 64 483.3 64 448L64 160C64 124.7 92.7 96 128 96L266.7 96C280.5 96 294 100.5 305.1 108.8L343.5 137.6C349 141.8 355.8 144 362.7 144L512 144C547.3 144 576 172.7 576 208L576 448C576 483.3 547.3 512 512 512z" />
+        </svg>
+      ),
+    },
+    {
+      icon: 'i-ph:star',
+      label: t('sidebar.starred'),
+      onClick: () => setNavSection('starred'),
+      svgIcon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className={collapsed ? 'w-5 h-5' : 'w-4 h-4'} fill="currentColor">
+          <path d="M320.1 32C329.1 32 337.4 37.1 341.5 45.1L415 189.3L574.9 214.7C583.8 216.1 591.2 222.4 594 231C596.8 239.6 594.5 249 588.2 255.4L473.7 369.9L499 529.8C500.4 538.7 496.7 547.7 489.4 553C482.1 558.3 472.4 559.1 464.4 555L320.1 481.6L175.8 555C167.8 559.1 158.1 558.3 150.8 553C143.5 547.7 139.8 538.8 141.2 529.8L166.4 369.9L52 255.4C45.6 249 43.4 239.6 46.2 231C49 222.4 56.3 216.1 65.3 214.7L225.2 189.3L298.8 45.1C302.9 37.1 311.2 32 320.2 32zM320.1 108.8L262.3 222C258.8 228.8 252.3 233.6 244.7 234.8L119.2 254.8L209 344.7C214.4 350.1 216.9 357.8 215.7 365.4L195.9 490.9L309.2 433.3C316 429.8 324.1 429.8 331 433.3L444.3 490.9L424.5 365.4C423.3 357.8 425.8 350.1 431.2 344.7L521 254.8L395.5 234.8C387.9 233.6 381.4 228.8 377.9 222L320.1 108.8z" />
+        </svg>
+      ),
+    },
     { icon: 'i-ph:clock-counter-clockwise', label: t('sidebar.recentlyViewed'), onClick: () => setNavSection('chats') },
     {
       icon: 'i-ph:book-open-text',
@@ -383,7 +412,13 @@ export function Menu() {
           {navItems.map((item) => {
             const content = (
               <>
-                <div className={`${item.icon} ${collapsed ? 'text-lg' : 'text-base'} shrink-0`} />
+                {item.svgIcon ? (
+                  <div className="shrink-0 flex items-center justify-center">
+                    {item.svgIcon}
+                  </div>
+                ) : (
+                  <div className={`${item.icon} ${collapsed ? 'text-lg' : 'text-base'} shrink-0`} />
+                )}
                 {!collapsed && (
                   <span className="text-sm truncate">{item.label}</span>
                 )}

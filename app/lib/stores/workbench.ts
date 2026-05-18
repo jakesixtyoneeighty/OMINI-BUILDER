@@ -3,6 +3,7 @@ import type { EditorDocument, ScrollPosition } from '~/components/editor/codemir
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
 import { webcontainer } from '~/lib/webcontainer';
+import { isMediaExtension } from '~/utils/media-types';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
@@ -162,7 +163,9 @@ export class WorkbenchStore {
       try {
         const relPath = file.path.startsWith(WORK_DIR) ? file.path.slice(WORK_DIR.length + 1) : file.path;
         await wc.fs.writeFile(relPath, file.content);
-        this.files.setKey(file.path, { type: 'file', content: file.content, isBinary: false });
+        // Detect binary files by extension (images, video, audio, fonts, etc.)
+        const isBinary = isMediaExtension(file.path);
+        this.files.setKey(file.path, { type: 'file', content: isBinary ? '' : file.content, isBinary });
       } catch (err) {
         console.error(`Failed to restore file ${file.path}`, err);
       }
