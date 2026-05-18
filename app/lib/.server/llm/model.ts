@@ -10,7 +10,7 @@ const LLM_TIMEOUT_MS = 5 * 60 * 1000;
 export function getModel(provider: ProviderId, modelId: string, apiKey: string) {
   switch (provider) {
     case 'anthropic': {
-      const anthropic = createAnthropic({ apiKey, timeout: LLM_TIMEOUT_MS });
+      const anthropic = createAnthropic({ apiKey, timeout: LLM_TIMEOUT_MS, maxRetries: 0 });
       return anthropic(modelId);
     }
     case 'openrouter': {
@@ -33,7 +33,10 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
     }
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey, timeout: LLM_TIMEOUT_MS });
-      return google(modelId);
+      return google(modelId, {
+        // Disable automatic retries so errors surface immediately
+        maxRetries: 0,
+      });
     }
     default:
       throw new Error(`Unsupported provider: ${provider}`);

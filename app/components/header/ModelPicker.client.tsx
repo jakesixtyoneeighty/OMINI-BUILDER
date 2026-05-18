@@ -97,7 +97,7 @@ export function ModelPicker() {
 
   const flat: FlatOption[] = useMemo(() => {
     const out: FlatOption[] = [];
-    // Always include all built-in Free models at the top
+    // Always include all built-in Omini models at the top
     for (const fm of FREE_MODELS) {
       out.push({ provider: FREE_PROVIDER, id: fm.id, label: fm.label });
     }
@@ -105,7 +105,7 @@ export function ModelPicker() {
       if (!keys[p]) return;
       const models = Array.isArray(allModels[p]) ? allModels[p] : [];
       for (const m of models) {
-        // Skip free models if they appear in the API results (we already added them)
+        // Skip free/virtual models if they appear in the API results (we already added them)
         if (isFreeModel(m.id)) return;
         out.push({ provider: p, id: m.id, label: m.label });
       }
@@ -136,8 +136,11 @@ export function ModelPicker() {
 
   const isAnyLoading = Object.values(loading).some(Boolean);
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label
-    || (model === AGENT_OMINI_MODEL_ID ? AGENT_OMINI_LABEL : isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Free' : model)
+    || (model === AGENT_OMINI_MODEL_ID ? AGENT_OMINI_LABEL : isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Agent Omini' : model)
     || t('model.selectModel');
+
+  // Show Omini logo when Agent Omini is selected, otherwise show provider logo
+  const currentLogo = isFreeModel(model) ? '/omni-builder-logo.svg' : PROVIDER_LOGOS[provider];
 
   const dropdownContent = open ? (
     <div
@@ -179,6 +182,8 @@ export function ModelPicker() {
                 </div>
                 {items.map((o) => {
                   const active = o.provider === provider && o.id === model;
+                  // For virtual models (Agent Omini), don't show the model ID subtitle
+                  const isVirtualFreeModel = isFreeModel(o.id);
                   return (
                     <button
                       key={`${o.provider}:${o.id}`}
@@ -191,7 +196,7 @@ export function ModelPicker() {
                       }`}
                     >
                       <span className="font-medium truncate">{o.label}</span>
-                      <span className="text-[9px] opacity-60 truncate">{o.id}</span>
+                      {!isVirtualFreeModel && <span className="text-[9px] opacity-60 truncate">{o.id}</span>}
                     </button>
                   );
                 })}
@@ -234,7 +239,7 @@ export function ModelPicker() {
         className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
         title={t('model.selectModel')}
       >
-        <img src={PROVIDER_LOGOS[provider]} alt={provider} className="w-4 h-4 object-contain" />
+        <img src={currentLogo} alt={provider} className="w-4 h-4 object-contain" />
         <span className="font-medium truncate max-w-[120px]">{currentLabel}</span>
         <div className={`i-ph:caret-up text-[10px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

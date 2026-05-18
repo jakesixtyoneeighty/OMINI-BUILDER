@@ -10,34 +10,32 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   google: 'Google Gemini',
 };
 
-// Agent Omini — the default free model powered by qwen3-coder via OpenRouter
-// Uses the server's OPENROUTER_API_KEY so users don't need their own key
-export const AGENT_OMINI_MODEL_ID = 'qwen/qwen3-coder:free';
+// Agent Omini — the default free model
+// The client uses a virtual model ID 'agent-omini' — the server translates it
+// to the real provider/model internally. The UI never reveals the real model.
+export const AGENT_OMINI_MODEL_ID = 'agent-omini';
 export const AGENT_OMINI_LABEL = 'Agent Omini';
 
-// Other free models available on OpenRouter (verified as of 2025-05)
+// Omini models (virtual IDs — server translates to real models)
 export const FREE_MODELS = [
-  { id: 'qwen/qwen3-coder:free', label: 'Agent Omini' },
-  { id: 'deepseek/deepseek-v4-flash:free', label: 'DeepSeek V4 Flash (Free)' },
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B (Free)' },
-  { id: 'google/gemma-4-31b-it:free', label: 'Gemma 4 31B (Free)' },
-  { id: 'qwen/qwen3-next-80b-a3b-instruct:free', label: 'Qwen3 Next 80B (Free)' },
-  { id: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'Nemotron 3 Super (Free)' },
+  { id: 'agent-omini', label: 'Agent Omini' },
 ];
 
 export const FREE_MODEL_ID = AGENT_OMINI_MODEL_ID;
 export const FREE_MODEL_LABEL = AGENT_OMINI_LABEL;
-export const FREE_PROVIDER: ProviderId = 'openrouter';
+export const FREE_PROVIDER: ProviderId = 'openrouter'; // Virtual — server translates
 
 /**
- * Check if a model ID is one of the known free models
+ * Check if a model ID is one of the known free/virtual models (Agent Omini etc.)
  */
 export function isFreeModel(modelId: string): boolean {
   return FREE_MODELS.some((m) => m.id === modelId) ||
     modelId === AGENT_OMINI_MODEL_ID ||
     // Also match old free model IDs that may be stored in localStorage
+    modelId === 'qwen/qwen3-coder:free' ||
     modelId === 'deepseek/deepseek-chat:free' ||
     modelId === 'deepseek/deepseek-r1:free' ||
+    modelId === 'deepseek/deepseek-v4-flash:free' ||
     modelId === 'openrouter/free';
 }
 
@@ -82,7 +80,7 @@ function loadInitial(): LLMState {
     }
 
     // Migrate: if the stored model is the old default, update to Agent Omini
-    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-chat:free' || model === 'deepseek/deepseek-r1:free' || model === 'openrouter/free') {
+    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-chat:free' || model === 'deepseek/deepseek-r1:free' || model === 'openrouter/free' || model === 'qwen/qwen3-coder:free' || model === 'deepseek/deepseek-v4-flash:free') {
       model = FREE_MODEL_ID;
       provider = 'openrouter';
     }

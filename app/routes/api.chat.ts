@@ -6,21 +6,30 @@ import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { ProviderId } from '~/lib/.server/llm/model';
 import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 
-// Known free model IDs on OpenRouter (must match llm.ts FREE_MODELS)
-const KNOWN_FREE_MODELS = [
+// Virtual model IDs that the server translates to real provider/model pairs
+// The client sends these virtual IDs; the server resolves them internally
+// so the user never sees the real provider/model in the UI.
+const AGENT_OMINI_VIRTUAL_ID = 'agent-omini';
+
+// Real provider/model that Agent Omini uses internally
+const AGENT_OMINI_REAL_PROVIDER: ProviderId = 'google';
+const AGENT_OMINI_REAL_MODEL = 'gemini-2.0-flash-lite';
+
+// Old free model IDs that may be stored in localStorage — auto-migrate to agent-omini
+const LEGACY_FREE_MODEL_IDS = [
   'qwen/qwen3-coder:free',
   'deepseek/deepseek-v4-flash:free',
+  'deepseek/deepseek-chat:free',
+  'deepseek/deepseek-r1:free',
   'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemma-4-31b-it:free',
   'qwen/qwen3-next-80b-a3b-instruct:free',
   'nvidia/nemotron-3-super-120b-a12b:free',
+  'openrouter/free',
 ];
 
-function isFreeModelId(modelId: string): boolean {
-  return KNOWN_FREE_MODELS.includes(modelId) ||
-    modelId === 'deepseek/deepseek-chat:free' ||
-    modelId === 'deepseek/deepseek-r1:free' ||
-    modelId === 'openrouter/free';
+function isVirtualModel(modelId: string): boolean {
+  return modelId === AGENT_OMINI_VIRTUAL_ID || LEGACY_FREE_MODEL_IDS.includes(modelId);
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -59,50 +68,69 @@ interface ChatRequest {
 }
 
 function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
-  const provider = (body.provider ?? 'openrouter') as ProviderId;
+  let provider = (body.provider ?? 'openrouter') as ProviderId;
+  let model = body.model || '';
+
+  // Migrate legacy free model IDs to agent-omini
+  if (LEGACY_FREE_MODEL_IDS.includes(model)) {
+    model = AGENT_OMINI_VIRTUAL_ID;
+  }
+
+  // Resolve virtual models to real provider/model pairs
+  // Agent Omini is the virtual name — internally uses Google Gemini
+  const isVirtual = isVirtualModel(model);
+  let realProvider = provider;
+  let realModel = model;
+
+  if (model === AGENT_OMINI_VIRTUAL_ID) {
+    realProvider = AGENT_OMINI_REAL_PROVIDER;
+    realModel = AGENT_OMINI_REAL_MODEL;
+  }
+
+  // Resolve API key: client key > server env key (for the REAL provider)
   const apiKey =
     body.apiKey ||
-    (provider === 'anthropic'
+    (realProvider === 'anthropic'
       ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
-      : provider === 'openrouter'
+      : realProvider === 'openrouter'
         ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
-        : provider === 'google'
+        : realProvider === 'google'
           ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
 
-  // For free models, the server provides the API key via OPENROUTER_API_KEY
-  // Users can use free models without providing their own key, OR use their own key
-  const isFreeModel = provider === 'openrouter' && isFreeModelId(body.model || '');
-
-  if (!apiKey && !isFreeModel) {
+  // Virtual models (Agent Omini) use the server's API key
+  if (!apiKey && !isVirtual) {
     throw new Response(
       JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes. Obtenha uma chave gratuita em https://openrouter.ai` }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  if (!apiKey && isFreeModel) {
+  if (!apiKey && isVirtual) {
+    const providerName = realProvider === 'google' ? 'GOOGLE_GENERATIVE_AI_API_KEY' : realProvider === 'openrouter' ? 'OPENROUTER_API_KEY' : `${realProvider.toUpperCase()}_API_KEY`;
     throw new Response(
       JSON.stringify({
-        error: 'O servidor nao possui a chave OpenRouter configurada (OPENROUTER_API_KEY). Modelos gratuitos (como Agent Omini) precisam de uma chave OpenRouter para funcionar. Voce pode: (1) adicionar sua propria chave gratuita nas Configuracoes > API Keys > OpenRouter, ou (2) o administrador precisa configurar OPENROUTER_API_KEY no servidor. Obtenha uma chave gratuita em https://openrouter.ai',
+        error: `O servidor nao possui a chave de API configurada (${providerName}). O Agent Omini precisa desta chave para funcionar. Voce pode: (1) aguardar o administrador configurar a chave no servidor, ou (2) usar seu proprio modelo nas Configuracoes > API Keys.`,
         errorType: 'MISSING_API_KEY',
       }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? KNOWN_FREE_MODELS[0] : provider === 'google' ? 'gemini-2.0-flash' : '');
+  if (!realModel) {
+    realModel = realProvider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : realProvider === 'openrouter' ? 'openai/gpt-4o-mini' : realProvider === 'google' ? 'gemini-2.0-flash' : '';
+  }
 
-  if (!model) {
+  if (!realModel) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {
       status: 400,
       headers: { 'content-type': 'application/json' } },
     );
   }
 
-  console.log(`[chat] provider=${provider} model=${model} hasApiKey=${!!apiKey} isFreeModel=${isFreeModel} clientKey=${!!body.apiKey} envKey=${!!(typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || !!env.OPENROUTER_API_KEY}`);
+  console.log(`[chat] virtualModel=${model} -> realProvider=${realProvider} realModel=${realModel} hasApiKey=${!!apiKey} clientKey=${!!body.apiKey}`);
 
-  return { provider, model, apiKey };
+  return { provider: realProvider, model: realModel, apiKey };
 }
 
 function resolveDbContext(config?: ClientDatabaseConfig): DatabaseContext | undefined {
@@ -265,12 +293,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       message = `O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Modelos gratuitos podem ter disponibilidade limitada. Tente novamente em alguns segundos.`;
       errorType = 'SERVICE_UNAVAILABLE';
     } else if (message.includes('Provider returned error') || message.includes('Failed after')) {
-      // This is the generic AI SDK error — try to give a more helpful message
-      if (isFreeModelId(selection.model)) {
-        message = `O modelo "${selection.model}" retornou um erro. Possiveis causas: (1) A chave OpenRouter do servidor esta invalida ou expirada, (2) O modelo gratuito esta temporariamente indisponivel, (3) Limite de uso atingido. Voce pode adicionar sua propria chave OpenRouter gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai`;
-      } else {
-        message = `O provedor retornou um erro ao processar sua requisicao. Verifique se sua chave de API e modelo estao corretos nas Configuracoes.`;
-      }
+      // Generic AI SDK error — give helpful message without revealing internal provider
+      message = `O Agent Omini retornou um erro. Possiveis causas: (1) A chave de API do servidor esta invalida ou expirada, (2) O modelo esta temporariamente indisponivel, (3) Limite de uso atingido. Tente novamente em alguns segundos. Se o problema persistir, configure sua propria chave de API nas Configuracoes.`;
       errorType = 'PROVIDER_ERROR';
     } else if (message.includes('Invalid') && message.includes('API key')) {
       message = `Chave de API invalida para o OpenRouter. Obtenha uma chave gratuita em https://openrouter.ai e adicione nas Configuracoes.`;
