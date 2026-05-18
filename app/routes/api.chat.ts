@@ -55,7 +55,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
 
   // For the free model, the server provides the API key via OPENROUTER_API_KEY (a.k.a. OPENROUTER_DEFAULT_API)
   // Users can use the free model without providing their own key
-  const isFreeModel = provider === 'openrouter' && (body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
+  const isFreeModel = provider === 'openrouter' && (body.model === 'deepseek/deepseek-v4-flash:free' || body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
 
   if (!apiKey && !isFreeModel) {
     throw new Response(
@@ -71,7 +71,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     );
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'nvidia/nemotron-3-super-120b-a12b:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'deepseek/deepseek-v4-flash:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     throw new Response(JSON.stringify({ error: 'No model selected.' }), {
@@ -147,7 +147,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   // Pass the request's abort signal so the LLM stream cancels when the client disconnects
   const abortSignal = request.signal;
 
-  const stream = new SwitchableStream();
+  const stream = new SwitchableStream(60_000); // 60s idle timeout — force-close if no chunks arrive
 
   try {
     const options: StreamingOptions = {

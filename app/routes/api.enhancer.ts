@@ -33,7 +33,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
           : undefined);
 
   // For the free model, use the server's OPENROUTER_API_KEY
-  const isFreeModel = provider === 'openrouter' && (body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
+  const isFreeModel = provider === 'openrouter' && (body.model === 'deepseek/deepseek-v4-flash:free' || body.model === 'nvidia/nemotron-3-super-120b-a12b:free' || body.model === 'openrouter/free');
 
   if (!apiKey && !isFreeModel) {
     return new Response(JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes.` }), {
@@ -42,7 +42,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     });
   }
 
-  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'nvidia/nemotron-3-super-120b-a12b:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : provider === 'openrouter' ? 'deepseek/deepseek-v4-flash:free' : provider === 'google' ? 'gemini-2.0-flash' : '');
 
   if (!model) {
     return new Response(JSON.stringify({ error: 'No model selected.' }), {

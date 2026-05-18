@@ -15,7 +15,7 @@ export interface SnapshotData {
  * NOT the full file contents. File data is stored separately
  * and only kept for the most recent snapshots.
  */
-interface SnapshotMeta {
+export interface SnapshotMeta {
   id: number;
   name: string;
   timestamp: string;
@@ -99,12 +99,21 @@ function tryFreeSpace(): boolean {
     }
   } catch {}
 
-  // Sort by ID (oldest first) and remove until we have enough space
+  // Sort by ID (oldest first)
   entries.sort((a, b) => a.id - b.id);
 
+  // Remove only the oldest snapshots until we free enough space (target: 1MB free)
+  const targetFree = 1 * 1024 * 1024; // 1MB
+  const currentUsage = estimateLocalStorageSize();
+  const estimatedMax = 5 * 1024 * 1024;
+  let freedBytes = 0;
+  const needed = currentUsage + targetFree - estimatedMax;
+
   for (const entry of entries) {
+    if (needed > 0 && freedBytes >= needed) break; // Stop once we've freed enough
     try {
       localStorage.removeItem(entry.key);
+      freedBytes += entry.size;
       freed = true;
       console.log(`[Snapshots] Removed snapshot data ${entry.id} (~${Math.round(entry.size / 1024)}KB)`);
     } catch {}
@@ -228,12 +237,9 @@ function getTotalSnapshotBytes(): number {
  * Enforce total snapshot storage limit by removing oldest snapshots.
  */
 function enforceTotalSizeLimit(projectId: string, snapshots: SnapshotMeta[]) {
+  // getTotalSnapshotBytes already counts all snapshot data in localStorage
+  // Don't double-count by adding dataSize from the meta list
   let totalBytes = getTotalSnapshotBytes();
-
-  // Also check from the meta list
-  for (const s of snapshots) {
-    totalBytes += s.dataSize;
-  }
 
   if (totalBytes <= MAX_TOTAL_SNAPSHOT_BYTES) return snapshots;
 

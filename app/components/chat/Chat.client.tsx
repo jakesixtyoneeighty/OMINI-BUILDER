@@ -141,7 +141,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     // Custom fetch with timeout to prevent indefinite hanging
     fetch: async (input, init) => {
       const controller = new AbortController();
-      // 5 minute timeout — large models can take a while to start streaming
+      // 5 minute timeout for the initial connection
       const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
 
       // If there's an existing signal, chain it
@@ -404,7 +404,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     // Sync messages to ref for Google Drive save
     chatMessagesRef.current = messages.map((m) => ({ role: m.role, content: m.content }));
     if (messages.length > initialMessages.length) {
-      storeMessageHistory(messages).catch((error) => toast.error(error.message));
+      storeMessageHistory(messages).catch((error) => {
+        // Don't show toast for known schema errors — they're handled internally
+        if (error?.message?.includes('messages') && error?.message?.includes('column')) return;
+        // Only show unexpected errors
+        console.warn('[Chat] Failed to store message history:', error?.message || error);
+      });
     }
 
     // Auto-create snapshot when AI finishes a response

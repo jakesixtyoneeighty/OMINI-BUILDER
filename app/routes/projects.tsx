@@ -99,7 +99,7 @@ function ProjectsContent() {
         try {
           const { data, error } = await sb
             .from('projects')
-            .select('id, name, description, logo, updated_at, created_at, messages')
+            .select('id, name, description, logo, updated_at, created_at')
             .eq('owner_id', currentUser.id)
             .order('updated_at', { ascending: false });
           if (!error && data) {
@@ -110,7 +110,7 @@ function ProjectsContent() {
                 description: p.description || '',
                 logo: p.logo || '',
                 timestamp: p.updated_at || p.created_at || '',
-                messageCount: Array.isArray(p.messages) ? p.messages.length : 0,
+                messageCount: 0, // Will be populated from IndexedDB below
                 source: 'cloud',
               });
             }
@@ -140,6 +140,12 @@ function ProjectsContent() {
                 messageCount: item.messages?.length || 0,
                 source: 'local',
               });
+            } else {
+              // Merge message count from IndexedDB into cloud project
+              const msgCount = item.messages?.length || 0;
+              if (msgCount > 0) {
+                cardMap.set(existing.id, { ...existing, messageCount: msgCount });
+              }
             }
           }
         }
@@ -211,9 +217,13 @@ function ProjectsContent() {
 
   const handleDeleteProject = async (project: ProjectCard) => {
     try {
-      await deleteProject(project.id);
-      toast.success(t('projects.projectDeleted'));
-      loadProjects();
+      const success = await deleteProject(project.id);
+      if (success) {
+        toast.success(t('projects.projectDeleted'));
+        loadProjects();
+      } else {
+        toast.error(t('projects.deleteFailed'));
+      }
     } catch (error) {
       toast.error(t('projects.deleteFailed'));
     }

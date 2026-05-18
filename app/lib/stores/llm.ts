@@ -11,7 +11,7 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 };
 
 // Built-in free model that uses the server's OPENROUTER_API_KEY
-export const FREE_MODEL_ID = 'nvidia/nemotron-3-super-120b-a12b:free';
+export const FREE_MODEL_ID = 'deepseek/deepseek-v4-flash:free';
 export const FREE_MODEL_LABEL = 'Free';
 export const FREE_PROVIDER: ProviderId = 'openrouter';
 
@@ -55,8 +55,8 @@ function loadInitial(): LLMState {
       return { provider: 'openrouter', model: FREE_MODEL_ID, keys };
     }
 
-    // Migrate: if the stored model is the old default 'gpt-4o-mini' or 'openrouter/free', update to new free model
-    if (model === 'gpt-4o-mini' || model === 'openrouter/free') {
+    // Migrate: if the stored model is the old default 'gpt-4o-mini' or 'openrouter/free' or 'nvidia/nemotron-3-super-120b-a12b:free', update to new free model
+    if (model === 'gpt-4o-mini' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
       model = FREE_MODEL_ID;
       provider = 'openrouter';
     }
@@ -105,7 +105,7 @@ if (typeof window !== 'undefined') {
 
     // Skip if the project's model is still the default — this means it's a new/unsaved project
     // that hasn't been configured yet. We should keep whatever model the user was using.
-    const isDefaultModel = (savedProvider === 'openrouter' && (savedModel === FREE_MODEL_ID || savedModel === 'openrouter/free')) ||
+    const isDefaultModel = (savedProvider === 'openrouter' && (savedModel === FREE_MODEL_ID || savedModel === 'openrouter/free' || savedModel === 'nvidia/nemotron-3-super-120b-a12b:free')) ||
                            (savedModel === 'gpt-4o-mini') ||
                            (!savedProvider && !savedModel);
 
@@ -203,7 +203,7 @@ export async function loadKeysFromSupabase() {
             model: FREE_MODEL_ID,
             keys: restoredKeys,
           });
-        } else if (restoredProvider === 'openrouter' && (restoredModel === 'gpt-4o-mini' || restoredModel === 'openrouter/free')) {
+        } else if (restoredProvider === 'openrouter' && (restoredModel === 'gpt-4o-mini' || restoredModel === 'openrouter/free' || restoredModel === 'nvidia/nemotron-3-super-120b-a12b:free')) {
           // Migrate: update old default model to new free model
           llmStore.set({
             provider: 'openrouter',

@@ -2,8 +2,14 @@ export default class SwitchableStream extends TransformStream {
   private _controller: TransformStreamDefaultController | null = null;
   private _currentReader: ReadableStreamDefaultReader | null = null;
   private _switches = 0;
+  private _idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private _idleTimeoutMs: number;
 
-  constructor() {
+  /**
+   * @param idleTimeoutMs If no chunk is received within this time (ms),
+   * the stream is force-closed. Default: 60s. Set to 0 to disable.
+   */
+  constructor(idleTimeoutMs = 60_000) {
     let controllerRef: TransformStreamDefaultController | undefined;
 
     super({
@@ -17,6 +23,19 @@ export default class SwitchableStream extends TransformStream {
     }
 
     this._controller = controllerRef;
+    this._idleTimeoutMs = idleTimeoutMs;
+  }
+
+  private _resetIdleTimer() {
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+    }
+    if (this._idleTimeoutMs > 0) {
+      this._idleTimer = setTimeout(() => {
+        console.warn(`[SwitchableStream] No data received for ${this._idleTimeoutMs / 1000}s, force-closing stream`);
+        this.close();
+      }, this._idleTimeoutMs);
+    }
   }
 
   async switchSource(newStream: ReadableStream) {
@@ -25,6 +44,9 @@ export default class SwitchableStream extends TransformStream {
     }
 
     this._currentReader = newStream.getReader();
+
+    // Reset idle timer when switching source
+    this._resetIdleTimer();
 
     this._pumpStream();
 
@@ -44,11 +66,20 @@ export default class SwitchableStream extends TransformStream {
           break;
         }
 
+        // Reset idle timer on each chunk received
+        this._resetIdleTimer();
+
         this._controller.enqueue(value);
       }
     } catch (error) {
       console.log(error);
       this._controller.error(error);
+    } finally {
+      // Clear idle timer when pump ends
+      if (this._idleTimer) {
+        clearTimeout(this._idleTimer);
+        this._idleTimer = null;
+      }
     }
   }
 
@@ -59,6 +90,11 @@ export default class SwitchableStream extends TransformStream {
   }
 
   close() {
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+      this._idleTimer = null;
+    }
+
     if (this._currentReader) {
       this._currentReader.cancel();
     }

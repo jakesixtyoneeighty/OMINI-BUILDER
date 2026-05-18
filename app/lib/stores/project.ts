@@ -106,7 +106,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   envVars: [],
   previewMode: 'webcontainer',
   provider: 'openrouter',
-  model: 'nvidia/nemotron-3-super-120b-a12b:free',
+  model: 'deepseek/deepseek-v4-flash:free',
   lastDeploy: { url: '', provider: '', siteId: '', deployedAt: '' },
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
@@ -166,7 +166,7 @@ export function setActiveProject(id: string, name = '') {
         const raw = localStorage.getItem('bolt.llm.settings');
         if (raw) {
           const parsed = JSON.parse(raw);
-          return { provider: parsed.provider || 'openrouter', model: parsed.model || 'nvidia/nemotron-3-super-120b-a12b:free' };
+          return { provider: parsed.provider || 'openrouter', model: parsed.model || 'deepseek/deepseek-v4-flash:free' };
         }
       } catch {}
       return null;
@@ -503,28 +503,60 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
 }
 
 /**
- * Delete a project from Supabase and local store
+ * Delete a project from Supabase and local store.
+ * Deletes from Supabase FIRST, then updates local state.
+ * Also cleans up localStorage snapshots and IndexedDB data.
  */
 export async function deleteProject(projectId: string): Promise<boolean> {
   const sb = getSupabase();
   const { user } = authStore.get();
 
-  // Remove from local store
-  const projects = { ...projectsStore.get() };
-  delete projects[projectId];
-  projectsStore.set(projects);
-
+  // Delete from Supabase FIRST — only update local state if cloud delete succeeds
   if (sb && user) {
     try {
       const { error } = await sb.from('projects').delete().eq('id', projectId).eq('owner_id', user.id);
       if (error) {
         console.error('Failed to delete project from Supabase:', error);
+        // Don't remove from local store if Supabase delete failed
+        // (project would reappear on next load, causing confusion)
         return false;
       }
     } catch {
       return false;
     }
   }
+
+  // Supabase delete succeeded (or no Supabase) — now update local state
+  const projects = { ...projectsStore.get() };
+  delete projects[projectId];
+  projectsStore.set(projects);
+
+  // Clean up localStorage snapshot data for this project
+  try {
+    const snapshotKey = `bolt.snapshots.${projectId}`;
+    const snapshotMeta = localStorage.getItem(snapshotKey);
+    if (snapshotMeta) {
+      const snapshots = JSON.parse(snapshotMeta);
+      for (const s of snapshots) {
+        localStorage.removeItem(`bolt.snapshot.data.${s.id}`);
+      }
+      localStorage.removeItem(snapshotKey);
+    }
+  } catch {}
+
+  // Clean up IndexedDB messages for this project
+  try {
+    const database = await getDb();
+    if (database) {
+      const tx = database.transaction('messages', 'readwrite');
+      const store = tx.objectStore('messages');
+      store.delete(projectId);
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+  } catch {}
 
   // If this was the active project, reset
   if (activeProjectIdStore.get() === projectId) {
@@ -574,6 +606,21 @@ const _lastSaveTime: Record<string, number> = {};
 const SAVE_THROTTLE_MS = 3000;
 
 // Track if the 'messages' column is missing so we don't spam errors
+// Persisted in localStorage so it survives page reloads
+const MESSAGES_COLUMN_FLAG = 'bolt.schema.messages_column_missing';
+function isMessagesColumnMissing(): boolean {
+  if (_messagesColumnMissing) return true;
+  try {
+    _messagesColumnMissing = localStorage.getItem(MESSAGES_COLUMN_FLAG) === 'true';
+  } catch {}
+  return _messagesColumnMissing;
+}
+function setMessagesColumnMissing(value: boolean) {
+  _messagesColumnMissing = value;
+  try {
+    localStorage.setItem(MESSAGES_COLUMN_FLAG, String(value));
+  } catch {}
+}
 let _messagesColumnMissing = false;
 
 export async function saveProjectMessages(projectId: string, messages: Message[], description?: string): Promise<void> {
@@ -593,7 +640,7 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
   if (!sb || !user || !isValidUUID(projectId)) return;
 
   // If the 'messages' column is missing from the schema, skip Supabase saves entirely
-  if (_messagesColumnMissing) return;
+  if (isMessagesColumnMissing()) return;
 
   // Throttle: skip if we saved this project too recently
   const now = Date.now();
@@ -620,8 +667,14 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
     if (error) {
       // If the 'messages' column is missing, mark it so we stop trying
       if (error.message?.includes('messages') && error.message?.includes('column')) {
-        console.warn('[saveProjectMessages] The "messages" column is missing from the projects table. Run: ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS messages jsonb DEFAULT \'[]\'::jsonb;');
-        _messagesColumnMissing = true;
+        console.warn('[saveProjectMessages] The "messages" column is missing from the projects table. Skipping cloud save. Run: ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS messages jsonb DEFAULT \'[]\'::jsonb;');
+        setMessagesColumnMissing(true);
+        return;
+      }
+      // For any other 400 error, also skip future attempts to avoid spam
+      if (error.code === 'PGRST204' || error.code === '42703') {
+        console.warn('[saveProjectMessages] Schema mismatch detected, skipping cloud saves:', error.message);
+        setMessagesColumnMissing(true);
         return;
       }
       console.error('[saveProjectMessages] Supabase error:', error.message);
@@ -635,10 +688,10 @@ export async function saveProjectMessages(projectId: string, messages: Message[]
  * Load messages for a project from Supabase (cloud-first), falling back to IndexedDB.
  */
 export async function loadProjectMessages(projectId: string): Promise<Message[]> {
-  // Try Supabase first — only if projectId is a valid UUID
+  // Try Supabase first — only if projectId is a valid UUID AND messages column exists
   const sb = getSupabase();
   const { user } = authStore.get();
-  if (sb && user && isValidUUID(projectId)) {
+  if (sb && user && isValidUUID(projectId) && !isMessagesColumnMissing()) {
     try {
       const { data, error } = await sb
         .from('projects')
@@ -647,7 +700,15 @@ export async function loadProjectMessages(projectId: string): Promise<Message[]>
         .eq('owner_id', user.id)
         .single();
 
-      if (!error && data && Array.isArray(data.messages) && data.messages.length > 0) {
+      if (error) {
+        // If the messages column is missing, mark it and fall through to IndexedDB
+        if (error.message?.includes('messages') && error.message?.includes('column')) {
+          console.warn('[loadProjectMessages] The "messages" column is missing, using IndexedDB fallback.');
+          setMessagesColumnMissing(true);
+        } else {
+          console.warn('[loadProjectMessages] Supabase load error:', error.message);
+        }
+      } else if (data && Array.isArray(data.messages) && data.messages.length > 0) {
         // Cache to IndexedDB for offline access
         try {
           const database = await getDb();

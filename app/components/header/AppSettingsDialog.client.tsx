@@ -13,6 +13,14 @@ import {
 import { workbenchStore } from '~/lib/stores/workbench';
 import { SecurityTestTab } from '~/components/chat/SecurityTestTab';
 import { useT } from '~/lib/i18n/useT';
+import {
+  saveSnapshotData,
+  saveSnapshotToList,
+  loadSnapshots,
+  loadSnapshotData,
+  deleteSnapshotData,
+  type SnapshotMeta,
+} from '~/lib/stores/snapshots';
 
 const TABS = [
   { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
@@ -126,7 +134,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
   const project = projects[activeId];
   const settings = project?.settings;
   const [tab, setTab] = useState<typeof TABS[number]['id']>((defaultTab as any) || 'general');
-  const [snapshots, setSnapshots] = useState<{ id: number; name: string; timestamp: string }[]>([]);
+  const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([]);
   const [envVars, setEnvVars] = useState<EnvVar[]>(Array.isArray(settings?.envVars) ? settings.envVars : []);
   const [newEnvKey, setNewEnvKey] = useState('');
   const [newEnvValue, setNewEnvValue] = useState('');
@@ -178,15 +186,7 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       return;
     }
     // Reset state when dialog opens
-    const saved = localStorage.getItem(`bolt.snapshots.${activeId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setSnapshots(Array.isArray(parsed) ? parsed : []);
-      } catch {
-        setSnapshots([]);
-      }
-    }
+    setSnapshots(loadSnapshots(activeId));
     setProjectName(project?.name || '');
     setProjectDesc(settings?.description || '');
     setEnvVars(Array.isArray(settings?.envVars) ? settings.envVars : []);
@@ -219,28 +219,44 @@ export function AppSettingsDialog({ open, onClose, defaultTab }: { open: boolean
       id: Date.now(),
       name: `Snapshot ${new Date().toLocaleString()}`,
       timestamp: new Date().toISOString(),
-      files: { ...files }
+      files: { ...files },
+      messageIndex: 0,
     };
-    const newSnapshots = [...snapshots, { id: snapshot.id, name: snapshot.name, timestamp: snapshot.timestamp }];
-    localStorage.setItem(`bolt.snapshots.${activeId}`, JSON.stringify(newSnapshots));
-    localStorage.setItem(`bolt.snapshot.data.${snapshot.id}`, JSON.stringify(snapshot.files));
-    setSnapshots(newSnapshots);
-    toast.success(t('appSettings.snapshotSaved'));
+    const dataSize = saveSnapshotData(snapshot);
+    const meta: SnapshotMeta = {
+      id: snapshot.id,
+      name: snapshot.name,
+      timestamp: snapshot.timestamp,
+      messageIndex: 0,
+      fileCount: Object.keys(files).length,
+      dataSize,
+    };
+    const currentSnapshots = loadSnapshots(activeId);
+    currentSnapshots.push(meta);
+    saveSnapshotToList(activeId, currentSnapshots);
+    setSnapshots(currentSnapshots);
+    if (dataSize > 0) {
+      toast.success(t('appSettings.snapshotSaved'));
+    } else {
+      toast.warn('Snapshot too large or localStorage full — only metadata saved');
+    }
   };
 
   const restoreSnapshot = (id: number) => {
-    const data = localStorage.getItem(`bolt.snapshot.data.${id}`);
-    if (data) {
-      const files = JSON.parse(data);
+    const files = loadSnapshotData(id);
+    if (files) {
       workbenchStore.files.set(files);
       toast.success(t('appSettings.snapshotRestored'));
+    } else {
+      toast.error('Snapshot data not found — may have been cleaned up to save space');
     }
   };
 
   const deleteSnapshot = (id: number) => {
-    const newSnapshots = snapshots.filter(s => s.id !== id);
-    localStorage.setItem(`bolt.snapshots.${activeId}`, JSON.stringify(newSnapshots));
-    localStorage.removeItem(`bolt.snapshot.data.${id}`);
+    const currentSnapshots = loadSnapshots(activeId);
+    const newSnapshots = currentSnapshots.filter(s => s.id !== id);
+    saveSnapshotToList(activeId, newSnapshots);
+    deleteSnapshotData(id);
     setSnapshots(newSnapshots);
   };
 

@@ -25,6 +25,24 @@ export const storageUsageStore = atom<StorageUsage>(DEFAULT_USAGE);
  * Calculate storage usage by querying project_files from Supabase
  * and estimating IndexedDB + localStorage usage.
  */
+// Track if the RPC function is missing so we don't keep trying
+const STORAGE_RPC_FLAG = 'bolt.schema.storage_rpc_missing';
+let _storageRpcMissing = false;
+
+function isStorageRpcMissing(): boolean {
+  if (_storageRpcMissing) return true;
+  try {
+    _storageRpcMissing = localStorage.getItem(STORAGE_RPC_FLAG) === 'true';
+  } catch {}
+  return _storageRpcMissing;
+}
+function setStorageRpcMissing(value: boolean) {
+  _storageRpcMissing = value;
+  try {
+    localStorage.setItem(STORAGE_RPC_FLAG, String(value));
+  } catch {}
+}
+
 export async function refreshStorageUsage() {
   const sb = getSupabase();
   const user = authStore.get().user;
@@ -32,39 +50,33 @@ export async function refreshStorageUsage() {
 
   if (sb && user) {
     try {
-      // Try the RPC function first
-      const { data, error } = await sb.rpc('get_user_storage_usage', { user_id: user.id });
+      // Try the RPC function first (skip if we know it doesn't exist)
+      if (!isStorageRpcMissing()) {
+        const { data, error } = await sb.rpc('get_user_storage_usage', { user_id: user.id });
 
-      if (!error && data !== null) {
-        totalBytes = Number(data) || 0;
-      } else if (error) {
-        // RPC function doesn't exist or failed — use manual estimation fallback
-        console.warn('[storage] get_user_storage_usage RPC not available, using fallback estimation');
+        if (!error && data !== null) {
+          totalBytes = Number(data) || 0;
+        } else if (error) {
+          // RPC function doesn't exist — mark it so we stop trying
+          console.warn('[storage] get_user_storage_usage RPC not available, using fallback estimation');
+          setStorageRpcMissing(true);
+        }
+      }
 
+      // Fallback: estimate storage from project count only (avoid querying 'messages' column)
+      if (totalBytes === 0) {
         try {
-          const { data: projects } = await sb
+          const { count, error } = await sb
             .from('projects')
-            .select('id')
+            .select('*', { count: 'exact', head: true })
             .eq('owner_id', user.id);
 
-          if (projects && projects.length > 0) {
-            // Estimate from messages JSONB size (simpler than project_files which may not exist)
-            const { data: projectData } = await sb
-              .from('projects')
-              .select('messages')
-              .eq('owner_id', user.id);
-
-            if (projectData) {
-              for (const p of projectData) {
-                if (p.messages) {
-                  totalBytes += new Blob([JSON.stringify(p.messages)]).size;
-                }
-              }
-            }
+          if (!error && count) {
+            // Rough estimate: ~50KB per project (env vars, settings, etc.)
+            totalBytes = count * 50 * 1024;
           }
-        } catch (fallbackErr) {
-          // Even fallback failed, just show 0
-          console.warn('[storage] Fallback estimation failed:', fallbackErr);
+        } catch {
+          // ignore
         }
       }
     } catch {
