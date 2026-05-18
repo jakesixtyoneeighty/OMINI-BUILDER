@@ -9,8 +9,8 @@ import {
   refreshAllConfiguredModels,
   selectProviderModel,
   FREE_MODELS,
-  FREE_MODEL_ID,
-  FREE_MODEL_LABEL,
+  AGENT_OMINI_MODEL_ID,
+  AGENT_OMINI_LABEL,
   FREE_PROVIDER,
   isFreeModel,
   type ProviderId,
@@ -136,7 +136,7 @@ export function ModelPicker() {
 
   const isAnyLoading = Object.values(loading).some(Boolean);
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label
-    || (isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Free' : model)
+    || (model === AGENT_OMINI_MODEL_ID ? AGENT_OMINI_LABEL : isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Free' : model)
     || t('model.selectModel');
 
   const dropdownContent = open ? (
@@ -165,7 +165,7 @@ export function ModelPicker() {
             const items = grouped[p];
             if (items.length === 0) return null;
             const isOmini = p === 'omini';
-            const groupLabel = isOmini ? 'Omini' : PROVIDER_LABELS[p as ProviderId] || p;
+            const groupLabel = isOmini ? 'Agent Omini' : PROVIDER_LABELS[p as ProviderId] || p;
             const groupLogo = isOmini ? '/omni-builder-logo.svg' : PROVIDER_LOGOS[p as ProviderId];
             return (
               <div key={p}>

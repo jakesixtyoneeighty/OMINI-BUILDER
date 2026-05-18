@@ -10,19 +10,23 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   google: 'Google Gemini',
 };
 
-// Built-in free models that use the server's OPENROUTER_API_KEY
-// Listed in priority order — the first one is the default
+// Agent Omini — the default free model powered by qwen3-coder via OpenRouter
+// Uses the server's OPENROUTER_API_KEY so users don't need their own key
+export const AGENT_OMINI_MODEL_ID = 'qwen/qwen3-coder:free';
+export const AGENT_OMINI_LABEL = 'Agent Omini';
+
+// Other free models available on OpenRouter
 export const FREE_MODELS = [
+  { id: 'qwen/qwen3-coder:free', label: 'Agent Omini' },
   { id: 'deepseek/deepseek-chat:free', label: 'DeepSeek V3 (Free)' },
   { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (Free)' },
   { id: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (Free)' },
   { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (Free)' },
   { id: 'qwen/qwen-2.5-72b-instruct:free', label: 'Qwen 2.5 72B (Free)' },
-  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Free)' },
 ];
 
-export const FREE_MODEL_ID = FREE_MODELS[0].id;
-export const FREE_MODEL_LABEL = FREE_MODELS[0].label;
+export const FREE_MODEL_ID = AGENT_OMINI_MODEL_ID;
+export const FREE_MODEL_LABEL = AGENT_OMINI_LABEL;
 export const FREE_PROVIDER: ProviderId = 'openrouter';
 
 /**
@@ -30,8 +34,10 @@ export const FREE_PROVIDER: ProviderId = 'openrouter';
  */
 export function isFreeModel(modelId: string): boolean {
   return FREE_MODELS.some((m) => m.id === modelId) ||
+    modelId === AGENT_OMINI_MODEL_ID ||
     // Also match old free model IDs that may be stored in localStorage
     modelId === 'deepseek/deepseek-v4-flash:free' ||
+    modelId === 'deepseek/deepseek-chat:free' ||
     modelId === 'nvidia/nemotron-3-super-120b-a12b:free' ||
     modelId === 'openrouter/free';
 }
@@ -77,7 +83,7 @@ function loadInitial(): LLMState {
     }
 
     // Migrate: if the stored model is the old default, update to new free model
-    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-v4-flash:free' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
+    if (model === 'gpt-4o-mini' || model === 'deepseek/deepseek-v4-flash:free' || model === 'deepseek/deepseek-chat:free' || model === 'openrouter/free' || model === 'nvidia/nemotron-3-super-120b-a12b:free') {
       model = FREE_MODEL_ID;
       provider = 'openrouter';
     }

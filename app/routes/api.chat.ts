@@ -8,12 +8,12 @@ import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 
 // Known free model IDs on OpenRouter (must match llm.ts FREE_MODELS)
 const KNOWN_FREE_MODELS = [
+  'qwen/qwen3-coder:free',
   'deepseek/deepseek-chat:free',
   'deepseek/deepseek-r1:free',
   'google/gemma-2-9b-it:free',
   'meta-llama/llama-3.1-8b-instruct:free',
   'qwen/qwen-2.5-72b-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
 ];
 
 function isFreeModelId(modelId: string): boolean {

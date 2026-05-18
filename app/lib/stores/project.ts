@@ -106,7 +106,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
   envVars: [],
   previewMode: 'webcontainer',
   provider: 'openrouter',
-  model: 'deepseek/deepseek-v4-flash:free',
+  model: 'qwen/qwen3-coder:free',
   lastDeploy: { url: '', provider: '', siteId: '', deployedAt: '' },
   netlify: { token: '', siteId: '' },
   vercel: { token: '', projectName: '', framework: 'vite' },
@@ -166,7 +166,7 @@ export function setActiveProject(id: string, name = '') {
         const raw = localStorage.getItem('bolt.llm.settings');
         if (raw) {
           const parsed = JSON.parse(raw);
-          return { provider: parsed.provider || 'openrouter', model: parsed.model || 'deepseek/deepseek-v4-flash:free' };
+          return { provider: parsed.provider || 'openrouter', model: parsed.model || 'qwen/qwen3-coder:free' };
         }
       } catch {}
       return null;
