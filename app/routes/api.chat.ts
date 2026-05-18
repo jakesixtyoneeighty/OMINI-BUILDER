@@ -12,8 +12,9 @@ import type { DatabaseContext } from '~/lib/.server/llm/prompts';
 const AGENT_OMINI_VIRTUAL_ID = 'agent-omini';
 
 // Real provider/model that Agent Omini uses internally
+// NOTE: gemini-2.0-flash-lite is DEPRECATED — use gemini-2.5-flash instead (current, stable, fast, free-tier eligible)
 const AGENT_OMINI_REAL_PROVIDER: ProviderId = 'google';
-const AGENT_OMINI_REAL_MODEL = 'gemini-2.0-flash-lite';
+const AGENT_OMINI_REAL_MODEL = 'gemini-2.5-flash';
 
 // Old free model IDs that may be stored in localStorage — auto-migrate to agent-omini
 const LEGACY_FREE_MODEL_IDS = [
@@ -87,16 +88,35 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     realModel = AGENT_OMINI_REAL_MODEL;
   }
 
-  // Resolve API key: client key > server env key (for the REAL provider)
-  const apiKey =
-    body.apiKey ||
-    (realProvider === 'anthropic'
-      ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
-      : realProvider === 'openrouter'
-        ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
-        : realProvider === 'google'
-          ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
+  // Resolve API key for the REAL provider
+  // CRITICAL: For virtual models (Agent Omini), we must NOT use body.apiKey
+  // because the client sends the key for the DISPLAYED provider (e.g. OpenRouter),
+  // but the real provider is different (e.g. Google). Using the wrong key causes
+  // "API key not valid" errors. Virtual models always use the server's env key.
+  let apiKey: string | undefined;
+
+  if (isVirtual) {
+    // Virtual models: ONLY use the server's environment variable for the real provider
+    // Never use body.apiKey (it's for the wrong provider)
+    if (realProvider === 'anthropic') {
+      apiKey = (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY;
+    } else if (realProvider === 'openrouter') {
+      apiKey = (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY;
+    } else if (realProvider === 'google') {
+      apiKey = (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY;
+    }
+  } else {
+    // Non-virtual models: client key > server env key
+    apiKey =
+      body.apiKey ||
+      (realProvider === 'anthropic'
+        ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
+        : realProvider === 'openrouter'
+          ? (typeof process !== 'undefined' ? process.env?.OPENROUTER_API_KEY : undefined) || env.OPENROUTER_API_KEY
+          : realProvider === 'google'
+            ? (typeof process !== 'undefined' ? process.env?.GOOGLE_GENERATIVE_AI_API_KEY : undefined) || env.GOOGLE_GENERATIVE_AI_API_KEY
+            : undefined);
+  }
 
   // Virtual models (Agent Omini) use the server's API key
   if (!apiKey && !isVirtual) {
@@ -128,7 +148,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     );
   }
 
-  console.log(`[chat] virtualModel=${model} -> realProvider=${realProvider} realModel=${realModel} hasApiKey=${!!apiKey} clientKey=${!!body.apiKey}`);
+  console.log(`[chat] virtualModel=${model} -> realProvider=${realProvider} realModel=${realModel} hasApiKey=${!!apiKey} isVirtual=${isVirtual} usedServerKey=${isVirtual}`);
 
   return { provider: realProvider, model: realModel, apiKey };
 }
