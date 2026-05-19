@@ -85,27 +85,44 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   const hasCommands = commands.length > 0;
 
-  // === STREAMING STATE: Omini logo + shimmer "Pensando..." ===
+  // === STREAMING STATE: Gradient "Pensando..." + blue streaming content ===
   if (isStreaming) {
     return (
       <div className={styles.streamingContainer}>
-        {/* Omini purple gradient logo */}
-        <img
-          src="/omini-icon.svg"
-          alt="Omini"
-          className={styles.ominiLogo}
-        />
-        {/* Shimmer text — exact spec */}
-        <div className={styles.shimmerText}>
-          Pensando...
+        {/* Gradient shine "Pensando..." — OpenAI style */}
+        <div className={styles.thinkingLabel}>
+          <svg
+            className={styles.thinkingIcon}
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 3a6 6 0 0 0-6 6c0 2.5 1.2 4 2.4 5.3.8.9 1.6 1.8 1.6 2.7h4c0-.9.8-1.8 1.6-2.7C16.8 13 18 11.5 18 9a6 6 0 0 0-6-6z" />
+            <path d="M9 21h6" />
+            <path d="M10 18h4" />
+          </svg>
+          <span className={styles.shimmerText}>Pensando...</span>
         </div>
+
+        {/* Blue streaming thinking content — appears as the AI thinks */}
+        {content && (
+          <div className={styles.streamingContent}>
+            <pre className={styles.streamingPre}>{content}</pre>
+            <span className={styles.cursorBlink}>|</span>
+          </div>
+        )}
       </div>
     );
   }
 
   // === COMPLETED STATE: "Exibir raciocínio" button ===
   return (
-    <div className="my-2">
+    <div className={styles.completedContainer}>
       <button
         className={styles.revealButton}
         onClick={() => setIsOpen(!isOpen)}
@@ -151,14 +168,14 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
         </svg>
       </button>
 
-      {/* Reasoning content — expandable */}
+      {/* Reasoning content — expandable, stays open when clicked */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
             <div className={styles.contentPanel}>

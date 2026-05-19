@@ -181,7 +181,7 @@ export const AssistantMessage = memo(({ content, tokenUsage, isStreaming }: Assi
 
   return (
     <div className="overflow-hidden w-full">
-      {thinking && <ThinkingBlock content={thinking} isStreaming={isStreaming || isThinking} />}
+      {(thinking || isThinking) && <ThinkingBlock content={thinking} isStreaming={isThinking} />}
       {/* Fetch site cards */}
       {fetchedUrls.length > 0 && (
         <div className="flex flex-wrap gap-2 my-2">
