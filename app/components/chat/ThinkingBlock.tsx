@@ -89,12 +89,19 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   const hasCommands = commands.length > 0;
 
-  // === STREAMING STATE: Shimmer "Pensando..." ===
+  // === STREAMING STATE: Shimmer "Pensando..." with Omini logo ===
   if (isStreaming) {
     return (
-      <div className="my-2">
+      <div className="my-2 flex items-center gap-3">
+        {/* Omini logo */}
+        <img
+          src="/omni-builder-logo.svg"
+          alt="Omini"
+          className="w-7 h-7 shrink-0"
+          style={{ filter: 'brightness(0) invert(1)', opacity: 0.7 }}
+        />
+        {/* Shimmer text */}
         <div
-          className="thinking-shimmer"
           style={{
             fontSize: '22px',
             fontWeight: 600,
