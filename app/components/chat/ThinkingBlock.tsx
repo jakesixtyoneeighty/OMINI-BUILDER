@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { classNames } from '~/utils/classNames';
+import styles from './ThinkingBlock.module.scss';
 
 interface ThinkingBlockProps {
   content: string;
@@ -20,10 +20,8 @@ function parseThinkingContent(content: string): { reasoning: string; commands: s
   let codeBlockContent = '';
 
   for (const line of lines) {
-    // Track code blocks
     if (line.trim().startsWith('```')) {
       if (inCodeBlock) {
-        // End of code block - check if it's a command
         const trimmed = codeBlockContent.trim();
         if (trimmed && looksLikeCommand(trimmed)) {
           commands.push(trimmed);
@@ -44,7 +42,6 @@ function parseThinkingContent(content: string): { reasoning: string; commands: s
       continue;
     }
 
-    // Check if line looks like a command
     if (looksLikeCommand(line.trim())) {
       commands.push(line.trim());
     } else {
@@ -52,7 +49,6 @@ function parseThinkingContent(content: string): { reasoning: string; commands: s
     }
   }
 
-  // Handle unclosed code block
   if (inCodeBlock && codeBlockContent.trim()) {
     reasoningLines.push('```' + codeBlockContent + '```');
   }
@@ -89,31 +85,18 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   const hasCommands = commands.length > 0;
 
-  // === STREAMING STATE: Shimmer "Pensando..." with Omini logo ===
+  // === STREAMING STATE: Omini logo + shimmer "Pensando..." ===
   if (isStreaming) {
     return (
-      <div className="my-2 flex items-center gap-3">
-        {/* Omini logo */}
+      <div className={styles.streamingContainer}>
+        {/* Omini purple gradient logo */}
         <img
-          src="/omni-builder-logo.svg"
+          src="/omini-icon.svg"
           alt="Omini"
-          className="w-7 h-7 shrink-0"
-          style={{ filter: 'brightness(0) invert(1)', opacity: 0.7 }}
+          className={styles.ominiLogo}
         />
-        {/* Shimmer text */}
-        <div
-          style={{
-            fontSize: '22px',
-            fontWeight: 600,
-            letterSpacing: '0.5px',
-            background: 'linear-gradient(90deg, #5a5a5a 0%, #ffffff 35%, #5a5a5a 55%, #ffffff 75%, #5a5a5a 100%)',
-            backgroundSize: '300% auto',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            animation: 'thinking-shine 12s linear infinite',
-          }}
-        >
+        {/* Shimmer text — exact spec */}
+        <div className={styles.shimmerText}>
           Pensando...
         </div>
       </div>
@@ -123,24 +106,8 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
   // === COMPLETED STATE: "Exibir raciocínio" button ===
   return (
     <div className="my-2">
-      {/* "Exibir raciocínio" pill button — OpenAI style */}
       <button
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-200 cursor-pointer"
-        style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          color: 'rgba(255,255,255,0.88)',
-          fontSize: '14px',
-          fontWeight: 500,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-        }}
+        className={styles.revealButton}
         onClick={() => setIsOpen(!isOpen)}
       >
         {/* Lightbulb icon */}
@@ -153,7 +120,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ opacity: 0.9, flexShrink: 0 }}
+          className={styles.revealIcon}
         >
           <path d="M12 3a6 6 0 0 0-6 6c0 2.5 1.2 4 2.4 5.3.8.9 1.6 1.8 1.6 2.7h4c0-.9.8-1.8 1.6-2.7C16.8 13 18 11.5 18 9a6 6 0 0 0-6-6z" />
           <path d="M9 21h6" />
@@ -163,7 +130,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
         <span>{isOpen ? 'Ocultar raciocínio' : 'Exibir raciocínio'}</span>
 
         {wordCount > 0 && (
-          <span style={{ fontSize: '11px', opacity: 0.5, marginLeft: '4px' }}>
+          <span className={styles.wordCount}>
             {wordCount} palavras
           </span>
         )}
@@ -178,12 +145,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{
-            marginLeft: 'auto',
-            opacity: 0.5,
-            transition: 'transform 0.2s ease',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
+          className={`${styles.chevronIcon} ${isOpen ? styles.chevronOpen : styles.chevronClosed}`}
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -199,23 +161,12 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div
-              className="mt-2 rounded-xl overflow-hidden"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
+            <div className={styles.contentPanel}>
               {/* Tabs — only show if there are commands */}
               {hasCommands && (
-                <div className="flex border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                <div className={styles.tabBar}>
                   <button
-                    className={classNames(
-                      'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2',
-                      activeTab === 'reasoning'
-                        ? 'text-blue-400 border-blue-400'
-                        : 'text-bolt-elements-textTertiary border-transparent hover:text-bolt-elements-textSecondary',
-                    )}
+                    className={`${styles.tab} ${activeTab === 'reasoning' ? styles.tabActive : styles.tabInactive}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveTab('reasoning');
@@ -225,12 +176,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     Raciocínio
                   </button>
                   <button
-                    className={classNames(
-                      'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2',
-                      activeTab === 'commands'
-                        ? 'text-blue-400 border-blue-400'
-                        : 'text-bolt-elements-textTertiary border-transparent hover:text-bolt-elements-textSecondary',
-                    )}
+                    className={`${styles.tab} ${activeTab === 'commands' ? styles.tabActive : styles.tabInactive}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveTab('commands');
@@ -243,24 +189,17 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
               )}
 
               {/* Content area */}
-              <div className="px-4 py-3">
+              <div className={styles.contentInner}>
                 {activeTab === 'reasoning' || !hasCommands ? (
-                  <pre className="text-xs text-bolt-elements-textTertiary whitespace-pre-wrap break-words font-mono leading-relaxed max-h-72 overflow-y-auto">
+                  <pre className={styles.reasoningPre}>
                     {reasoning || content}
                   </pre>
                 ) : (
-                  <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                  <div className={styles.commandList}>
                     {commands.map((cmd, i) => (
-                      <div
-                        key={i}
-                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-md"
-                        style={{
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                        }}
-                      >
-                        <span className="text-[10px] text-blue-400 font-mono shrink-0 mt-0.5">$</span>
-                        <code className="text-xs text-emerald-300 font-mono break-all leading-relaxed">{cmd}</code>
+                      <div key={i} className={styles.commandItem}>
+                        <span className={styles.commandPrompt}>$</span>
+                        <code className={styles.commandCode}>{cmd}</code>
                       </div>
                     ))}
                   </div>

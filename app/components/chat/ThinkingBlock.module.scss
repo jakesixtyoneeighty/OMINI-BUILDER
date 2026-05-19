@@ -1,0 +1,204 @@
+/* ============================================================
+   ThinkingBlock — Shimmer "Pensando..." animation
+   Exact spec from user: gradient sweep shine on text
+   ============================================================ */
+
+/* Shimmer sweep keyframes */
+@keyframes shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+/* Omini logo pulse — subtle glow while thinking */
+@keyframes logoPulse {
+  0%, 100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.3));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.6));
+  }
+}
+
+/* Container for the streaming state */
+.streamingContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 4px 0;
+}
+
+/* Omini logo with pulse animation */
+.ominiLogo {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  animation: logoPulse 2.5s ease-in-out infinite;
+}
+
+/* Shimmer text — EXACT user spec */
+.shimmerText {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: linear-gradient(
+    90deg,
+    #5a5a5a 0%,
+    #ffffff 35%,
+    #5a5a5a 55%,
+    #ffffff 75%,
+    #5a5a5a 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 12s linear infinite;
+}
+
+/* ============================================================
+   Completed state — "Exibir raciocínio" button
+   ============================================================ */
+
+.revealButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+}
+
+.revealIcon {
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.wordCount {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-left: 4px;
+}
+
+.chevronIcon {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.chevronClosed {
+  transform: rotate(0deg);
+}
+
+/* Expandable content area */
+.contentPanel {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Tabs */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease;
+  cursor: pointer;
+  background: none;
+  color: inherit;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.tabActive {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+.tabInactive {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Content */
+.contentInner {
+  padding: 12px 16px;
+}
+
+.reasoningPre {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: monospace;
+  line-height: 1.6;
+  max-height: 288px;
+  overflow-y: auto;
+}
+
+.commandList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 288px;
+  overflow-y: auto;
+}
+
+.commandItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commandPrompt {
+  font-size: 10px;
+  color: #60a5fa;
+  font-family: monospace;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.commandCode {
+  font-size: 12px;
+  color: #6ee7b7;
+  font-family: monospace;
+  word-break: break-all;
+  line-height: 1.6;
+}
