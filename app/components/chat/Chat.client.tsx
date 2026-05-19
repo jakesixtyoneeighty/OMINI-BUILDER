@@ -100,7 +100,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     Record<number, { promptTokens: number; completionTokens: number; totalTokens: number }>
   >({});
 
-  const { showChat, planMode } = useStore(chatStore);
+  const { showChat, planMode, thinkMode } = useStore(chatStore);
   const llm = useStore(llmStore);
   const projectId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
@@ -132,9 +132,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     apiKey: llm.keys[llm.provider] || '',
     databaseConfig,
     planMode,
+    thinkMode,
     customRules: (projects[projectId]?.settings?.customRules || '').trim() || undefined,
     language: currentLang,
-  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, projects, projectId, currentLang]);
+  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, thinkMode, projects, projectId, currentLang]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',

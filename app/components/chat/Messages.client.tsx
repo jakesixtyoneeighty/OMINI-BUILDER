@@ -93,7 +93,13 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
           })
         : null}
       {isStreaming && (
-        <div className="text-center w-full text-bolt-elements-textSecondary i-svg-spinners:3-dots-fade text-4xl mt-4"></div>
+        <div className="flex items-center gap-3 px-6 py-4 w-full">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+            <div className="i-svg-spinners:90-ring-with-bg text-blue-400 text-sm" />
+            <span className="text-xs font-semibold text-blue-400">Pensando</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          </div>
+        </div>
       )}
     </div>
   );

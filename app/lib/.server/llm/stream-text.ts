@@ -40,6 +40,7 @@ export function streamText(
   options?: StreamingOptions,
   dbContext?: DatabaseContext,
   planMode?: boolean,
+  thinkMode?: boolean,
   customRules?: string,
   language?: string,
   supabaseUrl?: string,
@@ -60,7 +61,7 @@ export function streamText(
   const projectId = dbContext?.type === 'omni' ? dbContext.omni?.projectId : undefined;
   const activeTools = buildTools(projectId, supabaseUrl, supabaseKey, serverOrigin);
 
-  console.log(`[streamText] provider=${selection.provider} model=${selection.model} hasApiKey=${!!selection.apiKey} messages=${coreMessages.length}`);
+  console.log(`[streamText] provider=${selection.provider} model=${selection.model} hasApiKey=${!!selection.apiKey} messages=${coreMessages.length} thinkMode=${!!thinkMode}`);
 
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
@@ -70,6 +71,13 @@ export function streamText(
     abortSignal,
     ...extra,
     messages: coreMessages,
+    // When /think is active, instruct the model to reason in <think/> tags
+    // The ThinkingBlock UI component will show this reasoning in real-time
+    ...(thinkMode ? {
+      providerOptions: {
+        google: { thinkingConfig: { thinkingBudget: 10000 } },
+      },
+    } : {}),
     ...options,
   });
 }

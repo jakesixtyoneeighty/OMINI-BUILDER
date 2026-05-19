@@ -120,6 +120,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     } | null>(null);
     const [mentionedFiles, setMentionedFiles] = useState<{ path: string; content: string }[]>([]);
 
+    // / slash command state
+    const [slashState, setSlashState] = useState<{
+      active: boolean;
+      search: string;
+      position: { top: number; left: number };
+      slashStart: number;
+    } | null>(null);
+    const thinkMode = useStore(chatStore).thinkMode;
+
     // Resizable layout state
     const chatWidthPct = useStore(chatWidthStore);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -385,8 +394,28 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           },
           mentionStart,
         });
+        setSlashState(null); // close slash menu if open
       } else {
         setMentionState(null);
+      }
+
+      // Detect / slash commands
+      const slashMatch = textBeforeCursor.match(/\/([\w-]*)$/);
+      if (slashMatch && !atMatch) {
+        const slashStart = cursorPos - slashMatch[0].length;
+        const search = slashMatch[1];
+        const rect = textarea.getBoundingClientRect();
+        setSlashState({
+          active: true,
+          search,
+          position: {
+            top: rect.top - 4,
+            left: Math.min(rect.left + 16, window.innerWidth - 280),
+          },
+          slashStart,
+        });
+      } else if (!atMatch) {
+        setSlashState(null);
       }
     }, [handleInputChange]);
 
@@ -398,6 +427,16 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
       if (event.key === 'Escape' && mentionState?.active) {
         setMentionState(null);
+        event.preventDefault();
+        return;
+      }
+      // If slash command dropdown is open
+      if (slashState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Escape' && slashState?.active) {
+        setSlashState(null);
         event.preventDefault();
         return;
       }
@@ -664,6 +703,22 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           >
                             <div className="i-ph:list-checks text-sm" />
                             <span className="hidden sm:inline">{t('landing.plan')}</span>
+                          </button>
+
+                          {/* /think mode toggle */}
+                          <button
+                            type="button"
+                            onClick={() => chatStore.setKey('thinkMode', !thinkMode)}
+                            className={classNames(
+                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                              thinkMode
+                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                            )}
+                            title="Pense melhor — raciocinio mais profundo e visivel"
+                          >
+                            <div className="i-ph:brain text-sm" />
+                            <span className="hidden sm:inline">Think</span>
                           </button>
                         </div>
 
@@ -1054,6 +1109,55 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               />
             )}
           </ClientOnly>
+        )}
+
+        {/* / Slash Command Dropdown */}
+        {slashState?.active && (
+          <div
+            className="fixed z-[9999] w-[260px] rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-2xl overflow-hidden"
+            style={{ bottom: window.innerHeight - slashState.position.top + 8, left: slashState.position.left }}
+          >
+            <div className="px-3 py-2 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1">
+              Comandos
+            </div>
+            <button
+              className={classNames(
+                'w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-bolt-elements-item-backgroundActive transition-colors',
+                thinkMode ? 'bg-blue-500/10' : '',
+              )}
+              onClick={() => {
+                // Toggle think mode
+                chatStore.setKey('thinkMode', !thinkMode);
+                // Remove /think or / from input
+                if (textareaRef?.current) {
+                  const val = textareaRef.current.value;
+                  const newVal = val.replace(/\/think?\s*$/, '').replace(/\/\s*$/, '');
+                  const syntheticEvent = { target: { value: newVal } } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                  handleInputChange?.(syntheticEvent);
+                }
+                setSlashState(null);
+                setTimeout(() => textareaRef?.current?.focus(), 0);
+              }}
+            >
+              <div className={classNames(
+                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                thinkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary',
+              )}>
+                <div className="i-ph:brain text-base" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={classNames('text-xs font-medium', thinkMode ? 'text-blue-400' : 'text-bolt-elements-textPrimary')}>
+                  /think
+                </div>
+                <div className="text-[10px] text-bolt-elements-textTertiary">
+                  Pense melhor — raciocinio mais profundo e visivel
+                </div>
+              </div>
+              {thinkMode && (
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0" />
+              )}
+            </button>
+          </div>
         )}
 
         {/* Mentioned files indicators — removed, now shown inside input card */}

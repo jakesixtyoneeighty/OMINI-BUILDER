@@ -5,4 +5,5 @@ export const chatStore = map({
   aborted: false,
   showChat: true,
   planMode: false,
+  thinkMode: false, // /think — AI reasons deeper with visible thinking
 });

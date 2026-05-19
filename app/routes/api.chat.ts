@@ -64,6 +64,7 @@ interface ChatRequest {
   apiKey?: string;
   databaseConfig?: ClientDatabaseConfig;
   planMode?: boolean;
+  thinkMode?: boolean;
   customRules?: string;
   language?: string;
 }
@@ -201,6 +202,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const selection = resolveSelection(body, env);
   const dbContext = resolveDbContext(body.databaseConfig);
   const planMode = body.planMode ?? false;
+  const thinkMode = body.thinkMode ?? false;
   const customRules = body.customRules;
   const language = body.language || 'pt';
 
@@ -246,13 +248,12 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
-
+        const result = await streamText(messages, selection, options, dbContext, planMode, thinkMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, selection, options, dbContext, planMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
+    const result = await streamText(messages, selection, options, dbContext, planMode, thinkMode, customRules, language, supabaseUrl, supabaseKey, serverOrigin, abortSignal);
 
     stream.switchSource(result.toAIStream());
 
