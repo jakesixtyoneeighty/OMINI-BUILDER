@@ -726,22 +726,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             <div className="i-ph:list-checks text-sm" />
                             <span className="hidden sm:inline">{t('landing.plan')}</span>
                           </button>
-
-                          {/* /think mode toggle */}
-                          <button
-                            type="button"
-                            onClick={() => chatStore.setKey('thinkMode', !thinkMode)}
-                            className={classNames(
-                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-                              thinkMode
-                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
-                            )}
-                            title="Pense melhor — raciocinio mais profundo e visivel"
-                          >
-                            <div className="i-ph:brain text-sm" />
-                            <span className="hidden sm:inline">Think</span>
-                          </button>
                         </div>
 
                         {/* Right group: Build now button */}

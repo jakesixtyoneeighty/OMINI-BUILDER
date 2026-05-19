@@ -94,15 +94,16 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
     return (
       <div className="my-2">
         <div
-          className="inline-flex items-center"
+          className="thinking-shimmer"
           style={{
-            fontSize: '18px',
+            fontSize: '22px',
             fontWeight: 600,
             letterSpacing: '0.5px',
             background: 'linear-gradient(90deg, #5a5a5a 0%, #ffffff 35%, #5a5a5a 55%, #ffffff 75%, #5a5a5a 100%)',
             backgroundSize: '300% auto',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
             animation: 'thinking-shine 12s linear infinite',
           }}
         >
