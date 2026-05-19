@@ -624,6 +624,28 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                       {/* Textarea area */}
                       <div className="px-4 pt-1 pb-1">
+                        {/* Think mode blue chip */}
+                        {thinkMode && (
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
+                            style={{
+                              color: '#60a5fa',
+                              background: 'rgba(59, 130, 246, 0.12)',
+                              border: '1px solid rgba(59, 130, 246, 0.25)',
+                            }}
+                          >
+                            <div className="i-ph:brain text-sm" />
+                            /think
+                            <button
+                              type="button"
+                              onClick={() => chatStore.setKey('thinkMode', false)}
+                              className="ml-0.5 hover:text-red-400 transition-colors"
+                              style={{ lineHeight: 1 }}
+                            >
+                              <div className="i-ph:x-bold text-[8px]" />
+                            </button>
+                          </span>
+                        )}
                         <textarea
                           ref={textareaRef}
                           className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
@@ -902,6 +924,28 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                       {/* Textarea area */}
                       <div className="px-4 pt-3 pb-1">
+                        {/* Think mode blue chip */}
+                        {thinkMode && (
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
+                            style={{
+                              color: '#60a5fa',
+                              background: 'rgba(59, 130, 246, 0.12)',
+                              border: '1px solid rgba(59, 130, 246, 0.25)',
+                            }}
+                          >
+                            <div className="i-ph:brain text-sm" />
+                            /think
+                            <button
+                              type="button"
+                              onClick={() => chatStore.setKey('thinkMode', false)}
+                              className="ml-0.5 hover:text-red-400 transition-colors"
+                              style={{ lineHeight: 1 }}
+                            >
+                              <div className="i-ph:x-bold text-[8px]" />
+                            </button>
+                          </span>
+                        )}
                         <textarea
                           ref={textareaRef}
                           className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
@@ -982,10 +1026,32 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
                   </ClientOnly>
 
-                  {/* Center: textarea */}
-                  <textarea
-                    ref={textareaRef}
-                    className="flex-1 py-2 px-2 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
+                  {/* Center: textarea with think chip */}
+                  <div className="flex-1 flex flex-col min-w-0">
+                    {thinkMode && (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1 select-none self-start"
+                        style={{
+                          color: '#60a5fa',
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.25)',
+                        }}
+                      >
+                        <div className="i-ph:brain text-sm" />
+                        /think
+                        <button
+                          type="button"
+                          onClick={() => chatStore.setKey('thinkMode', false)}
+                          className="ml-0.5 hover:text-red-400 transition-colors"
+                          style={{ lineHeight: 1 }}
+                        >
+                          <div className="i-ph:x-bold text-[8px]" />
+                        </button>
+                      </span>
+                    )}
+                    <textarea
+                      ref={textareaRef}
+                      className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
                     onKeyDown={handleKeyDown}
                     value={input}
                     onChange={(event) => {
@@ -999,6 +1065,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     rows={1}
                     style={{ maxHeight: 300 }}
                   />
+                  </div>
 
                   {/* Right side buttons */}
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -1131,7 +1198,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 // Remove /think or / from input
                 if (textareaRef?.current) {
                   const val = textareaRef.current.value;
-                  const newVal = val.replace(/\/think?\s*$/, '').replace(/\/\s*$/, '');
+                  const newVal = val.replace(/\/think\s*$/, '').replace(/\/\s*$/, '');
                   const syntheticEvent = { target: { value: newVal } } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
                   handleInputChange?.(syntheticEvent);
                 }

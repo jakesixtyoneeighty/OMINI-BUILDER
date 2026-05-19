@@ -58,3 +58,13 @@
 .animate-progress {
   animation: progress 3s ease-in-out infinite;
 }
+
+/* Thinking shimmer animation — OpenAI style gradient sweep */
+@keyframes thinking-shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
