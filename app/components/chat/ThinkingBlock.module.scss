@@ -16,10 +16,12 @@
 
 /* Cursor blink for streaming content */
 @keyframes blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -32,8 +34,8 @@
 .streamingContainer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 8px 0;
+  gap: 8px;
+  margin: 6px 0;
   padding: 4px 0;
 }
 
@@ -53,17 +55,10 @@
 
 /* Shimmer text — EXACT user spec: gradient sweep on "Pensando..." */
 .shimmerText {
-  font-size: 22px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  background: linear-gradient(
-    90deg,
-    #5a5a5a 0%,
-    #ffffff 35%,
-    #5a5a5a 55%,
-    #ffffff 75%,
-    #5a5a5a 100%
-  );
+  letter-spacing: 0.2px;
+  background: linear-gradient(90deg, #5a5a5a 0%, #ffffff 35%, #5a5a5a 55%, #ffffff 75%, #5a5a5a 100%);
   background-size: 300% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -88,7 +83,11 @@
   color: #93c5fd;
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   line-height: 1.7;
   margin: 0;
 }
@@ -107,7 +106,7 @@
    ============================================================ */
 
 .completedContainer {
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .revealButton {
@@ -207,7 +206,11 @@
   color: #93c5fd;
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   line-height: 1.7;
   max-height: 288px;
   overflow-y: auto;
