@@ -661,62 +661,105 @@ export function AppSettingsDialog({
 
   if (!open) return null;
 
+  // Check if an integration is connected
+  const isGmailConnected = !!gmailClientId;
+  const isGdriveConnected = !!gdriveClientId;
+  const isGithubConnected = !!githubToken;
+  const connectedCount = [isGmailConnected, isGdriveConnected, isGithubConnected].filter(Boolean).length;
+
+  // Tab icons mapping
+  const tabIconMap: Record<string, string> = {
+    deploy: 'i-ph:rocket-launch-duotone',
+    versions: 'i-ph:clock-counter-clockwise',
+    database: 'i-ph:database-duotone',
+    integrations: 'i-ph:plug-duotone',
+    env: 'i-ph:key',
+    general: 'i-ph:gear-six',
+    rules: 'i-ph:brain-duotone',
+    security: 'i-ph:shield-check',
+    preview: 'i-ph:eye',
+  };
+
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-[120]">
-      <div className="absolute inset-0 bg-black/28 backdrop-blur-[1px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       <aside
         onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-[var(--header-height)] bottom-0 w-[760px] max-w-[96vw] bg-bolt-elements-background-depth-2 border-l border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-l-[24px]"
+        className="absolute right-0 top-0 bottom-0 w-full bg-bolt-elements-background-depth-2 flex overflow-hidden"
       >
-        <div className="shrink-0 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 pr-2">
-                {TABS.map((tabItem) => (
+        {/* ====== LEFT SIDEBAR NAV ====== */}
+        <div className="w-[220px] shrink-0 bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor flex flex-col">
+          {/* Header */}
+          <div className="px-4 pt-5 pb-4 border-b border-bolt-elements-borderColor">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-bolt-elements-textPrimary uppercase tracking-wider">
+                {t('appSettings.projectSettings')}
+              </h2>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+              >
+                <div className="i-ph:x text-base" />
+              </button>
+            </div>
+            {/* Project info mini */}
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-bolt-elements-background-depth-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/12 flex items-center justify-center shrink-0">
+                {settings?.logo ? (
+                  <img src={settings.logo} alt="" className="w-5 h-5 rounded object-cover" />
+                ) : (
+                  <div className="i-ph:folder-open text-purple-400 text-sm" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-bolt-elements-textPrimary truncate">
+                  {projectName || t('appSettings.untitled')}
+                </div>
+                <div className="text-[10px] text-bolt-elements-textTertiary truncate">
+                  {activeId !== 'default' ? activeId.slice(0, 12) + '...' : t('appSettings.default')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <nav className="flex-1 overflow-y-auto py-2 px-2">
+            <div className="space-y-0.5">
+              {TABS.map((tabItem) => {
+                const isActive = tab === tabItem.id;
+                const isIntegrationTab = tabItem.id === 'integrations';
+                return (
                   <button
                     key={tabItem.id}
                     onClick={() => setTab(tabItem.id)}
-                    className={`inline-flex items-center px-3.5 py-2 rounded-full text-[12px] font-medium whitespace-nowrap border transition-all ${
-                      tab === tabItem.id
-                        ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary border-bolt-elements-borderColor shadow-sm'
-                        : 'bg-transparent text-bolt-elements-textSecondary border-bolt-elements-borderColor/60 hover:bg-bolt-elements-background-depth-2 hover:border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary'
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-left ${
+                      isActive
+                        ? 'bg-purple-500/12 text-purple-400'
+                        : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-background-depth-2 hover:text-bolt-elements-textPrimary'
                     }`}
                   >
-                    {t('appSettings.' + tabItem.id)}
+                    <div className={`${tabIconMap[tabItem.id]} text-base ${isActive ? 'text-purple-400' : ''}`} />
+                    <span className="flex-1">{t('appSettings.' + tabItem.id)}</span>
+                    {isIntegrationTab && connectedCount > 0 && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-green-500/15 text-green-400">
+                        {connectedCount}
+                      </span>
+                    )}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all shrink-0"
-            >
-              <div className="i-ph:x text-lg" />
-            </button>
-          </div>
+          </nav>
         </div>
 
-        <div className="shrink-0 border-b border-bolt-elements-borderColor px-5 py-4 bg-bolt-elements-background-depth-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor flex items-center justify-center shrink-0">
-              <div className="i-ph:folder-open text-bolt-elements-textSecondary text-lg" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[15px] font-semibold text-bolt-elements-textPrimary truncate">
-                {projectName || t('appSettings.untitled')}
-              </div>
-              <div className="text-[11px] text-bolt-elements-textTertiary truncate mt-0.5">
-                {activeId !== 'default' ? activeId.slice(0, 18) + '...' : t('appSettings.default')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-5">
-          <div className="mb-5">
-            <h2 className="text-base font-bold text-bolt-elements-textPrimary">{t('appSettings.' + tab)}</h2>
+        {/* ====== RIGHT CONTENT PANEL ====== */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Content Header */}
+          <div className="shrink-0 px-8 pt-6 pb-4 border-b border-bolt-elements-borderColor">
+            <h2 className="text-lg font-bold text-bolt-elements-textPrimary">{t('appSettings.' + tab)}</h2>
             <p className="text-xs text-bolt-elements-textTertiary mt-1 leading-relaxed">
               {tab === 'general' && t('appSettings.generalDesc')}
               {tab === 'preview' && t('appSettings.previewDesc')}
@@ -729,6 +772,9 @@ export function AppSettingsDialog({
               {tab === 'rules' && t('appSettings.aiRulesDesc')}
             </p>
           </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-8 py-6">
           {/* ====== GENERAL TAB ====== */}
           {tab === 'general' && (
             <div className="space-y-5">
@@ -791,12 +837,27 @@ export function AppSettingsDialog({
 
           {/* ====== INTEGRATIONS TAB ====== */}
           {tab === 'integrations' && (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* Connection status overview */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                <div className="i-ph:plug-duotone text-lg text-purple-400" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-bolt-elements-textPrimary">
+                    {connectedCount}/3 {t('appSettings.integrationsConnected')}
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isGmailConnected ? 'bg-green-400' : 'bg-bolt-elements-borderColor'}`} title="Gmail" />
+                  <div className={`w-2.5 h-2.5 rounded-full ${isGdriveConnected ? 'bg-green-400' : 'bg-bolt-elements-borderColor'}`} title="Google Drive" />
+                  <div className={`w-2.5 h-2.5 rounded-full ${isGithubConnected ? 'bg-green-400' : 'bg-bolt-elements-borderColor'}`} title="GitHub" />
+                </div>
+              </div>
+
               {/* Gmail Integration */}
-              <div className="p-4 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/12 flex items-center justify-center shrink-0">
-                    <svg width="22" height="22" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div className={`rounded-xl border transition-all ${isGmailConnected ? 'border-green-500/30 bg-green-500/3' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1'}`}>
+                <div className="flex items-center gap-4 p-5">
+                  <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/15">
+                    <svg width="30" height="30" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M64 128L256 274.667L448 128V96H64V128Z" fill="#4285F4"/>
                       <path d="M16 128V384C16 402.4 30.4 416 48 416H80L256 274.667L64 128H16Z" fill="#F44336"/>
                       <path d="M432 416H464C482.4 416 496 402.4 496 384V128H448L256 274.667L432 416Z" fill="#0F9D58"/>
@@ -805,73 +866,84 @@ export function AppSettingsDialog({
                       <path d="M496 128H448L256 274.667L496 384V128Z" fill="#0F9D58"/>
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.gmail')}</h3>
-                    <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.gmailSubtitle')}</p>
-                  </div>
-                  {gmailClientId && (
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
-                      {t('appSettings.connected')}
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.oauthClientId')}
-                    </label>
-                    <input
-                      value={gmailClientId}
-                      onChange={(e) => setGmailClientId(e.target.value)}
-                      onBlur={saveGmailSettings}
-                      placeholder="xxxxxxxxxxxx.apps.googleusercontent.com"
-                      type="text"
-                      className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.oauthClientSecret')}
-                    </label>
-                    <input
-                      value={gmailClientSecret}
-                      onChange={(e) => setGmailClientSecret(e.target.value)}
-                      onBlur={saveGmailSettings}
-                      placeholder="GOCSPX-xxxxxxxxxxxxxxxxx"
-                      type="password"
-                      className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.redirectUri')}
-                    </label>
-                    <input
-                      value={gmailRedirectUri}
-                      onChange={(e) => setGmailRedirectUri(e.target.value)}
-                      onBlur={saveGmailSettings}
-                      placeholder="https://yourdomain.com/api/gmail/callback"
-                      type="text"
-                      className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
-                    />
-                    <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                      {t('appSettings.gmailRedirectHint')}
-                    </p>
-                  </div>
-                  {gmailClientId && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
-                      <div className="i-ph:check-circle-fill text-green-400 text-sm" />
-                      <span className="text-xs text-green-400">{t('appSettings.gmailConfigured')}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-bolt-elements-textPrimary">{t('appSettings.gmail')}</h3>
+                      {isGmailConnected && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
+                          {t('appSettings.connected')}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <p className="text-xs text-bolt-elements-textTertiary mt-0.5">{t('appSettings.gmailSubtitle')}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('gmail-fields');
+                      if (el) el.classList.toggle('hidden');
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      isGmailConnected
+                        ? 'bg-green-500/12 text-green-400 hover:bg-green-500/20'
+                        : 'bg-red-500/12 text-red-400 hover:bg-red-500/20'
+                    }`}
+                  >
+                    {isGmailConnected ? t('appSettings.configured') : t('appSettings.connect')}
+                  </button>
+                </div>
+                <div id="gmail-fields" className={isGmailConnected ? '' : 'hidden'}>
+                  <div className="px-5 pb-5 space-y-3 border-t border-bolt-elements-borderColor pt-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.oauthClientId')}
+                      </label>
+                      <input
+                        value={gmailClientId}
+                        onChange={(e) => setGmailClientId(e.target.value)}
+                        onBlur={saveGmailSettings}
+                        placeholder="xxxxxxxxxxxx.apps.googleusercontent.com"
+                        type="text"
+                        className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.oauthClientSecret')}
+                      </label>
+                      <input
+                        value={gmailClientSecret}
+                        onChange={(e) => setGmailClientSecret(e.target.value)}
+                        onBlur={saveGmailSettings}
+                        placeholder="GOCSPX-xxxxxxxxxxxxxxxxx"
+                        type="password"
+                        className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.redirectUri')}
+                      </label>
+                      <input
+                        value={gmailRedirectUri}
+                        onChange={(e) => setGmailRedirectUri(e.target.value)}
+                        onBlur={saveGmailSettings}
+                        placeholder="https://yourdomain.com/api/gmail/callback"
+                        type="text"
+                        className={monoInputClass + ' focus:ring-red-500/30 focus:border-red-500/50'}
+                      />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
+                        {t('appSettings.gmailRedirectHint')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Google Drive Integration */}
-              <div className="p-4 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/12 flex items-center justify-center shrink-0">
-                    <svg width="22" height="22" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+              <div className={`rounded-xl border transition-all ${isGdriveConnected ? 'border-green-500/30 bg-green-500/3' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1'}`}>
+                <div className="flex items-center gap-4 p-5">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/15">
+                    <svg width="30" height="30" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
                       <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
                       <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
                       <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 14.95z" fill="#ea4335"/>
@@ -880,110 +952,131 @@ export function AppSettingsDialog({
                       <path d="m73.4 26.5-10.2-17.7c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.googleDrive')}</h3>
-                    <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.gdriveSubtitle')}</p>
-                  </div>
-                  {gdriveClientId && (
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
-                      {t('appSettings.connected')}
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.oauthClientId')}
-                    </label>
-                    <input
-                      value={gdriveClientId}
-                      onChange={(e) => setGdriveClientId(e.target.value)}
-                      onBlur={saveGdriveSettings}
-                      placeholder="xxxxxxxxxxxx.apps.googleusercontent.com"
-                      type="text"
-                      className={monoInputClass + ' focus:ring-blue-500/30 focus:border-blue-500/50'}
-                    />
-                    <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                      Create at <span className="text-blue-400">console.cloud.google.com/apis/credentials</span> → OAuth
-                      2.0 Client ID (Web). Add your domain to Authorized JavaScript Origins.
-                    </p>
-                  </div>
-                  {gdriveClientId && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
-                      <div className="i-ph:check-circle-fill text-green-400 text-sm" />
-                      <span className="text-xs text-green-400">{t('appSettings.gdriveClientIdConfigured')}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-bolt-elements-textPrimary">{t('appSettings.googleDrive')}</h3>
+                      {isGdriveConnected && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
+                          {t('appSettings.connected')}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <p className="text-xs text-bolt-elements-textTertiary mt-0.5">{t('appSettings.gdriveSubtitle')}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('gdrive-fields');
+                      if (el) el.classList.toggle('hidden');
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      isGdriveConnected
+                        ? 'bg-green-500/12 text-green-400 hover:bg-green-500/20'
+                        : 'bg-blue-500/12 text-blue-400 hover:bg-blue-500/20'
+                    }`}
+                  >
+                    {isGdriveConnected ? t('appSettings.configured') : t('appSettings.connect')}
+                  </button>
+                </div>
+                <div id="gdrive-fields" className={isGdriveConnected ? '' : 'hidden'}>
+                  <div className="px-5 pb-5 space-y-3 border-t border-bolt-elements-borderColor pt-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.oauthClientId')}
+                      </label>
+                      <input
+                        value={gdriveClientId}
+                        onChange={(e) => setGdriveClientId(e.target.value)}
+                        onBlur={saveGdriveSettings}
+                        placeholder="xxxxxxxxxxxx.apps.googleusercontent.com"
+                        type="text"
+                        className={monoInputClass + ' focus:ring-blue-500/30 focus:border-blue-500/50'}
+                      />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
+                        Create at <span className="text-blue-400">console.cloud.google.com/apis/credentials</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* GitHub Integration */}
-              <div className="p-4 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-500/12 flex items-center justify-center shrink-0">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <div className={`rounded-xl border transition-all ${isGithubConnected ? 'border-green-500/30 bg-green-500/3' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1'}`}>
+                <div className="flex items-center gap-4 p-5">
+                  <div className="w-14 h-14 rounded-2xl bg-gray-500/10 flex items-center justify-center shrink-0 border border-gray-500/15">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" fill="#8B949E"/>
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-bolt-elements-textPrimary">{t('appSettings.githubIntegration')}</h3>
-                    <p className="text-[11px] text-bolt-elements-textTertiary">{t('appSettings.githubSubtitle')}</p>
-                  </div>
-                  {githubToken && (
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
-                      {t('appSettings.connected')}
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.githubToken')}
-                    </label>
-                    <input
-                      value={githubToken}
-                      onChange={(e) => setGithubToken(e.target.value)}
-                      onBlur={saveGithubIntegrationSettings}
-                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                      type="password"
-                      className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
-                    />
-                    <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                      {t('appSettings.githubTokenHint')}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.githubRepo')}
-                    </label>
-                    <input
-                      value={githubRepo}
-                      onChange={(e) => setGithubRepo(e.target.value)}
-                      onBlur={saveGithubIntegrationSettings}
-                      placeholder="usuario/repositorio"
-                      type="text"
-                      className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
-                      {t('appSettings.githubBranch')}
-                    </label>
-                    <input
-                      value={githubBranch}
-                      onChange={(e) => setGithubBranch(e.target.value)}
-                      onBlur={saveGithubIntegrationSettings}
-                      placeholder="main"
-                      type="text"
-                      className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
-                    />
-                  </div>
-                  {githubToken && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 border border-green-500/20">
-                      <div className="i-ph:check-circle-fill text-green-400 text-sm" />
-                      <span className="text-xs text-green-400">{t('appSettings.githubConfigured')}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-bolt-elements-textPrimary">{t('appSettings.githubIntegration')}</h3>
+                      {isGithubConnected && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
+                          {t('appSettings.connected')}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <p className="text-xs text-bolt-elements-textTertiary mt-0.5">{t('appSettings.githubSubtitle')}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('github-fields');
+                      if (el) el.classList.toggle('hidden');
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      isGithubConnected
+                        ? 'bg-green-500/12 text-green-400 hover:bg-green-500/20'
+                        : 'bg-gray-500/12 text-gray-400 hover:bg-gray-500/20'
+                    }`}
+                  >
+                    {isGithubConnected ? t('appSettings.configured') : t('appSettings.connect')}
+                  </button>
+                </div>
+                <div id="github-fields" className={isGithubConnected ? '' : 'hidden'}>
+                  <div className="px-5 pb-5 space-y-3 border-t border-bolt-elements-borderColor pt-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.githubToken')}
+                      </label>
+                      <input
+                        value={githubToken}
+                        onChange={(e) => setGithubToken(e.target.value)}
+                        onBlur={saveGithubIntegrationSettings}
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                        type="password"
+                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                      />
+                      <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
+                        {t('appSettings.githubTokenHint')}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.githubRepo')}
+                      </label>
+                      <input
+                        value={githubRepo}
+                        onChange={(e) => setGithubRepo(e.target.value)}
+                        onBlur={saveGithubIntegrationSettings}
+                        placeholder="usuario/repositorio"
+                        type="text"
+                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider mb-1.5">
+                        {t('appSettings.githubBranch')}
+                      </label>
+                      <input
+                        value={githubBranch}
+                        onChange={(e) => setGithubBranch(e.target.value)}
+                        onBlur={saveGithubIntegrationSettings}
+                        placeholder="main"
+                        type="text"
+                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1865,6 +1958,7 @@ export function AppSettingsDialog({
               )}
             </div>
           )}
+        </div>
         </div>
       </aside>
     </div>
