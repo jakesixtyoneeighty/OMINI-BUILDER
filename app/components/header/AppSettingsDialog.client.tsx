@@ -1935,7 +1935,6 @@ export function AppSettingsDialog() {
         </div>
       </div>
       {/* End modal */}
-      </div>
     </div>
   );
 }
