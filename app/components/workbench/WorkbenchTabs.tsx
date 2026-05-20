@@ -1,23 +1,21 @@
-import { motion } from 'framer-motion';
 import { memo } from 'react';
 import { classNames } from '~/utils/classNames';
-import { cubicEasingFn } from '~/utils/easings';
 
-export interface TabOption<T extends string> {
-  value: T;
+export interface TabOption {
+  value: string;
   icon: string;
   label: string;
 }
 
-interface WorkbenchTabsProps<T extends string> {
-  selected: T;
-  options: TabOption<T>[];
-  setSelected: (selected: T) => void;
+interface WorkbenchTabsProps {
+  selected: string;
+  options: TabOption[];
+  setSelected: (selected: string) => void;
 }
 
-export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSelected }: WorkbenchTabsProps<T>) => {
+export const WorkbenchTabs = memo(({ selected, options, setSelected }: WorkbenchTabsProps) => {
   return (
-    <div className="flex items-center gap-0.5 bg-bolt-elements-background-depth-1 overflow-hidden rounded-full p-0.5 sm:p-1">
+    <div className="lovable-tabs flex items-center h-8 border border-bolt-elements-borderColor rounded-md p-0 overflow-hidden">
       {options.map((option) => {
         const isSelected = selected === option.value;
 
@@ -26,24 +24,15 @@ export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSel
             key={option.value}
             onClick={() => setSelected(option.value)}
             className={classNames(
-              'relative flex items-center gap-1 sm:gap-1.5 text-sm px-2 sm:px-3 py-1 rounded-full transition-colors',
+              'lovable-tab flex items-center gap-1 sm:gap-1.5 text-sm px-2 sm:px-3 h-full rounded-md transition-colors',
               isSelected
-                ? 'text-bolt-elements-item-contentAccent'
-                : 'text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive',
+                ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
+                : 'text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-bolt-elements-item-backgroundActive',
             )}
             title={option.label}
           >
-            <span className="relative z-10 flex items-center gap-1 sm:gap-1.5">
-              <div className={classNames(option.icon, 'text-base')} />
-              <span className="text-xs font-medium hidden sm:inline">{option.label}</span>
-            </span>
-            {isSelected && (
-              <motion.span
-                layoutId="pill-tab"
-                transition={{ duration: 0.2, ease: cubicEasingFn }}
-                className="absolute inset-0 z-0 bg-bolt-elements-item-backgroundAccent rounded-full"
-              />
-            )}
+            <div className={classNames(option.icon, 'text-base')} />
+            <span className="text-xs font-medium hidden sm:inline">{option.label}</span>
           </button>
         );
       })}

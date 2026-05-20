@@ -227,6 +227,55 @@ body {
   font-size: 12px;
 }
 
+/* ===== Lovable Clone Visual Design Additions ===== */
+
+/* Flat tab styles for WorkbenchTabs */
+.lovable-tabs {
+  gap: 0;
+}
+
+.lovable-tab {
+  white-space: nowrap;
+}
+
+/* File tree chevron rotation */
+.lovable-chevron {
+  transition: transform 0.15s ease;
+}
+
+/* File tree styling - clean Lovable Clone look */
+.lovable-filetree {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.lovable-filetree::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.lovable-filetree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lovable-filetree::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 2px;
+}
+
+.lovable-filetree::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.35);
+}
+
+/* Resize handle hover effects matching Lovable Clone */
+[data-resize-handle][data-resize-handle-state='hover']:after,
+[data-resize-handle][data-resize-handle-state='drag']:after {
+  background-color: var(--bolt-elements-item-backgroundAccent) !important;
+  opacity: 0.6;
+}
+
+/* ===== End Lovable Clone Additions ===== */
+
 /* Mobile responsive utilities */
 @media (max-width: 767px) {
   /* Prevent pull-to-refresh on mobile */

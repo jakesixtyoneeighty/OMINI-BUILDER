@@ -19,6 +19,9 @@ import { Preview } from './Preview';
 import { DatabasePanel } from './DatabasePanel';
 import { WorkbenchTabs, type TabOption } from './WorkbenchTabs';
 
+// Re-type TabOption locally for WorkbenchViewType safety
+type WorkbenchTabOption = TabOption & { value: WorkbenchViewType };
+
 interface WorkspaceProps {
   chatStarted?: boolean;
   isStreaming?: boolean;
@@ -29,7 +32,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
 
   const t = useT();
 
-  const tabOptions: TabOption<WorkbenchViewType>[] = [
+  const tabOptions: WorkbenchTabOption[] = [
     { value: 'preview', icon: 'i-ph:eye', label: t('workbench.preview') },
     { value: 'code', icon: 'i-ph:code', label: t('workbench.code') },
     { value: 'database', icon: 'i-ph:database', label: t('workbench.database') },
@@ -125,9 +128,9 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
         showWorkbench ? 'flex-1 min-w-0 h-full overflow-hidden opacity-100' : 'w-0 min-w-0 h-0 overflow-hidden opacity-0 pointer-events-none',
       )}
     >
-      <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden m-0.5">
-        <div className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border-b border-bolt-elements-borderColor">
-          <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
+      <div className="h-full flex flex-col bg-bolt-elements-background-depth-1 overflow-hidden">
+        <div className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-2">
+          <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={(v) => setSelectedView(v as WorkbenchViewType)} />
           <div className="ml-auto" />
           {selectedView === 'code' && (
             <PanelHeaderButton

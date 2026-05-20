@@ -5,7 +5,7 @@ import { createScopedLogger, renderLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('FileTree');
 
-const NODE_PADDING_LEFT = 8;
+const NODE_PADDING_LEFT = 12;
 const DEFAULT_HIDDEN_FILES = [/\/node_modules\//, /\/\.next/, /\/\.astro/];
 
 interface Props {
@@ -111,7 +111,7 @@ export const FileTree = memo(
     };
 
     return (
-      <div className={classNames('text-sm', className)}>
+      <div className={classNames('text-sm lovable-filetree', className)}>
         {filteredFileList.map((fileOrFolder) => {
           switch (fileOrFolder.kind) {
             case 'file': {
@@ -163,18 +163,21 @@ function Folder({ folder: { depth, name }, collapsed, selected = false, onClick 
   return (
     <NodeButton
       className={classNames('group', {
-        'bg-transparent text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-bolt-elements-item-backgroundActive':
+        'text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-bolt-elements-item-backgroundActive':
           !selected,
         'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': selected,
       })}
       depth={depth}
-      iconClasses={classNames({
-        'i-ph:caret-right scale-98': collapsed,
-        'i-ph:caret-down scale-98': !collapsed,
-      })}
       onClick={onClick}
     >
-      {name}
+      <span className={classNames('lovable-chevron inline-flex items-center justify-center w-4 h-4 shrink-0 transition-transform duration-150', {
+        'rotate-0': collapsed,
+        'rotate-90': !collapsed,
+      })}>
+        <div className="i-ph:caret-right text-xs" />
+      </span>
+      <div className="i-ph:folder-duotone text-base shrink-0 text-bolt-elements-item-contentDefault group-hover:text-bolt-elements-item-contentActive" />
+      <span className="truncate">{name}</span>
     </NodeButton>
   );
 }
@@ -190,17 +193,19 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
   return (
     <NodeButton
       className={classNames('group', {
-        'bg-transparent hover:bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentDefault': !selected,
+        'hover:bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentDefault': !selected,
         'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': selected,
       })}
       depth={depth}
-      iconClasses={classNames('i-ph:file-duotone scale-98', {
-        'group-hover:text-bolt-elements-item-contentActive': !selected,
-      })}
       onClick={onClick}
     >
+      <span className="inline-flex items-center justify-center w-4 h-4 shrink-0" />
+      <div className={classNames('i-ph:file-duotone text-base shrink-0', {
+        'text-bolt-elements-item-contentDefault group-hover:text-bolt-elements-item-contentActive': !selected,
+        'text-bolt-elements-item-contentAccent': selected,
+      })} />
       <div
-        className={classNames('flex items-center', {
+        className={classNames('flex items-center flex-1 min-w-0', {
           'group-hover:text-bolt-elements-item-contentActive': !selected,
         })}
       >
@@ -213,24 +218,22 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
 
 interface ButtonProps {
   depth: number;
-  iconClasses: string;
   children: ReactNode;
   className?: string;
   onClick?: () => void;
 }
 
-function NodeButton({ depth, iconClasses, onClick, className, children }: ButtonProps) {
+function NodeButton({ depth, onClick, className, children }: ButtonProps) {
   return (
     <button
       className={classNames(
-        'flex items-center gap-1.5 w-full pr-2 border-2 border-transparent text-faded py-0.5',
+        'flex items-center gap-1.5 w-full pr-2 border-2 border-transparent text-faded py-1 transition-colors',
         className,
       )}
-      style={{ paddingLeft: `${6 + depth * NODE_PADDING_LEFT}px` }}
+      style={{ paddingLeft: `${8 + depth * NODE_PADDING_LEFT}px` }}
       onClick={() => onClick?.()}
     >
-      <div className={classNames('scale-120 shrink-0', iconClasses)}></div>
-      <div className="truncate w-full text-left">{children}</div>
+      {children}
     </button>
   );
 }
