@@ -88,6 +88,7 @@ export default defineConfig((config) => {
       chunkSizeWarningLimit: 600,
     },
     plugins: [
+      ssrPathPolyfillPlugin(),
       nodePolyfills({
         include: ['path', 'buffer'],
       }),
@@ -106,6 +107,19 @@ export default defineConfig((config) => {
     ],
   };
 });
+
+function ssrPathPolyfillPlugin() {
+  return {
+    name: 'ssr-path-polyfill',
+    enforce: 'pre' as const,
+    resolveId(id: string, _importer: string | undefined, options: { ssr?: boolean }) {
+      if (options?.ssr && id === 'path-browserify') {
+        return { id: 'node:path', external: true };
+      }
+      return null;
+    },
+  };
+}
 
 function chrome129IssuePlugin() {
   return {
