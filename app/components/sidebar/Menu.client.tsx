@@ -412,30 +412,33 @@ export function Menu() {
             </div>
           </button>
         ) : (
-          <div className="flex items-center gap-2">
-            <a
-              href="/"
-              className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
-              title="Home"
-            >
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-11 w-[210px] max-w-full omni-logo-themed" />
-            </a>
+          <div className="flex flex-col gap-2">
             <button
               type="button"
-              onClick={() => setAccountSettingsOpen(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-              title={t('sidebar.accountSettings')}
+              onClick={handleNewChat}
+              className="flex items-center w-full rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
+              title={t('sidebar.startNewChat')}
             >
-              <div className="i-ph:gear-six text-base" />
+              <BrandAsset src="/omini-logo.html" title="Omini" className="h-14 w-full max-w-full omni-logo-themed" />
             </button>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-              title={t('sidebar.collapseSidebar')}
-            >
-              <div className="i-ph:caret-line-left text-base" />
-            </button>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAccountSettingsOpen(true)}
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title={t('sidebar.accountSettings')}
+              >
+                <div className="i-ph:gear-six text-base" />
+              </button>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                title={t('sidebar.collapseSidebar')}
+              >
+                <div className="i-ph:caret-line-left text-base" />
+              </button>
+            </div>
           </div>
         )}
       </div>
