@@ -29,20 +29,3 @@ dist-ssr
 .wrangler
 _worker.bundle
 .env
-
-# Skills not needed in app
-/skills
-
-# Agent context
-/agent-ctx
-
-# Husky (not used in Cloudflare deployment)
-/.husky
-
-# Replit
-.replit
-replit.md
-
-# Extra lockfiles (keeping only package-lock.json)
-bun.lock
-pnpm-lock.yaml
