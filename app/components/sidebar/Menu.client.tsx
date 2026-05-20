@@ -418,7 +418,7 @@ export function Menu() {
               className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
               title="Home"
             >
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[128px] omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Omini" className="h-11 w-[210px] max-w-full omni-logo-themed" />
             </a>
             <button
               type="button"

@@ -210,7 +210,7 @@ function GalleryContent() {
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[132px] omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Omini" className="h-10 w-[180px] max-w-full omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">

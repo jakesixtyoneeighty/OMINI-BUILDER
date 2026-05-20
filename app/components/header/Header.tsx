@@ -84,7 +84,7 @@ export function Header() {
           className="flex items-center rounded-lg px-2 py-1.5 hover:bg-bolt-elements-item-backgroundActive transition-all"
           title="Home"
         >
-          <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[132px] omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Omini" className="h-10 w-[190px] max-w-full omni-logo-themed" />
         </a>
       </div>
 
@@ -288,7 +288,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       {/* LEFT: Logo */}
       <div className="flex items-center px-2 sm:px-4 shrink-0">
         <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <BrandAsset src="/omini-logo.html" title="Omini" className="h-9 w-[150px] omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Omini" className="h-11 w-[200px] max-w-full omni-logo-themed" />
         </a>
       </div>
 
