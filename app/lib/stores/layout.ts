@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
 export type MobileView = 'chat' | 'workbench';
 export const mobileViewStore = atom<MobileView>('chat');
 
-// Settings panel - opens in the right sidebar area
+// Settings panel - opens as a modal overlay
 export type SettingsTab =
   | 'deploy'
   | 'versions'

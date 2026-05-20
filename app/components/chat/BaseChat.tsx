@@ -15,7 +15,7 @@ import { FileMentionDropdown } from './FileMentionDropdown.client';
 import { AuthDialog } from '~/components/header/AuthDialog.client';
 import { authStore } from '~/lib/stores/auth';
 import type { DetectedError } from '~/lib/stores/errors';
-import { chatWidthStore, mobileViewStore, settingsPanelStore } from '~/lib/stores/layout';
+import { chatWidthStore, mobileViewStore } from '~/lib/stores/layout';
 import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
@@ -153,7 +153,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const _mobile = useIsMobile();
     const mobileView = useStore(mobileViewStore);
     const showWorkbench = useStore(workbenchStore.showWorkbench);
-    const settingsPanel = useStore(settingsPanelStore);
 
     // Resize handle logic
     const handleResizeStart = useCallback(
@@ -529,13 +528,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 ? mobileView === 'chat'
                   ? 'flex-1 w-full min-h-0'
                   : 'hidden'
-                : chatStarted && (showWorkbench || settingsPanel.open)
+                : chatStarted && showWorkbench
                   ? 'shrink-0'
                   : 'flex-1',
             )}
             style={
               chatStarted && !_mobile
-                ? { width: (showWorkbench || settingsPanel.open) ? `${chatWidthPct}%` : '100%', minWidth: '280px' }
+                ? { width: showWorkbench ? `${chatWidthPct}%` : '100%', minWidth: '280px' }
                 : undefined
             }
           >
@@ -1224,8 +1223,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             )}
           </div>
 
-          {/* Resize handle - only visible when chat is started, a right panel is open, and not mobile */}
-          {chatStarted && !_mobile && (showWorkbench || settingsPanel.open) && (
+          {/* Resize handle - only visible when chat is started, workbench is open, and not mobile */}
+          {chatStarted && !_mobile && showWorkbench && (
             <div
               onMouseDown={handleResizeStart}
               className={classNames(
@@ -1240,21 +1239,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             </div>
           )}
 
-          {/* Right panel: Settings Panel (priority) or Workbench */}
-          {/* Settings Panel - replaces workbench when open */}
-          {settingsPanel.open && chatStarted && (
-            <div
-              className={classNames(
-                _mobile ? 'flex-1 w-full min-h-0' : 'flex-1 min-w-0',
-                'transition-[width,flex] duration-200 ease-in-out',
-              )}
-            >
-              <ClientOnly>{() => <AppSettingsDialog />}</ClientOnly>
-            </div>
-          )}
-
-          {/* Workbench panel - hidden when settings is open, or on landing page. On mobile show full width when active */}
-          {!settingsPanel.open && (
+          {/* Workbench panel - on landing page hidden. On mobile show full width when active */}
+          {
             <div
               className={classNames(
                 !chatStarted
@@ -1272,6 +1258,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
             </div>
           )}
+
+          {/* Settings Modal - rendered as overlay, not in sidebar */}
+          <ClientOnly>{() => <AppSettingsDialog />}</ClientOnly>
 
           {/* Mobile bottom tab bar - only when chat started */}
           {_mobile && chatStarted && (

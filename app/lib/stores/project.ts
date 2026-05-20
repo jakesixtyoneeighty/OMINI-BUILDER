@@ -276,11 +276,13 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       google_drive_config: {
         clientId: updatedSettings.googleDrive.clientId,
       },
-      gmail_config: {
-        clientId: updatedSettings.gmail.clientId,
-        clientSecret: updatedSettings.gmail.clientSecret,
-        redirectUri: updatedSettings.gmail.redirectUri,
-      },
+      ...(isGmailConfigColumnMissing() ? {} : {
+        gmail_config: {
+          clientId: updatedSettings.gmail.clientId,
+          clientSecret: updatedSettings.gmail.clientSecret,
+          redirectUri: updatedSettings.gmail.redirectUri,
+        },
+      }),
       updated_at: new Date().toISOString(),
     };
 
@@ -288,7 +290,19 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       // Existing project with a real UUID — upsert to update
       const { error: upsertError } = await sb.from('projects').upsert({ id, ...projectData });
       if (upsertError) {
-        console.error('[project] Failed to upsert project:', upsertError.message);
+        // If gmail_config column is missing, flag it and retry without
+        if (upsertError.message?.includes('gmail_config') && upsertError.message?.includes('column')) {
+          console.warn('[project] The "gmail_config" column is missing from the projects table. Retrying without it. Run: ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS gmail_config JSONB NOT NULL DEFAULT \'{}\'::jsonb;');
+          setGmailConfigColumnMissing(true);
+          const retryData = { ...projectData };
+          delete (retryData as any).gmail_config;
+          const { error: retryError } = await sb.from('projects').upsert({ id, ...retryData });
+          if (retryError) {
+            console.error('[project] Failed to upsert project (retry):', retryError.message);
+          }
+        } else {
+          console.error('[project] Failed to upsert project:', upsertError.message);
+        }
       }
     } else {
       // New project creation — check the project limit first
@@ -296,8 +310,35 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       if (currentCount >= MAX_PROJECTS_PER_USER) {
         throw new Error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`);
       }
-      const { data, error: insertError } = await sb.from('projects').insert(projectData).select().single();
+
+      // If gmail_config column is missing, remove it from the insert payload
+      const insertData = isGmailConfigColumnMissing() ? (() => { const d = { ...projectData }; delete (d as any).gmail_config; return d; })() : projectData;
+
+      const { data, error: insertError } = await sb.from('projects').insert(insertData).select().single();
       if (insertError) {
+        // If gmail_config column is missing, flag it and retry without
+        if (insertError.message?.includes('gmail_config') && insertError.message?.includes('column')) {
+          console.warn('[project] The "gmail_config" column is missing from the projects table. Retrying without it. Run: ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS gmail_config JSONB NOT NULL DEFAULT \'{}\'::jsonb;');
+          setGmailConfigColumnMissing(true);
+          const retryData = { ...projectData };
+          delete (retryData as any).gmail_config;
+          const { data: retryResult, error: retryError } = await sb.from('projects').insert(retryData).select().single();
+          if (retryError) {
+            console.error('[project] Failed to insert project (retry):', retryError.message, retryError.details, retryError.code);
+            throw new Error(`Falha ao criar projeto: ${retryError.message}`);
+          }
+          if (retryResult) {
+            console.log('[project] Project created in Supabase (without gmail_config):', retryResult.id);
+            const oldId = id;
+            activeProjectIdStore.set(retryResult.id);
+            projectsStore.setKey(retryResult.id, { ...updatedProject, id: retryResult.id });
+            if (oldId !== retryResult.id && projectsStore.get()[oldId]) {
+              const { [oldId]: _, ...rest } = projectsStore.get();
+              projectsStore.set(rest);
+            }
+            return;
+          }
+        }
         console.error('[project] Failed to insert project:', insertError.message, insertError.details, insertError.code);
         throw new Error(`Falha ao criar projeto: ${insertError.message}`);
       }
@@ -644,6 +685,23 @@ function setMessagesColumnMissing(value: boolean) {
   } catch {}
 }
 let _messagesColumnMissing = false;
+
+// Track if the 'gmail_config' column is missing so we don't spam errors
+const GMAIL_CONFIG_COLUMN_FLAG = 'bolt.schema.gmail_config_column_missing';
+function isGmailConfigColumnMissing(): boolean {
+  if (_gmailConfigColumnMissing) return true;
+  try {
+    _gmailConfigColumnMissing = localStorage.getItem(GMAIL_CONFIG_COLUMN_FLAG) === 'true';
+  } catch {}
+  return _gmailConfigColumnMissing;
+}
+function setGmailConfigColumnMissing(value: boolean) {
+  _gmailConfigColumnMissing = value;
+  try {
+    localStorage.setItem(GMAIL_CONFIG_COLUMN_FLAG, String(value));
+  } catch {}
+}
+let _gmailConfigColumnMissing = false;
 
 export async function saveProjectMessages(projectId: string, messages: Message[], description?: string): Promise<void> {
   // Always save to IndexedDB first (fast local cache)

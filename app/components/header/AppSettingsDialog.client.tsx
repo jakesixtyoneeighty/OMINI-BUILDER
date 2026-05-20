@@ -269,6 +269,16 @@ export function AppSettingsDialog() {
   // AI Rules
   const [customRules, setCustomRules] = useState(settings?.customRules || '');
 
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeSettingsPanel();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     // Reset state when panel opens
@@ -671,7 +681,16 @@ export function AppSettingsDialog() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-bolt-elements-background-depth-2">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={closeSettingsPanel}
+      />
+
+      {/* Modal */}
+      <div className="relative w-[90vw] max-w-[860px] h-[85vh] max-h-[800px] flex flex-col bg-bolt-elements-background-depth-2 rounded-2xl border border-bolt-elements-borderColor shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
       {/* ====== HEADER BAR ====== */}
       <div className="shrink-0 px-5 pt-4 pb-3 border-b border-bolt-elements-borderColor">
         <div className="flex items-center justify-between mb-3">
@@ -1915,5 +1934,8 @@ export function AppSettingsDialog() {
           )}
         </div>
       </div>
+      {/* End modal */}
+      </div>
+    </div>
   );
 }

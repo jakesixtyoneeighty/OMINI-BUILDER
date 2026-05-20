@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
   cloudrun_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   database_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   google_drive_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  gmail_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -107,6 +108,7 @@ ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS google_drive_config JSONB N
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS cloudflare_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS omnibuilder_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS last_deploy JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS gmail_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS messages JSONB DEFAULT '[]'::jsonb;
 
 -- ==========================================
