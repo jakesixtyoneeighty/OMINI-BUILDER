@@ -1240,24 +1240,22 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           )}
 
           {/* Workbench panel - on landing page hidden. On mobile show full width when active */}
-          {
-            <div
-              className={classNames(
-                !chatStarted
-                  ? 'hidden'
-                  : _mobile
-                    ? mobileView === 'workbench'
-                      ? 'flex-1 w-full min-h-0'
-                      : 'hidden'
-                    : showWorkbench
-                      ? 'flex-1 min-w-0'
-                      : 'w-0 min-w-0 overflow-hidden',
-                'transition-[width,flex] duration-200 ease-in-out',
-              )}
-            >
-              <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
-            </div>
-          )}
+          <div
+            className={classNames(
+              !chatStarted
+                ? 'hidden'
+                : _mobile
+                  ? mobileView === 'workbench'
+                    ? 'flex-1 w-full min-h-0'
+                    : 'hidden'
+                  : showWorkbench
+                    ? 'flex-1 min-w-0'
+                    : 'w-0 min-w-0 overflow-hidden',
+              'transition-[width,flex] duration-200 ease-in-out',
+            )}
+          >
+            <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
+          </div>
 
           {/* Settings Modal - rendered as overlay, not in sidebar */}
           <ClientOnly>{() => <AppSettingsDialog />}</ClientOnly>
