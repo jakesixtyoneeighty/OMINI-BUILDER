@@ -628,7 +628,7 @@ export function AppSettingsDialog({
 
       <aside
         onClick={(e) => e.stopPropagation()}
-        className="absolute left-0 top-[var(--header-height)] bottom-0 w-[760px] max-w-[96vw] bg-bolt-elements-background-depth-2 border-r border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-r-[24px]"
+        className="absolute right-0 top-[var(--header-height)] bottom-0 w-[760px] max-w-[96vw] bg-bolt-elements-background-depth-2 border-l border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-l-[24px]"
       >
         <div className="shrink-0 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 px-4 py-3">
           <div className="flex items-start gap-3">
