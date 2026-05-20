@@ -200,7 +200,7 @@ export const EditorPanel = memo(
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
           <PanelGroup direction="horizontal">
             <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
-              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full bg-bolt-elements-sidebar-background">
+              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
                 <PanelHeader>
                   <div className="i-ph:tree-structure-duotone shrink-0" />
                   {t('editorPanel.files')}
@@ -218,7 +218,7 @@ export const EditorPanel = memo(
             </Panel>
             <PanelResizeHandle />
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
-              <PanelHeader className="overflow-x-auto bg-bolt-elements-sidebar-background">
+              <PanelHeader className="overflow-x-auto">
                 {activeFileSegments?.length && (
                   <div className="flex items-center flex-1 text-sm">
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
@@ -271,7 +271,7 @@ export const EditorPanel = memo(
         >
           <div className="h-full">
             <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
-              <div className="flex items-center bg-bolt-elements-sidebar-background border-b border-bolt-elements-borderColor gap-1 min-h-[34px] px-2 py-1">
+              <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1.5 min-h-[34px] p-2">
                 {Array.from({ length: terminalCount }, (_, index) => {
                   const isActive = activeTerminal === index;
 
@@ -279,16 +279,16 @@ export const EditorPanel = memo(
                     <button
                       key={index}
                       className={classNames(
-                        'flex items-center text-sm cursor-pointer gap-1.5 px-2.5 py-1 rounded-md transition-colors whitespace-nowrap',
+                        'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                         {
-                          'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': isActive,
-                          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive':
+                          'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': isActive,
+                          'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
                             !isActive,
                         },
                       )}
                       onClick={() => setActiveTerminal(index)}
                     >
-                      <div className="i-ph:terminal-window-duotone text-base" />
+                      <div className="i-ph:terminal-window-duotone text-lg" />
                       {t('workbench.terminal')} {terminalCount > 1 && index + 1}
                     </button>
                   );
