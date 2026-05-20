@@ -628,12 +628,12 @@ export function AppSettingsDialog({
 
       <aside
         onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-[var(--header-height)] bottom-0 w-[560px] max-w-[94vw] bg-bolt-elements-background-depth-2 border-l border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-l-[24px]"
+        className="absolute left-0 top-[var(--header-height)] bottom-0 w-[760px] max-w-[96vw] bg-bolt-elements-background-depth-2 border-r border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-r-[24px]"
       >
         <div className="shrink-0 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex items-center gap-2 min-w-max pr-2">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 pr-2">
                 {TABS.map((tabItem) => (
                   <button
                     key={tabItem.id}
@@ -641,7 +641,7 @@ export function AppSettingsDialog({
                     className={`inline-flex items-center px-3.5 py-2 rounded-full text-[12px] font-medium whitespace-nowrap border transition-all ${
                       tab === tabItem.id
                         ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary border-bolt-elements-borderColor shadow-sm'
-                        : 'bg-transparent text-bolt-elements-textSecondary border-transparent hover:bg-bolt-elements-background-depth-2 hover:border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary'
+                        : 'bg-transparent text-bolt-elements-textSecondary border-bolt-elements-borderColor/60 hover:bg-bolt-elements-background-depth-2 hover:border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary'
                     }`}
                   >
                     {t('appSettings.' + tabItem.id)}
