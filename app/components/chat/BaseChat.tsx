@@ -20,7 +20,12 @@ import { chatStore } from '~/lib/stores/chat';
 import { ModelPicker } from '~/components/header/ModelPicker.client';
 import { SettingsDialog } from '~/components/header/SettingsDialog.client';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { inspectorStore, clearInspectorElements, removeInspectorElement, type InspectorElement } from '~/lib/stores/inspector';
+import {
+  inspectorStore,
+  clearInspectorElements,
+  removeInspectorElement,
+  type InspectorElement,
+} from '~/lib/stores/inspector';
 import { useT } from '~/lib/i18n/useT';
 import { useIsMobile } from '~/utils/mobile';
 
@@ -74,6 +79,17 @@ interface BaseChatProps {
 
 type BuildMode = 'standard' | 'design-system' | 'plan';
 
+const landingInputGlowKeyframes = `
+@keyframes landing-input-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes landing-input-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+`;
+
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -104,7 +120,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
-    const [attachedFiles, setAttachedFiles] = useState<{ id: string; name: string; type: string; size: number; preview: string; content: string }[]>([]);
+    const [attachedFiles, setAttachedFiles] = useState<
+      { id: string; name: string; type: string; size: number; preview: string; content: string }[]
+    >([]);
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user } = useStore(authStore);
@@ -116,7 +134,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       active: boolean;
       search: string;
       position: { top: number; left: number };
-      mentionStart: number;  // index of @ in the input
+      mentionStart: number; // index of @ in the input
     } | null>(null);
     const [mentionedFiles, setMentionedFiles] = useState<{ path: string; content: string }[]>([]);
 
@@ -140,35 +158,38 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const showWorkbench = useStore(workbenchStore.showWorkbench);
 
     // Resize handle logic
-    const handleResizeStart = useCallback((e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsResizing(true);
-      const startX = e.clientX;
-      const startWidth = chatWidthPct;
-      const containerEl = containerRef.current;
-      if (!containerEl) return;
-      const containerWidth = containerEl.offsetWidth;
+    const handleResizeStart = useCallback(
+      (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+        const startX = e.clientX;
+        const startWidth = chatWidthPct;
+        const containerEl = containerRef.current;
+        if (!containerEl) return;
+        const containerWidth = containerEl.offsetWidth;
 
-      const handleMove = (moveEvent: MouseEvent) => {
-        const delta = moveEvent.clientX - startX;
-        const deltaPct = (delta / containerWidth) * 100;
-        const newPct = Math.min(80, Math.max(20, startWidth + deltaPct));
-        chatWidthStore.set(newPct);
-      };
+        const handleMove = (moveEvent: MouseEvent) => {
+          const delta = moveEvent.clientX - startX;
+          const deltaPct = (delta / containerWidth) * 100;
+          const newPct = Math.min(80, Math.max(20, startWidth + deltaPct));
+          chatWidthStore.set(newPct);
+        };
 
-      const handleUp = () => {
-        setIsResizing(false);
-        document.removeEventListener('mousemove', handleMove);
-        document.removeEventListener('mouseup', handleUp);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
+        const handleUp = () => {
+          setIsResizing(false);
+          document.removeEventListener('mousemove', handleMove);
+          document.removeEventListener('mouseup', handleUp);
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        };
 
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      document.addEventListener('mousemove', handleMove);
-      document.addEventListener('mouseup', handleUp);
-    }, [chatWidthPct]);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleUp);
+      },
+      [chatWidthPct],
+    );
 
     const handleFileSelected = useCallback((files: File[]) => {
       files.forEach((file) => {
@@ -207,7 +228,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       if (type.includes('json')) return 'i-ph:brackets-curly';
       if (name.endsWith('.zip')) return 'i-ph:archive';
       if (name.endsWith('.html') || name.endsWith('.css')) return 'i-ph:code';
-      if (name.endsWith('.js') || name.endsWith('.ts') || name.endsWith('.tsx') || name.endsWith('.jsx')) return 'i-ph:file-js';
+      if (name.endsWith('.js') || name.endsWith('.ts') || name.endsWith('.tsx') || name.endsWith('.jsx'))
+        return 'i-ph:file-js';
       if (name.endsWith('.py')) return 'i-ph:file-py';
       return 'i-ph:file';
     };
@@ -265,7 +287,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         a: 'i-ph:link',
         img: 'i-ph:image',
         video: 'i-ph:video-camera',
-        h1: 'i-ph:text-h', h2: 'i-ph:text-h', h3: 'i-ph:text-h', h4: 'i-ph:text-h', h5: 'i-ph:text-h', h6: 'i-ph:text-h',
+        h1: 'i-ph:text-h',
+        h2: 'i-ph:text-h',
+        h3: 'i-ph:text-h',
+        h4: 'i-ph:text-h',
+        h5: 'i-ph:text-h',
+        h6: 'i-ph:text-h',
         p: 'i-ph:text-paragraph',
         span: 'i-ph:text-aa',
         div: 'i-ph:square-dashed',
@@ -288,167 +315,195 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     const formatInspectorChipLabel = (el: InspectorElement) => {
       const tag = el.tagName;
-      const mainClass = el.className ? el.className.split(' ').filter((c: string) => c && !c.startsWith('__') && !c.startsWith('css-')).slice(0, 1)[0] : '';
+      const mainClass = el.className
+        ? el.className
+            .split(' ')
+            .filter((c: string) => c && !c.startsWith('__') && !c.startsWith('css-'))
+            .slice(0, 1)[0]
+        : '';
       const id = el.attributes?.id ? '#' + el.attributes.id : '';
       if (mainClass) return `${tag}.${mainClass}`;
       if (id) return `${tag}${id}`;
       return tag;
     };
 
-    const handleSendWithAttachments = useCallback(async (event: React.UIEvent) => {
-      if (isStreaming) {
-        handleStop?.();
-        return;
-      }
-      // Login is required to use the chat
-      if (!user) {
-        setAuthModalOpen(true);
-        return;
-      }
-
-      // Build structured attachments (sent alongside the message, NOT as text)
-      const attachments = buildAttachments();
-
-      // Clear all attachment states before sending
-      setAttachedFiles([]);
-      setMentionedFiles([]);
-      clearInspectorElements();
-      setMentionState(null);
-
-      // Send message with structured attachments - NO text prefix added
-      try {
-        await sendMessage?.(event, undefined, attachments.length > 0 ? attachments : undefined);
-      } catch (err) {
-        console.error('[BaseChat] Erro ao enviar mensagem:', err);
-      }
-    }, [isStreaming, handleStop, sendMessage, buildAttachments, handleInputChange, textareaRef, user, attachedFiles, inspectorElements.length, mentionedFiles]);
-
-    // Handle @ file mention selection
-    const handleMentionSelect = useCallback((filePath: string) => {
-      if (!mentionState || !textareaRef?.current) return;
-
-      const textarea = textareaRef.current;
-      const currentVal = textarea.value;
-
-      // Get file content and add to mentioned files
-      const files = workbenchStore.files.get();
-      const file = files[filePath];
-      const displayPath = filePath.replace(/^\/home\/project\//, '');
-
-      if (file && file.type === 'file' && !file.isBinary) {
-        setMentionedFiles(prev => {
-          if (prev.some(f => f.path === filePath)) return prev;
-          return [...prev, { path: displayPath, content: file.content }];
-        });
-      }
-
-      // Replace @search with @displayPath in the input
-      const before = currentVal.slice(0, mentionState.mentionStart);
-      const after = currentVal.slice(textarea.selectionStart);
-      const newVal = `${before}@${displayPath} ${after}`;
-
-      const syntheticEvent = {
-        target: { value: newVal },
-      } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-      handleInputChange?.(syntheticEvent);
-
-      setMentionState(null);
-
-      // Focus back on textarea
-      setTimeout(() => {
-        textarea.focus();
-        const cursorPos = before.length + displayPath.length + 2; // +2 for @ and space
-        textarea.setSelectionRange(cursorPos, cursorPos);
-      }, 0);
-    }, [mentionState, handleInputChange]);
-
-    // Detect @ in textarea input
-    const handleInputChangeWithMention = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      handleInputChange?.(event);
-
-      const textarea = event.target;
-      const value = textarea.value;
-      const cursorPos = textarea.selectionStart;
-
-      // Find if cursor is after an @ that starts a mention
-      const textBeforeCursor = value.slice(0, cursorPos);
-      const atMatch = textBeforeCursor.match(/@([\w./_-]*)$/);
-
-      if (atMatch) {
-        const mentionStart = cursorPos - atMatch[0].length;
-        const search = atMatch[1];
-
-        // Get textarea position for dropdown — position ABOVE the input
-        const rect = textarea.getBoundingClientRect();
-        // Find the input card parent to position relative to it
-        const inputCard = textarea.closest('[data-input-card]') || textarea.parentElement;
-        const cardRect = inputCard?.getBoundingClientRect() || rect;
-
-        setMentionState({
-          active: true,
-          search,
-          position: {
-            // Position above the textarea
-            top: rect.top - 4,
-            left: Math.min(rect.left + 16, window.innerWidth - 304),
-          },
-          mentionStart,
-        });
-        setSlashState(null); // close slash menu if open
-      } else {
-        setMentionState(null);
-      }
-
-      // Detect / slash commands
-      const slashMatch = textBeforeCursor.match(/\/([\w-]*)$/);
-      if (slashMatch && !atMatch) {
-        const slashStart = cursorPos - slashMatch[0].length;
-        const search = slashMatch[1];
-        const rect = textarea.getBoundingClientRect();
-        setSlashState({
-          active: true,
-          search,
-          position: {
-            top: rect.top - 4,
-            left: Math.min(rect.left + 16, window.innerWidth - 280),
-          },
-          slashStart,
-        });
-      } else if (!atMatch) {
-        setSlashState(null);
-      }
-    }, [handleInputChange]);
-
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-      // If mention dropdown is open, let it handle navigation keys
-      if (mentionState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
-        event.preventDefault();
-        return;
-      }
-      if (event.key === 'Escape' && mentionState?.active) {
-        setMentionState(null);
-        event.preventDefault();
-        return;
-      }
-      // If slash command dropdown is open
-      if (slashState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
-        event.preventDefault();
-        return;
-      }
-      if (event.key === 'Escape' && slashState?.active) {
-        setSlashState(null);
-        event.preventDefault();
-        return;
-      }
-      if (event.key === 'Enter' && !event.shiftKey) {
-        if (mentionState?.active) {
-          // Let the dropdown handle Enter
+    const handleSendWithAttachments = useCallback(
+      async (event: React.UIEvent) => {
+        if (isStreaming) {
+          handleStop?.();
           return;
         }
-        event.preventDefault();
-        handleSendWithAttachments(event);
-      }
-    }, [handleSendWithAttachments, mentionState]);
+        // Login is required to use the chat
+        if (!user) {
+          setAuthModalOpen(true);
+          return;
+        }
+
+        // Build structured attachments (sent alongside the message, NOT as text)
+        const attachments = buildAttachments();
+
+        // Clear all attachment states before sending
+        setAttachedFiles([]);
+        setMentionedFiles([]);
+        clearInspectorElements();
+        setMentionState(null);
+
+        // Send message with structured attachments - NO text prefix added
+        try {
+          await sendMessage?.(event, undefined, attachments.length > 0 ? attachments : undefined);
+        } catch (err) {
+          console.error('[BaseChat] Erro ao enviar mensagem:', err);
+        }
+      },
+      [
+        isStreaming,
+        handleStop,
+        sendMessage,
+        buildAttachments,
+        handleInputChange,
+        textareaRef,
+        user,
+        attachedFiles,
+        inspectorElements.length,
+        mentionedFiles,
+      ],
+    );
+
+    // Handle @ file mention selection
+    const handleMentionSelect = useCallback(
+      (filePath: string) => {
+        if (!mentionState || !textareaRef?.current) return;
+
+        const textarea = textareaRef.current;
+        const currentVal = textarea.value;
+
+        // Get file content and add to mentioned files
+        const files = workbenchStore.files.get();
+        const file = files[filePath];
+        const displayPath = filePath.replace(/^\/home\/project\//, '');
+
+        if (file && file.type === 'file' && !file.isBinary) {
+          setMentionedFiles((prev) => {
+            if (prev.some((f) => f.path === filePath)) return prev;
+            return [...prev, { path: displayPath, content: file.content }];
+          });
+        }
+
+        // Replace @search with @displayPath in the input
+        const before = currentVal.slice(0, mentionState.mentionStart);
+        const after = currentVal.slice(textarea.selectionStart);
+        const newVal = `${before}@${displayPath} ${after}`;
+
+        const syntheticEvent = {
+          target: { value: newVal },
+        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+        handleInputChange?.(syntheticEvent);
+
+        setMentionState(null);
+
+        // Focus back on textarea
+        setTimeout(() => {
+          textarea.focus();
+          const cursorPos = before.length + displayPath.length + 2; // +2 for @ and space
+          textarea.setSelectionRange(cursorPos, cursorPos);
+        }, 0);
+      },
+      [mentionState, handleInputChange],
+    );
+
+    // Detect @ in textarea input
+    const handleInputChangeWithMention = useCallback(
+      (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        handleInputChange?.(event);
+
+        const textarea = event.target;
+        const value = textarea.value;
+        const cursorPos = textarea.selectionStart;
+
+        // Find if cursor is after an @ that starts a mention
+        const textBeforeCursor = value.slice(0, cursorPos);
+        const atMatch = textBeforeCursor.match(/@([\w./_-]*)$/);
+
+        if (atMatch) {
+          const mentionStart = cursorPos - atMatch[0].length;
+          const search = atMatch[1];
+
+          // Get textarea position for dropdown — position ABOVE the input
+          const rect = textarea.getBoundingClientRect();
+          // Find the input card parent to position relative to it
+          const inputCard = textarea.closest('[data-input-card]') || textarea.parentElement;
+          const cardRect = inputCard?.getBoundingClientRect() || rect;
+
+          setMentionState({
+            active: true,
+            search,
+            position: {
+              // Position above the textarea
+              top: rect.top - 4,
+              left: Math.min(rect.left + 16, window.innerWidth - 304),
+            },
+            mentionStart,
+          });
+          setSlashState(null); // close slash menu if open
+        } else {
+          setMentionState(null);
+        }
+
+        // Detect / slash commands
+        const slashMatch = textBeforeCursor.match(/\/([\w-]*)$/);
+        if (slashMatch && !atMatch) {
+          const slashStart = cursorPos - slashMatch[0].length;
+          const search = slashMatch[1];
+          const rect = textarea.getBoundingClientRect();
+          setSlashState({
+            active: true,
+            search,
+            position: {
+              top: rect.top - 4,
+              left: Math.min(rect.left + 16, window.innerWidth - 280),
+            },
+            slashStart,
+          });
+        } else if (!atMatch) {
+          setSlashState(null);
+        }
+      },
+      [handleInputChange],
+    );
+
+    const handleKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        // If mention dropdown is open, let it handle navigation keys
+        if (mentionState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
+          event.preventDefault();
+          return;
+        }
+        if (event.key === 'Escape' && mentionState?.active) {
+          setMentionState(null);
+          event.preventDefault();
+          return;
+        }
+        // If slash command dropdown is open
+        if (slashState?.active && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab')) {
+          event.preventDefault();
+          return;
+        }
+        if (event.key === 'Escape' && slashState?.active) {
+          setSlashState(null);
+          event.preventDefault();
+          return;
+        }
+        if (event.key === 'Enter' && !event.shiftKey) {
+          if (mentionState?.active) {
+            // Let the dropdown handle Enter
+            return;
+          }
+          event.preventDefault();
+          handleSendWithAttachments(event);
+        }
+      },
+      [handleSendWithAttachments, mentionState],
+    );
 
     return (
       <div
@@ -459,31 +514,64 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         )}
         data-chat-visible={showChat}
       >
-        <div ref={containerRef} className={classNames('flex w-full h-full', { 'overflow-y-auto': !chatStarted }, _mobile && chatStarted ? 'flex-col' : '')}>
+        <div
+          ref={containerRef}
+          className={classNames(
+            'flex w-full h-full',
+            { 'overflow-y-auto': !chatStarted },
+            _mobile && chatStarted ? 'flex-col' : '',
+          )}
+        >
           {/* Chat panel - resizable */}
           <div
-            className={classNames(styles.Chat, 'flex flex-col h-full transition-[width] duration-200 ease-in-out',
+            className={classNames(
+              styles.Chat,
+              'flex flex-col h-full transition-[width] duration-200 ease-in-out',
               _mobile && chatStarted
-                ? (mobileView === 'chat' ? 'flex-1 w-full min-h-0' : 'hidden')
-                : (chatStarted && showWorkbench ? 'shrink-0' : 'flex-1'),
+                ? mobileView === 'chat'
+                  ? 'flex-1 w-full min-h-0'
+                  : 'hidden'
+                : chatStarted && showWorkbench
+                  ? 'shrink-0'
+                  : 'flex-1',
             )}
-            style={chatStarted && !_mobile ? { width: showWorkbench ? `${chatWidthPct}%` : '100%', minWidth: '280px' } : undefined}
+            style={
+              chatStarted && !_mobile
+                ? { width: showWorkbench ? `${chatWidthPct}%` : '100%', minWidth: '280px' }
+                : undefined
+            }
           >
-
             {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
             {!chatStarted && (
               <div className="w-full flex flex-col h-full relative overflow-y-auto">
                 {/* Background gradient with arc decoration - theme-aware */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   {/* Main gradient */}
-                  <div className="absolute top-0 left-0 right-0 h-[70%]" style={{ background: `linear-gradient(to bottom, var(--bolt-elements-homepage-gradient-from), var(--bolt-elements-homepage-gradient-to))` }} />
+                  <div
+                    className="absolute top-0 left-0 right-0 h-[70%]"
+                    style={{
+                      background: `linear-gradient(to bottom, var(--bolt-elements-homepage-gradient-from), var(--bolt-elements-homepage-gradient-to))`,
+                    }}
+                  />
                   {/* Decorative arcs */}
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[120%] h-[500px] border-[1px] rounded-[50%]" style={{ borderColor: 'var(--bolt-elements-homepage-arc)' }} />
-                  <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[90%] h-[400px] border-[1px] rounded-[50%]" style={{ borderColor: 'var(--bolt-elements-homepage-arc)', opacity: 0.5 }} />
+                  <div
+                    className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[120%] h-[500px] border-[1px] rounded-[50%]"
+                    style={{ borderColor: 'var(--bolt-elements-homepage-arc)' }}
+                  />
+                  <div
+                    className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[90%] h-[400px] border-[1px] rounded-[50%]"
+                    style={{ borderColor: 'var(--bolt-elements-homepage-arc)', opacity: 0.5 }}
+                  />
                   {/* Gradient glow at bottom center */}
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full blur-3xl" style={{ background: `linear-gradient(to top, var(--bolt-elements-homepage-glow), transparent)` }} />
+                  <div
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full blur-3xl"
+                    style={{ background: `linear-gradient(to top, var(--bolt-elements-homepage-glow), transparent)` }}
+                  />
                   {/* Subtle accent dot */}
-                  <div className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--bolt-elements-homepage-arc)' }} />
+                  <div
+                    className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
+                    style={{ backgroundColor: 'var(--bolt-elements-homepage-arc)' }}
+                  />
                 </div>
 
                 {/* Hero Section */}
@@ -491,8 +579,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   {/* Headline */}
                   <h1 className="text-4xl sm:text-[52px] font-bold text-bolt-elements-textPrimary mb-4 leading-[1.1] tracking-tight">
                     {t('landing.headline')}{' '}
-                    <span className="text-bolt-elements-item-contentAccent">{t('landing.headlineAccent')}</span>
-                    {' '}{t('landing.headlineEnd')}
+                    <span className="text-bolt-elements-item-contentAccent">{t('landing.headlineAccent')}</span>{' '}
+                    {t('landing.headlineEnd')}
                   </h1>
 
                   {/* Subtitle */}
@@ -510,16 +598,38 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 {/* "Let's build" Input Card */}
                 <div className="px-4 pb-4 relative z-10">
                   <div className="relative w-full max-w-chat mx-auto z-prompt">
+                    <style>{landingInputGlowKeyframes}</style>
+                    <div
+                      className="absolute -inset-2 rounded-[28px] pointer-events-none"
+                      style={{
+                        background:
+                          'conic-gradient(from 0deg, rgba(124,58,237,0) 0deg, rgba(124,58,237,0.95) 70deg, rgba(59,130,246,0.95) 160deg, rgba(168,85,247,0.95) 250deg, rgba(124,58,237,0) 360deg)',
+                        filter: 'blur(18px)',
+                        animation: 'landing-input-spin 9s linear infinite, landing-input-pulse 4s ease-in-out infinite',
+                      }}
+                    />
+                    <div
+                      className="absolute -inset-[1px] rounded-[22px] pointer-events-none opacity-80"
+                      style={{
+                        background:
+                          'linear-gradient(120deg, rgba(124,58,237,0.7), rgba(59,130,246,0.65), rgba(168,85,247,0.7))',
+                        filter: 'blur(8px)',
+                      }}
+                    />
                     {/* Input card */}
                     <div
                       className={classNames(
-                        'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
-                        planMode || buildMode === 'plan' ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                        'relative border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
+                        planMode || buildMode === 'plan'
+                          ? 'border-bolt-elements-item-contentAccent/60 shadow-[0_0_0_2px_rgba(129,140,248,0.12)]'
+                          : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
                       {/* Card header */}
                       <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">{t('landing.letsBuild')}</span>
+                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">
+                          {t('landing.letsBuild')}
+                        </span>
                       </div>
 
                       {/* Mentioned files chips */}
@@ -532,10 +642,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
                               >
                                 <div className="i-ph:file-js text-xs text-blue-400" />
-                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">{f.path}</span>
+                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">
+                                  {f.path}
+                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                  onClick={() => setMentionedFiles((prev) => prev.filter((_, idx) => idx !== i))}
                                   className="text-blue-400/50 hover:text-red-400 transition-colors"
                                 >
                                   <div className="i-ph:x-bold text-[8px]" />
@@ -571,12 +683,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                                    <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+                                    <div
+                                      className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`}
+                                    />
                                   </div>
                                 )}
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
-                                  <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
+                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">
+                                    {file.name}
+                                  </span>
+                                  <span className="text-[9px] text-bolt-elements-textTertiary">
+                                    {formatFileSize(file.size)}
+                                  </span>
                                 </div>
                                 <button
                                   type="button"
@@ -600,7 +718,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 key={el.id}
                                 className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
                               >
-                                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
+                                <div
+                                  className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')}
+                                />
                                 <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
                                   {formatInspectorChipLabel(el)}
                                 </code>
@@ -672,9 +792,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         {/* Left group: + button + mode options */}
                         <div className="flex items-center gap-1.5">
                           {/* + file upload */}
-                          <ClientOnly>
-                            {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
-                          </ClientOnly>
+                          <ClientOnly>{() => <FileUploadButton onFilesSelected={handleFileSelected} />}</ClientOnly>
 
                           {/* Separator */}
                           <div className="w-px h-5 bg-bolt-elements-borderColor mx-0.5" />
@@ -732,7 +850,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         <button
                           type="button"
                           onClick={handleSendWithAttachments}
-                          disabled={!input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0}
+                          disabled={
+                            !input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0
+                          }
                           className={classNames(
                             'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
                             isStreaming
@@ -756,9 +876,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         {importFromGithub && (
                           <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
                         )}
-                        {onCloneSite && (
-                          <ClientOnly>{() => <CloneSite onClone={onCloneSite} />}</ClientOnly>
-                        )}
+                        {onCloneSite && <ClientOnly>{() => <CloneSite onClone={onCloneSite} />}</ClientOnly>}
                       </div>
                     </div>
                   </div>
@@ -803,7 +921,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div
                       className={classNames(
                         'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
-                        planMode ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]' : 'border-bolt-elements-borderColor shadow-sm',
+                        planMode
+                          ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]'
+                          : 'border-bolt-elements-borderColor shadow-sm',
                       )}
                     >
                       {/* Mentioned files chips */}
@@ -816,10 +936,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
                               >
                                 <div className="i-ph:file-js text-xs text-blue-400" />
-                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">{f.path}</span>
+                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">
+                                  {f.path}
+                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => setMentionedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                  onClick={() => setMentionedFiles((prev) => prev.filter((_, idx) => idx !== i))}
                                   className="text-blue-400/50 hover:text-red-400 transition-colors"
                                 >
                                   <div className="i-ph:x-bold text-[8px]" />
@@ -855,12 +977,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                                    <div className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`} />
+                                    <div
+                                      className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`}
+                                    />
                                   </div>
                                 )}
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">{file.name}</span>
-                                  <span className="text-[9px] text-bolt-elements-textTertiary">{formatFileSize(file.size)}</span>
+                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">
+                                    {file.name}
+                                  </span>
+                                  <span className="text-[9px] text-bolt-elements-textTertiary">
+                                    {formatFileSize(file.size)}
+                                  </span>
                                 </div>
                                 <button
                                   type="button"
@@ -884,7 +1012,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 key={el.id}
                                 className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
                               >
-                                <div className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')} />
+                                <div
+                                  className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')}
+                                />
                                 <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
                                   {formatInspectorChipLabel(el)}
                                 </code>
@@ -955,16 +1085,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       <div className="flex items-center justify-between px-3 py-2">
                         {/* Left group */}
                         <div className="flex items-center gap-2">
-                          <ClientOnly>
-                            {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
-                          </ClientOnly>
+                          <ClientOnly>{() => <FileUploadButton onFilesSelected={handleFileSelected} />}</ClientOnly>
                           <ClientOnly>
                             {() => (
                               <BuildPlanDropdown
                                 planMode={planMode}
                                 isStreaming={isStreaming}
-                                onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
-                                onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                                onBuild={() => {
+                                  if (planMode) onTogglePlanMode?.();
+                                }}
+                                onPlan={() => {
+                                  if (!planMode) onTogglePlanMode?.();
+                                }}
                               />
                             )}
                           </ClientOnly>
@@ -974,7 +1106,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         <button
                           type="button"
                           onClick={handleSendWithAttachments}
-                          disabled={!input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0}
+                          disabled={
+                            !input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0
+                          }
                           className={classNames(
                             'flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95',
                             isStreaming
@@ -1006,9 +1140,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   )}
                 >
                   {/* Left: file upload */}
-                  <ClientOnly>
-                    {() => <FileUploadButton onFilesSelected={handleFileSelected} />}
-                  </ClientOnly>
+                  <ClientOnly>{() => <FileUploadButton onFilesSelected={handleFileSelected} />}</ClientOnly>
 
                   {/* Center: textarea with think chip */}
                   <div className="flex-1 flex flex-col min-w-0">
@@ -1036,19 +1168,19 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <textarea
                       ref={textareaRef}
                       className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
-                    onKeyDown={handleKeyDown}
-                    value={input}
-                    onChange={(event) => {
-                      handleInputChangeWithMention(event);
-                      const el = event.target;
-                      el.style.height = 'auto';
-                      el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                    }}
-                    placeholder={t('landing.placeholder')}
-                    translate="no"
-                    rows={1}
-                    style={{ maxHeight: 300 }}
-                  />
+                      onKeyDown={handleKeyDown}
+                      value={input}
+                      onChange={(event) => {
+                        handleInputChangeWithMention(event);
+                        const el = event.target;
+                        el.style.height = 'auto';
+                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                      }}
+                      placeholder={t('landing.placeholder')}
+                      translate="no"
+                      rows={1}
+                      style={{ maxHeight: 300 }}
+                    />
                   </div>
 
                   {/* Right side buttons */}
@@ -1058,8 +1190,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         <BuildPlanDropdown
                           planMode={planMode}
                           isStreaming={isStreaming}
-                          onBuild={() => { if (planMode) onTogglePlanMode?.(); }}
-                          onPlan={() => { if (!planMode) onTogglePlanMode?.(); }}
+                          onBuild={() => {
+                            if (planMode) onTogglePlanMode?.();
+                          }}
+                          onPlan={() => {
+                            if (!planMode) onTogglePlanMode?.();
+                          }}
                         />
                       )}
                     </ClientOnly>
@@ -1107,13 +1243,20 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           )}
 
           {/* Workbench panel - hidden on landing page, on mobile show full width when active */}
-          <div className={classNames(
-            !chatStarted ? 'hidden' :
-            _mobile
-              ? (mobileView === 'workbench' ? 'flex-1 w-full min-h-0' : 'hidden')
-              : (showWorkbench ? 'flex-1 min-w-0' : 'w-0 min-w-0 overflow-hidden'),
-            'transition-[width,flex] duration-200 ease-in-out',
-          )}>
+          <div
+            className={classNames(
+              !chatStarted
+                ? 'hidden'
+                : _mobile
+                  ? mobileView === 'workbench'
+                    ? 'flex-1 w-full min-h-0'
+                    : 'hidden'
+                  : showWorkbench
+                    ? 'flex-1 min-w-0'
+                    : 'w-0 min-w-0 overflow-hidden',
+              'transition-[width,flex] duration-200 ease-in-out',
+            )}
+          >
             <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
           </div>
 
@@ -1139,7 +1282,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 }}
                 className={classNames(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
-                  mobileView === 'workbench' ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary',
+                  mobileView === 'workbench'
+                    ? 'text-bolt-elements-item-contentAccent'
+                    : 'text-bolt-elements-textTertiary',
                 )}
               >
                 <div className="i-ph:eye text-base" />
@@ -1183,30 +1328,39 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 if (textareaRef?.current) {
                   const val = textareaRef.current.value;
                   const newVal = val.replace(/\/think\s*$/, '').replace(/\/\s*$/, '');
-                  const syntheticEvent = { target: { value: newVal } } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                  const syntheticEvent = {
+                    target: { value: newVal },
+                  } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
                   handleInputChange?.(syntheticEvent);
                 }
                 setSlashState(null);
                 setTimeout(() => textareaRef?.current?.focus(), 0);
               }}
             >
-              <div className={classNames(
-                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                thinkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary',
-              )}>
+              <div
+                className={classNames(
+                  'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                  thinkMode
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary',
+                )}
+              >
                 <div className="i-ph:brain text-base" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className={classNames('text-xs font-medium', thinkMode ? 'text-blue-400' : 'text-bolt-elements-textPrimary')}>
+                <div
+                  className={classNames(
+                    'text-xs font-medium',
+                    thinkMode ? 'text-blue-400' : 'text-bolt-elements-textPrimary',
+                  )}
+                >
                   /think
                 </div>
                 <div className="text-[10px] text-bolt-elements-textTertiary">
                   Pense melhor — raciocinio mais profundo e visivel
                 </div>
               </div>
-              {thinkMode && (
-                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0" />
-              )}
+              {thinkMode && <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0" />}
             </button>
           </div>
         )}
