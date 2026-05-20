@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WebContainer } from '@webcontainer/api';
 import { useT } from '~/lib/i18n/useT';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 interface DeployData {
   deploy: {
@@ -245,7 +246,7 @@ server.listen(3000, () => {
       <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor shrink-0">
         {/* Logo + Name */}
         <div className="flex items-center gap-2 shrink-0">
-          <img src="/omini-favicon.svg" alt="Omini" className="h-5 w-5" />
+          <BrandAsset src="/omini-favicon.html" title="Omini" className="h-5 w-5" />
           <span className="text-xs font-semibold text-bolt-elements-textSecondary">
             {deployData?.deploy?.name || t('common.loading')}
           </span>

@@ -24,6 +24,7 @@ import { binDates } from './date-binning';
 import { ClientOnly } from 'remix-utils/client-only';
 import { StorageBar } from './StorageBar.client';
 import { useT } from '~/lib/i18n/useT';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 const sidebarVariants = {
   closed: {
@@ -401,9 +402,9 @@ export function Menu() {
             className="group relative flex items-center justify-center w-full h-10 rounded-xl text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
             title={t('sidebar.expandSidebar')}
           >
-            <img
-              src="/omini-favicon.svg"
-              alt="Omini"
+            <BrandAsset
+              src="/omini-favicon.html"
+              title="Omini"
               className="w-5 h-5 transition-all duration-200 group-hover:opacity-0 group-hover:scale-75"
             />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200">
@@ -417,7 +418,7 @@ export function Menu() {
               className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
               title="Home"
             >
-              <img src="/omini-logo.svg" alt="Omini" className="h-7 w-auto max-w-[128px] omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[128px] omni-logo-themed" />
             </a>
             <button
               type="button"

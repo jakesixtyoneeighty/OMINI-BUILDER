@@ -5,6 +5,7 @@ import { useStore } from '@nanostores/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { authStore } from '~/lib/stores/auth';
 import { useT } from '~/lib/i18n/useT';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 export const meta: MetaFunction = () => {
   return [
@@ -209,7 +210,7 @@ function GalleryContent() {
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <img src="/omini-logo.svg" alt="Omini" className="h-7 omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[132px] omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">

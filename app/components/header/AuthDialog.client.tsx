@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useT } from '~/lib/i18n/useT';
 import { signInWithEmail, signInWithGitHub, signInWithGoogle, signUpWithEmail } from '~/lib/stores/auth';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 interface AuthDialogProps {
   open: boolean;
@@ -70,7 +71,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
           {/* Logo + Title */}
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25">
-              <img src="/omini-favicon.svg" alt="Omini" className="w-10 h-10" />
+              <BrandAsset src="/omini-favicon.html" title="Omini" className="w-10 h-10" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-bolt-elements-textPrimary tracking-tight">

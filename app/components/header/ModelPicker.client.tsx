@@ -16,6 +16,7 @@ import {
   type ProviderId,
 } from '~/lib/stores/llm';
 import { useT } from '~/lib/i18n/useT';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 interface FlatOption {
   provider: ProviderId;
@@ -146,7 +147,7 @@ export function ModelPicker() {
     t('model.selectModel');
 
   // Show Omini logo when Agent Omini is selected, otherwise show provider logo
-  const currentLogo = isFreeModel(model) ? '/omini-favicon.svg' : PROVIDER_LOGOS[provider];
+  const currentLogo = isFreeModel(model) ? '/omini-favicon.html' : PROVIDER_LOGOS[provider];
 
   const dropdownContent = open ? (
     <div
@@ -175,12 +176,12 @@ export function ModelPicker() {
             if (items.length === 0) return null;
             const isOmini = p === 'omini';
             const groupLabel = isOmini ? 'Agent Omini' : PROVIDER_LABELS[p as ProviderId] || p;
-            const groupLogo = isOmini ? '/omini-favicon.svg' : PROVIDER_LOGOS[p as ProviderId];
+            const groupLogo = isOmini ? '/omini-favicon.html' : PROVIDER_LOGOS[p as ProviderId];
             return (
               <div key={p}>
                 <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img src={groupLogo} alt={p} className="w-3 h-3 object-contain" />
+                    <BrandAsset src={groupLogo} title={p} className="w-3 h-3" />
                     <span>{groupLabel}</span>
                     {isOmini && (
                       <span className="text-[8px] px-1 py-0 rounded bg-green-500/20 text-green-400 font-bold">
@@ -253,7 +254,7 @@ export function ModelPicker() {
         className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
         title={t('model.selectModel')}
       >
-        <img src={currentLogo} alt={provider} className="w-4 h-4 object-contain" />
+        <BrandAsset src={currentLogo} title={provider} className="w-4 h-4" />
         <span className="font-medium truncate max-w-[120px]">{currentLabel}</span>
         <div className={`i-ph:caret-up text-[10px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

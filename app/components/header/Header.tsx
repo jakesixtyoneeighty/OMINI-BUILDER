@@ -19,6 +19,7 @@ import { ModelPicker } from './ModelPicker.client';
 import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
 import { useT } from '~/lib/i18n/useT';
 import { classNames } from '~/utils/classNames';
+import { BrandAsset } from '~/components/ui/BrandAsset';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -83,7 +84,7 @@ export function Header() {
           className="flex items-center rounded-lg px-2 py-1.5 hover:bg-bolt-elements-item-backgroundActive transition-all"
           title="Home"
         >
-          <img src="/omini-logo.svg" alt="Omini" className="h-7 w-auto max-w-[132px] omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Omini" className="h-7 w-[132px] omni-logo-themed" />
         </a>
       </div>
 
@@ -287,7 +288,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       {/* LEFT: Logo */}
       <div className="flex items-center px-2 sm:px-4 shrink-0">
         <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <img src="/omini-logo.svg" alt="Omini" className="h-9 w-auto max-w-[150px] omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Omini" className="h-9 w-[150px] omni-logo-themed" />
         </a>
       </div>
 
