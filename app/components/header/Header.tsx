@@ -285,12 +285,8 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
 
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
-      {/* LEFT: Logo */}
-      <div className="flex items-center px-2 sm:px-4 shrink-0">
-        <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <BrandAsset src="/omini-logo.html" title="Omini" className="h-11 w-[200px] max-w-full omni-logo-themed" />
-        </a>
-      </div>
+      {/* LEFT: spacing only */}
+      <div className="w-0 sm:w-4 shrink-0" />
 
       {/* CENTER: Search bar */}
       <div className="flex-1 flex items-center justify-center px-4 max-w-xl mx-auto">
