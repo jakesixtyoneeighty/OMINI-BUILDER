@@ -26,3 +26,35 @@ if (typeof window !== 'undefined') {
 // Mobile view: 'chat' | 'workbench'
 export type MobileView = 'chat' | 'workbench';
 export const mobileViewStore = atom<MobileView>('chat');
+
+// Settings panel - opens in the right sidebar area
+export type SettingsTab =
+  | 'deploy'
+  | 'versions'
+  | 'database'
+  | 'integrations'
+  | 'env'
+  | 'general'
+  | 'rules'
+  | 'security'
+  | 'preview';
+
+interface SettingsPanelState {
+  open: boolean;
+  tab: SettingsTab;
+}
+
+export const settingsPanelStore = atom<SettingsPanelState>({ open: false, tab: 'general' });
+
+export function openSettingsPanel(tab?: SettingsTab) {
+  settingsPanelStore.set({ open: true, tab: tab || 'general' });
+}
+
+export function closeSettingsPanel() {
+  settingsPanelStore.set({ open: false, tab: 'general' });
+}
+
+export function setSettingsTab(tab: SettingsTab) {
+  const current = settingsPanelStore.get();
+  settingsPanelStore.set({ ...current, tab });
+}

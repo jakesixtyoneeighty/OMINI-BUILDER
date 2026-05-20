@@ -6,7 +6,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { themeStore, toggleTheme } from '~/lib/stores/theme';
 import { AuthButton } from './AuthButton.client';
 import { SettingsDialog } from './SettingsDialog.client';
-import { AppSettingsDialog } from './AppSettingsDialog.client';
+import { openSettingsPanel, type SettingsTab } from '~/lib/stores/layout';
 import { DeployButton } from './DeployButton.client';
 import { ShareButton } from './ShareButton.client';
 import { EditableProjectName } from './EditableProjectName.client';
@@ -26,8 +26,9 @@ export function Header() {
   const t = useT();
   const currentLang = useStore(languageStore);
 
-  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'general' | 'preview' | 'deploy' | 'env' | 'versions'>('general');
+  const openProjectSettings = useCallback((tab?: SettingsTab) => {
+    openSettingsPanel(tab);
+  }, []);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -45,12 +46,7 @@ export function Header() {
   }, []);
 
   const openDeploySettings = useCallback(() => {
-    setSettingsTab('deploy');
-    setAppSettingsOpen(true);
-  }, []);
-
-  const closeSettings = useCallback(() => {
-    setAppSettingsOpen(false);
+    openSettingsPanel('deploy');
   }, []);
 
   // Close more menu on outside click
@@ -218,8 +214,7 @@ export function Header() {
                       <div className="border-t border-bolt-elements-borderColor my-1" />
                       <button
                         onClick={() => {
-                          setSettingsTab('general');
-                          setAppSettingsOpen(true);
+                          openProjectSettings('general');
                           setMoreMenuOpen(false);
                         }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
@@ -241,7 +236,6 @@ export function Header() {
               </div>
 
               <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
-              <AppSettingsDialog open={appSettingsOpen} onClose={closeSettings} defaultTab={settingsTab} />
               <AuthButton />
             </>
           )}

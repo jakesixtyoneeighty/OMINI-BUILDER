@@ -21,6 +21,12 @@ import {
   deleteSnapshotData,
   type SnapshotMeta,
 } from '~/lib/stores/snapshots';
+import {
+  settingsPanelStore,
+  closeSettingsPanel,
+  setSettingsTab,
+  type SettingsTab,
+} from '~/lib/stores/layout';
 
 const TABS = [
   { id: 'deploy' as const, label: 'Deploy', icon: 'i-ph:rocket-launch-duotone' },
@@ -194,21 +200,15 @@ function EnvVarRow({
   );
 }
 
-export function AppSettingsDialog({
-  open,
-  onClose,
-  defaultTab,
-}: {
-  open: boolean;
-  onClose: () => void;
-  defaultTab?: string;
-}) {
+export function AppSettingsDialog() {
   const t = useT();
   const activeId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
   const project = projects[activeId];
   const settings = project?.settings;
-  const [tab, setTab] = useState<(typeof TABS)[number]['id']>((defaultTab as any) || 'general');
+  const panelState = useStore(settingsPanelStore);
+  const open = panelState.open;
+  const tab = panelState.tab;
   const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([]);
   const [envVars, setEnvVars] = useState<EnvVar[]>(Array.isArray(settings?.envVars) ? settings.envVars : []);
   const [newEnvKey, setNewEnvKey] = useState('');
@@ -247,7 +247,7 @@ export function AppSettingsDialog({
   const [githubBranch, setGithubBranch] = useState(settings?.github?.branch || 'main');
 
   // Database
-  const [dbType, setDbType] = useState<'none' | 'firebase' | 'supabase'>(settings?.database?.type || 'none');
+  const [dbType, setDbType] = useState<string>(settings?.database?.type || 'none');
   const [firebase, setFirebase] = useState<FirebaseConfig>(settings?.database?.firebase || { ...emptyFirebase });
   const [supabase, setSupabase] = useState<SupabaseConfig>(settings?.database?.supabase || { ...emptySupabase });
 
@@ -269,15 +269,9 @@ export function AppSettingsDialog({
   // AI Rules
   const [customRules, setCustomRules] = useState(settings?.customRules || '');
 
-  // Flag to only apply defaultTab on first open, not on every settings change
-  const [hasAppliedDefault, setHasAppliedDefault] = useState(false);
-
   useEffect(() => {
-    if (!open) {
-      setHasAppliedDefault(false);
-      return;
-    }
-    // Reset state when dialog opens
+    if (!open) return;
+    // Reset state when panel opens
     setSnapshots(loadSnapshots(activeId));
     setProjectName(project?.name || '');
     setProjectDesc(settings?.description || '');
@@ -304,12 +298,7 @@ export function AppSettingsDialog({
     setSupabase(settings?.database?.supabase || { ...emptySupabase });
     setDeployResult(null);
     setCustomRules(settings?.customRules || '');
-    // Only apply defaultTab once when dialog first opens
-    if (!hasAppliedDefault && defaultTab) {
-      setTab(defaultTab as any);
-      setHasAppliedDefault(true);
-    }
-  }, [open, activeId, project, settings, defaultTab, hasAppliedDefault]);
+  }, [open, activeId, project, settings]);
 
   const saveSnapshot = () => {
     const files = workbenchStore.files.get();
@@ -453,13 +442,14 @@ export function AppSettingsDialog({
     toast.success(t('appSettings.githubSettingsSaved'));
   };
 
-  const saveDatabaseSettings = (overrideType?: 'none' | 'firebase' | 'supabase') => {
+  const saveDatabaseSettings = (overrideType?: string) => {
     const type = overrideType ?? dbType;
     updateActiveProjectSettings({
       database: {
-        type,
+        type: type as any,
         firebase,
         supabase,
+        omni: settings?.database?.omni || { uri: '', db: '' },
       },
     });
     toast.success(t('appSettings.databaseSettingsSaved'));
@@ -680,101 +670,66 @@ export function AppSettingsDialog({
     preview: 'i-ph:eye',
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[120]">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      <aside
-        onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-0 bottom-0 w-full bg-bolt-elements-background-depth-2 flex overflow-hidden"
-      >
-        {/* ====== LEFT SIDEBAR NAV ====== */}
-        <div className="w-[220px] shrink-0 bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor flex flex-col">
-          {/* Header */}
-          <div className="px-4 pt-5 pb-4 border-b border-bolt-elements-borderColor">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-bolt-elements-textPrimary uppercase tracking-wider">
-                {t('appSettings.projectSettings')}
-              </h2>
-              <button
-                onClick={onClose}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-              >
-                <div className="i-ph:x text-base" />
-              </button>
+    <div className="h-full flex flex-col bg-bolt-elements-background-depth-2">
+      {/* ====== HEADER BAR ====== */}
+      <div className="shrink-0 px-5 pt-4 pb-3 border-b border-bolt-elements-borderColor">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/12 flex items-center justify-center shrink-0">
+              {settings?.logo ? (
+                <img src={settings.logo} alt="" className="w-5 h-5 rounded object-cover" />
+              ) : (
+                <div className="i-ph:folder-open text-purple-400 text-sm" />
+              )}
             </div>
-            {/* Project info mini */}
-            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-bolt-elements-background-depth-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/12 flex items-center justify-center shrink-0">
-                {settings?.logo ? (
-                  <img src={settings.logo} alt="" className="w-5 h-5 rounded object-cover" />
-                ) : (
-                  <div className="i-ph:folder-open text-purple-400 text-sm" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-bolt-elements-textPrimary truncate">
-                  {projectName || t('appSettings.untitled')}
-                </div>
-                <div className="text-[10px] text-bolt-elements-textTertiary truncate">
-                  {activeId !== 'default' ? activeId.slice(0, 12) + '...' : t('appSettings.default')}
-                </div>
-              </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-bolt-elements-textPrimary truncate">
+                {projectName || t('appSettings.untitled')}
+              </h2>
+              <p className="text-[10px] text-bolt-elements-textTertiary">
+                {t('appSettings.projectSettings')}
+              </p>
             </div>
           </div>
-
-          {/* Tab Navigation */}
-          <nav className="flex-1 overflow-y-auto py-2 px-2">
-            <div className="space-y-0.5">
-              {TABS.map((tabItem) => {
-                const isActive = tab === tabItem.id;
-                const isIntegrationTab = tabItem.id === 'integrations';
-                return (
-                  <button
-                    key={tabItem.id}
-                    onClick={() => setTab(tabItem.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-left ${
-                      isActive
-                        ? 'bg-purple-500/12 text-purple-400'
-                        : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-background-depth-2 hover:text-bolt-elements-textPrimary'
-                    }`}
-                  >
-                    <div className={`${tabIconMap[tabItem.id]} text-base ${isActive ? 'text-purple-400' : ''}`} />
-                    <span className="flex-1">{t('appSettings.' + tabItem.id)}</span>
-                    {isIntegrationTab && connectedCount > 0 && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-green-500/15 text-green-400">
-                        {connectedCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
+          <button
+            onClick={closeSettingsPanel}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+          >
+            <div className="i-ph:x text-base" />
+          </button>
         </div>
 
-        {/* ====== RIGHT CONTENT PANEL ====== */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Content Header */}
-          <div className="shrink-0 px-8 pt-6 pb-4 border-b border-bolt-elements-borderColor">
-            <h2 className="text-lg font-bold text-bolt-elements-textPrimary">{t('appSettings.' + tab)}</h2>
-            <p className="text-xs text-bolt-elements-textTertiary mt-1 leading-relaxed">
-              {tab === 'general' && t('appSettings.generalDesc')}
-              {tab === 'preview' && t('appSettings.previewDesc')}
-              {tab === 'deploy' && t('appSettings.deployDesc')}
-              {tab === 'database' && t('appSettings.databaseDesc')}
-              {tab === 'integrations' && t('appSettings.integrationsDesc')}
-              {tab === 'env' && t('appSettings.envVarsDesc')}
-              {tab === 'security' && t('appSettings.securityDesc')}
-              {tab === 'versions' && t('appSettings.snapshotsDesc')}
-              {tab === 'rules' && t('appSettings.aiRulesDesc')}
-            </p>
-          </div>
+        {/* ====== HORIZONTAL TAB PILLS ====== */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 -mb-1 scrollbar-none">
+          {TABS.map((tabItem) => {
+            const isActive = tab === tabItem.id;
+            const isIntegrationTab = tabItem.id === 'integrations';
+            return (
+              <button
+                key={tabItem.id}
+                onClick={() => setSettingsTab(tabItem.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-bolt-elements-textPrimary text-bolt-elements-background-depth-1 shadow-sm'
+                    : 'text-bolt-elements-textTertiary hover:bg-bolt-elements-background-depth-1 hover:text-bolt-elements-textPrimary'
+                }`}
+              >
+                <div className={`${tabIconMap[tabItem.id]} text-sm ${isActive ? 'text-bolt-elements-background-depth-1' : ''}`} />
+                <span>{t('appSettings.' + tabItem.id)}</span>
+                {isIntegrationTab && connectedCount > 0 && (
+                  <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary' : 'bg-green-500/15 text-green-400'}`}>
+                    {connectedCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-8 py-6">
+      {/* ====== CONTENT AREA ====== */}
+      <div className="flex-1 overflow-y-auto px-6 py-5">
           {/* ====== GENERAL TAB ====== */}
           {tab === 'general' && (
             <div className="space-y-5">
@@ -1610,7 +1565,7 @@ export function AppSettingsDialog({
                       },
                     }),
                   );
-                  onClose();
+                  closeSettingsPanel();
                 }}
                 className="w-full py-3 px-4 bg-purple-500/10 text-purple-400 rounded-xl text-sm font-semibold border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
               >
@@ -1705,14 +1660,14 @@ export function AppSettingsDialog({
                       <input
                         value={firebase[field.key]}
                         onChange={(e) => setFirebase({ ...firebase, [field.key]: e.target.value })}
-                        onBlur={saveDatabaseSettings}
+                        onBlur={() => saveDatabaseSettings()}
                         placeholder={field.placeholder}
                         className={monoInputClass + ' focus:ring-amber-500/30 focus:border-amber-500/50'}
                       />
                     </div>
                   ))}
                   <button
-                    onClick={saveDatabaseSettings}
+                    onClick={() => saveDatabaseSettings()}
                     className="w-full py-3 px-4 bg-amber-500/12 text-amber-400 rounded-xl text-sm font-semibold border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2"
                   >
                     <div className="i-ph:floppy-disk text-base" /> {t('appSettings.saveFirebaseConfig')}
@@ -1745,7 +1700,7 @@ export function AppSettingsDialog({
                       <input
                         value={supabase[field.key]}
                         onChange={(e) => setSupabase({ ...supabase, [field.key]: e.target.value })}
-                        onBlur={saveDatabaseSettings}
+                        onBlur={() => saveDatabaseSettings()}
                         placeholder={field.placeholder}
                         type={field.key === 'serviceRoleKey' ? 'password' : 'text'}
                         className={monoInputClass + ' focus:ring-emerald-500/30 focus:border-emerald-500/50'}
@@ -1753,7 +1708,7 @@ export function AppSettingsDialog({
                     </div>
                   ))}
                   <button
-                    onClick={saveDatabaseSettings}
+                    onClick={() => saveDatabaseSettings()}
                     className="w-full py-3 px-4 bg-emerald-500/12 text-emerald-400 rounded-xl text-sm font-semibold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2"
                   >
                     <div className="i-ph:floppy-disk text-base" /> {t('appSettings.saveSupabaseConfig')}
@@ -1841,7 +1796,7 @@ export function AppSettingsDialog({
             <SecurityTestTab
               onRunTest={(prompt) => {
                 window.dispatchEvent(new CustomEvent('security-test-requested', { detail: { prompt } }));
-                onClose();
+                closeSettingsPanel();
                 toast.info(t('settings.securityTestSent'));
               }}
             />
@@ -1959,8 +1914,6 @@ export function AppSettingsDialog({
             </div>
           )}
         </div>
-        </div>
-      </aside>
-    </div>
+      </div>
   );
 }
