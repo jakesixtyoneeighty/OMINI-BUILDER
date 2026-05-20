@@ -28,7 +28,7 @@ const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
   zh: 'RESPOND IN CHINESE (). All your explanations, comments, descriptions, and any natural language text MUST be in Chinese. Code variable names and standard programming terms can remain in English, but all explanations, descriptions, and conversational text must be in Chinese.',
 };
 
-export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean, customRules?: string, language?: string, serverOrigin?: string) => `
+export const getSystemPrompt = (cwd: string = WORK_DIR, dbContext?: DatabaseContext, planMode?: boolean, thinkMode?: boolean, customRules?: string, language?: string, serverOrigin?: string) => `
 You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
 
 <system_constraints>
@@ -483,6 +483,32 @@ PLAN MODE IS ACTIVE. When the user sends a message requesting a feature or proje
 
 CRITICAL: In plan mode, you MUST present the plan FIRST and STOP. If the user's message doesn't contain an approval response, present the plan and wait. Only proceed with code implementation when the user explicitly approves.
 </plan_mode>
+` : ''}
+
+${thinkMode ? `
+<think_mode>
+THINK MODE IS ACTIVE. You are in deep reasoning mode. The user wants you to think carefully and show your reasoning.
+
+IMPORTANT RULES:
+1. You MUST wrap ALL your reasoning, analysis, and thinking process in <think>...</think> XML tags.
+2. The <think> tag should appear at the VERY BEGINNING of EVERY assistant response.
+3. Within the <think> tags, write your complete thought process in natural language (Portuguese, as specified):
+   - Analyze the user's request thoroughly
+   - Consider multiple approaches and their trade-offs
+   - Plan the file structure, architecture, and implementation steps
+   - Think about edge cases, error handling, and best practices
+   - Evaluate each decision you make
+4. After closing the </think> tag, proceed with your normal response (explanations, artifacts, code, etc.).
+5. The thinking content will be shown to the user in a collapsible "Exibir raciocinio" section.
+6. NEVER skip the <think> tags. Every single response MUST start with <think>...</think>.
+
+Example format:
+<think>
+[Your detailed reasoning in Portuguese - analyze the request, plan the approach, consider alternatives]
+</think>
+
+[Your normal response with explanations, boltArtifact tags, code, etc.]
+</think_mode>
 ` : ''}
 
 ${dbContext && dbContext.type !== 'none' ? `

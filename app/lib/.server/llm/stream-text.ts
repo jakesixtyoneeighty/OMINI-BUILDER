@@ -65,7 +65,7 @@ export function streamText(
 
   return _streamText({
     model: getModel(selection.provider, selection.model, selection.apiKey) as any,
-    system: getSystemPrompt(undefined, dbContext, planMode, customRules, language, serverOrigin),
+    system: getSystemPrompt(undefined, dbContext, planMode, thinkMode, customRules, language, serverOrigin),
     maxTokens: MAX_TOKENS,
     tools: activeTools,
     abortSignal,
