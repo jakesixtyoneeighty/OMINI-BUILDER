@@ -81,12 +81,8 @@ type BuildMode = 'standard' | 'design-system' | 'plan';
 
 const landingInputGlowKeyframes = `
 @keyframes landing-input-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-@keyframes landing-input-pulse {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 0.9; }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 `;
 
@@ -600,271 +596,265 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <div className="relative w-full max-w-chat mx-auto z-prompt">
                     <style>{landingInputGlowKeyframes}</style>
                     <div
-                      className="absolute -inset-2 rounded-[28px] pointer-events-none"
+                      className="relative rounded-[18px] p-[1px] overflow-hidden"
                       style={{
                         background:
-                          'conic-gradient(from 0deg, rgba(124,58,237,0) 0deg, rgba(124,58,237,0.95) 70deg, rgba(59,130,246,0.95) 160deg, rgba(168,85,247,0.95) 250deg, rgba(124,58,237,0) 360deg)',
-                        filter: 'blur(18px)',
-                        animation: 'landing-input-spin 9s linear infinite, landing-input-pulse 4s ease-in-out infinite',
+                          'conic-gradient(from 0deg, rgba(124,58,237,0.95) 0deg, rgba(59,130,246,0.95) 140deg, rgba(168,85,247,0.95) 240deg, rgba(124,58,237,0.95) 360deg)',
+                        animation: 'landing-input-spin 8s linear infinite',
+                        boxShadow: '0 0 14px rgba(99, 102, 241, 0.16)',
                       }}
-                    />
-                    <div
-                      className="absolute -inset-[1px] rounded-[22px] pointer-events-none opacity-80"
-                      style={{
-                        background:
-                          'linear-gradient(120deg, rgba(124,58,237,0.7), rgba(59,130,246,0.65), rgba(168,85,247,0.7))',
-                        filter: 'blur(8px)',
-                      }}
-                    />
-                    {/* Input card */}
-                    <div
-                      className={classNames(
-                        'relative border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
-                        planMode || buildMode === 'plan'
-                          ? 'border-bolt-elements-item-contentAccent/60 shadow-[0_0_0_2px_rgba(129,140,248,0.12)]'
-                          : 'border-bolt-elements-borderColor shadow-sm',
-                      )}
                     >
-                      {/* Card header */}
-                      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                        <span className="text-sm font-semibold text-bolt-elements-textPrimary">
-                          {t('landing.letsBuild')}
-                        </span>
-                      </div>
-
-                      {/* Mentioned files chips */}
-                      {mentionedFiles.length > 0 && (
-                        <div className="px-3 pt-1 pb-1">
-                          <div className="flex flex-wrap gap-1.5">
-                            {mentionedFiles.map((f, i) => (
-                              <div
-                                key={`mention-${i}`}
-                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
-                              >
-                                <div className="i-ph:file-js text-xs text-blue-400" />
-                                <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">
-                                  {f.path}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => setMentionedFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                                  className="text-blue-400/50 hover:text-red-400 transition-colors"
-                                >
-                                  <div className="i-ph:x-bold text-[8px]" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                      {/* Input card */}
+                      <div
+                        className={classNames(
+                          'relative border border-transparent rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
+                          planMode || buildMode === 'plan' ? 'shadow-[0_0_0_2px_rgba(129,140,248,0.12)]' : 'shadow-sm',
+                        )}
+                      >
+                        {/* Card header */}
+                        <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                          <span className="text-sm font-semibold text-bolt-elements-textPrimary">
+                            {t('landing.letsBuild')}
+                          </span>
                         </div>
-                      )}
 
-                      {/* Attached files preview */}
-                      {attachedFiles.length > 0 && (
-                        <div className="px-3 pt-1 pb-1">
-                          <div className="flex flex-wrap gap-2">
-                            {attachedFiles.map((file) => (
-                              <div
-                                key={file.id}
-                                className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
-                              >
-                                {file.type.startsWith('image/') ? (
-                                  <img
-                                    src={file.preview}
-                                    alt={file.name}
-                                    className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
-                                  />
-                                ) : file.type.startsWith('video/') ? (
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                                    <div className="i-ph:video-camera text-base text-purple-400" />
-                                  </div>
-                                ) : file.type.startsWith('audio/') ? (
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20">
-                                    <div className="i-ph:music-note text-base text-pink-400" />
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-                                    <div
-                                      className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`}
-                                    />
-                                  </div>
-                                )}
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">
-                                    {file.name}
-                                  </span>
-                                  <span className="text-[9px] text-bolt-elements-textTertiary">
-                                    {formatFileSize(file.size)}
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeAttachedFile(file.id)}
-                                  className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
-                                >
-                                  <div className="i-ph:x-bold text-[8px]" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Inspector elements (like attached files from the preview inspector) */}
-                      {inspectorElements.length > 0 && (
-                        <div className="px-3 pt-1 pb-1">
-                          <div className="flex flex-wrap gap-1.5">
-                            {inspectorElements.map((el) => (
-                              <div
-                                key={el.id}
-                                className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
-                              >
+                        {/* Mentioned files chips */}
+                        {mentionedFiles.length > 0 && (
+                          <div className="px-3 pt-1 pb-1">
+                            <div className="flex flex-wrap gap-1.5">
+                              {mentionedFiles.map((f, i) => (
                                 <div
-                                  className={classNames(getElementIcon(el.tagName), 'text-xs text-orange-400 shrink-0')}
-                                />
-                                <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
-                                  {formatInspectorChipLabel(el)}
-                                </code>
-                                {el.textContent && (
-                                  <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
-                                    {el.textContent.substring(0, 20)}
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => removeInspectorElement(el.id)}
-                                  className="text-orange-400/50 hover:text-red-400 transition-colors"
+                                  key={`mention-${i}`}
+                                  className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all"
                                 >
-                                  <div className="i-ph:x-bold text-[8px]" />
-                                </button>
-                              </div>
-                            ))}
+                                  <div className="i-ph:file-js text-xs text-blue-400" />
+                                  <span className="text-[11px] font-medium text-blue-400 truncate max-w-[140px]">
+                                    {f.path}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMentionedFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                                    className="text-blue-400/50 hover:text-red-400 transition-colors"
+                                  >
+                                    <div className="i-ph:x-bold text-[8px]" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Textarea area */}
-                      <div className="px-4 pt-1 pb-1">
-                        {/* Think mode blue chip */}
-                        {thinkMode && (
-                          <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
-                            style={{
-                              color: '#60a5fa',
-                              background: 'rgba(59, 130, 246, 0.12)',
-                              border: '1px solid rgba(59, 130, 246, 0.25)',
+                        {/* Attached files preview */}
+                        {attachedFiles.length > 0 && (
+                          <div className="px-3 pt-1 pb-1">
+                            <div className="flex flex-wrap gap-2">
+                              {attachedFiles.map((file) => (
+                                <div
+                                  key={file.id}
+                                  className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-textTertiary/30 transition-all"
+                                >
+                                  {file.type.startsWith('image/') ? (
+                                    <img
+                                      src={file.preview}
+                                      alt={file.name}
+                                      className="w-8 h-8 rounded-lg object-cover border border-bolt-elements-borderColor"
+                                    />
+                                  ) : file.type.startsWith('video/') ? (
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                      <div className="i-ph:video-camera text-base text-purple-400" />
+                                    </div>
+                                  ) : file.type.startsWith('audio/') ? (
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                                      <div className="i-ph:music-note text-base text-pink-400" />
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+                                      <div
+                                        className={`${getFileIcon(file.type, file.name)} text-base text-bolt-elements-textTertiary`}
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-[11px] font-medium text-bolt-elements-textPrimary truncate max-w-[100px]">
+                                      {file.name}
+                                    </span>
+                                    <span className="text-[9px] text-bolt-elements-textTertiary">
+                                      {formatFileSize(file.size)}
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAttachedFile(file.id)}
+                                    className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textTertiary hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                                  >
+                                    <div className="i-ph:x-bold text-[8px]" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Inspector elements (like attached files from the preview inspector) */}
+                        {inspectorElements.length > 0 && (
+                          <div className="px-3 pt-1 pb-1">
+                            <div className="flex flex-wrap gap-1.5">
+                              {inspectorElements.map((el) => (
+                                <div
+                                  key={el.id}
+                                  className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all"
+                                >
+                                  <div
+                                    className={classNames(
+                                      getElementIcon(el.tagName),
+                                      'text-xs text-orange-400 shrink-0',
+                                    )}
+                                  />
+                                  <code className="text-[11px] text-orange-400 font-mono truncate max-w-[120px]">
+                                    {formatInspectorChipLabel(el)}
+                                  </code>
+                                  {el.textContent && (
+                                    <span className="text-[9px] text-bolt-elements-textTertiary truncate max-w-[60px]">
+                                      {el.textContent.substring(0, 20)}
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeInspectorElement(el.id)}
+                                    className="text-orange-400/50 hover:text-red-400 transition-colors"
+                                  >
+                                    <div className="i-ph:x-bold text-[8px]" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Textarea area */}
+                        <div className="px-4 pt-1 pb-1">
+                          {/* Think mode blue chip */}
+                          {thinkMode && (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
+                              style={{
+                                color: '#60a5fa',
+                                background: 'rgba(59, 130, 246, 0.12)',
+                                border: '1px solid rgba(59, 130, 246, 0.25)',
+                              }}
+                            >
+                              <div className="i-ph:brain text-sm" />
+                              /think
+                              <button
+                                type="button"
+                                onClick={() => chatStore.setKey('thinkMode', false)}
+                                className="ml-0.5 hover:text-red-400 transition-colors"
+                                style={{ lineHeight: 1 }}
+                              >
+                                <div className="i-ph:x-bold text-[8px]" />
+                              </button>
+                            </span>
+                          )}
+                          <textarea
+                            ref={textareaRef}
+                            className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
+                            onKeyDown={handleKeyDown}
+                            value={input}
+                            onChange={(event) => {
+                              handleInputChangeWithMention(event);
+                              const el = event.target;
+                              el.style.height = 'auto';
+                              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
                             }}
-                          >
-                            <div className="i-ph:brain text-sm" />
-                            /think
+                            placeholder={t('landing.placeholder')}
+                            translate="no"
+                            rows={2}
+                            style={{ maxHeight: 180 }}
+                          />
+                        </div>
+
+                        {/* Divider */}
+                        <div className="mx-4 border-t border-bolt-elements-borderColor" />
+
+                        {/* Toolbar row with build modes + Build now button */}
+                        <div className="flex items-center justify-between px-2 sm:px-3 py-2.5 gap-1 flex-wrap sm:flex-nowrap">
+                          {/* Left group: + button + mode options */}
+                          <div className="flex items-center gap-1.5">
+                            {/* + file upload */}
+                            <ClientOnly>{() => <FileUploadButton onFilesSelected={handleFileSelected} />}</ClientOnly>
+
+                            {/* Separator */}
+                            <div className="w-px h-5 bg-bolt-elements-borderColor mx-0.5" />
+
+                            {/* Standard mode */}
                             <button
                               type="button"
-                              onClick={() => chatStore.setKey('thinkMode', false)}
-                              className="ml-0.5 hover:text-red-400 transition-colors"
-                              style={{ lineHeight: 1 }}
+                              onClick={() => setBuildMode('standard')}
+                              className={classNames(
+                                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                                buildMode === 'standard'
+                                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
+                                  : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                              )}
                             >
-                              <div className="i-ph:x-bold text-[8px]" />
+                              <div className="i-ph:code text-sm" />
+                              <span className="hidden sm:inline">{t('landing.standard')}</span>
                             </button>
-                          </span>
-                        )}
-                        <textarea
-                          ref={textareaRef}
-                          className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
-                          onKeyDown={handleKeyDown}
-                          value={input}
-                          onChange={(event) => {
-                            handleInputChangeWithMention(event);
-                            const el = event.target;
-                            el.style.height = 'auto';
-                            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-                          }}
-                          placeholder={t('landing.placeholder')}
-                          translate="no"
-                          rows={2}
-                          style={{ maxHeight: 180 }}
-                        />
-                      </div>
 
-                      {/* Divider */}
-                      <div className="mx-4 border-t border-bolt-elements-borderColor" />
+                            {/* Design System mode */}
+                            <button
+                              type="button"
+                              onClick={() => setBuildMode('design-system')}
+                              className={classNames(
+                                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                                buildMode === 'design-system'
+                                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
+                                  : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                              )}
+                            >
+                              <div className="i-ph:palette text-sm" />
+                              <span className="hidden sm:inline">{t('landing.designSystem')}</span>
+                            </button>
 
-                      {/* Toolbar row with build modes + Build now button */}
-                      <div className="flex items-center justify-between px-2 sm:px-3 py-2.5 gap-1 flex-wrap sm:flex-nowrap">
-                        {/* Left group: + button + mode options */}
-                        <div className="flex items-center gap-1.5">
-                          {/* + file upload */}
-                          <ClientOnly>{() => <FileUploadButton onFilesSelected={handleFileSelected} />}</ClientOnly>
+                            {/* Plan mode */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBuildMode('plan');
+                                if (!planMode) onTogglePlanMode?.();
+                              }}
+                              className={classNames(
+                                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                                buildMode === 'plan'
+                                  ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
+                                  : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                              )}
+                            >
+                              <div className="i-ph:list-checks text-sm" />
+                              <span className="hidden sm:inline">{t('landing.plan')}</span>
+                            </button>
+                          </div>
 
-                          {/* Separator */}
-                          <div className="w-px h-5 bg-bolt-elements-borderColor mx-0.5" />
-
-                          {/* Standard mode */}
+                          {/* Right group: Build now button */}
                           <button
                             type="button"
-                            onClick={() => setBuildMode('standard')}
+                            onClick={handleSendWithAttachments}
+                            disabled={
+                              !input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0
+                            }
                             className={classNames(
-                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-                              buildMode === 'standard'
-                                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
-                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
+                              'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
+                              isStreaming
+                                ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent'
+                                : input || attachedFiles.length > 0 || inspectorElements.length > 0
+                                  ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110 shadow-sm'
+                                  : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
                             )}
                           >
-                            <div className="i-ph:code text-sm" />
-                            <span className="hidden sm:inline">{t('landing.standard')}</span>
-                          </button>
-
-                          {/* Design System mode */}
-                          <button
-                            type="button"
-                            onClick={() => setBuildMode('design-system')}
-                            className={classNames(
-                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-                              buildMode === 'design-system'
-                                ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary'
-                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
-                            )}
-                          >
-                            <div className="i-ph:palette text-sm" />
-                            <span className="hidden sm:inline">{t('landing.designSystem')}</span>
-                          </button>
-
-                          {/* Plan mode */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBuildMode('plan');
-                              if (!planMode) onTogglePlanMode?.();
-                            }}
-                            className={classNames(
-                              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-                              buildMode === 'plan'
-                                ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
-                                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive',
-                            )}
-                          >
-                            <div className="i-ph:list-checks text-sm" />
-                            <span className="hidden sm:inline">{t('landing.plan')}</span>
+                            {t('landing.buildNow')}
+                            <div className="i-ph:arrow-right text-sm" />
                           </button>
                         </div>
-
-                        {/* Right group: Build now button */}
-                        <button
-                          type="button"
-                          onClick={handleSendWithAttachments}
-                          disabled={
-                            !input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0
-                          }
-                          className={classNames(
-                            'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
-                            isStreaming
-                              ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent'
-                              : input || attachedFiles.length > 0 || inspectorElements.length > 0
-                                ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110 shadow-sm'
-                                : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
-                          )}
-                        >
-                          {t('landing.buildNow')}
-                          <div className="i-ph:arrow-right text-sm" />
-                        </button>
                       </div>
                     </div>
                     {/* End input card */}
