@@ -23,14 +23,14 @@ import {
 } from '~/lib/stores/snapshots';
 
 const TABS = [
-  { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
-  { id: 'preview' as const, label: 'Preview', icon: 'i-ph:eye' },
   { id: 'deploy' as const, label: 'Deploy', icon: 'i-ph:rocket-launch-duotone' },
-  { id: 'database' as const, label: 'Database', icon: 'i-ph:database-duotone' },
-  { id: 'security' as const, label: 'Security', icon: 'i-ph:shield-check' },
-  { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
   { id: 'versions' as const, label: 'Snapshots', icon: 'i-ph:clock-counter-clockwise' },
+  { id: 'database' as const, label: 'Database', icon: 'i-ph:database-duotone' },
+  { id: 'env' as const, label: 'Env Vars', icon: 'i-ph:key' },
+  { id: 'general' as const, label: 'General', icon: 'i-ph:gear-six' },
   { id: 'rules' as const, label: 'AI Rules', icon: 'i-ph:brain-duotone' },
+  { id: 'security' as const, label: 'Security', icon: 'i-ph:shield-check' },
+  { id: 'preview' as const, label: 'Preview', icon: 'i-ph:eye' },
 ];
 
 const VERCEL_FRAMEWORKS = [
@@ -623,30 +623,30 @@ export function AppSettingsDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+    <div className="fixed inset-0 z-[120]">
+      <div className="absolute inset-0 bg-black/28 backdrop-blur-[1px]" onClick={onClose} />
 
-      <div
+      <aside
         onClick={(e) => e.stopPropagation()}
-        className="absolute inset-x-2 bottom-2 md:inset-x-auto md:right-3 md:bottom-3 w-auto md:w-[620px] md:max-w-[calc(100vw-24px)] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
-        style={{ top: 'calc(var(--header-height) + 12px)' }}
+        className="absolute right-0 top-[var(--header-height)] bottom-0 w-[560px] max-w-[94vw] bg-bolt-elements-background-depth-2 border-l border-bolt-elements-borderColor shadow-2xl flex flex-col overflow-hidden rounded-l-[24px]"
       >
-        <div className="shrink-0 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 px-5 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/12 border border-purple-500/15 flex items-center justify-center shrink-0">
-                <div className="i-ph:folder-open text-purple-400 text-lg" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold text-bolt-elements-textPrimary truncate">
-                  {projectName || t('appSettings.untitled')}
-                </div>
-                <div className="text-[11px] text-bolt-elements-textTertiary truncate">
-                  {activeId !== 'default' ? activeId.slice(0, 18) + '...' : t('appSettings.default')}
-                </div>
-                <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
-                  Abra e ajuste o projeto sem sair da tela principal.
-                </p>
+        <div className="shrink-0 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex items-center gap-2 min-w-max pr-2">
+                {TABS.map((tabItem) => (
+                  <button
+                    key={tabItem.id}
+                    onClick={() => setTab(tabItem.id)}
+                    className={`inline-flex items-center px-3.5 py-2 rounded-full text-[12px] font-medium whitespace-nowrap border transition-all ${
+                      tab === tabItem.id
+                        ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary border-bolt-elements-borderColor shadow-sm'
+                        : 'bg-transparent text-bolt-elements-textSecondary border-transparent hover:bg-bolt-elements-background-depth-2 hover:border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary'
+                    }`}
+                  >
+                    {t('appSettings.' + tabItem.id)}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -657,23 +657,20 @@ export function AppSettingsDialog({
               <div className="i-ph:x text-lg" />
             </button>
           </div>
+        </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <div className="flex items-center gap-2 min-w-max pr-1">
-              {TABS.map((tabItem) => (
-                <button
-                  key={tabItem.id}
-                  onClick={() => setTab(tabItem.id)}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[12px] font-medium whitespace-nowrap border transition-all ${
-                    tab === tabItem.id
-                      ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary border-purple-500/35 shadow-[0_0_0_1px_rgba(168,85,247,0.16)]'
-                      : 'bg-transparent text-bolt-elements-textSecondary border-bolt-elements-borderColor hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary'
-                  }`}
-                >
-                  <div className={`${tabItem.icon} text-[14px] ${tab === tabItem.id ? 'text-purple-400' : ''}`} />
-                  {t('appSettings.' + tabItem.id)}
-                </button>
-              ))}
+        <div className="shrink-0 border-b border-bolt-elements-borderColor px-5 py-4 bg-bolt-elements-background-depth-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor flex items-center justify-center shrink-0">
+              <div className="i-ph:folder-open text-bolt-elements-textSecondary text-lg" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[15px] font-semibold text-bolt-elements-textPrimary truncate">
+                {projectName || t('appSettings.untitled')}
+              </div>
+              <div className="text-[11px] text-bolt-elements-textTertiary truncate mt-0.5">
+                {activeId !== 'default' ? activeId.slice(0, 18) + '...' : t('appSettings.default')}
+              </div>
             </div>
           </div>
         </div>
@@ -1666,7 +1663,7 @@ export function AppSettingsDialog({
             </div>
           )}
         </div>
-      </div>
+      </aside>
     </div>
   );
 }
