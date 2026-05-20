@@ -25,7 +25,8 @@ interface FlatOption {
 
 const PROVIDER_LOGOS: Record<ProviderId, string> = {
   google: '/gemini.svg',
-  openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
+  openrouter:
+    'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
   anthropic: '/claude.svg',
 };
 
@@ -71,10 +72,7 @@ export function ModelPicker() {
     // Close on click outside (check both button and dropdown)
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (
-        buttonRef.current?.contains(target) ||
-        dropdownRef.current?.contains(target)
-      ) {
+      if (buttonRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
         return;
       }
       setOpen(false);
@@ -117,7 +115,10 @@ export function ModelPicker() {
     const q = filter.toLowerCase().trim();
     if (!q) return flat;
     return flat.filter(
-      (o) => o.label.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || PROVIDER_LABELS[o.provider].toLowerCase().includes(q),
+      (o) =>
+        o.label.toLowerCase().includes(q) ||
+        o.id.toLowerCase().includes(q) ||
+        PROVIDER_LABELS[o.provider].toLowerCase().includes(q),
     );
   }, [flat, filter]);
 
@@ -135,12 +136,17 @@ export function ModelPicker() {
   }, [filtered]);
 
   const isAnyLoading = Object.values(loading).some(Boolean);
-  const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label
-    || (model === AGENT_OMINI_MODEL_ID ? AGENT_OMINI_LABEL : isFreeModel(model) ? FREE_MODELS.find(m => m.id === model)?.label || 'Agent Omini' : model)
-    || t('model.selectModel');
+  const currentLabel =
+    flat.find((o) => o.provider === provider && o.id === model)?.label ||
+    (model === AGENT_OMINI_MODEL_ID
+      ? AGENT_OMINI_LABEL
+      : isFreeModel(model)
+        ? FREE_MODELS.find((m) => m.id === model)?.label || 'Agent Omini'
+        : model) ||
+    t('model.selectModel');
 
   // Show Omini logo when Agent Omini is selected, otherwise show provider logo
-  const currentLogo = isFreeModel(model) ? '/omni-builder-logo.svg' : PROVIDER_LOGOS[provider];
+  const currentLogo = isFreeModel(model) ? '/omini-favicon.svg' : PROVIDER_LOGOS[provider];
 
   const dropdownContent = open ? (
     <div
@@ -169,14 +175,18 @@ export function ModelPicker() {
             if (items.length === 0) return null;
             const isOmini = p === 'omini';
             const groupLabel = isOmini ? 'Agent Omini' : PROVIDER_LABELS[p as ProviderId] || p;
-            const groupLogo = isOmini ? '/omni-builder-logo.svg' : PROVIDER_LOGOS[p as ProviderId];
+            const groupLogo = isOmini ? '/omini-favicon.svg' : PROVIDER_LOGOS[p as ProviderId];
             return (
               <div key={p}>
                 <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <img src={groupLogo} alt={p} className="w-3 h-3 object-contain" />
                     <span>{groupLabel}</span>
-                    {isOmini && <span className="text-[8px] px-1 py-0 rounded bg-green-500/20 text-green-400 font-bold">FREE</span>}
+                    {isOmini && (
+                      <span className="text-[8px] px-1 py-0 rounded bg-green-500/20 text-green-400 font-bold">
+                        FREE
+                      </span>
+                    )}
                   </div>
                   <span>{items.length}</span>
                 </div>
@@ -192,7 +202,9 @@ export function ModelPicker() {
                         setOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-[11px] flex flex-col gap-0.5 hover:bg-bolt-elements-item-backgroundActive transition-theme ${
-                        active ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textPrimary'
+                        active
+                          ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
+                          : 'text-bolt-elements-textPrimary'
                       }`}
                     >
                       <span className="font-medium truncate">{o.label}</span>
@@ -207,7 +219,9 @@ export function ModelPicker() {
       </div>
 
       <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
-        <span>{flat.length} {t('model.models')}</span>
+        <span>
+          {flat.length} {t('model.models')}
+        </span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => {

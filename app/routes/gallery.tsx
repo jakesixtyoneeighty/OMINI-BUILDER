@@ -107,27 +107,30 @@ function GalleryContent() {
     return () => document.removeEventListener('mousedown', handler);
   }, [sortOpen]);
 
-  const fetchProjects = useCallback(async (loadMore = false) => {
-    if (!loadMore) setLoading(true);
-    try {
-      const offset = loadMore ? projects.length : 0;
-      const params = new URLSearchParams({ limit: '24', offset: String(offset), category, sort });
-      if (search) params.set('search', search);
+  const fetchProjects = useCallback(
+    async (loadMore = false) => {
+      if (!loadMore) setLoading(true);
+      try {
+        const offset = loadMore ? projects.length : 0;
+        const params = new URLSearchParams({ limit: '24', offset: String(offset), category, sort });
+        if (search) params.set('search', search);
 
-      const res = await fetch(`/api/gallery?${params}`);
-      const data = await res.json();
+        const res = await fetch(`/api/gallery?${params}`);
+        const data = await res.json();
 
-      if (data.projects) {
-        setProjects((prev) => loadMore ? [...prev, ...data.projects] : data.projects);
-        setTotal(data.total || 0);
-        setHasMore((loadMore ? projects.length + data.projects.length : data.projects.length) < (data.total || 0));
+        if (data.projects) {
+          setProjects((prev) => (loadMore ? [...prev, ...data.projects] : data.projects));
+          setTotal(data.total || 0);
+          setHasMore((loadMore ? projects.length + data.projects.length : data.projects.length) < (data.total || 0));
+        }
+      } catch (err) {
+        console.error('Failed to fetch gallery:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch gallery:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [category, search, sort, projects.length]);
+    },
+    [category, search, sort, projects.length],
+  );
 
   const fetchMyProjects = useCallback(async () => {
     if (!user) return;
@@ -184,7 +187,12 @@ function GalleryContent() {
     }
   };
 
-  const displayProjects = tab === 'my' ? myProjects : (featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' ? regularProjects : projects);
+  const displayProjects =
+    tab === 'my'
+      ? myProjects
+      : featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest'
+        ? regularProjects
+        : projects;
 
   const currentSortKey = SORT_OPTIONS.find((o) => o.id === sort)?.labelKey || 'gallery.newest';
 
@@ -194,11 +202,14 @@ function GalleryContent() {
       <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-bolt-elements-bg-depth-1/70 border-b border-bolt-elements-borderColor">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors">
+            <a
+              href="/"
+              className="flex items-center gap-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
+            >
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <img src="/omni-builder-logo.svg" alt="Omni" className="h-7 omni-logo-themed" />
+              <img src="/omini-logo.svg" alt="Omini" className="h-7 omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">
@@ -214,12 +225,18 @@ function GalleryContent() {
               type="text"
               placeholder={t('gallery.searchPlaceholder')}
               value={searchInput}
-              onChange={(e) => { setSearchInput(e.target.value); debouncedSearch(e.target.value); }}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
               className="w-full pl-9 pr-4 py-2 bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor rounded-xl text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all"
             />
             {searchInput && (
               <button
-                onClick={() => { setSearchInput(''); setSearch(''); }}
+                onClick={() => {
+                  setSearchInput('');
+                  setSearch('');
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary transition-colors"
               >
                 <div className="i-ph:x text-sm" />
@@ -275,7 +292,9 @@ function GalleryContent() {
               <div className="relative z-10 px-6 py-8 sm:px-12 sm:py-12">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                  <span className="text-xs font-medium text-indigo-300/80 uppercase tracking-widest">{t('gallery.community')}</span>
+                  <span className="text-xs font-medium text-indigo-300/80 uppercase tracking-widest">
+                    {t('gallery.community')}
+                  </span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-bolt-elements-textPrimary mb-3 tracking-tight">
                   {t('gallery.galleryTitle')}{' '}
@@ -376,7 +395,9 @@ function GalleryContent() {
                   onClick={() => setSortOpen(!sortOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-borderColorActive transition-all"
                 >
-                  <div className={`${SORT_OPTIONS.find((o) => o.id === sort)?.icon || 'i-ph:sort-ascending'} text-sm`} />
+                  <div
+                    className={`${SORT_OPTIONS.find((o) => o.id === sort)?.icon || 'i-ph:sort-ascending'} text-sm`}
+                  />
                   {t(currentSortKey)}
                   <div className={`i-ph:caret-down text-[10px] transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -386,7 +407,10 @@ function GalleryContent() {
                     {SORT_OPTIONS.map((opt) => (
                       <button
                         key={opt.id}
-                        onClick={() => { setSort(opt.id); setSortOpen(false); }}
+                        onClick={() => {
+                          setSort(opt.id);
+                          setSortOpen(false);
+                        }}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left ${
                           sort === opt.id
                             ? 'bg-indigo-500/20 text-indigo-300 font-medium'
@@ -395,9 +419,7 @@ function GalleryContent() {
                       >
                         <div className={`${opt.icon} text-sm`} />
                         {t(opt.labelKey)}
-                        {sort === opt.id && (
-                          <div className="i-ph:check text-xs ml-auto text-indigo-400" />
-                        )}
+                        {sort === opt.id && <div className="i-ph:check text-xs ml-auto text-indigo-400" />}
                       </button>
                     ))}
                   </div>
@@ -417,8 +439,18 @@ function GalleryContent() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {featuredProjects.map((project, i) => (
-                <div key={project.id} style={{ animationDelay: `${i * 80}ms` }} className="animate-[fadeInUp_0.4s_ease-out_forwards] opacity-0">
-                  <FeaturedCard project={project} formatDate={formatDate} formatNumber={formatNumber} onShare={handleShare} onSelect={setSelectedProject} />
+                <div
+                  key={project.id}
+                  style={{ animationDelay: `${i * 80}ms` }}
+                  className="animate-[fadeInUp_0.4s_ease-out_forwards] opacity-0"
+                >
+                  <FeaturedCard
+                    project={project}
+                    formatDate={formatDate}
+                    formatNumber={formatNumber}
+                    onShare={handleShare}
+                    onSelect={setSelectedProject}
+                  />
                 </div>
               ))}
             </div>
@@ -426,22 +458,33 @@ function GalleryContent() {
         )}
 
         {/* Section header for regular projects */}
-        {tab === 'explore' && featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' && regularProjects.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 mt-8">
-            <div className="i-ph:clock-duotone text-blue-400 text-base" />
-            <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">{t('gallery.recent')}</h2>
-          </div>
-        )}
+        {tab === 'explore' &&
+          featuredProjects.length > 0 &&
+          category === 'all' &&
+          !search &&
+          sort === 'newest' &&
+          regularProjects.length > 0 && (
+            <div className="flex items-center gap-2 mb-4 mt-8">
+              <div className="i-ph:clock-duotone text-blue-400 text-base" />
+              <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">{t('gallery.recent')}</h2>
+            </div>
+          )}
 
         {/* Loading Skeleton */}
         {loading && (
-          <div className={viewMode === 'grid'
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5'
-            : 'flex flex-col gap-3'
-          }>
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5'
+                : 'flex flex-col gap-3'
+            }
+          >
+            {Array.from({ length: 8 }).map((_, i) =>
               viewMode === 'grid' ? (
-                <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
+                <div
+                  key={i}
+                  className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse"
+                >
                   <div className="w-full aspect-[16/10] bg-bolt-elements-bg-depth-3" />
                   <div className="p-4 space-y-3">
                     <div className="h-4 w-3/4 bg-bolt-elements-bg-depth-4 rounded-lg" />
@@ -453,34 +496,58 @@ function GalleryContent() {
                   </div>
                 </div>
               ) : (
-                <div key={i} className="flex items-center gap-4 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 p-4 animate-pulse">
+                <div
+                  key={i}
+                  className="flex items-center gap-4 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 p-4 animate-pulse"
+                >
                   <div className="w-16 h-12 rounded-lg bg-bolt-elements-bg-depth-3 shrink-0" />
                   <div className="flex-1 space-y-2">
                     <div className="h-4 w-1/3 bg-bolt-elements-bg-depth-4 rounded-lg" />
                     <div className="h-3 w-2/3 bg-bolt-elements-bg-depth-3 rounded-lg" />
                   </div>
                 </div>
-              )
-            ))}
+              ),
+            )}
           </div>
         )}
 
         {/* Projects Grid / List */}
         {!loading && displayProjects.length > 0 && (
           <>
-            <div className={viewMode === 'grid'
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5'
-              : 'flex flex-col gap-3'
-            }>
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5'
+                  : 'flex flex-col gap-3'
+              }
+            >
               {(tab === 'explore'
-                ? (featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest' ? regularProjects : projects)
+                ? featuredProjects.length > 0 && category === 'all' && !search && sort === 'newest'
+                  ? regularProjects
+                  : projects
                 : myProjects
               ).map((project, i) => (
-                <div key={project.id} style={{ animationDelay: `${i * 50}ms` }} className="animate-[fadeInUp_0.35s_ease-out_forwards] opacity-0">
+                <div
+                  key={project.id}
+                  style={{ animationDelay: `${i * 50}ms` }}
+                  className="animate-[fadeInUp_0.35s_ease-out_forwards] opacity-0"
+                >
                   {viewMode === 'grid' ? (
-                    <ProjectCard project={project} formatDate={formatDate} formatNumber={formatNumber} onShare={handleShare} onSelect={setSelectedProject} />
+                    <ProjectCard
+                      project={project}
+                      formatDate={formatDate}
+                      formatNumber={formatNumber}
+                      onShare={handleShare}
+                      onSelect={setSelectedProject}
+                    />
                   ) : (
-                    <ListCard project={project} formatDate={formatDate} formatNumber={formatNumber} onShare={handleShare} onSelect={setSelectedProject} />
+                    <ListCard
+                      project={project}
+                      formatDate={formatDate}
+                      formatNumber={formatNumber}
+                      onShare={handleShare}
+                      onSelect={setSelectedProject}
+                    />
                   )}
                 </div>
               ))}
@@ -520,11 +587,7 @@ function GalleryContent() {
               {tab === 'my' ? t('gallery.noProjectsPublished') : t('gallery.noProjectsFound')}
             </p>
             <p className="text-sm text-bolt-elements-textTertiary mb-6 max-w-md text-center">
-              {search
-                ? t('gallery.tryAdjusting')
-                : tab === 'my'
-                  ? t('gallery.publishFirst')
-                  : t('gallery.beFirst')}
+              {search ? t('gallery.tryAdjusting') : tab === 'my' ? t('gallery.publishFirst') : t('gallery.beFirst')}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -536,7 +599,11 @@ function GalleryContent() {
               </a>
               {search && (
                 <button
-                  onClick={() => { setSearch(''); setSearchInput(''); setCategory('all'); }}
+                  onClick={() => {
+                    setSearch('');
+                    setSearchInput('');
+                    setCategory('all');
+                  }}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-bolt-elements-bg-depth-3 text-bolt-elements-textSecondary hover:bg-bolt-elements-bg-depth-4 border border-bolt-elements-borderColor transition-all"
                 >
                   <div className="i-ph:arrow-counter-clockwise text-base" />
@@ -553,7 +620,9 @@ function GalleryContent() {
             <div className="w-20 h-20 rounded-3xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-5">
               <div className="i-ph:rocket-launch text-4xl text-bolt-elements-textTertiary" />
             </div>
-            <p className="text-lg font-semibold text-bolt-elements-textSecondary mb-2">{t('gallery.publishYourFirst')}</p>
+            <p className="text-lg font-semibold text-bolt-elements-textSecondary mb-2">
+              {t('gallery.publishYourFirst')}
+            </p>
             <p className="text-sm text-bolt-elements-textTertiary mb-6 max-w-sm text-center">
               {t('gallery.createIncredible')}
             </p>
@@ -592,8 +661,12 @@ function GalleryContent() {
             <span>{t('gallery.madeWithAIFooter')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/gallery" className="hover:text-bolt-elements-textSecondary transition-colors">{t('gallery.gallery')}</a>
-            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">{t('gallery.editor')}</a>
+            <a href="/gallery" className="hover:text-bolt-elements-textSecondary transition-colors">
+              {t('gallery.gallery')}
+            </a>
+            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">
+              {t('gallery.editor')}
+            </a>
           </div>
         </div>
       </footer>
@@ -676,11 +749,7 @@ function ProjectDetailModal({
               </div>
             </div>
           ) : (
-            <img
-              src={mainImage}
-              alt={project.name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            <img src={mainImage} alt={project.name} className="absolute inset-0 w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-bolt-elements-bg-depth-2 via-bolt-elements-bg-depth-2/30 to-transparent" />
         </div>
@@ -690,7 +759,11 @@ function ProjectDetailModal({
           <div className="flex items-start gap-4 mb-4">
             {/* Logo */}
             {project.logo ? (
-              <img src={project.logo} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 shadow-xl bg-white" />
+              <img
+                src={project.logo}
+                alt=""
+                className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 shadow-xl bg-white"
+              />
             ) : (
               <div className="w-14 h-14 rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center shrink-0">
                 <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-2xl text-white/50`} />
@@ -700,7 +773,9 @@ function ProjectDetailModal({
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold text-bolt-elements-textPrimary truncate">{project.name}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm text-bolt-elements-textSecondary">{t('gallery.by')} {project.author_name}</span>
+                <span className="text-sm text-bolt-elements-textSecondary">
+                  {t('gallery.by')} {project.author_name}
+                </span>
                 <span className="text-bolt-elements-textTertiary">·</span>
                 <span className="text-sm text-bolt-elements-textTertiary">{formatDate(project.published_at)}</span>
               </div>
@@ -736,7 +811,10 @@ function ProjectDetailModal({
               </span>
             )}
             {project.tags?.map((tag: string) => (
-              <span key={tag} className="px-2 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[11px] text-bolt-elements-textSecondary border border-bolt-elements-borderColor">
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[11px] text-bolt-elements-textSecondary border border-bolt-elements-borderColor"
+              >
                 {tag}
               </span>
             ))}
@@ -861,13 +939,18 @@ function FeaturedCard({
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <div className="flex items-end gap-3">
             {project.logo ? (
-              <img src={project.logo} alt="" className="w-11 h-11 rounded-xl object-cover border-2 border-white/20 shadow-xl flex-shrink-0 bg-white" />
+              <img
+                src={project.logo}
+                alt=""
+                className="w-11 h-11 rounded-xl object-cover border-2 border-white/20 shadow-xl flex-shrink-0 bg-white"
+              />
             ) : (
-              <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center flex-shrink-0">
-              </div>
+              <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center flex-shrink-0"></div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-bolt-elements-textPrimary drop-shadow-lg truncate">{project.name}</h3>
+              <h3 className="text-base font-bold text-bolt-elements-textPrimary drop-shadow-lg truncate">
+                {project.name}
+              </h3>
               <p className="text-[11px] text-white/50 truncate mt-0.5">{project.description}</p>
             </div>
           </div>
@@ -991,25 +1074,36 @@ function ProjectCard({
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <div className="flex items-center gap-2.5">
             {project.logo ? (
-              <img src={project.logo} alt="" className="w-8 h-8 rounded-lg object-cover border-2 border-white/20 shadow-lg flex-shrink-0 bg-white" />
+              <img
+                src={project.logo}
+                alt=""
+                className="w-8 h-8 rounded-lg object-cover border-2 border-white/20 shadow-lg flex-shrink-0 bg-white"
+              />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center flex-shrink-0">
                 <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-sm text-white/60`} />
               </div>
             )}
-            <h3 className="text-sm font-semibold text-bolt-elements-textPrimary drop-shadow-md truncate">{project.name}</h3>
+            <h3 className="text-sm font-semibold text-bolt-elements-textPrimary drop-shadow-md truncate">
+              {project.name}
+            </h3>
           </div>
         </div>
       </div>
 
       {/* Content area */}
       <div className="p-3.5 flex flex-col gap-2 flex-1">
-        <p className="text-[11px] text-bolt-elements-textTertiary leading-relaxed line-clamp-2 min-h-[28px]">{project.description}</p>
+        <p className="text-[11px] text-bolt-elements-textTertiary leading-relaxed line-clamp-2 min-h-[28px]">
+          {project.description}
+        </p>
 
         {project.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {project.tags.slice(0, 3).map((tag: string) => (
-              <span key={tag} className="px-1.5 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[9px] text-bolt-elements-textTertiary border border-bolt-elements-borderColor">
+              <span
+                key={tag}
+                className="px-1.5 py-0.5 rounded-md bg-bolt-elements-bg-depth-3 text-[9px] text-bolt-elements-textTertiary border border-bolt-elements-borderColor"
+              >
                 {tag}
               </span>
             ))}
@@ -1018,7 +1112,9 @@ function ProjectCard({
 
         <div className="mt-auto pt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-bolt-elements-textTertiary truncate max-w-[70px]">{project.author_name}</span>
+            <span className="text-[10px] text-bolt-elements-textTertiary truncate max-w-[70px]">
+              {project.author_name}
+            </span>
             <span className="text-bolt-elements-textTertiary">·</span>
             <span className="text-[10px] text-bolt-elements-textTertiary">{formatDate(project.published_at)}</span>
           </div>
@@ -1088,7 +1184,12 @@ function ListCard({
       {/* Thumbnail */}
       <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-bolt-elements-bg-depth-2 shrink-0">
         {mainImage ? (
-          <img src={mainImage} alt={project.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+          <img
+            src={mainImage}
+            alt={project.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
         ) : (
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
             <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-lg text-white/20`} />
@@ -1135,18 +1236,16 @@ function ListCard({
         >
           <div className="i-ph:share-network text-xs" />
         </button>
-        <span className="text-[10px] text-bolt-elements-textTertiary hidden sm:block">{formatDate(project.published_at)}</span>
+        <span className="text-[10px] text-bolt-elements-textTertiary hidden sm:block">
+          {formatDate(project.published_at)}
+        </span>
       </div>
     </div>
   );
 }
 
 export default function GalleryPage() {
-  return (
-    <ClientOnly fallback={<GallerySkeleton />}>
-      {() => <GalleryContent />}
-    </ClientOnly>
-  );
+  return <ClientOnly fallback={<GallerySkeleton />}>{() => <GalleryContent />}</ClientOnly>;
 }
 
 function GallerySkeleton() {
@@ -1157,7 +1256,10 @@ function GallerySkeleton() {
         <div className="h-48 rounded-3xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor mb-10 animate-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
+            <div
+              key={i}
+              className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse"
+            >
               <div className="w-full aspect-[16/10] bg-bolt-elements-bg-depth-3" />
               <div className="p-5 space-y-3">
                 <div className="h-4 w-3/4 bg-bolt-elements-bg-depth-3 rounded-lg" />

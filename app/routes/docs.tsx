@@ -5,7 +5,11 @@ import { useT } from '~/lib/i18n/useT';
 export const meta: MetaFunction = () => {
   return [
     { title: 'Documentacao — Omni-Builder' },
-    { name: 'description', content: 'Documentacao completa do Omni-Builder. Aprenda a criar apps com IA, configurar provedores, fazer deploy e mais.' },
+    {
+      name: 'description',
+      content:
+        'Documentacao completa do Omni-Builder. Aprenda a criar apps com IA, configurar provedores, fazer deploy e mais.',
+    },
   ];
 };
 
@@ -117,10 +121,26 @@ function GettingStartedContent({ activeSub }: { activeSub: string }) {
         <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsOmniDesc1')}</p>
         <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsOmniDesc2')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-          <FeatureCard icon="i-ph:chat-circle-dots-duotone" title={t('docs.featureChatTitle')} desc={t('docs.featureChatDesc')} />
-          <FeatureCard icon="i-ph:code-duotone" title={t('docs.featureEditorTitle')} desc={t('docs.featureEditorDesc')} />
-          <FeatureCard icon="i-ph:cloud-arrow-up-duotone" title={t('docs.featureDeployTitle')} desc={t('docs.featureDeployDesc')} />
-          <FeatureCard icon="i-ph:storefront-duotone" title={t('docs.featureGalleryTitle')} desc={t('docs.featureGalleryDesc')} />
+          <FeatureCard
+            icon="i-ph:chat-circle-dots-duotone"
+            title={t('docs.featureChatTitle')}
+            desc={t('docs.featureChatDesc')}
+          />
+          <FeatureCard
+            icon="i-ph:code-duotone"
+            title={t('docs.featureEditorTitle')}
+            desc={t('docs.featureEditorDesc')}
+          />
+          <FeatureCard
+            icon="i-ph:cloud-arrow-up-duotone"
+            title={t('docs.featureDeployTitle')}
+            desc={t('docs.featureDeployDesc')}
+          />
+          <FeatureCard
+            icon="i-ph:storefront-duotone"
+            title={t('docs.featureGalleryTitle')}
+            desc={t('docs.featureGalleryDesc')}
+          />
         </div>
       </div>
     );
@@ -181,8 +201,18 @@ function ChatAIContent({ activeSub }: { activeSub: string }) {
         <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.planModeDesc1')}</p>
         <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.planModeDesc2')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <ModeCard icon="i-ph:compass-duotone" title={t('docs.planModeName')} desc={t('docs.planModeCardDesc')} color="indigo" />
-          <ModeCard icon="i-ph:bolt-duotone" title={t('docs.buildModeName')} desc={t('docs.buildModeCardDesc')} color="amber" />
+          <ModeCard
+            icon="i-ph:compass-duotone"
+            title={t('docs.planModeName')}
+            desc={t('docs.planModeCardDesc')}
+            color="indigo"
+          />
+          <ModeCard
+            icon="i-ph:bolt-duotone"
+            title={t('docs.buildModeName')}
+            desc={t('docs.buildModeCardDesc')}
+            color="amber"
+          />
         </div>
       </div>
     );
@@ -355,7 +385,12 @@ function EditorContent({ activeSub }: { activeSub: string }) {
           <ModeCard icon="i-ph:globe-duotone" title="WebContainer" desc={t('docs.webcontainerDesc')} color="blue" />
           <ModeCard icon="i-ph:browser-duotone" title="Sandpack" desc={t('docs.sandpackDesc')} color="purple" />
           <ModeCard icon="i-ph:monitor-duotone" title="Iframe SrcDoc" desc={t('docs.iframeDesc')} color="green" />
-          <ModeCard icon="i-ph:arrow-square-out-duotone" title={t('docs.newTabTitle')} desc={t('docs.newTabDesc')} color="orange" />
+          <ModeCard
+            icon="i-ph:arrow-square-out-duotone"
+            title={t('docs.newTabTitle')}
+            desc={t('docs.newTabDesc')}
+            color="orange"
+          />
         </div>
       </div>
     );
@@ -589,12 +624,11 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left"
-      >
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 text-left">
         <span className="text-sm font-medium text-bolt-elements-textPrimary">{question}</span>
-        <div className={`i-ph:caret-down text-sm text-bolt-elements-textTertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <div
+          className={`i-ph:caret-down text-sm text-bolt-elements-textTertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
       {open && (
         <div className="px-4 pb-3">
@@ -654,11 +688,14 @@ export default function DocsPage() {
       <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-bolt-elements-bg-depth-1/70 border-b border-bolt-elements-borderColor">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors">
+            <a
+              href="/"
+              className="flex items-center gap-2 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
+            >
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <img src="/omni-builder-logo.svg" alt="Omni" className="h-7 omni-logo-themed" />
+              <img src="/omini-logo.svg" alt="Omini" className="h-7 omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">
@@ -693,14 +730,16 @@ export default function DocsPage() {
         )}
 
         {/* Sidebar */}
-        <aside className={`
+        <aside
+          className={`
           fixed lg:sticky top-16 z-40 lg:z-0
           w-[280px] h-[calc(100vh-4rem)]
           bg-bolt-elements-bg-depth-2 border-r border-bolt-elements-borderColor
           overflow-y-auto
           transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
+        `}
+        >
           <div className="p-4">
             {/* Search (placeholder) */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor mb-4">
@@ -723,7 +762,9 @@ export default function DocsPage() {
                       : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-bg-depth-3'
                   }`}
                 >
-                  <div className={`${section.icon} text-base ${activeSection === section.id ? 'text-indigo-400' : 'text-bolt-elements-textTertiary'}`} />
+                  <div
+                    className={`${section.icon} text-base ${activeSection === section.id ? 'text-indigo-400' : 'text-bolt-elements-textTertiary'}`}
+                  />
                   {t(section.titleKey)}
                 </button>
 
@@ -754,11 +795,15 @@ export default function DocsPage() {
         <main className="flex-1 min-w-0 px-6 sm:px-10 py-8 lg:px-16">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs text-bolt-elements-textTertiary mb-8">
-            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">Omni Builder</a>
+            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">
+              Omni Builder
+            </a>
             <div className="i-ph:caret-right text-[10px]" />
             <span className="text-bolt-elements-textSecondary">{t('docs.documentation')}</span>
             <div className="i-ph:caret-right text-[10px]" />
-            <span className="text-indigo-400">{t(DOC_SECTIONS.find((s) => s.id === activeSection)?.titleKey || '')}</span>
+            <span className="text-indigo-400">
+              {t(DOC_SECTIONS.find((s) => s.id === activeSection)?.titleKey || '')}
+            </span>
           </div>
 
           {/* Content */}
@@ -783,7 +828,9 @@ export default function DocsPage() {
                       <div className="i-ph:caret-left text-base" />
                       {t(prev.titleKey)}
                     </button>
-                  ) : <div />}
+                  ) : (
+                    <div />
+                  )}
                   {next ? (
                     <button
                       onClick={() => handleSubClick(next.sectionId, next.id)}
@@ -792,7 +839,9 @@ export default function DocsPage() {
                       {t(next.titleKey)}
                       <div className="i-ph:caret-right text-base" />
                     </button>
-                  ) : <div />}
+                  ) : (
+                    <div />
+                  )}
                 </>
               );
             })()}
@@ -809,9 +858,15 @@ export default function DocsPage() {
             <span>{t('docs.madeWithAI')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/docs" className="hover:text-bolt-elements-textSecondary transition-colors">{t('docs.documentation')}</a>
-            <a href="/gallery" className="hover:text-bolt-elements-textSecondary transition-colors">{t('docs.gallery')}</a>
-            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">{t('docs.editor')}</a>
+            <a href="/docs" className="hover:text-bolt-elements-textSecondary transition-colors">
+              {t('docs.documentation')}
+            </a>
+            <a href="/gallery" className="hover:text-bolt-elements-textSecondary transition-colors">
+              {t('docs.gallery')}
+            </a>
+            <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">
+              {t('docs.editor')}
+            </a>
           </div>
         </div>
       </footer>

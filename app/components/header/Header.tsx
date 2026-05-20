@@ -77,9 +77,13 @@ export function Header() {
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo */}
-      <div className="flex items-center gap-2 px-3 shrink-0">
-        <a href="/" className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all" title="Home">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-8 w-8 omni-logo-themed" />
+      <div className="flex items-center px-3 shrink-0">
+        <a
+          href="/"
+          className="flex items-center rounded-lg px-2 py-1.5 hover:bg-bolt-elements-item-backgroundActive transition-all"
+          title="Home"
+        >
+          <img src="/omini-logo.svg" alt="Omini" className="h-7 w-auto max-w-[132px] omni-logo-themed" />
         </a>
       </div>
 
@@ -151,10 +155,19 @@ export function Header() {
                     {/* Settings & Theme */}
                     <div className="p-1">
                       <button
-                        onClick={() => { toggleTheme(); setMoreMenuOpen(false); }}
+                        onClick={() => {
+                          toggleTheme();
+                          setMoreMenuOpen(false);
+                        }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
-                        <div className={themeStore.get() === 'dark' ? 'i-ph:sun-dim-duotone text-base text-amber-400' : 'i-ph:moon-stars-duotone text-base text-indigo-400'} />
+                        <div
+                          className={
+                            themeStore.get() === 'dark'
+                              ? 'i-ph:sun-dim-duotone text-base text-amber-400'
+                              : 'i-ph:moon-stars-duotone text-base text-indigo-400'
+                          }
+                        />
                         <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
                       </button>
 
@@ -170,7 +183,10 @@ export function Header() {
                             <button
                               key={lang}
                               type="button"
-                              onClick={() => { languageStore.set(lang); setMoreMenuOpen(false); }}
+                              onClick={() => {
+                                languageStore.set(lang);
+                                setMoreMenuOpen(false);
+                              }}
                               className={classNames(
                                 'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all text-left',
                                 currentLang === lang
@@ -180,14 +196,19 @@ export function Header() {
                             >
                               <span className="text-sm">{LANGUAGE_FLAGS[lang]}</span>
                               <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
-                              {currentLang === lang && <div className="i-ph:check-bold text-[10px] ml-auto text-bolt-elements-item-contentAccent" />}
+                              {currentLang === lang && (
+                                <div className="i-ph:check-bold text-[10px] ml-auto text-bolt-elements-item-contentAccent" />
+                              )}
                             </button>
                           ))}
                         </div>
                       </div>
 
                       <button
-                        onClick={() => { window.dispatchEvent(new CustomEvent('open-api-settings')); setMoreMenuOpen(false); }}
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('open-api-settings'));
+                          setMoreMenuOpen(false);
+                        }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:gear-six text-base" />
@@ -195,7 +216,11 @@ export function Header() {
                       </button>
                       <div className="border-t border-bolt-elements-borderColor my-1" />
                       <button
-                        onClick={() => { setSettingsTab('general'); setAppSettingsOpen(true); setMoreMenuOpen(false); }}
+                        onClick={() => {
+                          setSettingsTab('general');
+                          setAppSettingsOpen(true);
+                          setMoreMenuOpen(false);
+                        }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
                       >
                         <div className="i-ph:folder-open text-base" />
@@ -260,10 +285,9 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo */}
-      <div className="flex items-center gap-2.5 px-2 sm:px-4 shrink-0">
-        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <img src="/omni-builder-logo.svg" alt="Omni-Builder" className="h-9 w-9 omni-logo-themed" />
-          <span className="text-base font-bold text-bolt-elements-textPrimary hidden sm:inline">Omni Builder</span>
+      <div className="flex items-center px-2 sm:px-4 shrink-0">
+        <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <img src="/omini-logo.svg" alt="Omini" className="h-9 w-auto max-w-[150px] omni-logo-themed" />
         </a>
       </div>
 
@@ -304,7 +328,9 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           >
             <span>{LANGUAGE_FLAGS[currentLang]}</span>
             <span className="hidden lg:inline">{LANGUAGE_NAMES[currentLang]}</span>
-            <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`} />
+            <div
+              className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
+            />
           </button>
           {langOpen && (
             <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">
@@ -340,7 +366,9 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
           >
             {t('header.resources')}
-            <div className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${resourcesOpen ? 'rotate-180' : ''}`} />
+            <div
+              className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${resourcesOpen ? 'rotate-180' : ''}`}
+            />
           </button>
           {resourcesOpen && (
             <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">

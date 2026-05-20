@@ -83,8 +83,12 @@ export function DeployViewer({ deployId }: { deployId: string }) {
         });
 
         // Detect project type and run accordingly
-        const hasPackageJson = deployData.files.some(f => f.path.endsWith('package.json') || f.path === '/package.json');
-        const packageJsonFile = deployData.files.find(f => f.path.endsWith('package.json') || f.path === '/package.json');
+        const hasPackageJson = deployData.files.some(
+          (f) => f.path.endsWith('package.json') || f.path === '/package.json',
+        );
+        const packageJsonFile = deployData.files.find(
+          (f) => f.path.endsWith('package.json') || f.path === '/package.json',
+        );
 
         if (hasPackageJson && packageJsonFile) {
           try {
@@ -118,23 +122,33 @@ export function DeployViewer({ deployId }: { deployId: string }) {
               const isDev = !!pkg.scripts?.dev;
               const runProcess = await wc.spawn('npm', ['run', isDev ? 'dev' : 'start']);
 
-              runProcess.output.pipeTo(new WritableStream({
-                write(data) {
-                  console.log('[wc]', data);
-                },
-              }));
+              runProcess.output.pipeTo(
+                new WritableStream({
+                  write(data) {
+                    console.log('[wc]', data);
+                  },
+                }),
+              );
             } else {
               // No start script, try npx vite or node index.js
               if (pkg.devDependencies?.vite || pkg.dependencies?.vite) {
                 const runProcess = await wc.spawn('npx', ['vite', '--host', '0.0.0.0']);
-                runProcess.output.pipeTo(new WritableStream({
-                  write(data) { console.log('[wc]', data); },
-                }));
+                runProcess.output.pipeTo(
+                  new WritableStream({
+                    write(data) {
+                      console.log('[wc]', data);
+                    },
+                  }),
+                );
               } else {
                 const runProcess = await wc.spawn('node', ['index.js']);
-                runProcess.output.pipeTo(new WritableStream({
-                  write(data) { console.log('[wc]', data); },
-                }));
+                runProcess.output.pipeTo(
+                  new WritableStream({
+                    write(data) {
+                      console.log('[wc]', data);
+                    },
+                  }),
+                );
               }
             }
           } catch (err) {
@@ -144,9 +158,7 @@ export function DeployViewer({ deployId }: { deployId: string }) {
           }
         } else {
           // Static HTML project — serve it directly via a simple server
-          const htmlFile = deployData.files.find(f =>
-            f.path.endsWith('index.html') || f.path === '/index.html'
-          );
+          const htmlFile = deployData.files.find((f) => f.path.endsWith('index.html') || f.path === '/index.html');
 
           if (htmlFile) {
             // Create a simple server for static files
@@ -189,9 +201,13 @@ server.listen(3000, () => {
             await wc.fs.writeFile('/server.js', serverCode);
 
             const runProcess = await wc.spawn('node', ['server.js']);
-            runProcess.output.pipeTo(new WritableStream({
-              write(data) { console.log('[wc]', data); },
-            }));
+            runProcess.output.pipeTo(
+              new WritableStream({
+                write(data) {
+                  console.log('[wc]', data);
+                },
+              }),
+            );
           } else {
             setError(t('deployViewer.noIndexOrPackageJson'));
             setState('error');
@@ -229,7 +245,7 @@ server.listen(3000, () => {
       <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor shrink-0">
         {/* Logo + Name */}
         <div className="flex items-center gap-2 shrink-0">
-          <img src="/omni-builder-logo.svg" alt="Omni" className="h-5 w-5" />
+          <img src="/omini-favicon.svg" alt="Omini" className="h-5 w-5" />
           <span className="text-xs font-semibold text-bolt-elements-textSecondary">
             {deployData?.deploy?.name || t('common.loading')}
           </span>
@@ -345,7 +361,9 @@ server.listen(3000, () => {
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                 <div className="i-ph:warning-circle-duotone text-3xl text-red-400" />
               </div>
-              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-2">{t('deployViewer.failedToLoadProject')}</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-2">
+                {t('deployViewer.failedToLoadProject')}
+              </p>
               <p className="text-xs text-bolt-elements-textTertiary mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
