@@ -82,6 +82,11 @@ export interface ProjectSettings {
   googleDrive: {
     clientId: string;
   };
+  gmail: {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+  };
   customRules: string;
 }
 
@@ -121,6 +126,7 @@ const DEFAULT_SETTINGS: ProjectSettings = {
     omni: { enabled: false, projectId: '' },
   },
   googleDrive: { clientId: '' },
+  gmail: { clientId: '', clientSecret: '', redirectUri: '' },
   customRules: '',
 };
 
@@ -196,6 +202,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     cloudRun: { ...DEFAULT_SETTINGS.cloudRun, ...current.settings.cloudRun, ...(patch.cloudRun ?? {}) },
     database: { ...DEFAULT_SETTINGS.database, ...current.settings.database, ...(patch.database ?? {}), firebase: { ...DEFAULT_SETTINGS.database.firebase, ...current.settings.database.firebase, ...(patch.database?.firebase ?? {}) }, supabase: { ...DEFAULT_SETTINGS.database.supabase, ...current.settings.database.supabase, ...(patch.database?.supabase ?? {}) }, omni: { ...DEFAULT_SETTINGS.database.omni, ...current.settings.database.omni, ...(patch.database?.omni ?? {}) } },
     googleDrive: { ...DEFAULT_SETTINGS.googleDrive, ...current.settings.googleDrive, ...(patch.googleDrive ?? {}) },
+    gmail: { ...DEFAULT_SETTINGS.gmail, ...current.settings.gmail, ...(patch.gmail ?? {}) },
   };
 
   const updatedProject = {
@@ -268,6 +275,11 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       },
       google_drive_config: {
         clientId: updatedSettings.googleDrive.clientId,
+      },
+      gmail_config: {
+        clientId: updatedSettings.gmail.clientId,
+        clientSecret: updatedSettings.gmail.clientSecret,
+        redirectUri: updatedSettings.gmail.redirectUri,
       },
       updated_at: new Date().toISOString(),
     };
@@ -380,6 +392,11 @@ export async function loadAllProjectsFromSupabase(): Promise<number> {
         googleDrive: {
           clientId: p.google_drive_config?.clientId || '',
         },
+        gmail: {
+          clientId: (p as any).gmail_config?.clientId || '',
+          clientSecret: (p as any).gmail_config?.clientSecret || '',
+          redirectUri: (p as any).gmail_config?.redirectUri || '',
+        },
       };
 
       newProjects[p.id] = {
@@ -484,6 +501,11 @@ export async function loadProjectFromSupabase(projectId: string): Promise<Projec
       },
       googleDrive: {
         clientId: data.google_drive_config?.clientId || '',
+      },
+      gmail: {
+        clientId: (data as any).gmail_config?.clientId || '',
+        clientSecret: (data as any).gmail_config?.clientSecret || '',
+        redirectUri: (data as any).gmail_config?.redirectUri || '',
       },
     };
 

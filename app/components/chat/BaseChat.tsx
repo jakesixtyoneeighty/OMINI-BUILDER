@@ -598,12 +598,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div
                       className="relative rounded-[18px] p-[1px] overflow-hidden"
                       style={{
-                        background:
-                          'conic-gradient(from 0deg, rgba(124,58,237,0.95) 0deg, rgba(59,130,246,0.95) 140deg, rgba(168,85,247,0.95) 240deg, rgba(124,58,237,0.95) 360deg)',
-                        animation: 'landing-input-spin 8s linear infinite',
-                        boxShadow: '0 0 14px rgba(99, 102, 241, 0.16)',
+                        background: 'rgba(124,58,237,0.15)',
                       }}
                     >
+                      {/* Rotating shine line */}
+                      <div
+                        className="absolute inset-0 rounded-[18px]"
+                        style={{
+                          background: 'conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(139,92,246,0.9) 350deg, rgba(96,165,250,0.9) 358deg, transparent 360deg)',
+                          animation: 'landing-input-spin 4s linear infinite',
+                          filter: 'blur(1px)',
+                        }}
+                      />
                       {/* Input card */}
                       <div
                         className={classNames(
