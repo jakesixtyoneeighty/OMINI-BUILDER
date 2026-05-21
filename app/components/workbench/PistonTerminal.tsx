@@ -230,16 +230,16 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
   }, [input, handleCommand]);
 
   return (
-    <div className="h-full flex flex-col bg-bolt-elements-bg-depth-2">
+    <div className="h-full flex flex-col bg-bolt-elements-bg-depth-2 rounded-lg overflow-hidden border border-purple-500/20 shadow-lg">
       {/* Terminal header */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-3 border-b border-purple-500/20 shrink-0">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 text-[10px] font-medium">
-          <div className="i-ph:rocket-duotone text-xs" />
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-900/40 to-bolt-elements-bg-depth-3 border-b border-purple-500/30 shrink-0">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gradient-to-r from-purple-500/20 to-purple-600/10 text-purple-300 text-[10px] font-medium shadow-sm">
+          <div className="i-ph:rocket-launch-duotone text-xs animate-pulse" />
           Piston
         </div>
-        <span className="text-[10px] text-purple-300/50">Remote Execution Engine</span>
+        <span className="text-[10px] text-purple-300/60 font-medium">Remote Execution Engine</span>
         {isRunning && (
-          <span className="flex items-center gap-1 text-[10px] text-yellow-400 ml-auto">
+          <span className="flex items-center gap-1 text-[10px] text-yellow-300 ml-auto font-medium">
             <div className="i-ph:spinner-gap animate-spin text-xs" />
             Running...
           </span>
@@ -247,24 +247,29 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
       </div>
 
       {/* Terminal output */}
-      <div ref={scrollRef} className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed">
+      <div ref={scrollRef} className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed bg-gradient-to-b from-gray-900/50 to-gray-800/30">
         {lines.map((line, i) => (
-          <div key={i} className={`whitespace-pre-wrap break-all ${
-            line.type === 'input' ? 'text-cyan-400' :
-            line.type === 'output' ? 'text-green-400' :
-            line.type === 'error' ? 'text-red-400' :
-            line.type === 'system' ? 'text-purple-400' :
-            'text-gray-400'
-          }`}>
-            {line.type === 'input' && <span className="text-purple-400 select-none">$ </span>}
+          <div 
+            key={i} 
+            className={`whitespace-pre-wrap break-all transition-all duration-200 ${
+              line.type === 'input' ? 'text-cyan-300 font-semibold' :
+              line.type === 'output' ? 'text-green-300' :
+              line.type === 'error' ? 'text-red-400 font-medium' :
+              line.type === 'system' ? 'text-purple-300 font-medium' :
+              'text-gray-400'
+            }`}
+          >
+            {line.type === 'input' && (
+              <span className="text-purple-400 select-none font-bold mr-1">❯</span>
+            )}
             {line.text}
           </div>
         ))}
       </div>
 
       {/* Input line */}
-      <div className="flex items-center gap-2 px-3 py-2 border-t border-purple-500/20 bg-bolt-elements-bg-depth-3 shrink-0">
-        <span className="text-purple-400 font-mono text-sm select-none">❯</span>
+      <div className="flex items-center gap-2 px-3 py-2 border-t border-purple-500/30 bg-gradient-to-r from-purple-900/20 to-bolt-elements-bg-depth-3 shrink-0">
+        <span className="text-purple-400 font-mono text-sm select-none font-bold">❯</span>
         <input
           ref={inputRef}
           type="text"
@@ -273,7 +278,7 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
           onKeyDown={handleKeyDown}
           disabled={isRunning}
           placeholder={isRunning ? 'Waiting...' : 'Type filename or command (help for list)'}
-          className="flex-1 bg-transparent text-green-400 text-xs font-mono focus:outline-none placeholder:text-purple-300/30 disabled:opacity-50"
+          className="flex-1 bg-transparent text-green-300 text-xs font-mono focus:outline-none placeholder:text-purple-300/40 disabled:opacity-50 caret-purple-400"
         />
       </div>
     </div>

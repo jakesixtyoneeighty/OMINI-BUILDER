@@ -5,7 +5,7 @@ import { createScopedLogger, renderLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('FileTree');
 
-const NODE_PADDING_LEFT = 8;
+const NODE_PADDING_LEFT = 12;
 const DEFAULT_HIDDEN_FILES = [/\/node_modules\//, /\/\.next/, /\/\.astro/];
 
 interface Props {
@@ -162,19 +162,25 @@ interface FolderProps {
 function Folder({ folder: { depth, name }, collapsed, selected = false, onClick }: FolderProps) {
   return (
     <NodeButton
-      className={classNames('group', {
-        'bg-transparent text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-bolt-elements-item-backgroundActive':
-          !selected,
-        'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': selected,
-      })}
+      className={classNames(
+        'group transition-all duration-200 ease-out',
+        {
+          'bg-transparent text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-gradient-to-r hover:from-bolt-elements-item-backgroundActive/50 hover:to-transparent':
+            !selected,
+          'bg-gradient-to-r from-bolt-elements-item-backgroundAccent/80 to-bolt-elements-item-backgroundAccent/30 text-bolt-elements-item-contentAccent shadow-sm': selected,
+        },
+      )}
       depth={depth}
-      iconClasses={classNames({
-        'i-ph:caret-right scale-98': collapsed,
-        'i-ph:caret-down scale-98': !collapsed,
-      })}
+      iconClasses={classNames(
+        'transition-transform duration-200 text-blue-400 dark:text-blue-300',
+        {
+          'i-ph:caret-right rotate-0': collapsed,
+          'i-ph:caret-down rotate-0': !collapsed,
+        },
+      )}
       onClick={onClick}
     >
-      {name}
+      <span className="font-medium tracking-wide">{name}</span>
     </NodeButton>
   );
 }
@@ -187,25 +193,37 @@ interface FileProps {
 }
 
 function File({ file: { depth, name }, onClick, selected, unsavedChanges = false }: FileProps) {
+  const fileIcon = getFileIcon(name);
+  
   return (
     <NodeButton
-      className={classNames('group', {
-        'bg-transparent hover:bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentDefault': !selected,
-        'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': selected,
-      })}
+      className={classNames(
+        'group transition-all duration-200 ease-out',
+        {
+          'bg-transparent hover:bg-gradient-to-r hover:from-bolt-elements-item-backgroundActive/50 hover:to-transparent text-bolt-elements-item-contentDefault': !selected,
+          'bg-gradient-to-r from-bolt-elements-item-backgroundAccent/80 to-bolt-elements-item-backgroundAccent/30 text-bolt-elements-item-contentAccent shadow-sm': selected,
+        },
+      )}
       depth={depth}
-      iconClasses={classNames('i-ph:file-duotone scale-98', {
-        'group-hover:text-bolt-elements-item-contentActive': !selected,
-      })}
+      iconClasses={classNames(
+        'scale-110 shrink-0 transition-all duration-200',
+        fileIcon.color,
+        {
+          'group-hover:scale-115': !selected,
+        },
+      )}
+      icon={fileIcon.icon}
       onClick={onClick}
     >
       <div
-        className={classNames('flex items-center', {
+        className={classNames('flex items-center flex-1 min-w-0', {
           'group-hover:text-bolt-elements-item-contentActive': !selected,
         })}
       >
-        <div className="flex-1 truncate pr-2">{name}</div>
-        {unsavedChanges && <span className="i-ph:circle-fill scale-68 shrink-0 text-orange-500" />}
+        <div className="flex-1 truncate pr-2 font-mono text-xs tracking-tight">{name}</div>
+        {unsavedChanges && (
+          <span className="i-ph:circle-fill scale-70 shrink-0 text-orange-500 animate-pulse" style={{ marginLeft: '4px' }} />
+        )}
       </div>
     </NodeButton>
   );
@@ -217,22 +235,93 @@ interface ButtonProps {
   children: ReactNode;
   className?: string;
   onClick?: () => void;
+  icon?: string;
 }
 
-function NodeButton({ depth, iconClasses, onClick, className, children }: ButtonProps) {
+function NodeButton({ depth, iconClasses, onClick, className, children, icon }: ButtonProps) {
   return (
     <button
       className={classNames(
-        'flex items-center gap-1.5 w-full pr-2 border-2 border-transparent text-faded py-0.5',
+        'flex items-center gap-2 w-full pr-3 border-2 border-transparent text-faded py-1.5 rounded-md mx-1 my-0.5',
         className,
       )}
-      style={{ paddingLeft: `${6 + depth * NODE_PADDING_LEFT}px` }}
+      style={{ paddingLeft: `${8 + depth * NODE_PADDING_LEFT}px` }}
       onClick={() => onClick?.()}
     >
-      <div className={classNames('scale-120 shrink-0', iconClasses)}></div>
+      <div className={classNames('shrink-0', icon || iconClasses)}></div>
       <div className="truncate w-full text-left">{children}</div>
     </button>
   );
+}
+
+/**
+ * Returns the appropriate icon and color for a file based on its extension
+ */
+function getFileIcon(fileName: string): { icon: string; color: string } {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  
+  const iconMap: Record<string, { icon: string; color: string }> = {
+    // JavaScript/TypeScript
+    js: { icon: 'i-ph:file-js-duotone', color: 'text-yellow-400 dark:text-yellow-300' },
+    ts: { icon: 'i-ph:file-ts-duotone', color: 'text-blue-500 dark:text-blue-400' },
+    tsx: { icon: 'i-ph:file-ts-duotone', color: 'text-cyan-500 dark:text-cyan-400' },
+    jsx: { icon: 'i-ph:file-js-duotone', color: 'text-teal-400 dark:text-teal-300' },
+    
+    // CSS
+    css: { icon: 'i-ph:file-css-duotone', color: 'text-blue-400 dark:text-blue-300' },
+    scss: { icon: 'i-ph:file-css-duotone', color: 'text-pink-400 dark:text-pink-300' },
+    sass: { icon: 'i-ph:file-css-duotone', color: 'text-pink-500 dark:text-pink-400' },
+    less: { icon: 'i-ph:file-css-duotone', color: 'text-blue-300 dark:text-blue-200' },
+    
+    // HTML
+    html: { icon: 'i-ph:file-html-duotone', color: 'text-orange-500 dark:text-orange-400' },
+    
+    // JSON
+    json: { icon: 'i-ph:file-json-duotone', color: 'text-green-400 dark:text-green-300' },
+    
+    // Markdown
+    md: { icon: 'i-ph:file-text-duotone', color: 'text-gray-400 dark:text-gray-300' },
+    mdx: { icon: 'i-ph:file-text-duotone', color: 'text-gray-500 dark:text-gray-400' },
+    
+    // Python
+    py: { icon: 'i-ph:file-python-duotone', color: 'text-yellow-500 dark:text-yellow-400' },
+    
+    // Rust
+    rs: { icon: 'i-ph:file-code-duotone', color: 'text-orange-400 dark:text-orange-300' },
+    
+    // Go
+    go: { icon: 'i-ph:file-code-duotone', color: 'text-cyan-400 dark:text-cyan-300' },
+    
+    // Ruby
+    rb: { icon: 'i-ph:file-code-duotone', color: 'text-red-400 dark:text-red-300' },
+    
+    // PHP
+    php: { icon: 'i-ph:file-php-duotone', color: 'text-purple-400 dark:text-purple-300' },
+    
+    // Shell
+    sh: { icon: 'i-ph:terminal-window-duotone', color: 'text-green-500 dark:text-green-400' },
+    bash: { icon: 'i-ph:terminal-window-duotone', color: 'text-green-400 dark:text-green-300' },
+    zsh: { icon: 'i-ph:terminal-window-duotone', color: 'text-green-300 dark:text-green-200' },
+    
+    // Config files
+    env: { icon: 'i-ph:gear-duotone', color: 'text-yellow-600 dark:text-yellow-500' },
+    config: { icon: 'i-ph:gear-duotone', color: 'text-gray-500 dark:text-gray-400' },
+    yaml: { icon: 'i-ph:file-dotted-duotone', color: 'text-blue-300 dark:text-blue-200' },
+    yml: { icon: 'i-ph:file-dotted-duotone', color: 'text-blue-300 dark:text-blue-200' },
+    toml: { icon: 'i-ph:file-dotted-duotone', color: 'text-orange-300 dark:text-orange-200' },
+    
+    // Images
+    png: { icon: 'i-ph:image-duotone', color: 'text-purple-400 dark:text-purple-300' },
+    jpg: { icon: 'i-ph:image-duotone', color: 'text-purple-300 dark:text-purple-200' },
+    jpeg: { icon: 'i-ph:image-duotone', color: 'text-purple-300 dark:text-purple-200' },
+    svg: { icon: 'i-ph:image-duotone', color: 'text-pink-400 dark:text-pink-300' },
+    gif: { icon: 'i-ph:image-duotone', color: 'text-pink-300 dark:text-pink-200' },
+    webp: { icon: 'i-ph:image-duotone', color: 'text-blue-400 dark:text-blue-300' },
+    
+    // Default
+  };
+  
+  return iconMap[ext] || { icon: 'i-ph:file-duotone', color: 'text-gray-400 dark:text-gray-300' };
 }
 
 type Node = FileNode | FolderNode;

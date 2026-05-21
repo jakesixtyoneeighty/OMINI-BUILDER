@@ -163,6 +163,11 @@ export const Terminal = memo(
       };
     }, []);
 
-    return <div className={className} ref={terminalElementRef} />;
+    return (
+      <div 
+        className={`${className} rounded-lg overflow-hidden border border-bolt-elements-borderColor/50 shadow-inner`} 
+        ref={terminalElementRef} 
+      />
+    );
   }),
 );
