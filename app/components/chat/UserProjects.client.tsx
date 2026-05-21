@@ -99,43 +99,50 @@ export function UserProjects() {
 
   return (
     <div className="w-full max-w-xl mx-auto px-4 pb-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-bolt-elements-textPrimary flex items-center gap-2">
-          <div className="i-ph:folder-open text-base text-bolt-elements-item-contentAccent" />
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/20 to-blue-500/10 flex items-center justify-center">
+            <div className="i-ph:folder-simple-star text-sm text-violet-400" />
+          </div>
           {t('userProjects.yourProjects')}
         </h2>
         {loading && (
-          <div className="i-svg-spinners:90-ring-with-bg text-sm text-bolt-elements-textTertiary" />
+          <div className="w-5 h-5 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
         )}
       </div>
+      
+      {/* Projects grid - modern cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {allProjects.map((project) => (
           <a
             key={project.id}
             href={`/chat/${project.id}`}
-            className="group flex items-start gap-3 p-3 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 hover:bg-bolt-elements-item-backgroundActive hover:border-bolt-elements-borderColorActive transition-all"
+            className="group flex items-start gap-3 p-3.5 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 hover:bg-bolt-elements-item-backgroundActive hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200"
           >
-            {/* Project icon */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent shrink-0">
+            {/* Project icon - modern gradient */}
+            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/15 to-blue-500/10 text-violet-400 shrink-0">
               {project.logo ? (
-                <img src={project.logo} alt="" className="w-6 h-6 rounded" />
+                <img src={project.logo} alt="" className="w-6 h-6 rounded-lg" />
               ) : (
                 <div className="i-ph:code text-lg" />
               )}
             </div>
+            
             {/* Project info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
+              <div className="text-sm font-semibold text-bolt-elements-textPrimary truncate group-hover:text-violet-400 transition-colors mb-0.5">
                 {project.name || t('projects.untitled')}
               </div>
               {project.description && (
-                <div className="text-xs text-bolt-elements-textTertiary truncate mt-0.5">
+                <div className="text-xs text-bolt-elements-textTertiary truncate mb-1.5">
                   {project.description}
                 </div>
               )}
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2">
                 {project.source === 'cloud' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent font-medium">
+                  <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 font-medium">
+                    <div className="i-ph:cloud text-[8px]" />
                     {t('userProjects.cloud')}
                   </span>
                 )}
@@ -145,6 +152,11 @@ export function UserProjects() {
                   </span>
                 )}
               </div>
+            </div>
+            
+            {/* Arrow indicator */}
+            <div className="w-6 h-6 rounded-lg bg-bolt-elements-bg-depth-3 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200">
+              <div className="i-ph:arrow-right text-xs text-bolt-elements-textTertiary" />
             </div>
           </a>
         ))}

@@ -280,151 +280,193 @@ function ProjectsContent() {
 
   return (
     <div className="flex-1 overflow-auto bg-bolt-elements-bg-depth-1">
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Page header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('projects.title')}</h1>
-            <p className="text-sm text-bolt-elements-textTertiary mt-1">
-              {projects.length}/{MAX_PROJECTS_PER_USER} {t('projects.count')}
-            </p>
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Page header - modern gradient background */}
+        <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-bolt-elements-bg-depth-2 via-bolt-elements-bg-depth-1 to-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/5 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
+          
+          <div className="relative flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-blue-500/10 border border-violet-500/20 flex items-center justify-center">
+                  <div className="i-ph:folder-simple-star text-xl text-violet-400" />
+                </div>
+                <h1 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('projects.title')}</h1>
+              </div>
+              <p className="text-sm text-bolt-elements-textTertiary">
+                <span className="font-semibold text-bolt-elements-textPrimary">{projects.length}</span>
+                <span className="mx-1">/</span>
+                <span>{MAX_PROJECTS_PER_USER}</span>
+                <span className="ml-1.5">{t('projects.count')}</span>
+              </p>
+            </div>
+            <button
+              onClick={handleNewProject}
+              disabled={projects.length >= MAX_PROJECTS_PER_USER}
+              className="group flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500/90 to-blue-500/90 text-white hover:from-violet-500 hover:to-blue-500 text-sm font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="i-ph:plus text-base" />
+              {t('projects.newProject')}
+              <div className="i-ph:arrow-right text-sm opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+            </button>
           </div>
-          <button
-            onClick={handleNewProject}
-            disabled={projects.length >= MAX_PROJECTS_PER_USER}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <div className="i-ph:plus text-base" />
-            {t('projects.newProject')}
-          </button>
         </div>
 
-        {/* Search bar */}
+        {/* Search bar - modern style */}
         {projects.length > 0 && (
-          <div className="mb-6">
-            <div className="relative max-w-md">
-              <div className="i-ph:magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-sm text-bolt-elements-textTertiary" />
-              <input
-                type="text"
-                placeholder={t('projects.searchProjects')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-lg text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive transition-all"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
-                >
-                  <div className="i-ph:x text-sm" />
-                </button>
-              )}
+          <div className="mb-8">
+            <div className="relative max-w-md group">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-blue-500/20 rounded-xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center gap-3 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-xl px-4 py-2.5 focus-within:border-violet-500/50 focus-within:bg-bolt-elements-bg-depth-1 transition-all duration-200">
+                <div className="i-ph:magnifying-glass text-base text-bolt-elements-textTertiary group-focus-within:text-violet-400 transition-colors" />
+                <input
+                  type="text"
+                  placeholder={t('projects.searchProjects')}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none"
+                />
+                {search ? (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="w-6 h-6 rounded-lg bg-bolt-elements-bg-depth-3 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-all"
+                  >
+                    <div className="i-ph:x text-xs" />
+                  </button>
+                ) : (
+                  <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] text-bolt-elements-textTertiary bg-bolt-elements-bg-depth-3 rounded border border-bolt-elements-borderColor">
+                    <span>/</span>
+                  </kbd>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {/* Loading */}
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
-                <div className="w-full h-28 bg-bolt-elements-bg-depth-3" />
-                <div className="p-4 space-y-2.5">
-                  <div className="h-4 w-3/4 bg-bolt-elements-bg-depth-3 rounded" />
-                  <div className="h-3 w-1/2 bg-bolt-elements-bg-depth-3 rounded" />
+              <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
+                <div className="w-full h-32 bg-gradient-to-br from-bolt-elements-bg-depth-3 to-bolt-elements-bg-depth-2" />
+                <div className="p-5 space-y-3">
+                  <div className="h-5 w-3/4 bg-bolt-elements-bg-depth-3 rounded-lg" />
+                  <div className="h-4 w-1/2 bg-bolt-elements-bg-depth-3 rounded-lg" />
+                  <div className="h-3 w-1/3 bg-bolt-elements-bg-depth-3 rounded-lg" />
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Projects grid */}
+        {/* Projects grid - modern cards */}
         {!loading && filtered.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filtered.map((project) => (
               <div
                 key={project.id}
-                className={`group rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-bolt-elements-borderColorActive hover:shadow-lg transition-all duration-200 relative ${menuOpenId === project.id ? 'z-[10000] overflow-visible' : 'overflow-hidden'}`}
+                className={`group rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 relative ${menuOpenId === project.id ? 'z-[10000] overflow-visible' : 'overflow-hidden'}`}
               >
-                {/* Card visual header */}
+                {/* Card visual header - modern gradient */}
                 <a href={`/chat/${project.id}`} className="block">
-                  <div className={`relative w-full h-28 bg-gradient-to-br ${getAccent(project.id)} overflow-hidden`}>
+                  <div className={`relative w-full h-32 bg-gradient-to-br ${getAccent(project.id)} overflow-hidden`}>
+                    {/* Decorative grid pattern */}
+                    <div className="absolute inset-0 opacity-10" style={{
+                      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+                      backgroundSize: '20px 20px'
+                    }} />
+                    
                     <div className="absolute inset-0 flex items-center justify-center">
                       {project.logo ? (
-                        <img src={project.logo} alt="" className="w-12 h-12 rounded-lg shadow-lg" />
+                        <img src={project.logo} alt="" className="w-14 h-14 rounded-xl shadow-xl ring-2 ring-white/10" />
                       ) : (
-                        <div className={`${getIcon(project.id)} text-4xl text-bolt-elements-textTertiary/20 group-hover:scale-110 transition-transform duration-300`} />
+                        <div className={`${getIcon(project.id)} text-5xl text-white/10 group-hover:text-white/20 group-hover:scale-110 transition-all duration-500`} />
                       )}
                     </div>
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-bolt-elements-item-backgroundAccent/0 group-hover:bg-bolt-elements-item-backgroundAccent/30 flex items-center justify-center transition-all duration-200">
-                      <div className="w-10 h-10 rounded-full bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                        <div className="i-ph:arrow-right text-lg" />
+                    
+                    {/* Hover overlay - glass morphism */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 flex items-end justify-center pb-4 transition-all duration-300">
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-2 ring-white/20">
+                        <div className="i-ph:play-bold text-xl text-white" />
                       </div>
                     </div>
-                    {/* Source badge */}
+                    
+                    {/* Source badge - modern pill */}
                     {project.source === 'cloud' && (
-                      <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-md bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent font-medium backdrop-blur-sm">
+                      <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-violet-500/30 backdrop-blur-md text-violet-200 font-semibold border border-violet-400/20">
+                        <div className="i-ph:cloud text-xs" />
                         {t('sidebar.cloud')}
                       </span>
                     )}
-                    {/* Menu button */}
+                    
+                    {/* Menu button - glass effect */}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setMenuOpenId(menuOpenId === project.id ? null : project.id);
                       }}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-[60]"
+                      className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-black/40 backdrop-blur-md text-white/60 hover:text-white hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 border border-white/10 hover:border-white/20"
                     >
-                      <div className="i-ph:dots-three text-base" />
+                      <div className="i-ph:dots-three-vertical text-base" />
                     </button>
                   </div>
                 </a>
 
-                {/* Dropdown menu */}
+                {/* Dropdown menu - modern glass morphism */}
                 {menuOpenId === project.id && (
-                  <div className="absolute top-0 right-2 z-[9999] w-44 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(null);
-                        setEditingId(project.id);
-                        setEditName(project.name);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
-                    >
-                      <div className="i-ph:pencil-simple text-base" />
-                      {t('projects.rename')}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(null);
-                        navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
-                        toast.success(t('projects.linkCopied'));
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
-                    >
-                      <div className="i-ph:link text-base" />
-                      {t('projects.copyLink')}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(null);
-                        setDialogContent({ type: 'delete', project });
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
-                    >
-                      <div className="i-ph:trash text-base" />
-                      {t('projects.delete')}
-                    </button>
+                  <div className="absolute top-8 right-3 z-[9999] w-48 bg-bolt-elements-bg-depth-2/95 backdrop-blur-xl border border-bolt-elements-borderColor rounded-xl shadow-2xl shadow-black/30 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <div className="p-1.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpenId(null);
+                          setEditingId(project.id);
+                          setEditName(project.name);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                          <div className="i-ph:pencil-simple text-sm" />
+                        </div>
+                        {t('projects.rename')}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpenId(null);
+                          navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
+                          toast.success(t('projects.linkCopied'));
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                          <div className="i-ph:link text-sm" />
+                        </div>
+                        {t('projects.copyLink')}
+                      </button>
+                      <div className="h-px bg-bolt-elements-borderColor my-1.5" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpenId(null);
+                          setDialogContent({ type: 'delete', project });
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left rounded-lg"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                          <div className="i-ph:trash text-sm" />
+                        </div>
+                        {t('projects.delete')}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Card content */}
-                <div className="p-4">
+                {/* Card content - modern typography */}
+                <div className="p-5">
                   {editingId === project.id ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -436,40 +478,40 @@ function ProjectsContent() {
                           if (e.key === 'Escape') setEditingId(null);
                         }}
                         autoFocus
-                        className="flex-1 px-2 py-1 bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColorActive rounded text-sm text-bolt-elements-textPrimary focus:outline-none"
+                        className="flex-1 px-3 py-2 bg-bolt-elements-bg-depth-3 border border-violet-500/50 rounded-lg text-sm text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
                       />
                       <button
                         onClick={() => handleRenameProject(project.id, editName)}
-                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500 text-white hover:bg-emerald-400 transition-all"
                       >
                         <div className="i-ph:check text-sm" />
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-all"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-red-500/10 hover:text-red-400 transition-all"
                       >
                         <div className="i-ph:x text-sm" />
                       </button>
                     </div>
                   ) : (
                     <a href={`/chat/${project.id}`} className="block">
-                      <h3 className="text-sm font-semibold text-bolt-elements-textPrimary truncate group-hover:text-bolt-elements-item-contentAccent transition-colors">
+                      <h3 className="text-base font-semibold text-bolt-elements-textPrimary truncate group-hover:text-violet-400 transition-colors mb-1">
                         {project.name || t('projects.untitled')}
                       </h3>
                     </a>
                   )}
                   {project.description && (
-                    <p className="text-xs text-bolt-elements-textTertiary truncate mt-1">{project.description}</p>
+                    <p className="text-xs text-bolt-elements-textTertiary truncate mb-3">{project.description}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-bolt-elements-textTertiary">
+                  <div className="flex items-center gap-4 text-[11px] text-bolt-elements-textTertiary">
                     {project.timestamp && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
                         <div className="i-ph:clock text-xs" />
                         <span>{formatDate(project.timestamp)}</span>
                       </div>
                     )}
                     {project.messageCount > 0 && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
                         <div className="i-ph:chat-circle-dots text-xs" />
                         <span>{project.messageCount} {t('projects.messages')}</span>
                       </div>
@@ -481,32 +523,58 @@ function ProjectsContent() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty state - modern illustration style */}
         {!loading && filtered.length === 0 && projects.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-20 h-20 rounded-2xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-5">
-              <div className="i-ph:folder-open text-4xl text-bolt-elements-textTertiary" />
+          <div className="flex flex-col items-center justify-center py-20">
+            {/* Decorative background */}
+            <div className="relative mb-8">
+              <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-violet-500/20 via-blue-500/10 to-transparent flex items-center justify-center border border-violet-500/20 shadow-2xl shadow-violet-500/10">
+                <div className="i-ph:folder-simple-plus text-5xl text-violet-400/80" />
+              </div>
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/30 to-orange-400/20 border border-amber-400/20 flex items-center justify-center">
+                <div className="i-ph:sparkle text-sm text-amber-400" />
+              </div>
+              <div className="absolute -bottom-3 -left-3 w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-400/30 to-green-400/20 border border-emerald-400/20 flex items-center justify-center">
+                <div className="i-ph:star text-xs text-emerald-400" />
+              </div>
             </div>
-            <p className="text-lg font-semibold text-bolt-elements-textPrimary mb-2">{t('projects.noProjectsYet')}</p>
-            <p className="text-sm text-bolt-elements-textTertiary mb-6">{t('projects.startNewChat')}</p>
+            
+            <h3 className="text-xl font-bold text-bolt-elements-textPrimary mb-2">{t('projects.noProjectsYet')}</h3>
+            <p className="text-sm text-bolt-elements-textTertiary mb-8 max-w-sm text-center">{t('projects.startNewChat')}</p>
+            
             <button
               onClick={handleNewProject}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover text-sm font-medium transition-all"
+              className="group flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-blue-500 text-white font-semibold hover:from-violet-400 hover:to-blue-400 transition-all duration-300 shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <div className="i-ph:plus text-base" />
+              <div className="i-ph:rocket text-lg" />
               {t('projects.newProject')}
+              <div className="i-ph:arrow-right text-sm opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
             </button>
           </div>
         )}
 
-        {/* Search empty state */}
+        {/* Search empty state - modern style */}
         {!loading && filtered.length === 0 && projects.length > 0 && (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-16 h-16 rounded-xl bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor flex items-center justify-center mx-auto mb-4">
-              <div className="i-ph:magnifying-glass text-2xl text-bolt-elements-textTertiary" />
+            <div className="relative mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-bolt-elements-bg-depth-2 to-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center shadow-inner">
+                <div className="i-ph:magnifying-glass text-3xl text-bolt-elements-textTertiary" />
+              </div>
+              {/* Search ring decoration */}
+              <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-bolt-elements-borderColor -m-2" />
             </div>
-            <p className="text-sm font-medium text-bolt-elements-textPrimary mb-1">{t('projects.noResults')}</p>
+            <p className="text-base font-semibold text-bolt-elements-textPrimary mb-1">{t('projects.noResults')}</p>
             <p className="text-sm text-bolt-elements-textTertiary">{t('projects.tryAdjustingSearch')}</p>
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-violet-500/30 transition-all"
+              >
+                <div className="i-ph:x text-sm" />
+                Limpar busca
+              </button>
+            )}
           </div>
         )}
       </div>
