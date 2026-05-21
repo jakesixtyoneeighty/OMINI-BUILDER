@@ -190,27 +190,32 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           display: 'inline-flex',
           alignItems: 'center',
           gap: 8,
-          padding: '8px 14px',
-          borderRadius: 9999,
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.07)',
-          color: 'rgba(255, 255, 255, 0.55)',
+          padding: '10px 16px',
+          borderRadius: 12,
+          background: '#0a0a0a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          color: 'rgba(255, 255, 255, 0.85)',
           fontSize: 13,
-          fontWeight: 400,
+          fontWeight: 500,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
           letterSpacing: '0.2px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+          e.currentTarget.style.background = '#1a1a1a';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.95)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-1px)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)';
+          e.currentTarget.style.background = '#0a0a0a';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)';
+          e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
         {/* Lightbulb icon — subtle gray */}
@@ -287,11 +292,12 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           >
             <div
               style={{
-                marginTop: 8,
+                marginTop: 10,
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: 'rgba(59, 130, 246, 0.04)',
-                border: '1px solid rgba(59, 130, 246, 0.1)',
+                background: '#0a0a0a',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
               }}
             >
               {/* Tabs — only show if there are commands */}
@@ -299,7 +305,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                 <div
                   style={{
                     display: 'flex',
-                    borderBottom: '1px solid rgba(59, 130, 246, 0.1)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                   }}
                 >
                   <button
@@ -311,18 +317,20 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
-                      padding: '8px 16px',
+                      padding: '10px 16px',
                       fontSize: 12,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       border: 'none',
-                      borderBottom: `2px solid ${activeTab === 'reasoning' ? '#60a5fa' : 'transparent'}`,
-                      color: activeTab === 'reasoning' ? '#60a5fa' : 'rgba(255,255,255,0.35)',
+                      borderBottom: `2px solid ${activeTab === 'reasoning' ? '#ffffff' : 'transparent'}`,
+                      color: activeTab === 'reasoning' ? '#ffffff' : 'rgba(255,255,255,0.45)',
                       background: 'none',
                       cursor: 'pointer',
                       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                      letterSpacing: '0.3px',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    <span>🧠</span> Raciocínio
+                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>🧠</span> Raciocínio
                   </button>
                   <button
                     onClick={(e) => {
@@ -333,29 +341,31 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
-                      padding: '8px 16px',
+                      padding: '10px 16px',
                       fontSize: 12,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       border: 'none',
-                      borderBottom: `2px solid ${activeTab === 'commands' ? '#60a5fa' : 'transparent'}`,
-                      color: activeTab === 'commands' ? '#60a5fa' : 'rgba(255,255,255,0.35)',
+                      borderBottom: `2px solid ${activeTab === 'commands' ? '#ffffff' : 'transparent'}`,
+                      color: activeTab === 'commands' ? '#ffffff' : 'rgba(255,255,255,0.45)',
                       background: 'none',
                       cursor: 'pointer',
                       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                      letterSpacing: '0.3px',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    <span>⚡</span> Comandos ({commands.length})
+                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>⚡</span> Comandos ({commands.length})
                   </button>
                 </div>
               )}
 
               {/* Content area */}
-              <div style={{ padding: '12px 16px' }}>
+              <div style={{ padding: '14px 18px' }}>
                 {activeTab === 'reasoning' || !hasCommands ? (
                   <pre
                     style={{
                       fontSize: 13,
-                      color: '#93c5fd',
+                      color: 'rgba(255, 255, 255, 0.9)',
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
                       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
@@ -372,7 +382,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 6,
+                      gap: 8,
                       maxHeight: 288,
                       overflowY: 'auto',
                     }}
@@ -383,20 +393,20 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                         style={{
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: 8,
-                          padding: '6px 10px',
-                          borderRadius: 6,
+                          gap: 10,
+                          padding: '8px 12px',
+                          borderRadius: 8,
                           background: 'rgba(255, 255, 255, 0.03)',
                           border: '1px solid rgba(255, 255, 255, 0.06)',
                         }}
                       >
                         <span
                           style={{
-                            fontSize: 10,
-                            color: '#60a5fa',
+                            fontSize: 11,
+                            color: 'rgba(255, 255, 255, 0.5)',
                             fontFamily: 'monospace',
                             flexShrink: 0,
-                            marginTop: 2,
+                            marginTop: 3,
                           }}
                         >
                           $
@@ -404,7 +414,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                         <code
                           style={{
                             fontSize: 12,
-                            color: '#6ee7b7',
+                            color: 'rgba(255, 255, 255, 0.9)',
                             fontFamily: 'monospace',
                             wordBreak: 'break-all',
                             lineHeight: 1.6,

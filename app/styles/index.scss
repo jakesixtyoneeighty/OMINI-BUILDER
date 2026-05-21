@@ -168,8 +168,260 @@ body {
 
 /* Better focus rings */
 [data-theme="dark"] *:focus-visible {
-  outline: 1px solid rgba(129, 140, 248, 0.5);
-  outline-offset: 1px;
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ===== Modern Chat Interface Enhancements ===== */
+
+/* Chat messages - cleaner spacing and modern card style */
+[data-theme="dark"] .message-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+}
+
+/* Input area - modern floating card style */
+[data-theme="dark"] .z-prompt {
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  backdrop-filter: blur(12px);
+}
+
+/* Send button - modern gradient style */
+[data-theme="dark"] .send-button {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(200, 200, 200, 0.9) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .send-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* File chips - modern pill style */
+[data-theme="dark"] .file-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .file-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Code blocks - modern dark style with subtle border */
+[data-theme="dark"] .code-block {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Action buttons - modern glass morphism */
+[data-theme="dark"] .action-button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .action-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Tooltip - modern dark style */
+[data-theme="dark"] .tooltip {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+/* Sidebar items - modern hover effect */
+[data-theme="dark"] .sidebar-item {
+  transition: all 0.2s ease;
+  border-radius: 10px;
+}
+
+[data-theme="dark"] .sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Modal overlays - modern blur backdrop */
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+/* Modal content - modern card style */
+[data-theme="dark"] .modal-content {
+  background: #111114;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* Progress bars - modern gradient */
+[data-theme="dark"] .progress-bar {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .progress-bar-fill {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* ===== Enhanced Chat Interface ===== */
+
+/* Chat container - modern layout */
+[data-theme="dark"] .chat-container {
+  background: linear-gradient(180deg, rgba(9, 9, 11, 1) 0%, rgba(17, 17, 20, 1) 100%);
+}
+
+/* Message bubbles - modern style */
+[data-theme="dark"] .message-bubble {
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .message-bubble-assistant {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px 16px 16px 4px;
+}
+
+[data-theme="dark"] .message-bubble-user {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px 16px 4px 16px;
+}
+
+/* Text input - modern style */
+[data-theme="dark"] textarea,
+[data-theme="dark"] input[type="text"] {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+[data-theme="dark"] textarea::placeholder,
+[data-theme="dark"] input[type="text"]::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* File attach button - modern icon style */
+[data-theme="dark"] .attach-button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .attach-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+/* Build mode buttons - modern pill style */
+[data-theme="dark"] .build-mode-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .build-mode-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .build-mode-button-active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Build now button - modern gradient */
+[data-theme="dark"] .build-now-button {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(220, 220, 220, 0.85) 100%);
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .build-now-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Divider line - subtle modern style */
+[data-theme="dark"] .chat-divider {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Landing page - modern gradient background */
+[data-theme="dark"] .landing-background {
+  background: radial-gradient(ellipse at center top, rgba(30, 30, 35, 0.8) 0%, rgba(9, 9, 11, 1) 70%);
+}
+
+/* Hero text - modern typography */
+[data-theme="dark"] .hero-headline {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Model picker - modern dropdown style */
+[data-theme="dark"] .model-picker {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .model-picker:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Settings button - modern icon style */
+[data-theme="dark"] .settings-button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .settings-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: rotate(30deg);
 }
 
 /* ===== Sidebar Styles ===== */
