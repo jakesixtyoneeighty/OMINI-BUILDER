@@ -640,6 +640,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'artifact.openWorkbench': 'Abrir Workbench',
     'artifact.installed': 'Instalado {count} pacote',
     'artifact.installedPlural': 'Instalados {count} pacotes',
+    'artifact.actionHistory': 'Action history',
+    'artifact.actionsSubtitle': 'Here are key actions taken for the app:',
+    'artifact.noActions': 'No actions yet',
+    'artifact.building': 'Building...',
+    'artifact.buildSuccess': 'Build successful',
 
     // === Code Block ===
     'codeBlock.copyCode': 'Copiar Codigo',
@@ -1693,6 +1698,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'artifact.openWorkbench': 'Open Workbench',
     'artifact.installed': 'Installed {count} package',
     'artifact.installedPlural': 'Installed {count} packages',
+    'artifact.actionHistory': 'Action history',
+    'artifact.actionsSubtitle': 'Here are key actions taken for the app:',
+    'artifact.noActions': 'No actions yet',
+    'artifact.building': 'Building...',
+    'artifact.buildSuccess': 'Build successful',
 
     // === Code Block ===
     'codeBlock.copyCode': 'Copy Code',
@@ -2746,6 +2756,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'artifact.openWorkbench': 'Abrir Workbench',
     'artifact.installed': 'Instalado {count} paquete',
     'artifact.installedPlural': 'Instalados {count} paquetes',
+    'artifact.actionHistory': 'Historial de acciones',
+    'artifact.actionsSubtitle': 'Aqui estan las acciones clave realizadas para la app:',
+    'artifact.noActions': 'Aun no hay acciones',
+    'artifact.building': 'Construyendo...',
+    'artifact.buildSuccess': 'Build exitoso',
 
     // === Code Block ===
     'codeBlock.copyCode': 'Copiar Codigo',
@@ -3799,6 +3814,11 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'artifact.openWorkbench': '打开工作台',
     'artifact.installed': '安装了 {count} 个包',
     'artifact.installedPlural': '安装了 {count} 个包',
+    'artifact.actionHistory': '操作历史',
+    'artifact.actionsSubtitle': '以下是为应用执行的关键操作：',
+    'artifact.noActions': '暂无操作',
+    'artifact.building': '构建中...',
+    'artifact.buildSuccess': '构建成功',
 
     // === Code Block ===
     'codeBlock.copyCode': '复制代码',

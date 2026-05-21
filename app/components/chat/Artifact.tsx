@@ -2,24 +2,11 @@ import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { computed } from 'nanostores';
 import { memo, useEffect, useMemo, useState } from 'react';
-import { createHighlighter, type BundledLanguage, type BundledTheme, type HighlighterGeneric } from 'shiki';
 import type { ActionState } from '~/lib/runtime/action-runner';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { useT } from '~/lib/i18n/useT';
-
-const highlighterOptions = {
-  langs: ['shell'],
-  themes: ['light-plus', 'dark-plus'],
-};
-
-const shellHighlighter: HighlighterGeneric<BundledLanguage, BundledTheme> =
-  import.meta.hot?.data.shellHighlighter ?? (await createHighlighter(highlighterOptions));
-
-if (import.meta.hot) {
-  import.meta.hot.data.shellHighlighter = shellHighlighter;
-}
 
 interface ArtifactProps {
   messageId: string;
@@ -125,6 +112,16 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
   const sections = useMemo(() => {
     const result: { key: string; label: string; icon: string; iconColor: string; actions: ActionState[] }[] = [];
 
+    if (installActions.length > 0) {
+      result.push({
+        key: 'install',
+        label: t('artifact.installedPackages'),
+        icon: 'i-ph:download-simple',
+        iconColor: 'text-blue-500',
+        actions: installActions,
+      });
+    }
+
     if (createdFiles.length > 0) {
       result.push({
         key: 'created',
@@ -151,16 +148,6 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
       });
     }
 
-    if (installActions.length > 0) {
-      result.push({
-        key: 'install',
-        label: t('artifact.installedPackages'),
-        icon: 'i-ph:package',
-        iconColor: 'text-violet-500',
-        actions: installActions,
-      });
-    }
-
     if (otherShellActions.length > 0) {
       result.push({
         key: 'shell',
@@ -169,7 +156,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             ? t('artifact.ranPlural', { count: otherShellActions.length })
             : t('artifact.ran', { count: otherShellActions.length }),
         icon: 'i-ph:terminal',
-        iconColor: 'text-blue-500',
+        iconColor: 'text-slate-500',
         actions: otherShellActions,
       });
     }
@@ -179,7 +166,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         key: 'built',
         label: t('artifact.built'),
         icon: 'i-ph:wrench',
-        iconColor: 'text-blue-500',
+        iconColor: 'text-slate-500',
         actions: buildActions,
       });
     }
@@ -187,37 +174,29 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     return result;
   }, [createdFiles, editedFiles, installActions, buildActions, otherShellActions, t]);
 
+  // Calculate totals for header
+  const totalFiles = createdFiles.length + editedFiles.length;
+  const totalInstalls = installActions.length;
+  const totalBuilds = buildActions.length;
+
   return (
     <div
       className={classNames(
-        'my-3 rounded-xl overflow-hidden transition-all duration-300',
-        isProcessing ? 'artifact-processing border border-transparent' : 'border border-bolt-elements-borderColor',
+        'my-3 rounded-xl overflow-hidden transition-all duration-300 border border-bolt-elements-borderColor/60 bg-bolt-elements-bg-depth-2',
+        isProcessing && 'artifact-processing-ring',
       )}
-      style={
-        isProcessing
-          ? {
-              background:
-                'linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.15), rgba(168,85,247,0.15), rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
-              backgroundSize: '300% 300%',
-              animation: 'gradientShift 3s ease infinite',
-              border: '1px solid rgba(99,102,241,0.3)',
-            }
-          : {
-              background: 'var(--bolt-elements-artifacts-background, rgba(255,255,255,0.03))',
-            }
-      }
     >
-      {/* Header - clickable to open workbench */}
+      {/* Header - Action History */}
       <div
-        className="flex items-center gap-2.5 px-4 py-3 cursor-pointer hover:bg-bolt-elements-item-backgroundActive transition-colors"
+        className="flex items-center gap-2.5 px-4 py-3 cursor-pointer hover:bg-bolt-elements-item-backgroundActive/50 transition-colors border-b border-bolt-elements-borderColor/60"
         onClick={() => {
           const showWorkbench = workbenchStore.showWorkbench.get();
           workbenchStore.showWorkbench.set(!showWorkbench);
         }}
       >
-        <div className="i-ph:cube-duotone text-base text-bolt-elements-textTertiary shrink-0" />
-        <span className="text-sm font-semibold text-bolt-elements-textPrimary flex-1 truncate">
-          {artifact?.title || t('artifact.project')}
+        <div className="i-ph:clipboard-text text-base text-bolt-elements-textSecondary shrink-0" />
+        <span className="text-sm font-semibold text-bolt-elements-textPrimary flex-1">
+          {t('artifact.actionHistory')}
         </span>
         <span className="text-[10px] text-bolt-elements-textTertiary hidden sm:inline">
           {t('artifact.openWorkbench')}
@@ -225,7 +204,14 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         <div className="i-ph:arrow-square-out text-xs text-bolt-elements-textTertiary" />
       </div>
 
-      {/* Action Timeline - all actions grouped together */}
+      {/* Subtitle */}
+      <div className="px-4 py-2 border-b border-bolt-elements-borderColor/40">
+        <p className="text-xs text-bolt-elements-textSecondary">
+          {t('artifact.actionsSubtitle')}
+        </p>
+      </div>
+
+      {/* Action Timeline */}
       <AnimatePresence>
         {showActions && hasContent && (
           <motion.div
@@ -235,43 +221,45 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             transition={{ duration: 0.2, ease: cubicEasingFn }}
             className="overflow-hidden"
           >
-            <div className="border-t border-bolt-elements-borderColor">
+            <div>
               {sections.map((section, sIdx) => (
                 <div
                   key={section.key}
-                  className={sIdx < sections.length - 1 ? 'border-b border-bolt-elements-borderColor/50' : ''}
+                  className={sIdx < sections.length - 1 ? 'border-b border-bolt-elements-borderColor/30' : ''}
                 >
                   {/* Section header */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-bolt-elements-bg-depth-2">
-                    <div className={`${section.icon} text-xs ${section.iconColor}`} />
-                    <span className="text-xs font-medium text-bolt-elements-textSecondary">{section.label}</span>
+                  <div className="flex items-center gap-2 px-4 py-2.5">
+                    <div className={`${section.icon} text-sm ${section.iconColor} shrink-0`} />
+                    <span className="text-sm font-medium text-bolt-elements-textPrimary">
+                      {section.label}
+                    </span>
                   </div>
-                  {/* Action items */}
-                  <ul className="list-none">
-                    {section.actions.map((action, index) => (
-                      <motion.li
-                        key={`${section.key}-${index}`}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                      >
-                        {action.type === 'file' ? (
-                          <FileActionItem
-                            action={action}
-                            isLast={index === section.actions.length - 1}
-                            sectionKey={section.key}
-                          />
-                        ) : (
-                          <ShellActionItem
-                            action={action}
-                            isLast={index === section.actions.length - 1}
-                            isBuildSection={section.key === 'built'}
-                            isInstallSection={section.key === 'install'}
-                          />
-                        )}
-                      </motion.li>
-                    ))}
-                  </ul>
+
+                  {/* Action items - clean list with checkmarks */}
+                  {section.actions.length > 0 && section.key !== 'install' && section.key !== 'built' && (
+                    <ul className="list-none pb-1">
+                      {section.actions.map((action, index) => (
+                        <motion.li
+                          key={`${section.key}-${index}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.2, delay: index * 0.03 }}
+                        >
+                          <FileActionItem action={action} />
+                        </motion.li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Install section - show packages as tags */}
+                  {section.key === 'install' && section.actions.length > 0 && (
+                    <InstallActionItems actions={section.actions} />
+                  )}
+
+                  {/* Build section - show build info */}
+                  {section.key === 'built' && section.actions.length > 0 && (
+                    <BuildActionItems actions={section.actions} />
+                  )}
                 </div>
               ))}
             </div>
@@ -279,171 +267,90 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         )}
       </AnimatePresence>
 
-      {/* Inline keyframes for animated gradient */}
-      <style>{`
-        @keyframes gradientShift {
-          0% { --gradient-angle: 0deg; }
-          50% { --gradient-angle: 180deg; }
-          100% { --gradient-angle: 360deg; }
-        }
+      {/* Empty state */}
+      {!hasContent && (
+        <div className="px-4 py-6 text-center">
+          <div className="i-ph:cube text-2xl text-bolt-elements-textTertiary mx-auto mb-2" />
+          <p className="text-xs text-bolt-elements-textTertiary">{t('artifact.noActions')}</p>
+        </div>
+      )}
 
-        @property --gradient-angle {
-          syntax: "<angle>";
-          initial-value: 0deg;
-          inherits: false;
-        }
+      {/* Inline keyframes for animated border when processing */}
+      {isProcessing && (
+        <style>{`
+          @keyframes gradientShift {
+            0% { --gradient-angle: 0deg; }
+            50% { --gradient-angle: 180deg; }
+            100% { --gradient-angle: 360deg; }
+          }
 
-        .artifact-processing {
-          position: relative;
-        }
+          @property --gradient-angle {
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false;
+          }
 
-        .artifact-processing::before {
-          content: '';
-          position: absolute;
-          inset: -1px;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(
-            var(--gradient-angle, 0deg),
-            rgba(99,102,241,0.6),
-            rgba(168,85,247,0.6),
-            rgba(59,130,246,0.6),
-            rgba(99,102,241,0.6)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          animation: borderRotate 3s linear infinite;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        @keyframes borderRotate {
-          0% { --gradient-angle: 0deg; }
-          100% { --gradient-angle: 360deg; }
-        }
-      `}</style>
+          .artifact-processing-ring {
+            position: relative;
+            border: 1px solid transparent;
+            background: linear-gradient(var(--bolt-elements-bg-depth-2), var(--bolt-elements-bg-depth-2)) padding-box,
+              linear-gradient(var(--gradient-angle, 0deg), rgba(99,102,241,0.5), rgba(168,85,247,0.5), rgba(59,130,246,0.5)) border-box;
+            animation: gradientShift 3s ease infinite;
+          }
+        `}</style>
+      )}
     </div>
   );
 });
 
-/* ===== File Action Item ===== */
+/* ===== File Action Item - Clean with checkmark ===== */
 
-function FileActionItem({ action, isLast, sectionKey }: { action: ActionState; isLast: boolean; sectionKey: string }) {
-  const [expanded, setExpanded] = useState(false);
+function FileActionItem({ action }: { action: ActionState }) {
   const fileName = action.filePath?.split('/').pop() || '';
 
-  const isCreated = sectionKey === 'created';
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
 
   return (
-    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/30' : ''}>
-      {/* Action summary line */}
-      <div
-        className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {/* File path */}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span className="text-xs text-bolt-elements-textPrimary truncate font-mono">
-            {action.filePath || fileName}
-          </span>
+    <div className="flex items-center gap-3 px-4 py-1.5 group">
+      {/* File path */}
+      <span className="text-xs text-bolt-elements-textSecondary truncate font-mono flex-1 pl-6">
+        {action.filePath || fileName}
+      </span>
 
-          {/* Diff stats for edits */}
-          {!isCreated && isComplete && (action.additions !== undefined || action.deletions !== undefined) && (
-            <span className="text-[10px] font-mono shrink-0 flex items-center gap-1">
-              {action.additions !== undefined && action.additions > 0 && (
-                <span className="text-emerald-400">+{action.additions}</span>
-              )}
-              {action.deletions !== undefined && action.deletions > 0 && (
-                <span className="text-red-400">-{action.deletions}</span>
-              )}
-            </span>
-          )}
-
-          {/* Line count for new files */}
-          {isCreated && isComplete && action.additions !== undefined && action.additions > 0 && (
-            <span className="text-[10px] font-mono text-emerald-400 shrink-0">+{action.additions}</span>
-          )}
-        </div>
-
-        {/* Status icon */}
-        <div className="shrink-0 w-4 h-4 flex items-center justify-center">
-          {isRunning ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
-          ) : isComplete ? (
-            <div className="i-ph:check text-sm text-emerald-500" />
-          ) : isFailed ? (
-            <div className="i-ph:x text-sm text-red-400" />
-          ) : (
-            <div className="i-ph:circle-dashed text-xs text-bolt-elements-textTertiary" />
-          )}
-        </div>
-
-        {/* Expand chevron */}
-        <div
-          className={classNames(
-            'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-            expanded && 'rotate-180',
-          )}
-        >
-          <div className="i-ph:caret-down text-[10px]" />
-        </div>
-      </div>
-
-      {/* Expanded code view */}
-      <AnimatePresence>
-        {expanded && action.content && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-3">
-              <div className="border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 p-3 rounded-lg max-h-[300px] overflow-auto">
-                <pre className="text-[11px] font-mono text-bolt-elements-textSecondary whitespace-pre-wrap break-all leading-relaxed">
-                  {action.content}
-                </pre>
-              </div>
-            </div>
-          </motion.div>
+      {/* Status icon - clean checkmark circle */}
+      <div className="shrink-0 w-5 h-5 flex items-center justify-center">
+        {isRunning ? (
+          <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
+        ) : isComplete ? (
+          <div className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center">
+            <div className="i-ph:check text-[10px] text-emerald-500" />
+          </div>
+        ) : isFailed ? (
+          <div className="w-4 h-4 rounded-full bg-red-500/15 flex items-center justify-center">
+            <div className="i-ph:x text-[10px] text-red-400" />
+          </div>
+        ) : (
+          <div className="w-4 h-4 rounded-full bg-bolt-elements-textTertiary/10 flex items-center justify-center">
+            <div className="i-ph:circle text-[8px] text-bolt-elements-textTertiary" />
+          </div>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-/* ===== Shell Action Item ===== */
+/* ===== Install Action Items - Package tags ===== */
 
-function ShellActionItem({
-  action,
-  isLast,
-  isBuildSection = false,
-  isInstallSection = false,
-}: {
-  action: ActionState;
-  isLast: boolean;
-  isBuildSection?: boolean;
-  isInstallSection?: boolean;
-}) {
+function InstallActionItems({ actions }: { actions: ActionState[] }) {
   const t = useT();
-  const [expanded, setExpanded] = useState(false);
 
-  const isComplete = action.status === 'complete';
-  const isRunning = action.status === 'running';
-  const isFailed = action.status === 'failed';
-
-  // Get a friendly label for the command
-  const getLabel = () => {
-    const content = action.content?.trim() || '';
-    const firstLine = content.split('\n')[0].trim();
-
-    if (isBuildSection) return firstLine;
-    if (isInstallSection) {
+  // Extract all packages from install commands
+  const allPackages = useMemo(() => {
+    const packages: string[] = [];
+    for (const action of actions) {
+      const content = action.content?.trim() || '';
       const npmMatch = content.match(/npm\s+(?:install|i)\s+(.+)/);
       const pnpmMatch = content.match(/pnpm\s+(?:add|install)\s+(.+)/);
       const yarnMatch = content.match(/yarn\s+add\s+(.+)/);
@@ -451,87 +358,66 @@ function ShellActionItem({
 
       const match = npmMatch || pnpmMatch || yarnMatch || pipMatch;
       if (match) {
-        const packages = match[1].trim();
-        const pkgCount = packages.split(/\s+/).length;
-        return `${pkgCount > 1 ? t('artifact.installedPlural', { count: pkgCount }) : t('artifact.installed', { count: pkgCount })}: ${firstLine}`;
+        const pkgs = match[1].trim().split(/\s+/);
+        packages.push(...pkgs);
       }
-      return firstLine;
     }
+    return packages;
+  }, [actions]);
 
-    // Detect common patterns
-    const npxMatch = content.match(/npx\s+(\S+)/);
-    if (npxMatch) return `${t('artifact.ran', { count: 1 })} ${npxMatch[1]}`;
-
-    return firstLine.length > 60 ? firstLine.substring(0, 57) + '...' : firstLine;
-  };
+  if (allPackages.length === 0) {
+    return (
+      <div className="px-4 pb-3">
+        <span className="text-xs text-bolt-elements-textSecondary font-mono">
+          {actions.map(a => a.content?.trim() || '').join(', ')}
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className={!isLast ? 'border-b border-bolt-elements-borderColor/30' : ''}>
-      {/* Command summary line */}
-      <div
-        className="flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer group hover:bg-bolt-elements-item-backgroundActive/30"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {/* Command text */}
-        <span className="text-xs text-bolt-elements-textPrimary flex-1 truncate font-mono">{getLabel()}</span>
-
-        {/* Status icon */}
-        <div className="shrink-0 w-4 h-4 flex items-center justify-center">
-          {isRunning ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
-          ) : isComplete ? (
-            <div className="i-ph:check text-sm text-emerald-500" />
-          ) : isFailed ? (
-            <div className="i-ph:x text-sm text-red-400" />
-          ) : (
-            <div className="i-ph:circle-dashed text-xs text-bolt-elements-textTertiary" />
-          )}
-        </div>
-
-        {/* Expand chevron */}
-        <div
-          className={classNames(
-            'shrink-0 text-bolt-elements-textTertiary transition-transform duration-200',
-            expanded && 'rotate-180',
-          )}
-        >
-          <div className="i-ph:caret-down text-[10px]" />
-        </div>
-      </div>
-
-      {/* Expanded command view */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+    <div className="px-4 pb-3">
+      <div className="flex flex-wrap gap-1.5">
+        {allPackages.map((pkg, i) => (
+          <span
+            key={`${pkg}-${i}`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-medium"
           >
-            <div className="px-4 pb-3">
-              <ShellCodeBlock code={action.content} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="i-ph:package text-[10px]" />
+            {pkg}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-/* ===== Shell Code Block ===== */
+/* ===== Build Action Items ===== */
 
-function ShellCodeBlock({ code }: { code: string }) {
+function BuildActionItems({ actions }: { actions: ActionState[] }) {
+  const t = useT();
+
   return (
-    <div
-      className="text-xs rounded-lg overflow-hidden bg-bolt-elements-code-background border border-bolt-elements-borderColor/30"
-      dangerouslySetInnerHTML={{
-        __html: shellHighlighter.codeToHtml(code, {
-          lang: 'shell',
-          theme: 'dark-plus',
-        }),
-      }}
-    />
+    <div className="px-4 pb-3">
+      {actions.map((action, index) => (
+        <div key={index} className="flex items-center gap-2 py-0.5">
+          <span className="text-xs text-bolt-elements-textSecondary font-mono truncate">
+            {action.content?.trim().split('\n')[0] || 'build'}
+          </span>
+          {action.status === 'running' && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
+              <div className="i-svg-spinners:90-ring-with-bg text-[10px]" />
+              {t('artifact.building')}
+            </span>
+          )}
+          {action.status === 'complete' && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500">
+              <div className="i-ph:check-circle text-[10px]" />
+              {t('artifact.buildSuccess')}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
