@@ -547,10 +547,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 <div className="max-w-chat mx-auto">
                   {/* "Let's build" Input Card */}
                   <div className="relative z-prompt">
-                  <div className="relative w-full max-w-chat mx-auto z-prompt">
                     <style>{landingInputGlowKeyframes}</style>
                     <div
-                      className="relative rounded-[18px] p-[1px] overflow-hidden"
+                      className="relative w-full max-w-chat mx-auto rounded-[18px] p-[1px] overflow-hidden"
                       style={{
                         background: 'var(--bolt-elements-item-contentAccent, rgba(124,58,237,0.15))',
                       }}
@@ -823,10 +822,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         {onCloneSite && <ClientOnly>{() => <CloneSite onClone={onCloneSite} />}</ClientOnly>}
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                  </div>
                 </div>
               </LandingPage>
             )}
