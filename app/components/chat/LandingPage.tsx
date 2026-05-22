@@ -175,19 +175,8 @@ export function LandingPage({ children }: LandingPageProps) {
           100% { background-position: 0% 50%; }
         }
         .shimmer-text {
-          background: linear-gradient(
-            90deg,
-            #60a5fa 0%,
-            #a78bfa 25%,
-            #f472b6 50%,
-            #a78bfa 75%,
-            #60a5fa 100%
-          );
-          background-size: 300% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: shimmer 8s ease-in-out infinite;
+          color: #ffffff;
+          text-shadow: none;
         }
         .gradient-animated {
           background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
