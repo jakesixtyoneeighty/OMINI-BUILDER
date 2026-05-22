@@ -823,7 +823,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       </div>
                     </div>
                 </div>
-              </LandingPage>
+              </div>
+            </LandingPage>
             )}
 
             {/* ============ CHAT VIEW ============ */}
