@@ -599,7 +599,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div
                       className="relative rounded-[18px] p-[1px] overflow-hidden"
                       style={{
-                        background: 'rgba(124,58,237,0.15)',
+                        background: 'var(--bolt-elements-item-contentAccent, rgba(124,58,237,0.15))',
                       }}
                     >
                       {/* Rotating shine line */}
@@ -743,20 +743,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           {/* Think mode blue chip */}
                           {thinkMode && (
                             <span
-                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
-                              style={{
-                                color: '#60a5fa',
-                                background: 'rgba(59, 130, 246, 0.12)',
-                                border: '1px solid rgba(59, 130, 246, 0.25)',
-                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/25"
                             >
                               <div className="i-ph:brain text-sm" />
                               /think
                               <button
                                 type="button"
                                 onClick={() => chatStore.setKey('thinkMode', false)}
-                                className="ml-0.5 hover:text-red-400 transition-colors"
-                                style={{ lineHeight: 1 }}
+                                className="ml-0.5 hover:text-red-400 transition-colors leading-none"
                               >
                                 <div className="i-ph:x-bold text-[8px]" />
                               </button>
@@ -1038,20 +1032,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         {/* Think mode blue chip */}
                         {thinkMode && (
                           <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none"
-                            style={{
-                              color: '#60a5fa',
-                              background: 'rgba(59, 130, 246, 0.12)',
-                              border: '1px solid rgba(59, 130, 246, 0.25)',
-                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1.5 select-none bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/25"
                           >
                             <div className="i-ph:brain text-sm" />
                             /think
                             <button
                               type="button"
                               onClick={() => chatStore.setKey('thinkMode', false)}
-                              className="ml-0.5 hover:text-red-400 transition-colors"
-                              style={{ lineHeight: 1 }}
+                              className="ml-0.5 hover:text-red-400 transition-colors leading-none"
                             >
                               <div className="i-ph:x-bold text-[8px]" />
                             </button>
@@ -1143,20 +1131,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <div className="flex-1 flex flex-col min-w-0">
                     {thinkMode && (
                       <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1 select-none self-start"
-                        style={{
-                          color: '#60a5fa',
-                          background: 'rgba(59, 130, 246, 0.12)',
-                          border: '1px solid rgba(59, 130, 246, 0.25)',
-                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[13px] font-semibold mb-1 select-none self-start bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/25"
                       >
                         <div className="i-ph:brain text-sm" />
                         /think
                         <button
                           type="button"
                           onClick={() => chatStore.setKey('thinkMode', false)}
-                          className="ml-0.5 hover:text-red-400 transition-colors"
-                          style={{ lineHeight: 1 }}
+                          className="ml-0.5 hover:text-red-400 transition-colors leading-none"
                         >
                           <div className="i-ph:x-bold text-[8px]" />
                         </button>

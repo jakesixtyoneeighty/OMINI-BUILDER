@@ -668,64 +668,296 @@ body {
   background-color: var(--bolt-elements-bg-depth-2) !important;
 }
 
+/* All buttons with bg-white in dark mode */
+[data-theme="dark"] button.bg-white {
+  background-color: var(--bolt-elements-button-secondary-background) !important;
+  color: var(--bolt-elements-textPrimary) !important;
+  border-color: var(--bolt-elements-borderColor) !important;
+}
+
+/* All spans/labels with bg-white in dark mode */
+[data-theme="dark"] span.bg-white,
+[data-theme="dark"] label.bg-white {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+}
+
 /* text-black in dark mode — unreadable */
 [data-theme="dark"] .text-black {
   color: var(--bolt-elements-textPrimary) !important;
 }
 
-/* bg-white/10 divs in dark mode — nearly invisible */
-[data-theme="dark"] .bg-white\/10 {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-}
+/* ===== bg-white opacity variants in dark mode ===== */
 
-/* bg-white/5 in dark mode */
 [data-theme="dark"] .bg-white\/5 {
   background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
-/* hover:bg-white/10 in dark mode */
+[data-theme="dark"] .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+[data-theme="dark"] .bg-white\/25 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .bg-white\/30 {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+[data-theme="dark"] .bg-white\/40 {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-theme="dark"] .bg-white\/50 {
+  background-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+[data-theme="dark"] .bg-white\/60 {
+  background-color: rgba(255, 255, 255, 0.26) !important;
+}
+
+[data-theme="dark"] .bg-white\/70 {
+  background-color: rgba(255, 255, 255, 0.30) !important;
+}
+
+[data-theme="dark"] .bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-white\/90 {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* hover:bg-white opacity variants */
+[data-theme="dark"] .hover\:bg-white\/5:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
 [data-theme="dark"] .hover\:bg-white\/10:hover {
   background-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* hover:bg-white/20 in dark mode */
 [data-theme="dark"] .hover\:bg-white\/20:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.10) !important;
 }
 
-/* hover:bg-white/[0.03] in dark mode */
-[data-theme="dark"] [class*="hover:bg-white/"] {
-  --tw-bg-opacity: 1;
-}
-
-/* border-white/10 in dark mode */
+/* border-white opacity variants */
 [data-theme="dark"] .border-white\/10 {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* bg-gray-500 buttons in dark mode — Vercel deploy card */
+[data-theme="dark"] .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ===== bg-gray-* overrides in dark mode ===== */
+
+/* bg-gray-50/100/200 are light grays that look terrible in dark mode */
+[data-theme="dark"] .bg-gray-50 {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+}
+
+[data-theme="dark"] .bg-gray-200 {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+}
+
+/* bg-gray-500 opacity variants - used in deploy/settings dialogs */
+[data-theme="dark"] .bg-gray-500\/3 {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
 [data-theme="dark"] .bg-gray-500\/5 {
   background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="dark"] .bg-gray-500\/10 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 [data-theme="dark"] .bg-gray-500\/12 {
   background-color: rgba(255, 255, 255, 0.06) !important;
 }
 
+[data-theme="dark"] .bg-gray-500\/15 {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
 [data-theme="dark"] .bg-gray-500\/20 {
   background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bg-gray-500\/30 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* hover:bg-gray-500 opacity variants */
+[data-theme="dark"] .hover\:bg-gray-500\/10:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .hover\:bg-gray-500\/15:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+[data-theme="dark"] .hover\:bg-gray-500\/20:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .hover\:bg-gray-500\/30:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* border-gray-500 opacity variants */
+[data-theme="dark"] .border-gray-500\/10 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .border-gray-500\/15 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] .border-gray-500\/20 {
   border-color: var(--bolt-elements-borderColor) !important;
 }
 
+[data-theme="dark"] .border-gray-500\/30 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .border-gray-500\/50 {
+  border-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+/* ===== text-gray-* overrides in dark mode ===== */
+
+[data-theme="dark"] .text-gray-300 {
+  color: var(--bolt-elements-textSecondary) !important;
+}
+
 [data-theme="dark"] .text-gray-400 {
   color: var(--bolt-elements-textSecondary) !important;
 }
 
-[data-theme="dark"] .hover\:bg-gray-500\/20:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+[data-theme="dark"] .text-gray-500 {
+  color: var(--bolt-elements-textTertiary) !important;
+}
+
+[data-theme="dark"] .text-gray-600 {
+  color: var(--bolt-elements-textSecondary) !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+[data-theme="dark"] .text-gray-800 {
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+[data-theme="dark"] .text-gray-900 {
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+/* ===== focus ring/border gray overrides ===== */
+
+[data-theme="dark"] .focus\:ring-gray-500\/30:focus {
+  --tw-ring-color: rgba(144, 152, 252, 0.2) !important;
+}
+
+[data-theme="dark"] .focus\:border-gray-500\/50:focus {
+  border-color: rgba(144, 152, 252, 0.3) !important;
+}
+
+/* ===== from-gray / to-gray gradient overrides ===== */
+
+[data-theme="dark"] .from-gray-500\/20 {
+  --tw-gradient-from: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .to-gray-600\/20 {
+  --tw-gradient-to: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .from-gray-500\/30 {
+  --tw-gradient-from: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .to-gray-600\/30 {
+  --tw-gradient-to: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* ===== ring-white overrides ===== */
+
+[data-theme="dark"] .ring-white\/20 {
+  --tw-ring-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ===== bg-green-500 opacity overrides for connected status ===== */
+
+[data-theme="dark"] .bg-green-500\/3 {
+  background-color: rgba(88, 214, 141, 0.03) !important;
+}
+
+[data-theme="dark"] .bg-green-500\/12 {
+  background-color: rgba(88, 214, 141, 0.06) !important;
+}
+
+[data-theme="dark"] .bg-green-500\/15 {
+  background-color: rgba(88, 214, 141, 0.08) !important;
+}
+
+[data-theme="dark"] .bg-green-500\/20 {
+  background-color: rgba(88, 214, 141, 0.10) !important;
+}
+
+[data-theme="dark"] .hover\:bg-green-500\/20:hover {
+  background-color: rgba(88, 214, 141, 0.10) !important;
+}
+
+/* ===== bg-blue-500 opacity overrides ===== */
+
+[data-theme="dark"] .bg-blue-500\/10 {
+  background-color: rgba(96, 165, 250, 0.06) !important;
+}
+
+[data-theme="dark"] .bg-blue-500\/15 {
+  background-color: rgba(96, 165, 250, 0.08) !important;
+}
+
+[data-theme="dark"] .bg-blue-500\/20 {
+  background-color: rgba(96, 165, 250, 0.10) !important;
+}
+
+[data-theme="dark"] .border-blue-500\/20 {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+[data-theme="dark"] .border-blue-500\/40 {
+  border-color: rgba(96, 165, 250, 0.20) !important;
+}
+
+[data-theme="dark"] .hover\:border-blue-500\/40:hover {
+  border-color: rgba(96, 165, 250, 0.20) !important;
+}
+
+[data-theme="dark"] .focus\:ring-blue-500\/30:focus {
+  --tw-ring-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+[data-theme="dark"] .focus\:border-blue-500\/50:focus {
+  border-color: rgba(96, 165, 250, 0.3) !important;
 }
 
 /* Mobile responsive utilities */

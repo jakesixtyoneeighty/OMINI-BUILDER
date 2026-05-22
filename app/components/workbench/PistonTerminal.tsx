@@ -256,7 +256,7 @@ export const PistonTerminal = memo(function PistonTerminal({ previewMode }: { pr
               line.type === 'output' ? 'text-green-300' :
               line.type === 'error' ? 'text-red-400 font-medium' :
               line.type === 'system' ? 'text-purple-300 font-medium' :
-              'text-gray-400'
+              'text-bolt-elements-textSecondary'
             }`}
           >
             {line.type === 'input' && (

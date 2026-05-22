@@ -613,8 +613,8 @@ function ProjectCardWithPreview({
           
           {/* Hover overlay - glass morphism */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 flex items-end justify-center pb-4 transition-all duration-300">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-2 ring-white/20">
-              <div className="i-ph:play-bold text-xl text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-bolt-elements-item-backgroundActive/60 backdrop-blur-md flex items-center justify-center shadow-lg ring-2 ring-bolt-elements-borderColor/40">
+              <div className="i-ph:play-bold text-xl text-bolt-elements-textPrimary" />
             </div>
           </div>
           

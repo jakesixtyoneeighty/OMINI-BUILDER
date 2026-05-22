@@ -67,7 +67,7 @@ export const BuildPlanDropdown = memo(function BuildPlanDropdown({
               className={classNames(
                 'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition-all',
                 planMode
-                  ? 'bg-blue-500/15 text-blue-400'
+                  ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent'
                   : 'text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive',
               )}
             >

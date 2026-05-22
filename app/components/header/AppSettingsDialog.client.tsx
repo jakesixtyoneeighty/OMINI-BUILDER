@@ -976,7 +976,7 @@ export function AppSettingsDialog() {
               {/* GitHub Integration */}
               <div className={`rounded-xl border transition-all ${isGithubConnected ? 'border-green-500/30 bg-green-500/3' : 'border-bolt-elements-borderColor bg-bolt-elements-background-depth-1'}`}>
                 <div className="flex items-center gap-4 p-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gray-500/10 flex items-center justify-center shrink-0 border border-gray-500/15">
+                  <div className="w-14 h-14 rounded-2xl bg-bolt-elements-item-backgroundAccent/10 flex items-center justify-center shrink-0 border border-bolt-elements-borderColor">
                     <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" fill="#8B949E"/>
                     </svg>
@@ -1000,7 +1000,7 @@ export function AppSettingsDialog() {
                     className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                       isGithubConnected
                         ? 'bg-green-500/12 text-green-400 hover:bg-green-500/20'
-                        : 'bg-gray-500/12 text-gray-400 hover:bg-gray-500/20'
+                        : 'bg-bolt-elements-item-backgroundAccent/12 text-bolt-elements-item-contentAccent hover:bg-bolt-elements-item-backgroundAccent/20'
                     }`}
                   >
                     {isGithubConnected ? t('appSettings.configured') : t('appSettings.connect')}
@@ -1018,7 +1018,7 @@ export function AppSettingsDialog() {
                         onBlur={saveGithubIntegrationSettings}
                         placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                         type="password"
-                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                        className={monoInputClass + ' focus:ring-bolt-elements-item-contentAccent/30 focus:border-bolt-elements-item-contentAccent/50'}
                       />
                       <p className="text-[11px] text-bolt-elements-textTertiary mt-1">
                         {t('appSettings.githubTokenHint')}
@@ -1034,7 +1034,7 @@ export function AppSettingsDialog() {
                         onBlur={saveGithubIntegrationSettings}
                         placeholder="usuario/repositorio"
                         type="text"
-                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                        className={monoInputClass + ' focus:ring-bolt-elements-item-contentAccent/30 focus:border-bolt-elements-item-contentAccent/50'}
                       />
                     </div>
                     <div>
@@ -1047,7 +1047,7 @@ export function AppSettingsDialog() {
                         onBlur={saveGithubIntegrationSettings}
                         placeholder="main"
                         type="text"
-                        className={monoInputClass + ' focus:ring-gray-500/30 focus:border-gray-500/50'}
+                        className={monoInputClass + ' focus:ring-bolt-elements-item-contentAccent/30 focus:border-bolt-elements-item-contentAccent/50'}
                       />
                     </div>
                   </div>
@@ -1270,7 +1270,7 @@ export function AppSettingsDialog() {
               {/* Vercel Section */}
               <div className="border-t border-bolt-elements-borderColor pt-5">
                 <div className="flex items-center gap-2.5 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-bolt-elements-bg-depth-3 flex items-center justify-center shrink-0 overflow-hidden">
                     <img src="/logos/vercel.svg" alt="Vercel" className="w-5 h-5 object-contain" />
                   </div>
                   <div>

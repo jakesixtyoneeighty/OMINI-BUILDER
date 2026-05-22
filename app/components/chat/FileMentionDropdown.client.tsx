@@ -31,8 +31,8 @@ function getFileColor(path: string): string {
   if (path.endsWith('.css') || path.endsWith('.scss')) return 'text-pink-400';
   if (path.endsWith('.html')) return 'text-orange-400';
   if (path.endsWith('.json')) return 'text-green-400';
-  if (path.endsWith('.md')) return 'text-gray-400';
-  return 'text-gray-400';
+  if (path.endsWith('.md')) return 'text-bolt-elements-textSecondary';
+  return 'text-bolt-elements-textSecondary';
 }
 
 export function FileMentionDropdown({ search, position, onSelect, onClose }: FileMentionDropdownProps) {

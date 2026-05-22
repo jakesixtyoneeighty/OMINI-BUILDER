@@ -817,9 +817,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               {hasVercel && (
                 <button
                   onClick={() => deployTo('vercel')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-gray-500/20 bg-gray-500/5"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bolt-elements-item-backgroundActive transition-all text-left group border border-bolt-elements-borderColor bg-bolt-elements-item-backgroundDefault"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-600/20 flex items-center justify-center shrink-0 group-hover:from-gray-500/30 group-hover:to-gray-600/30 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-bolt-elements-bg-depth-3 to-bolt-elements-bg-depth-4 flex items-center justify-center shrink-0 group-hover:from-bolt-elements-item-backgroundActive group-hover:to-bolt-elements-item-backgroundActive transition-colors">
                     <div className="i-ph:triangle-fill text-white text-base" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -830,7 +830,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                       {settings?.vercel?.projectName ? t('deploy.sameUrlUpdate') : t('deploy.vercelDefault')}
                     </p>
                   </div>
-                  <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-gray-500/20 text-white uppercase tracking-wider">
+                  <div className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-bolt-elements-item-contentAccent/15 text-bolt-elements-item-contentAccent uppercase tracking-wider">
                     {t('deploy.default')}
                   </div>
                 </button>

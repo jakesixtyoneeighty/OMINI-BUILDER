@@ -55,7 +55,7 @@ $code-font-size: 13px;
 
   h6 {
     font-size: 0.85em;
-    color: #6a737d;
+    color: var(--bolt-elements-textTertiary);
   }
 
   p {
@@ -315,13 +315,13 @@ $code-font-size: 13px;
   }
 
   &::-webkit-progress-value {
-    background-color: #6366f1;
+    background-color: var(--bolt-elements-item-contentAccent, #6366f1);
     border-radius: 4px;
     transition: width 0.3s ease;
   }
 
   &::-moz-progress-bar {
-    background-color: #6366f1;
+    background-color: var(--bolt-elements-item-contentAccent, #6366f1);
     border-radius: 4px;
   }
 }

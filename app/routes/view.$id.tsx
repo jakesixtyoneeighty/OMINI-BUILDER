@@ -35,7 +35,7 @@ export default function ViewDeploy() {
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">
               <div className="i-svg-spinners:90-ring-with-bg text-4xl text-teal-400 mx-auto mb-4" />
-              <p className="text-sm text-gray-400">Loading project...</p>
+              <p className="text-sm text-bolt-elements-textSecondary">Loading project...</p>
             </div>
           </div>
         }
