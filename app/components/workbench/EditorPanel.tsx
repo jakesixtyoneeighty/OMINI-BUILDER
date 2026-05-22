@@ -211,11 +211,17 @@ export const EditorPanel = memo(
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
           <PanelGroup direction="horizontal">
             <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
-              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full bg-bolt-elements-background-depth-2">
+              <div
+                className="flex flex-col h-full"
+                style={{ borderRight: '1px solid rgba(255,255,255,.06)', background: 'rgba(10,10,18,.6)' }}
+              >
                 {/* File tree header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-bolt-elements-borderColor">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
-                    <div className="i-ph:tree-structure-duotone text-sm" />
+                <div
+                  className="flex items-center justify-between px-3 py-2.5"
+                  style={{ borderBottom: '1px solid rgba(255,255,255,.05)' }}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,.25)' }}>
+                    <div className="i-ph:tree-structure-duotone text-sm" style={{ color: 'rgba(255,255,255,.3)' }} />
                     {t('editorPanel.files')}
                   </div>
                   <div className="flex items-center gap-0.5">
@@ -250,7 +256,13 @@ export const EditorPanel = memo(
 
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
               {/* Editor header */}
-              <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 gap-2">
+              <div
+                className="flex items-center px-3 py-2 gap-2"
+                style={{
+                  borderBottom: '1px solid rgba(255,255,255,.05)',
+                  background: 'rgba(10,10,18,.8)',
+                }}
+              >
                 {/* Toggle file tree button */}
                 <button
                   onClick={toggleFileTree}
@@ -350,19 +362,26 @@ export const EditorPanel = memo(
           <div className="h-full">
             <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
               {/* Terminal tabs */}
-              <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1 min-h-[36px] px-2">
+              <div
+                className="flex items-center gap-1 min-h-[36px] px-2"
+                style={{
+                  background: 'rgba(10,10,18,.9)',
+                  borderTop: '1px solid rgba(255,255,255,.05)',
+                  borderBottom: '1px solid rgba(255,255,255,.05)',
+                }}
+              >
                 {Array.from({ length: terminalCount }, (_, index) => {
                   const isActive = activeTerminal === index;
 
                   return (
                     <button
                       key={index}
-                      className={classNames(
-                        'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-1.5 h-full whitespace-nowrap rounded-lg transition-all duration-150',
-                        isActive
-                          ? 'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary shadow-sm'
-                          : 'bg-transparent text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground/50',
-                      )}
+                      className="flex items-center text-sm cursor-pointer gap-1.5 px-3 py-1.5 h-full whitespace-nowrap rounded-lg transition-all duration-150"
+                      style={{
+                        background: isActive ? 'rgba(99,102,241,.12)' : 'transparent',
+                        color: isActive ? '#a5b4fc' : 'rgba(255,255,255,.3)',
+                        border: isActive ? '1px solid rgba(99,102,241,.2)' : '1px solid transparent',
+                      }}
                       onClick={() => setActiveTerminal(index)}
                     >
                       <div className={isActive ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window-duotone'} text-base />

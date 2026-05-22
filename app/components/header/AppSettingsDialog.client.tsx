@@ -682,45 +682,77 @@ export function AppSettingsDialog() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      <style>{`
+        .settings-modal { font-family: 'Geist', system-ui, sans-serif; }
+        .settings-tab-active {
+          background: rgba(99,102,241,.15) !important;
+          color: #a5b4fc !important;
+          border-color: rgba(99,102,241,.3) !important;
+        }
+        .settings-tab-active .tab-icon { color: #a5b4fc !important; }
+        .settings-tab:hover:not(.settings-tab-active) {
+          background: rgba(255,255,255,.04) !important;
+          color: rgba(255,255,255,.7) !important;
+        }
+      `}</style>
+
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0"
+        style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(8px)' }}
         onClick={closeSettingsPanel}
       />
 
       {/* Modal */}
-      <div className="relative w-[90vw] max-w-[860px] h-[85vh] max-h-[800px] flex flex-col bg-bolt-elements-background-depth-2 rounded-2xl border border-bolt-elements-borderColor shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div
+        className="settings-modal relative w-[92vw] max-w-[900px] h-[88vh] max-h-[820px] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        style={{
+          background: 'rgba(12,12,20,.97)',
+          border: '1px solid rgba(255,255,255,.08)',
+          borderRadius: '20px',
+          boxShadow: '0 40px 100px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04)',
+        }}
+      >
 
       {/* ====== HEADER BAR ====== */}
-      <div className="shrink-0 px-5 pt-4 pb-3 border-b border-bolt-elements-borderColor">
-        <div className="flex items-center justify-between mb-3">
+      <div
+        className="shrink-0 px-5 pt-4 pb-0"
+        style={{ borderBottom: '1px solid rgba(255,255,255,.06)' }}
+      >
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/12 flex items-center justify-center shrink-0">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(99,102,241,.12)', border: '1px solid rgba(99,102,241,.2)' }}
+            >
               {settings?.logo ? (
                 <img src={settings.logo} alt="" className="w-5 h-5 rounded object-cover" />
               ) : (
-                <div className="i-ph:folder-open text-purple-400 text-sm" />
+                <div className="i-ph:folder-open text-sm" style={{ color: '#818cf8' }} />
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-bold text-bolt-elements-textPrimary truncate">
+              <h2 className="text-sm font-semibold truncate" style={{ color: 'rgba(255,255,255,.9)' }}>
                 {projectName || t('appSettings.untitled')}
               </h2>
-              <p className="text-[10px] text-bolt-elements-textTertiary">
-                {t('appSettings.projectSettings')}
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,.3)' }}>
+                Project Settings
               </p>
             </div>
           </div>
           <button
             onClick={closeSettingsPanel}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+            style={{ color: 'rgba(255,255,255,.3)', background: 'rgba(255,255,255,.05)' }}
+            onMouseEnter={e => { (e.target as HTMLElement).closest('button')!.style.background = 'rgba(255,255,255,.1)'; (e.target as HTMLElement).closest('button')!.style.color = 'rgba(255,255,255,.8)'; }}
+            onMouseLeave={e => { (e.target as HTMLElement).closest('button')!.style.background = 'rgba(255,255,255,.05)'; (e.target as HTMLElement).closest('button')!.style.color = 'rgba(255,255,255,.3)'; }}
           >
-            <div className="i-ph:x text-base" />
+            <div className="i-ph:x text-sm" />
           </button>
         </div>
 
         {/* ====== HORIZONTAL TAB PILLS ====== */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 -mb-1 scrollbar-none">
+        <div className="flex items-center gap-1 overflow-x-auto pb-3 scrollbar-none">
           {TABS.map((tabItem) => {
             const isActive = tab === tabItem.id;
             const isIntegrationTab = tabItem.id === 'integrations';
@@ -728,16 +760,19 @@ export function AppSettingsDialog() {
               <button
                 key={tabItem.id}
                 onClick={() => setSettingsTab(tabItem.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-bolt-elements-textPrimary text-bolt-elements-background-depth-1 shadow-sm'
-                    : 'text-bolt-elements-textTertiary hover:bg-bolt-elements-background-depth-1 hover:text-bolt-elements-textPrimary'
-                }`}
+                className={`settings-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isActive ? 'settings-tab-active' : ''}`}
+                style={{
+                  border: '1px solid transparent',
+                  color: isActive ? '#a5b4fc' : 'rgba(255,255,255,.35)',
+                }}
               >
-                <div className={`${tabIconMap[tabItem.id]} text-sm ${isActive ? 'text-bolt-elements-background-depth-1' : ''}`} />
+                <div className={`tab-icon ${tabIconMap[tabItem.id]} text-sm`} style={{ color: isActive ? '#a5b4fc' : 'rgba(255,255,255,.3)' }} />
                 <span>{t('appSettings.' + tabItem.id)}</span>
                 {isIntegrationTab && connectedCount > 0 && (
-                  <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary' : 'bg-green-500/15 text-green-400'}`}>
+                  <span
+                    className="px-1.5 py-0.5 text-[9px] font-bold rounded-full"
+                    style={{ background: 'rgba(16,185,129,.15)', color: '#6ee7b7' }}
+                  >
                     {connectedCount}
                   </span>
                 )}

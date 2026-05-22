@@ -9,8 +9,8 @@ export interface SlashCommand {
   name: string;
   description: string;
   icon: string;
-  iconBg: string;
-  shortcut?: string;
+  color: string;
+  tag?: string;
   action: () => void;
 }
 
@@ -21,6 +21,23 @@ interface SlashCommandsProps {
   onClose: () => void;
 }
 
+const TAG_COLORS: Record<string, string> = {
+  'AI':      'rgba(99,102,241,.15)',
+  'Skill':   'rgba(16,185,129,.15)',
+  'Media':   'rgba(236,72,153,.15)',
+  'Mode':    'rgba(245,158,11,.15)',
+  'Debug':   'rgba(239,68,68,.15)',
+  'Docs':    'rgba(6,182,212,.15)',
+};
+const TAG_TEXT: Record<string, string> = {
+  'AI':      '#a5b4fc',
+  'Skill':   '#6ee7b7',
+  'Media':   '#f9a8d4',
+  'Mode':    '#fcd34d',
+  'Debug':   '#fca5a5',
+  'Docs':    '#67e8f9',
+};
+
 export function useSlashCommands(): SlashCommand[] {
   const thinkMode = useStore(chatStore).thinkMode;
 
@@ -28,93 +45,109 @@ export function useSlashCommands(): SlashCommand[] {
     {
       id: 'think',
       name: 'think',
-      description: 'Raciocinio profundo e visivel da IA',
+      description: 'Deep visible reasoning mode',
       icon: 'i-ph:brain-duotone',
-      iconBg: 'bg-blue-500/15 text-blue-400',
-      shortcut: 'Modo pensamento',
-      action: () => {
-        chatStore.setKey('thinkMode', !thinkMode);
-      },
+      color: '#6366f1',
+      tag: 'AI',
+      action: () => { chatStore.setKey('thinkMode', !thinkMode); },
+    },
+    {
+      id: 'plan',
+      name: 'plan',
+      description: 'Create execution plan before building',
+      icon: 'i-ph:list-checks-duotone',
+      color: '#f59e0b',
+      tag: 'Mode',
+      action: () => {},
     },
     {
       id: 'skill-web',
       name: 'skill-web',
-      description: 'Gerar pagina web completa com HTML/CSS/JS',
+      description: 'Generate complete web page with HTML/CSS/JS',
       icon: 'i-ph:globe-duotone',
-      iconBg: 'bg-emerald-500/15 text-emerald-400',
-      shortcut: 'Skill',
+      color: '#10b981',
+      tag: 'Skill',
       action: () => {},
     },
     {
       id: 'skill-ui',
       name: 'skill-ui',
-      description: 'Criar componente UI com design system',
+      description: 'Create UI component with design system',
       icon: 'i-ph:palette-duotone',
-      iconBg: 'bg-purple-500/15 text-purple-400',
-      shortcut: 'Skill',
+      color: '#8b5cf6',
+      tag: 'Skill',
       action: () => {},
     },
     {
       id: 'skill-api',
       name: 'skill-api',
-      description: 'Criar endpoint de API REST',
+      description: 'Create REST API endpoint',
       icon: 'i-ph:plug-duotone',
-      iconBg: 'bg-amber-500/15 text-amber-400',
-      shortcut: 'Skill',
+      color: '#f59e0b',
+      tag: 'Skill',
       action: () => {},
     },
     {
       id: 'skill-db',
       name: 'skill-db',
-      description: 'Criar schema de banco de dados',
+      description: 'Create database schema',
       icon: 'i-ph:database-duotone',
-      iconBg: 'bg-cyan-500/15 text-cyan-400',
-      shortcut: 'Skill',
+      color: '#06b6d4',
+      tag: 'Skill',
+      action: () => {},
+    },
+    {
+      id: 'skill-auth',
+      name: 'skill-auth',
+      description: 'Add authentication to your app',
+      icon: 'i-ph:lock-key-duotone',
+      color: '#ec4899',
+      tag: 'Skill',
+      action: () => {},
+    },
+    {
+      id: 'skill-ppt',
+      name: 'skill-ppt',
+      description: 'Generate PowerPoint presentation',
+      icon: 'i-ph:presentation-chart-duotone',
+      color: '#ef4444',
+      tag: 'Skill',
       action: () => {},
     },
     {
       id: 'image',
       name: 'image',
-      description: 'Gerar imagem com IA a partir de descricao',
+      description: 'Generate image with AI from description',
       icon: 'i-ph:image-duotone',
-      iconBg: 'bg-pink-500/15 text-pink-400',
-      shortcut: 'Gerar',
+      color: '#ec4899',
+      tag: 'Media',
       action: () => {},
     },
     {
       id: 'voice',
       name: 'voice',
-      description: 'Dictar mensagem por voz',
+      description: 'Dictate message by voice',
       icon: 'i-ph:microphone-duotone',
-      iconBg: 'bg-rose-500/15 text-rose-400',
-      shortcut: 'Audio',
-      action: () => {},
-    },
-    {
-      id: 'plan',
-      name: 'plan',
-      description: 'Criar plano de execucao antes de construir',
-      icon: 'i-ph:list-checks-duotone',
-      iconBg: 'bg-indigo-500/15 text-indigo-400',
-      shortcut: 'Modo plano',
+      color: '#f43f5e',
+      tag: 'Media',
       action: () => {},
     },
     {
       id: 'debug',
       name: 'debug',
-      description: 'Analisar e corrigir erros no codigo',
+      description: 'Analyze and fix errors in code',
       icon: 'i-ph:bug-beetle-duotone',
-      iconBg: 'bg-red-500/15 text-red-400',
-      shortcut: 'Debug',
+      color: '#ef4444',
+      tag: 'Debug',
       action: () => {},
     },
     {
       id: 'docs',
       name: 'docs',
-      description: 'Gerar documentacao para o codigo',
+      description: 'Generate documentation for code',
       icon: 'i-ph:book-bookmark-duotone',
-      iconBg: 'bg-teal-500/15 text-teal-400',
-      shortcut: 'Docs',
+      color: '#06b6d4',
+      tag: 'Docs',
       action: () => {},
     },
   ];
@@ -126,36 +159,21 @@ export function SlashCommandsDropdown({ search, position, onSelect, onClose }: S
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Filter commands by search
   const filtered = commands.filter(
     (cmd) =>
       cmd.name.toLowerCase().includes(search.toLowerCase()) ||
-      cmd.description.toLowerCase().includes(search.toLowerCase()),
+      cmd.description.toLowerCase().includes(search.toLowerCase()) ||
+      (cmd.tag || '').toLowerCase().includes(search.toLowerCase()),
   );
 
-  // Reset selection when filter changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [search]);
+  useEffect(() => { setSelectedIndex(0); }, [search]);
 
-  // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % filtered.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (filtered[selectedIndex]) {
-          onSelect(filtered[selectedIndex]);
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex((p) => (p + 1) % filtered.length); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedIndex((p) => (p - 1 + filtered.length) % filtered.length); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (filtered[selectedIndex]) onSelect(filtered[selectedIndex]); }
+      else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
     },
     [filtered, selectedIndex, onSelect, onClose],
   );
@@ -165,20 +183,13 @@ export function SlashCommandsDropdown({ search, position, onSelect, onClose }: S
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Scroll selected item into view
   useEffect(() => {
-    const el = itemRefs.current[selectedIndex];
-    if (el) {
-      el.scrollIntoView({ block: 'nearest' });
-    }
+    itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        onClose();
-      }
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) onClose();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -186,108 +197,139 @@ export function SlashCommandsDropdown({ search, position, onSelect, onClose }: S
 
   if (filtered.length === 0) return null;
 
-  // Calculate position to avoid going off screen
-  const dropdownHeight = Math.min(filtered.length * 56 + 40, 400);
+  const dropdownHeight = Math.min(filtered.length * 52 + 80, 380);
   const top = Math.min(position.top, window.innerHeight - dropdownHeight - 20);
+
+  // Group by tag
+  const groups: { tag: string; items: typeof filtered }[] = [];
+  const seen = new Set<string>();
+  for (const cmd of filtered) {
+    const tag = cmd.tag || 'Other';
+    if (!seen.has(tag)) { seen.add(tag); groups.push({ tag, items: [] }); }
+    groups.find((g) => g.tag === tag)!.items.push(cmd);
+  }
 
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+      initial={{ opacity: 0, y: 6, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
-      className="fixed z-[9999] w-[320px] rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-2xl overflow-hidden"
+      exit={{ opacity: 0, y: 6, scale: 0.97 }}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
+      className="fixed z-[9999] w-[340px] rounded-2xl overflow-hidden"
       style={{
-        bottom: window.innerHeight - top + 8,
-        left: Math.min(position.left, window.innerWidth - 340),
+        bottom: window.innerHeight - top + 10,
+        left: Math.min(position.left, window.innerWidth - 360),
+        background: 'rgba(14,14,22,.95)',
+        border: '1px solid rgba(255,255,255,.08)',
+        boxShadow: '0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04)',
+        backdropFilter: 'blur(24px)',
       }}
     >
       {/* Header */}
-      <div className="px-3 py-2 flex items-center justify-between border-b border-bolt-elements-borderColor/50 bg-bolt-elements-background-depth-1">
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-bolt-elements-textTertiary">
-          Comandos & Skills
-        </span>
-        <span className="text-[10px] text-bolt-elements-textTertiary">
-          {filtered.length} disponivel{filtered.length !== 1 ? 'is' : ''}
-        </span>
-      </div>
-
-      {/* Commands list */}
-      <div className="max-h-[360px] overflow-y-auto py-1">
-        {filtered.map((cmd, index) => (
-          <button
-            key={cmd.id}
-            ref={(el) => { itemRefs.current[index] = el; }}
-            onClick={() => onSelect(cmd)}
-            onMouseEnter={() => setSelectedIndex(index)}
-            className={classNames(
-              'w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all duration-100',
-              selectedIndex === index
-                ? 'bg-bolt-elements-item-backgroundActive'
-                : 'hover:bg-bolt-elements-item-backgroundActive/50',
-            )}
-          >
-            {/* Icon */}
-            <div
-              className={classNames(
-                'w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 transition-transform duration-150',
-                cmd.iconBg,
-                selectedIndex === index ? 'scale-110' : '',
-              )}
-            >
-              <div className={cmd.icon} />
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span
-                  className={classNames(
-                    'text-sm font-semibold',
-                    selectedIndex === index ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textPrimary',
-                  )}
-                >
-                  /{cmd.name}
-                </span>
-                {cmd.shortcut && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary font-medium">
-                    {cmd.shortcut}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-bolt-elements-textTertiary truncate mt-0.5">{cmd.description}</p>
-            </div>
-
-            {/* Arrow indicator when selected */}
-            {selectedIndex === index && (
-              <motion.div
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-bolt-elements-item-contentAccent"
-              >
-                <div className="i-ph:caret-left text-xs" />
-              </motion.div>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Footer hint */}
-      <div className="px-3 py-2 border-t border-bolt-elements-borderColor/50 bg-bolt-elements-background-depth-1 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] text-bolt-elements-textTertiary">
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[9px]">↑↓</kbd>
-            Navegar
-          </span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[9px]">Enter</kbd>
-            Selecionar
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between border-b" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
+        <div className="flex items-center gap-2">
+          <div className="i-ph:terminal-window-duotone text-sm" style={{ color: '#6366f1' }} />
+          <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,.3)' }}>
+            Commands
           </span>
         </div>
-        <span className="text-[10px] text-bolt-elements-textTertiary">
-          <kbd className="px-1 rounded bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-[9px]">Esc</kbd>
-          Fechar
+        <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,.2)' }}>
+          {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Commands */}
+      <div className="max-h-[320px] overflow-y-auto py-1.5 scrollbar-thin">
+        {groups.map(({ tag, items }) => {
+          const globalStart = filtered.indexOf(items[0]);
+          return (
+            <div key={tag}>
+              <div className="px-4 pt-2 pb-1">
+                <span
+                  className="text-[9px] uppercase tracking-[0.2em] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: TAG_COLORS[tag] || 'rgba(255,255,255,.06)',
+                    color: TAG_TEXT[tag] || 'rgba(255,255,255,.4)',
+                  }}
+                >
+                  {tag}
+                </span>
+              </div>
+              {items.map((cmd) => {
+                const globalIdx = filtered.indexOf(cmd);
+                const isSelected = globalIdx === selectedIndex;
+                return (
+                  <button
+                    key={cmd.id}
+                    ref={(el) => { itemRefs.current[globalIdx] = el; }}
+                    onClick={() => onSelect(cmd)}
+                    onMouseEnter={() => setSelectedIndex(globalIdx)}
+                    className="w-full text-left px-3 py-2 mx-1 flex items-center gap-3 rounded-xl transition-all duration-100"
+                    style={{
+                      width: 'calc(100% - 8px)',
+                      background: isSelected ? 'rgba(99,102,241,.12)' : 'transparent',
+                    }}
+                  >
+                    {/* Icon */}
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                      style={{ background: `${cmd.color}18`, color: cmd.color }}
+                    >
+                      <div className={cmd.icon} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-sm font-semibold"
+                          style={{ color: isSelected ? '#a5b4fc' : 'rgba(255,255,255,.85)' }}
+                        >
+                          /{cmd.name}
+                        </span>
+                      </div>
+                      <p className="text-[11px] truncate mt-0.5" style={{ color: 'rgba(255,255,255,.3)' }}>
+                        {cmd.description}
+                      </p>
+                    </div>
+
+                    {isSelected && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: .8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-[10px] px-2 py-0.5 rounded-md font-medium"
+                        style={{ background: 'rgba(99,102,241,.2)', color: '#a5b4fc' }}
+                      >
+                        ↵
+                      </motion.div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div
+        className="px-4 py-2 flex items-center justify-between"
+        style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}
+      >
+        <div className="flex items-center gap-3 text-[10px]" style={{ color: 'rgba(255,255,255,.25)' }}>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1 py-0.5 rounded text-[9px] font-mono" style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)' }}>↑↓</kbd>
+            navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1 py-0.5 rounded text-[9px] font-mono" style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)' }}>↵</kbd>
+            select
+          </span>
+        </div>
+        <span className="flex items-center gap-1 text-[10px]" style={{ color: 'rgba(255,255,255,.2)' }}>
+          <kbd className="px-1 py-0.5 rounded text-[9px] font-mono" style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)' }}>esc</kbd>
+          close
         </span>
       </div>
     </motion.div>

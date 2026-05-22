@@ -1,140 +1,27 @@
 import { useStore } from '@nanostores/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { languageStore } from '~/lib/stores/language';
 import { useT } from '~/lib/i18n/useT';
 import { classNames } from '~/utils/classNames';
 
-const SKILL_CARDS = [
-  {
-    icon: 'i-ph:globe-hemisphere-west-duotone',
-    title: 'Web Apps',
-    desc: 'Sites & Apps completos',
-    gradient: 'from-blue-500/15 via-indigo-500/10 to-purple-500/15',
-    border: 'hover:border-blue-400/40',
-    iconGradient: 'from-blue-400 to-indigo-400',
-    shadow: 'shadow-blue-500/10',
-  },
-  {
-    icon: 'i-ph:game-controller-duotone',
-    title: 'Games',
-    desc: 'Jogos interativos',
-    gradient: 'from-purple-500/15 via-pink-500/10 to-rose-500/15',
-    border: 'hover:border-purple-400/40',
-    iconGradient: 'from-purple-400 to-pink-400',
-    shadow: 'shadow-purple-500/10',
-  },
-  {
-    icon: 'i-ph:chart-bar-duotone',
-    title: 'Dashboards',
-    desc: 'Painéis analíticos',
-    gradient: 'from-emerald-500/15 via-teal-500/10 to-cyan-500/15',
-    border: 'hover:border-emerald-400/40',
-    iconGradient: 'from-emerald-400 to-teal-400',
-    shadow: 'shadow-emerald-500/10',
-  },
-  {
-    icon: 'i-ph:robot-duotone',
-    title: 'AI Tools',
-    desc: 'Ferramentas com IA',
-    gradient: 'from-amber-500/15 via-orange-500/10 to-red-500/15',
-    border: 'hover:border-amber-400/40',
-    iconGradient: 'from-amber-400 to-orange-400',
-    shadow: 'shadow-amber-500/10',
-  },
-  {
-    icon: 'i-ph:shopping-cart-duotone',
-    title: 'E-Commerce',
-    desc: 'Lojas online',
-    gradient: 'from-rose-500/15 via-red-500/10 to-pink-500/15',
-    border: 'hover:border-rose-400/40',
-    iconGradient: 'from-rose-400 to-red-400',
-    shadow: 'shadow-rose-500/10',
-  },
-  {
-    icon: 'i-ph:graduation-cap-duotone',
-    title: 'Educação',
-    desc: 'Apps educacionais',
-    gradient: 'from-cyan-500/15 via-sky-500/10 to-blue-500/15',
-    border: 'hover:border-cyan-400/40',
-    iconGradient: 'from-cyan-400 to-sky-400',
-    shadow: 'shadow-cyan-500/10',
-  },
+const CATEGORIES = [
+  { icon: 'i-ph:globe-hemisphere-west-duotone', label: 'Web Apps', color: '#6366f1' },
+  { icon: 'i-ph:game-controller-duotone', label: 'Games', color: '#8b5cf6' },
+  { icon: 'i-ph:chart-bar-duotone', label: 'Dashboards', color: '#10b981' },
+  { icon: 'i-ph:robot-duotone', label: 'AI Tools', color: '#f59e0b' },
+  { icon: 'i-ph:shopping-cart-duotone', label: 'E-Commerce', color: '#ef4444' },
+  { icon: 'i-ph:graduation-cap-duotone', label: 'Education', color: '#06b6d4' },
 ];
 
-const FLOATING_ICONS = [
-  { icon: 'i-ph:react-logo', x: 10, y: 20, delay: 0, scale: 0.6, opacity: 0.15 },
-  { icon: 'i-ph:angular-logo', x: 85, y: 15, delay: 1, scale: 0.5, opacity: 0.12 },
-  { icon: 'i-ph:vue-logo', x: 75, y: 70, delay: 2, scale: 0.55, opacity: 0.13 },
-  { icon: 'i-ph:code-bold', x: 15, y: 75, delay: 3, scale: 0.45, opacity: 0.1 },
-  { icon: 'i-ph:terminal', x: 90, y: 50, delay: 1.5, scale: 0.5, opacity: 0.12 },
-  { icon: 'i-ph:database', x: 5, y: 45, delay: 2.5, scale: 0.6, opacity: 0.14 },
-  { icon: 'i-ph:lightning', x: 50, y: 10, delay: 0.5, scale: 0.4, opacity: 0.1 },
-  { icon: 'i-ph:cloud', x: 30, y: 80, delay: 3.5, scale: 0.65, opacity: 0.13 },
-  { icon: 'i-ph:brackets-angle', x: 70, y: 30, delay: 4, scale: 0.5, opacity: 0.11 },
-  { icon: 'i-ph:star', x: 45, y: 65, delay: 1.2, scale: 0.45, opacity: 0.12 },
+const EXAMPLES = [
+  'Build a real-time dashboard with charts and filters',
+  'Create a landing page for my SaaS product',
+  'Make an interactive quiz game with leaderboard',
+  'Design a portfolio site with animations',
+  'Build a task manager with drag-and-drop',
+  'Create an e-commerce store with cart',
 ];
-
-function FloatingParticles() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {FLOATING_ICONS.map((item, i) => (
-        <motion.div
-          key={i}
-          className={`absolute text-3xl ${item.icon}`}
-          style={{ left: `${item.x}%`, top: `${item.y}%` }}
-          animate={{
-            y: [0, -15, 0, 15, 0],
-            x: [0, 8, 0, -8, 0],
-            rotate: [0, 3, 0, -3, 0],
-          }}
-          transition={{
-            duration: 12,
-            delay: item.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function GradientOrbs() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div
-        className="absolute top-[-10%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[120px] opacity-20"
-        style={{ background: 'radial-gradient(ellipse, rgba(99,102,241,0.35), transparent 70%)' }}
-      />
-      <div
-        className="absolute top-[30%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-15"
-        style={{ background: 'radial-gradient(ellipse, rgba(168,85,247,0.3), transparent 70%)' }}
-      />
-      <div
-        className="absolute bottom-[-5%] left-[15%] w-[500px] h-[500px] rounded-full blur-[100px] opacity-18"
-        style={{ background: 'radial-gradient(ellipse, rgba(59,130,246,0.3), transparent 70%)' }}
-      />
-      <div
-        className="absolute top-[60%] left-[40%] w-[400px] h-[400px] rounded-full blur-[100px] opacity-12"
-        style={{ background: 'radial-gradient(ellipse, rgba(236,72,153,0.25), transparent 70%)' }}
-      />
-    </div>
-  );
-}
-
-function GridPattern() {
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none opacity-[0.03]"
-      style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
-        backgroundSize: '80px 80px',
-      }}
-    />
-  );
-}
 
 interface LandingPageProps {
   children: React.ReactNode;
@@ -143,255 +30,199 @@ interface LandingPageProps {
 export function LandingPage({ children }: LandingPageProps) {
   const t = useT();
   const currentLang = useStore(languageStore);
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [exampleIdx, setExampleIdx] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    const interval = setInterval(() => {
+      setExampleIdx((i) => (i + 1) % EXAMPLES.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', fn);
+    return () => window.removeEventListener('mousemove', fn);
   }, []);
 
   return (
-    <div className="w-full flex flex-col h-full relative overflow-y-auto overflow-x-hidden bg-bolt-elements-bg-depth-1">
+    <div className="relative w-full h-full flex flex-col overflow-y-auto overflow-x-hidden bg-[#0a0a0f]">
       <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+
+        .landing-root * { font-family: 'Geist', system-ui, sans-serif; }
+
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
+        @keyframes shimmer-slide {
+          from { background-position: 200% center; }
+          to   { background-position: -200% center; }
         }
-        @keyframes glow-pulse {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.05); }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
-        @keyframes gradient-shift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes pulse-ring {
+          0%,100% { transform: scale(1); opacity:.5; }
+          50%      { transform: scale(1.15); opacity:.2; }
         }
-        .shimmer-text {
-          color: #ffffff;
-          text-shadow: none;
+
+        .fade-up { animation: fade-up .6s cubic-bezier(.16,1,.3,1) both; }
+        .delay-1 { animation-delay:.1s; }
+        .delay-2 { animation-delay:.2s; }
+        .delay-3 { animation-delay:.35s; }
+        .delay-4 { animation-delay:.5s; }
+        .delay-5 { animation-delay:.65s; }
+
+        .gradient-text {
+          background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,.5));
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
-        .gradient-animated {
-          background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
-          background-size: 400% 400%;
-          animation: gradient-shift 15s ease infinite;
+        .accent-text {
+          background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer-slide 4s linear infinite;
         }
-        .glass-card {
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+        .glass {
+          background: rgba(255,255,255,.03);
+          border: 1px solid rgba(255,255,255,.07);
+          backdrop-filter: blur(16px);
         }
-        .hero-glow {
-          filter: drop-shadow(0 0 80px rgba(99,102,241,0.15));
+        .cat-card {
+          transition: all .2s cubic-bezier(.16,1,.3,1);
+          cursor: default;
+        }
+        .cat-card:hover {
+          background: rgba(255,255,255,.06) !important;
+          border-color: rgba(255,255,255,.12) !important;
+          transform: translateY(-2px);
+        }
+
+        .noise-bg::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+          pointer-events: none;
+          opacity: .4;
         }
       `}</style>
 
-      {/* Background layers */}
-      <GradientOrbs />
-      <FloatingParticles />
-      <GridPattern />
-
-      {/* Mouse follow glow - intensified */}
+      {/* Ambient glow following mouse */}
       <div
-        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+        className="pointer-events-none fixed inset-0 z-0 transition-none"
         style={{
-          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99,102,241,0.15), rgba(168,85,247,0.1) 30%, transparent 50%)`,
+          background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(99,102,241,.07), transparent 60%)`,
         }}
       />
 
-      {/* ===== HERO SECTION ===== */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 flex flex-col items-center pt-[8vh] pb-8 px-4 sm:px-6"
-      >
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: -10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
-          className="mb-8"
-        >
-          <div className="group relative inline-flex">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-lg opacity-50 group-hover:opacity-70 transition-opacity" />
-            <span className="relative inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-white/10 text-xs font-medium text-blue-300 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-gradient-to-r from-blue-400 to-purple-400" />
-              </span>
-              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent font-semibold">
-                AI-Powered Full-Stack Builder
-              </span>
-            </span>
-          </div>
-        </motion.div>
+      {/* Static ambient orbs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
+        <div className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+        <div className="absolute bottom-[10%] right-[-5%] w-[400px] h-[400px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(139,92,246,.1) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+      </div>
 
-        {/* Main headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-6 relative"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 hero-glow" />
-          <span className="block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-bolt-elements-textPrimary leading-[1.05]">
-            {t('landing.headline')}
-          </span>
-          <span className="block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-[1.05] mt-2 shimmer-text">
-            {t('landing.headlineAccent')}
-          </span>
-          <span className="block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-bolt-elements-textPrimary leading-[1.05] mt-2">
-            {t('landing.headlineEnd')}
-          </span>
-        </motion.h1>
+      {/* Grid */}
+      <div className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)',
+          backgroundSize: '72px 72px',
+        }} />
+
+      {/* Content */}
+      <div className="landing-root relative z-10 flex flex-col items-center w-full px-4 sm:px-6 pt-[12vh] pb-20 noise-bg">
+
+        {/* Status badge */}
+        <div className="fade-up delay-1 mb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass text-xs font-medium text-white/60 tracking-wide">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400" />
+            </span>
+            AI-Powered Full-Stack Builder — Open Source
+          </div>
+        </div>
+
+        {/* Headline */}
+        <div className="fade-up delay-2 text-center mb-6 max-w-3xl">
+          <h1 className="text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.1] tracking-tight gradient-text">
+            Build anything with
+          </h1>
+          <h1 className="text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.1] tracking-tight accent-text">
+            natural language
+          </h1>
+        </div>
 
         {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.7, ease: 'easeOut' }}
-          className="text-base sm:text-lg lg:text-xl text-bolt-elements-textTertiary text-center max-w-2xl mb-10 leading-relaxed px-4"
-        >
-          {t('landing.subtitle')}
-        </motion.p>
+        <p className="fade-up delay-3 text-center text-white/40 text-base sm:text-lg leading-relaxed max-w-xl mb-12 font-light">
+          Describe your idea, and watch it come to life. Full-stack apps, dashboards, games — no code required.
+        </p>
 
-        {/* Quick stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6, ease: 'easeOut' }}
-          className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mb-12 text-xs sm:text-sm text-bolt-elements-textSecondary"
-        >
-          <div className="flex items-center gap-2">
-            <div className="i-ph:lightning-bold text-amber-400 text-lg" />
-            <span className="font-medium">6 Preview Modes</span>
-          </div>
-          <div className="w-px h-4 bg-bolt-elements-borderColor/50" />
-          <div className="flex items-center gap-2">
-            <div className="i-ph:cloud-arrow-up-bold text-emerald-400 text-lg" />
-            <span className="font-medium">Multi-Deploy</span>
-          </div>
-          <div className="w-px h-4 bg-bolt-elements-borderColor/50" />
-          <div className="flex items-center gap-2">
-            <div className="i-ph:brain-bold text-purple-400 text-lg" />
-            <span className="font-medium">Multi-Model AI</span>
-          </div>
-          <div className="w-px h-4 bg-bolt-elements-borderColor/50" />
-          <div className="flex items-center gap-2">
-            <div className="i-ph:rocket-launch-bold text-blue-400 text-lg" />
-            <span className="font-medium">Instant Build</span>
-          </div>
-        </motion.div>
-      </motion.div>
+        {/* Input area */}
+        <div className="fade-up delay-4 w-full max-w-2xl mb-10">
+          {children}
+        </div>
 
-      {/* ===== INPUT AREA ===== */}
-      <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay: 0.8, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-20 px-4 sm:px-6 mb-12"
-      >
-        <div className="max-w-4xl mx-auto">{children}</div>
-      </motion.div>
+        {/* Example prompts */}
+        <div className="fade-up delay-5 flex items-center gap-2 mb-16 text-xs text-white/30 font-medium">
+          <div className="i-ph:sparkle-duotone text-indigo-400 text-sm shrink-0" />
+          <span className="transition-all duration-500">{EXAMPLES[exampleIdx]}</span>
+        </div>
 
-      {/* ===== SKILL CARDS ===== */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.8 }}
-        className="relative z-10 mt-4 mb-8 px-4 sm:px-6"
-      >
-        <div className="max-w-6xl mx-auto">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.5 }}
-            className="text-center text-xs sm:text-sm text-bolt-elements-textTertiary mb-6 uppercase tracking-[0.2em] font-medium"
-          >
-            Construa qualquer coisa
-          </motion.p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {SKILL_CARDS.map((card, i) => (
+        {/* Category pills */}
+        <div className="fade-up delay-5 w-full max-w-3xl">
+          <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/20 mb-5 font-medium">
+            What can you build
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+            {CATEGORIES.map((cat, i) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 1.2 + i * 0.08, duration: 0.5, ease: 'easeOut' }}
-                onMouseEnter={() => setHoveredCard(i)}
-                onMouseLeave={() => setHoveredCard(null)}
-                className={classNames(
-                  'group relative flex flex-col items-center gap-3 p-4 sm:p-5 rounded-2xl border backdrop-blur-xl transition-all duration-500 cursor-default overflow-hidden',
-                  'bg-gradient-to-br',
-                  card.gradient,
-                  hoveredCard === i
-                    ? `${card.border} ${card.shadow} shadow-lg scale-[1.05] border-opacity-60`
-                    : 'border-white/5 hover:border-white/10',
-                )}
+                key={cat.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 + i * 0.07, duration: 0.4 }}
+                className="cat-card flex flex-col items-center gap-2.5 py-4 px-3 rounded-xl glass"
               >
-                {/* Hover glow effect */}
                 <div
-                  className={classNames(
-                    'absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500',
-                    card.gradient,
-                  )}
-                />
-                
-                {/* Icon container */}
-                <div
-                  className={classNames(
-                    'relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br flex items-center justify-center text-2xl sm:text-3xl transition-all duration-500 shadow-md',
-                    card.iconGradient,
-                    hoveredCard === i ? 'scale-110 rotate-3 shadow-lg' : 'scale-100 rotate-0',
-                  )}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xl"
+                  style={{ background: `${cat.color}18`, color: cat.color }}
                 >
-                  <div className={classNames(card.icon, 'text-white')} />
+                  <div className={cat.icon} />
                 </div>
-                
-                {/* Text content */}
-                <div className="relative text-center z-10">
-                  <p className="text-xs sm:text-sm font-bold text-bolt-elements-textPrimary tracking-tight">
-                    {card.title}
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-bolt-elements-textTertiary mt-1 font-medium leading-tight">
-                    {card.desc}
-                  </p>
-                </div>
+                <span className="text-[11px] font-medium text-white/50 tracking-wide">{cat.label}</span>
               </motion.div>
             ))}
           </div>
         </div>
-      </motion.div>
 
-      {/* ===== FOOTER HINT ===== */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.8, duration: 0.6 }}
-        className="relative z-10 mt-auto pb-8 pt-6 text-center px-4"
-      >
-        <div className="inline-flex items-center gap-4 text-[11px] sm:text-xs text-bolt-elements-textTertiary">
+        {/* Bottom hint */}
+        <div className="mt-16 flex items-center gap-6 text-[11px] text-white/20">
           <div className="flex items-center gap-1.5">
-            <kbd className="px-2 py-1 rounded-lg text-[10px] font-mono font-semibold bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/50 text-bolt-elements-textSecondary shadow-sm">
-              @
-            </kbd>
-            <span>mencionar arquivos</span>
+            <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 border border-white/10">@</kbd>
+            <span>mention files</span>
           </div>
-          <div className="w-px h-3 bg-bolt-elements-borderColor/50" />
+          <div className="w-px h-3 bg-white/10" />
           <div className="flex items-center gap-1.5">
-            <kbd className="px-2 py-1 rounded-lg text-[10px] font-mono font-semibold bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/50 text-bolt-elements-textSecondary shadow-sm">
-              /
-            </kbd>
-            <span>comandos rápidos</span>
+            <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 border border-white/10">/</kbd>
+            <span>commands</span>
+          </div>
+          <div className="w-px h-3 bg-white/10" />
+          <div className="flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 border border-white/10">⌘↵</kbd>
+            <span>send</span>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
