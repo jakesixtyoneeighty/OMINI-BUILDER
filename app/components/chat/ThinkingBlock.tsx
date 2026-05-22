@@ -192,29 +192,27 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           gap: 8,
           padding: '10px 16px',
           borderRadius: 12,
-          background: '#0a0a0a',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          color: 'rgba(255, 255, 255, 0.85)',
+          background: 'rgba(255, 255, 255, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          color: 'rgba(255, 255, 255, 0.9)',
           fontSize: 13,
           fontWeight: 500,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
           letterSpacing: '0.2px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(8px)',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#1a1a1a';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.95)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
           e.currentTarget.style.transform = 'translateY(-1px)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = '#0a0a0a';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
           e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
@@ -295,9 +293,9 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                 marginTop: 10,
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: '#0a0a0a',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(12px)',
               }}
             >
               {/* Tabs — only show if there are commands */}
