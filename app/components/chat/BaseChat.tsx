@@ -1,5 +1,6 @@
 import type { Message } from 'ai';
 import React, { type RefCallback, useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { ClientOnly } from 'remix-utils/client-only';
 import { useStore } from '@nanostores/react';
 import { Workbench } from '~/components/workbench/Workbench.client';
@@ -29,6 +30,8 @@ import {
 } from '~/lib/stores/inspector';
 import { useT } from '~/lib/i18n/useT';
 import { useIsMobile } from '~/utils/mobile';
+import { LandingPage } from './LandingPage';
+import { SlashCommandsDropdown, type SlashCommand } from './SlashCommands';
 
 import styles from './BaseChat.module.scss';
 
@@ -538,62 +541,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 : undefined
             }
           >
-            {/* ============ LANDING PAGE VIEW (Bolt.new style) ============ */}
+            {/* ============ LANDING PAGE VIEW (NEW DESIGN) ============ */}
             {!chatStarted && (
-              <div className="w-full flex flex-col h-full relative overflow-y-auto">
-                {/* Background gradient with arc decoration - theme-aware */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {/* Main gradient */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-[70%]"
-                    style={{
-                      background: `linear-gradient(to bottom, var(--bolt-elements-homepage-gradient-from), var(--bolt-elements-homepage-gradient-to))`,
-                    }}
-                  />
-                  {/* Decorative arcs */}
-                  <div
-                    className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[120%] h-[500px] border-[1px] rounded-[50%]"
-                    style={{ borderColor: 'var(--bolt-elements-homepage-arc)' }}
-                  />
-                  <div
-                    className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[90%] h-[400px] border-[1px] rounded-[50%]"
-                    style={{ borderColor: 'var(--bolt-elements-homepage-arc)', opacity: 0.5 }}
-                  />
-                  {/* Gradient glow at bottom center */}
-                  <div
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full blur-3xl"
-                    style={{ background: `linear-gradient(to top, var(--bolt-elements-homepage-glow), transparent)` }}
-                  />
-                  {/* Subtle accent dot */}
-                  <div
-                    className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
-                    style={{ backgroundColor: 'var(--bolt-elements-homepage-arc)' }}
-                  />
-                </div>
-
-                {/* Hero Section */}
-                <div className="mt-[12vh] max-w-2xl mx-auto px-4 text-center relative z-10">
-                  {/* Headline */}
-                  <h1 className="text-4xl sm:text-[52px] font-bold text-bolt-elements-textPrimary mb-4 leading-[1.1] tracking-tight">
-                    {t('landing.headline')}{' '}
-                    <span className="text-bolt-elements-item-contentAccent">{t('landing.headlineAccent')}</span>{' '}
-                    {t('landing.headlineEnd')}
-                  </h1>
-
-                  {/* Subtitle */}
-                  <p className="text-base text-bolt-elements-textTertiary mb-6 max-w-md mx-auto leading-relaxed">
-                    {t('landing.subtitle')}
-                  </p>
-
-                  {/* Model picker + API Settings */}
-                  <div className="flex justify-center items-center gap-2 mb-8">
-                    <ClientOnly>{() => <ModelPicker />}</ClientOnly>
-                    <ClientOnly>{() => <SettingsDialog />}</ClientOnly>
-                  </div>
-                </div>
-
-                {/* "Let's build" Input Card */}
-                <div className="px-4 pb-4 relative z-10">
+              <LandingPage>
+                <div className="max-w-chat mx-auto">
+                  {/* "Let's build" Input Card */}
+                  <div className="relative z-prompt">
                   <div className="relative w-full max-w-chat mx-auto z-prompt">
                     <style>{landingInputGlowKeyframes}</style>
                     <div
@@ -873,11 +826,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   </div>
                 </div>
 
-                {/* Recently viewed section */}
-                <div className="pb-8 pt-6 relative z-10">
-                  <ClientOnly>{() => <RecentlyViewed />}</ClientOnly>
+                  </div>
                 </div>
-              </div>
+              </LandingPage>
             )}
 
             {/* ============ CHAT VIEW ============ */}
@@ -1290,62 +1241,90 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         )}
 
         {/* / Slash Command Dropdown */}
-        {slashState?.active && (
-          <div
-            className="fixed z-[9999] w-[260px] rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-2xl overflow-hidden"
-            style={{ bottom: window.innerHeight - slashState.position.top + 8, left: slashState.position.left }}
-          >
-            <div className="px-3 py-2 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1">
-              Comandos
-            </div>
-            <button
-              className={classNames(
-                'w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-bolt-elements-item-backgroundActive transition-colors',
-                thinkMode ? 'bg-blue-500/10' : '',
-              )}
-              onClick={() => {
-                // Toggle think mode
-                chatStore.setKey('thinkMode', !thinkMode);
-                // Remove /think or / from input
-                if (textareaRef?.current) {
-                  const val = textareaRef.current.value;
-                  const newVal = val.replace(/\/think\s*$/, '').replace(/\/\s*$/, '');
-                  const syntheticEvent = {
-                    target: { value: newVal },
-                  } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-                  handleInputChange?.(syntheticEvent);
+        <AnimatePresence>
+          {slashState?.active && (
+            <SlashCommandsDropdown
+              search={slashState.search}
+              position={slashState.position}
+              onSelect={(cmd: SlashCommand) => {
+                // Execute command action
+                cmd.action();
+
+                // Handle special commands
+                if (cmd.id === 'think') {
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/think\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else if (cmd.id.startsWith('skill-')) {
+                  const skillType = cmd.id.replace('skill-', '');
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/skill-\w*\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal + `Use a skill de ${skillType} para ` },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else if (cmd.id === 'plan') {
+                  if (!planMode) onTogglePlanMode?.();
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/plan\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else if (cmd.id === 'debug') {
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/debug\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal + 'Analise e corrija os erros no código: ' },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else if (cmd.id === 'docs') {
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/docs\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal + 'Gere documentação para ' },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else if (cmd.id === 'image') {
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(/\/image\s*$/, '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal + 'Gere uma imagem de ' },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
+                } else {
+                  // Generic: remove the command text
+                  if (textareaRef?.current) {
+                    const val = textareaRef.current.value;
+                    const newVal = val.replace(new RegExp(`\\/${cmd.name}\\s*$`), '').replace(/\/\s*$/, '');
+                    const syntheticEvent = {
+                      target: { value: newVal },
+                    } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                    handleInputChange?.(syntheticEvent);
+                  }
                 }
                 setSlashState(null);
                 setTimeout(() => textareaRef?.current?.focus(), 0);
               }}
-            >
-              <div
-                className={classNames(
-                  'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                  thinkMode
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : 'bg-bolt-elements-background-depth-1 text-bolt-elements-textTertiary',
-                )}
-              >
-                <div className="i-ph:brain text-base" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div
-                  className={classNames(
-                    'text-xs font-medium',
-                    thinkMode ? 'text-blue-400' : 'text-bolt-elements-textPrimary',
-                  )}
-                >
-                  /think
-                </div>
-                <div className="text-[10px] text-bolt-elements-textTertiary">
-                  Pense melhor — raciocinio mais profundo e visivel
-                </div>
-              </div>
-              {thinkMode && <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0" />}
-            </button>
-          </div>
-        )}
+              onClose={() => setSlashState(null)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Mentioned files indicators — removed, now shown inside input card */}
 

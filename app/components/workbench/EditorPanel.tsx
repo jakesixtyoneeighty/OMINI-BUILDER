@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
 import {
   CodeMirrorEditor,
@@ -21,6 +21,7 @@ import { classNames } from '~/utils/classNames';
 import { WORK_DIR } from '~/utils/constants';
 import { renderLogger } from '~/utils/logger';
 import { isMobile, useIsMobile } from '~/utils/mobile';
+import { motion } from 'framer-motion';
 import { FileBreadcrumb } from './FileBreadcrumb';
 import { FileTree } from './FileTree';
 import { Terminal, type TerminalRef } from './terminal/Terminal';
@@ -47,9 +48,7 @@ const DEFAULT_EDITOR_SIZE = 100 - DEFAULT_TERMINAL_SIZE;
 const editorSettings: EditorSettings = { tabSize: 2 };
 
 /**
- * Lazy terminal wrapper — only mounts the xterm Terminal component
- * when the terminal panel is actually visible. This saves ~10-20MB RAM
- * per terminal that's not visible.
+ * Lazy terminal wrapper
  */
 function LazyTerminal({
   isActive,
@@ -66,7 +65,6 @@ function LazyTerminal({
   theme: string;
   terminalRefs: React.MutableRefObject<Array<TerminalRef | null>>;
 }) {
-  // Only mount the actual Terminal component when this tab has been active at least once
   const [hasBeenActive, setHasBeenActive] = useState(isActive);
 
   useEffect(() => {
@@ -78,7 +76,6 @@ function LazyTerminal({
   const t = useT();
 
   if (!hasBeenActive) {
-    // Show a placeholder instead of mounting xterm
     return (
       <div className="h-full flex items-center justify-center text-bolt-elements-textTertiary text-xs">
         {t('editorPanel.clickToActivateTerminal')}
@@ -133,6 +130,7 @@ export const EditorPanel = memo(
 
     const [activeTerminal, setActiveTerminal] = useState(0);
     const [terminalCount, setTerminalCount] = useState(1);
+    const [showFileTree, setShowFileTree] = useState(true);
 
     const activeFileSegments = useMemo(() => {
       if (!editorDocument) {
@@ -147,9 +145,9 @@ export const EditorPanel = memo(
     }, [editorDocument, unsavedFiles]);
 
     useEffect(() => {
-      // On mobile, collapse the FileTree panel by default
       if (_mobile && fileTreePanelRef.current) {
         fileTreePanelRef.current.collapse();
+        setShowFileTree(false);
       }
     }, [_mobile]);
 
@@ -195,16 +193,46 @@ export const EditorPanel = memo(
       }
     };
 
+    const toggleFileTree = () => {
+      const panel = fileTreePanelRef.current;
+      if (panel) {
+        if (panel.isCollapsed()) {
+          panel.expand();
+          setShowFileTree(true);
+        } else {
+          panel.collapse();
+          setShowFileTree(false);
+        }
+      }
+    };
+
     return (
       <PanelGroup direction="vertical">
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
           <PanelGroup direction="horizontal">
             <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
-              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
-                <PanelHeader>
-                  <div className="i-ph:tree-structure-duotone shrink-0" />
-                  {t('editorPanel.files')}
-                </PanelHeader>
+              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full bg-bolt-elements-background-depth-2">
+                {/* File tree header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-bolt-elements-borderColor">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
+                    <div className="i-ph:tree-structure-duotone text-sm" />
+                    {t('editorPanel.files')}
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <IconButton
+                      icon="i-ph:plus"
+                      size="sm"
+                      title="New File"
+                      onClick={() => {/* TODO */}}
+                    />
+                    <IconButton
+                      icon="i-ph:folder-plus"
+                      size="sm"
+                      title="New Folder"
+                      onClick={() => {/* TODO */}}
+                    />
+                  </div>
+                </div>
                 <FileTree
                   className="h-full"
                   files={files}
@@ -216,28 +244,75 @@ export const EditorPanel = memo(
                 />
               </div>
             </Panel>
-            <PanelResizeHandle />
+
+            {/* Custom resize handle with hover effect */}
+            <PanelResizeHandle className="w-[3px] bg-transparent hover:bg-bolt-elements-item-contentAccent/30 transition-colors data-[resize-handle-active]:bg-bolt-elements-item-contentAccent/50" />
+
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
-              <PanelHeader className="overflow-x-auto">
-                {activeFileSegments?.length && (
-                  <div className="flex items-center flex-1 text-sm">
+              {/* Editor header */}
+              <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 gap-2">
+                {/* Toggle file tree button */}
+                <button
+                  onClick={toggleFileTree}
+                  className={classNames(
+                    'flex items-center justify-center w-7 h-7 rounded-lg transition-all',
+                    showFileTree
+                      ? 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
+                      : 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/10',
+                  )}
+                  title={showFileTree ? 'Hide file tree' : 'Show file tree'}
+                >
+                  <div className={showFileTree ? 'i-ph:sidebar-simple' : 'i-ph:sidebar-simple-duotone'} text-sm />
+                </button>
+
+                <div className="w-px h-4 bg-bolt-elements-borderColor" />
+
+                {/* Breadcrumb */}
+                {activeFileSegments?.length ? (
+                  <div className="flex items-center flex-1 text-sm min-w-0 overflow-hidden">
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
-                    {activeFileUnsaved && (
-                      <div className="flex gap-1 ml-auto -mr-1.5">
-                        <PanelHeaderButton onClick={onFileSave}>
+                  </div>
+                ) : (
+                  <span className="text-xs text-bolt-elements-textTertiary flex-1">
+                    Select a file to start editing
+                  </span>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1">
+                  {activeFileUnsaved && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-1"
+                      >
+                        <PanelHeaderButton onClick={onFileSave} className="text-emerald-400 hover:text-emerald-300">
                           <div className="i-ph:floppy-disk-duotone" />
-                          {t('common.save')}
+                          <span className="hidden sm:inline text-xs">{t('common.save')}</span>
                         </PanelHeaderButton>
                         <PanelHeaderButton onClick={onFileReset}>
                           <div className="i-ph:clock-counter-clockwise-duotone" />
-                          {t('editorPanel.reset')}
+                          <span className="hidden sm:inline text-xs">{t('editorPanel.reset')}</span>
                         </PanelHeaderButton>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </PanelHeader>
-              <div className="h-full flex-1 overflow-hidden">
+                      </motion.div>
+                      <div className="w-px h-4 bg-bolt-elements-borderColor mx-1" />
+                    </>
+                  )}
+                  <PanelHeaderButton
+                    onClick={() => {
+                      workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
+                    }}
+                    className={showTerminal ? 'text-bolt-elements-item-contentAccent' : ''}
+                  >
+                    <div className="i-ph:terminal" />
+                    <span className="hidden sm:inline text-xs">{t('workbench.terminal')}</span>
+                  </PanelHeaderButton>
+                </div>
+              </div>
+
+              {/* Code editor */}
+              <div className="h-full flex-1 overflow-hidden bg-bolt-elements-code-background">
                 <CodeMirrorEditor
                   theme={theme}
                   editable={!isStreaming && editorDocument !== undefined}
@@ -252,7 +327,10 @@ export const EditorPanel = memo(
             </Panel>
           </PanelGroup>
         </Panel>
-        <PanelResizeHandle />
+
+        {/* Terminal panel */}
+        <PanelResizeHandle className="h-[3px] bg-transparent hover:bg-bolt-elements-item-contentAccent/30 transition-colors data-[resize-handle-active]:bg-bolt-elements-item-contentAccent/50" />
+
         <Panel
           ref={terminalPanelRef}
           defaultSize={showTerminal ? DEFAULT_TERMINAL_SIZE : 0}
@@ -271,7 +349,8 @@ export const EditorPanel = memo(
         >
           <div className="h-full">
             <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
-              <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1.5 min-h-[34px] p-2">
+              {/* Terminal tabs */}
+              <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1 min-h-[36px] px-2">
                 {Array.from({ length: terminalCount }, (_, index) => {
                   const isActive = activeTerminal === index;
 
@@ -279,31 +358,34 @@ export const EditorPanel = memo(
                     <button
                       key={index}
                       className={classNames(
-                        'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
-                        {
-                          'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': isActive,
-                          'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
-                            !isActive,
-                        },
+                        'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-1.5 h-full whitespace-nowrap rounded-lg transition-all duration-150',
+                        isActive
+                          ? 'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary shadow-sm'
+                          : 'bg-transparent text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground/50',
                       )}
                       onClick={() => setActiveTerminal(index)}
                     >
-                      <div className="i-ph:terminal-window-duotone text-lg" />
-                      {t('workbench.terminal')} {terminalCount > 1 && index + 1}
+                      <div className={isActive ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window-duotone'} text-base />
+                      <span className="text-xs font-medium">
+                        {t('workbench.terminal')} {terminalCount > 1 && index + 1}
+                      </span>
                     </button>
                   );
                 })}
-                {terminalCount < MAX_TERMINALS && <IconButton icon="i-ph:plus" size="md" onClick={addTerminal} />}
-                <IconButton
-                  className="ml-auto"
-                  icon="i-ph:caret-down"
-                  title={t('common.close')}
-                  size="md"
-                  onClick={() => workbenchStore.toggleTerminal(false)}
-                />
+                {terminalCount < MAX_TERMINALS && (
+                  <IconButton icon="i-ph:plus" size="sm" onClick={addTerminal} title="Add terminal" />
+                )}
+                <div className="ml-auto flex items-center gap-0.5">
+                  <IconButton
+                    icon="i-ph:caret-down"
+                    title={t('common.close')}
+                    size="sm"
+                    onClick={() => workbenchStore.toggleTerminal(false)}
+                  />
+                </div>
               </div>
-              {/* Use LazyTerminal — only mounts xterm when tab has been active */}
-              {/* Use LazyTerminal for WebContainer, PistonTerminal for Piston mode */}
+
+              {/* Terminal content */}
               {isPistonMode ? (
                 <PistonTerminal previewMode={previewMode} />
               ) : (

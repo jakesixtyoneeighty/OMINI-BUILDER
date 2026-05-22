@@ -133,3 +133,105 @@ html[data-theme='dark'] {
   --bolt-elements-editor-search-button-backgroundColor: theme('colors.gray.800');
   --bolt-elements-editor-search-button-backgroundColorHover: theme('colors.alpha.white.10');
 }
+
+/* ===== Editor Enhancements ===== */
+
+/* Smooth panel resize handles */
+[data-panel-resize-handle-id] {
+  transition: background-color 0.15s ease;
+}
+
+[data-panel-resize-handle-id]:hover {
+  background-color: var(--bolt-elements-item-contentAccent, rgba(99,102,241,0.3));
+}
+
+[data-resize-handle-state="drag"] {
+  background-color: var(--bolt-elements-item-contentAccent, rgba(99,102,241,0.5)) !important;
+}
+
+/* Editor tab animations */
+@keyframes tab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50% { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+}
+
+/* Unsaved indicator animation */
+.unsaved-indicator {
+  animation: tab-pulse 2s ease-in-out infinite;
+}
+
+/* Terminal panel improvements */
+.terminal-tab-active {
+  position: relative;
+}
+
+.terminal-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--bolt-elements-item-contentAccent);
+  border-radius: 1px;
+}
+
+/* CodeMirror enhancements */
+.cm-editor {
+  border-radius: 0 !important;
+}
+
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+
+/* Gutter styling */
+.cm-gutters {
+  border-right: 1px solid var(--bolt-elements-borderColor) !important;
+  background: var(--bolt-elements-bg-depth-2) !important;
+}
+
+/* Active line highlight */
+.cm-activeLineGutter {
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+
+/* Selection color */
+.cm-selectionBackground {
+  background: rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Cursor styling */
+.cm-cursor {
+  border-left-width: 2px !important;
+  border-left-color: var(--bolt-elements-item-contentAccent) !important;
+}
+
+/* File tree item hover */
+.file-tree-item:hover {
+  background: var(--bolt-elements-item-backgroundActive);
+}
+
+.file-tree-item.selected {
+  background: var(--bolt-elements-item-backgroundAccent);
+  color: var(--bolt-elements-item-contentAccent);
+}
+
+/* Scrollbar styling for editor */
+.cm-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 4px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.25);
+}
