@@ -208,11 +208,11 @@ export function LandingPage({ children }: LandingPageProps) {
       <FloatingParticles />
       <GridPattern />
 
-      {/* Mouse follow glow */}
+      {/* Mouse follow glow - intensified */}
       <div
-        className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
         style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99,102,241,0.06), transparent 40%)`,
+          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99,102,241,0.15), rgba(168,85,247,0.1) 30%, transparent 50%)`,
         }}
       />
 
