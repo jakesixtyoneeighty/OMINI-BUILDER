@@ -110,67 +110,27 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ flexShrink: 0, opacity: 0.65, color: 'rgba(255,255,255,0.42)' }}
+            className="text-bolt-elements-textTertiary"
+            style={{ flexShrink: 0, opacity: 0.65 }}
           >
             <path d="M12 3a6 6 0 0 0-6 6c0 2.5 1.2 4 2.4 5.3.8.9 1.6 1.8 1.6 2.7h4c0-.9.8-1.8 1.6-2.7C16.8 13 18 11.5 18 9a6 6 0 0 0-6-6z" />
             <path d="M9 21h6" />
             <path d="M10 18h4" />
           </svg>
 
-          {/* Shimmer text — gradient animado via inline style */}
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: '0.2px',
-              background: 'linear-gradient(90deg, #5a5a5a 0%, #ffffff 35%, #5a5a5a 55%, #ffffff 75%, #5a5a5a 100%)',
-              backgroundSize: '300% auto',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'thinking-shimmer 12s linear infinite',
-              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-            }}
-          >
+          {/* Shimmer text — gradient animado via CSS class */}
+          <span className="thinking-shimmer-text">
             Pensando...
           </span>
         </div>
 
         {/* Blue streaming content */}
         {content && (
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: 12,
-              background: 'rgba(59, 130, 246, 0.04)',
-              border: '1px solid rgba(59, 130, 246, 0.1)',
-              maxHeight: 200,
-              overflowY: 'auto',
-              position: 'relative',
-            }}
-          >
-            <pre
-              style={{
-                fontSize: 13,
-                color: '#93c5fd',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                lineHeight: 1.7,
-                margin: 0,
-              }}
-            >
+          <div className="thinking-streaming-content">
+            <pre className="thinking-streaming-pre">
               {content}
             </pre>
-            <span
-              style={{
-                color: '#60a5fa',
-                fontSize: 14,
-                fontWeight: 300,
-                animation: 'thinking-blink 1s step-end infinite',
-                marginLeft: 2,
-              }}
-            >
+            <span className="thinking-cursor-blink">
               |
             </span>
           </div>
@@ -186,37 +146,15 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '10px 16px',
-          borderRadius: 12,
-          background: 'rgba(120, 120, 120, 0.15)',
-          border: '1px solid rgba(150, 150, 150, 0.2)',
-          color: 'rgba(200, 200, 200, 0.9)',
-          fontSize: 13,
-          fontWeight: 500,
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-          letterSpacing: '0.2px',
-          backdropFilter: 'blur(8px)',
-        }}
+        className="thinking-reveal-button"
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(140, 140, 140, 0.25)';
-          e.currentTarget.style.borderColor = 'rgba(170, 170, 170, 0.3)';
-          e.currentTarget.style.color = 'rgba(220, 220, 220, 1)';
-          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.classList.add('thinking-reveal-button-hover');
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(120, 120, 120, 0.15)';
-          e.currentTarget.style.borderColor = 'rgba(150, 150, 150, 0.2)';
-          e.currentTarget.style.color = 'rgba(200, 200, 200, 0.9)';
-          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.classList.remove('thinking-reveal-button-hover');
         }}
       >
-        {/* Lightbulb icon — subtle gray */}
+        {/* Lightbulb icon */}
         <svg
           width="16"
           height="16"
@@ -238,17 +176,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
 
         {/* Word/char count badge */}
         {(wordCount > 0 || charCount > 0) && (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 400,
-              color: 'rgba(255, 255, 255, 0.3)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '2px 7px',
-              borderRadius: 999,
-              letterSpacing: '0.3px',
-            }}
-          >
+          <span className="thinking-count-badge">
             {charCount >= 1000
               ? `${(charCount / 1000).toFixed(1)}k caracteres`
               : wordCount > 50
@@ -288,45 +216,16 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div
-              style={{
-                marginTop: 10,
-                borderRadius: 12,
-                overflow: 'hidden',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(12px)',
-              }}
-            >
+            <div className="thinking-content-panel">
               {/* Tabs — only show if there are commands */}
               {hasCommands && (
-                <div
-                  style={{
-                    display: 'flex',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  }}
-                >
+                <div className="thinking-tab-bar">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveTab('reasoning');
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '10px 16px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: 'none',
-                      borderBottom: `2px solid ${activeTab === 'reasoning' ? '#ffffff' : 'transparent'}`,
-                      color: activeTab === 'reasoning' ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                      background: 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                      letterSpacing: '0.3px',
-                      textTransform: 'uppercase',
-                    }}
+                    className={`thinking-tab ${activeTab === 'reasoning' ? 'thinking-tab-active' : 'thinking-tab-inactive'}`}
                   >
                     <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>🧠</span> Raciocínio
                   </button>
@@ -335,22 +234,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                       e.stopPropagation();
                       setActiveTab('commands');
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '10px 16px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: 'none',
-                      borderBottom: `2px solid ${activeTab === 'commands' ? '#ffffff' : 'transparent'}`,
-                      color: activeTab === 'commands' ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                      background: 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                      letterSpacing: '0.3px',
-                      textTransform: 'uppercase',
-                    }}
+                    className={`thinking-tab ${activeTab === 'commands' ? 'thinking-tab-active' : 'thinking-tab-inactive'}`}
                   >
                     <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>⚡</span> Comandos ({commands.length})
                   </button>
@@ -360,19 +244,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
               {/* Content area */}
               <div style={{ padding: '14px 18px' }}>
                 {activeTab === 'reasoning' || !hasCommands ? (
-                  <pre
-                    style={{
-                      fontSize: 13,
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                      lineHeight: 1.7,
-                      maxHeight: 288,
-                      overflowY: 'auto',
-                      margin: 0,
-                    }}
-                  >
+                  <pre className="thinking-reasoning-pre">
                     {reasoning || content}
                   </pre>
                 ) : (
@@ -388,36 +260,12 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     {commands.map((cmd, i) => (
                       <div
                         key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 10,
-                          padding: '8px 12px',
-                          borderRadius: 8,
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid rgba(255, 255, 255, 0.06)',
-                        }}
+                        className="thinking-command-item"
                       >
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: 'rgba(255, 255, 255, 0.5)',
-                            fontFamily: 'monospace',
-                            flexShrink: 0,
-                            marginTop: 3,
-                          }}
-                        >
+                        <span className="thinking-command-prompt">
                           $
                         </span>
-                        <code
-                          style={{
-                            fontSize: 12,
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontFamily: 'monospace',
-                            wordBreak: 'break-all',
-                            lineHeight: 1.6,
-                          }}
-                        >
+                        <code className="thinking-command-code">
                           {cmd}
                         </code>
                       </div>

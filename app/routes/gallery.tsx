@@ -763,7 +763,7 @@ function ProjectDetailModal({
               <img
                 src={project.logo}
                 alt=""
-                className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 shadow-xl bg-white"
+                className="w-14 h-14 rounded-xl object-cover border-2 border-bolt-elements-borderColor shadow-xl bg-bolt-elements-bg-depth-3"
               />
             ) : (
               <div className="w-14 h-14 rounded-xl bg-bolt-elements-bg-depth-3 border border-bolt-elements-borderColor flex items-center justify-center shrink-0">
@@ -915,7 +915,7 @@ function FeaturedCard({
 
         {/* Featured badge */}
         <div className="absolute top-3 left-3">
-          <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/90 text-[10px] font-bold text-black backdrop-blur-sm shadow-sm">
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/90 text-[10px] font-bold text-white backdrop-blur-sm shadow-sm">
             <div className="i-ph:star-fill text-[9px]" /> {t('gallery.featuredBadge')}
           </span>
         </div>
@@ -943,10 +943,10 @@ function FeaturedCard({
               <img
                 src={project.logo}
                 alt=""
-                className="w-11 h-11 rounded-xl object-cover border-2 border-white/20 shadow-xl flex-shrink-0 bg-white"
+                className="w-11 h-11 rounded-xl object-cover border-2 border-bolt-elements-borderColor shadow-xl flex-shrink-0 bg-bolt-elements-bg-depth-3"
               />
             ) : (
-              <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center flex-shrink-0"></div>
+              <div className="w-11 h-11 rounded-xl bg-bolt-elements-bg-depth-3 backdrop-blur-md border border-bolt-elements-borderColor flex items-center justify-center flex-shrink-0"></div>
             )}
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-bold text-bolt-elements-textPrimary drop-shadow-lg truncate">
@@ -1078,10 +1078,10 @@ function ProjectCard({
               <img
                 src={project.logo}
                 alt=""
-                className="w-8 h-8 rounded-lg object-cover border-2 border-white/20 shadow-lg flex-shrink-0 bg-white"
+                className="w-8 h-8 rounded-lg object-cover border-2 border-bolt-elements-borderColor shadow-lg flex-shrink-0 bg-bolt-elements-bg-depth-3"
               />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-bolt-elements-bg-depth-3 backdrop-blur-sm border border-bolt-elements-borderColor flex items-center justify-center flex-shrink-0">
                 <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-sm text-white/60`} />
               </div>
             )}
@@ -1202,7 +1202,7 @@ function ListCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {project.logo ? (
-            <img src={project.logo} alt="" className="w-5 h-5 rounded object-cover bg-white shrink-0" />
+            <img src={project.logo} alt="" className="w-5 h-5 rounded object-cover bg-bolt-elements-bg-depth-3 shrink-0" />
           ) : (
             <div className="w-5 h-5 rounded bg-bolt-elements-bg-depth-3 flex items-center justify-center shrink-0">
               <div className={`${catInfo?.icon || 'i-ph:cube-duotone'} text-[10px] text-white/40`} />

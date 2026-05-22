@@ -479,6 +479,255 @@ body {
   font-size: 12px;
 }
 
+/* ===== ThinkingBlock — Theme-aware global classes ===== */
+
+/* Shimmer text — gradient sweep on "Pensando..." */
+.thinking-shimmer-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(
+    90deg,
+    var(--bolt-elements-textTertiary) 0%,
+    var(--bolt-elements-textPrimary) 35%,
+    var(--bolt-elements-textTertiary) 55%,
+    var(--bolt-elements-textPrimary) 75%,
+    var(--bolt-elements-textTertiary) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 12s linear infinite;
+}
+
+/* Streaming content area — blue-tinted panel */
+.thinking-streaming-content {
+  position: relative;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Streaming pre — accent-colored text */
+.thinking-streaming-pre {
+  font-size: 13px;
+  color: var(--bolt-elements-item-contentAccent, #93c5fd);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Cursor blink */
+.thinking-cursor-blink {
+  color: var(--bolt-elements-item-contentAccent, #60a5fa);
+  font-size: 14px;
+  font-weight: 300;
+  animation: thinking-blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+/* Reveal button — "Exibir raciocínio" */
+.thinking-reveal-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--bolt-elements-button-secondary-background);
+  border: 1px solid var(--bolt-elements-borderColor);
+  color: var(--bolt-elements-textPrimary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(8px);
+}
+
+.thinking-reveal-button-hover {
+  background: var(--bolt-elements-button-secondary-backgroundHover) !important;
+  border-color: var(--bolt-elements-borderColorActive) !important;
+  transform: translateY(-1px);
+}
+
+/* Count badge inside reveal button */
+.thinking-count-badge {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--bolt-elements-textTertiary);
+  background: var(--bolt-elements-bg-depth-3);
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+/* Content panel — expandable area */
+.thinking-content-panel {
+  margin-top: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bolt-elements-bg-depth-2);
+  border: 1px solid var(--bolt-elements-borderColor);
+  backdrop-filter: blur(12px);
+}
+
+/* Tab bar */
+.thinking-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--bolt-elements-borderColor);
+}
+
+/* Tab button */
+.thinking-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+
+.thinking-tab-active {
+  color: var(--bolt-elements-textPrimary);
+  border-bottom-color: var(--bolt-elements-item-contentAccent, #60a5fa);
+}
+
+.thinking-tab-inactive {
+  color: var(--bolt-elements-textTertiary);
+}
+
+.thinking-tab-inactive:hover {
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Reasoning pre text */
+.thinking-reasoning-pre {
+  font-size: 13px;
+  color: var(--bolt-elements-textPrimary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.7;
+  max-height: 288px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Command item */
+.thinking-command-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bolt-elements-bg-depth-3);
+  border: 1px solid var(--bolt-elements-borderColor);
+}
+
+.thinking-command-prompt {
+  font-size: 11px;
+  color: var(--bolt-elements-item-contentAccent, #60a5fa);
+  font-family: monospace;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.thinking-command-code {
+  font-size: 12px;
+  color: var(--bolt-elements-textPrimary);
+  font-family: monospace;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+/* ===== Dark Theme: Comprehensive bg-white / text-black overrides ===== */
+
+/* All images with bg-white in dark mode */
+[data-theme="dark"] img.bg-white {
+  background-color: var(--bolt-elements-bg-depth-3) !important;
+}
+
+/* All divs with bg-white in dark mode */
+[data-theme="dark"] div.bg-white {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+}
+
+/* text-black in dark mode — unreadable */
+[data-theme="dark"] .text-black {
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+/* bg-white/10 divs in dark mode — nearly invisible */
+[data-theme="dark"] .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* bg-white/5 in dark mode */
+[data-theme="dark"] .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* hover:bg-white/10 in dark mode */
+[data-theme="dark"] .hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* hover:bg-white/20 in dark mode */
+[data-theme="dark"] .hover\:bg-white\/20:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* hover:bg-white/[0.03] in dark mode */
+[data-theme="dark"] [class*="hover:bg-white/"] {
+  --tw-bg-opacity: 1;
+}
+
+/* border-white/10 in dark mode */
+[data-theme="dark"] .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* bg-gray-500 buttons in dark mode — Vercel deploy card */
+[data-theme="dark"] .bg-gray-500\/5 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="dark"] .bg-gray-500\/12 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .bg-gray-500\/20 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .border-gray-500\/20 {
+  border-color: var(--bolt-elements-borderColor) !important;
+}
+
+[data-theme="dark"] .text-gray-400 {
+  color: var(--bolt-elements-textSecondary) !important;
+}
+
+[data-theme="dark"] .hover\:bg-gray-500\/20:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* Mobile responsive utilities */
 @media (max-width: 767px) {
   /* Prevent pull-to-refresh on mobile */

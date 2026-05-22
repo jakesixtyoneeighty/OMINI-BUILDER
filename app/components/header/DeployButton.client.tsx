@@ -785,7 +785,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               </div>
               <button
                 onClick={() => { setBuildError(null); setDeployError(null); setDeployPhase('idle'); }}
-                className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-white/10 transition-all"
+                className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
                 title={t('error.dismiss')}
               >
                 <div className="i-ph:x text-sm" />

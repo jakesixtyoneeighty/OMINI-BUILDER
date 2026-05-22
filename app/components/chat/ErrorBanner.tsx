@@ -94,7 +94,7 @@ function ErrorItem({
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.03] transition-colors"
+        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-bolt-elements-item-backgroundActive transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="shrink-0 w-5 h-5 flex items-center justify-center">
