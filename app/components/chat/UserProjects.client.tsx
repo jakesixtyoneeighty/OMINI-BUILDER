@@ -120,12 +120,17 @@ export function UserProjects() {
             href={`/chat/${project.id}`}
             className="group flex items-start gap-3 p-3.5 rounded-xl border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 hover:bg-bolt-elements-item-backgroundActive hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200"
           >
-            {/* Project icon - modern gradient */}
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/15 to-blue-500/10 text-violet-400 shrink-0">
+            {/* Project icon - modern gradient with decorative pattern */}
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/15 to-blue-500/10 text-violet-400 shrink-0 overflow-hidden">
+              {/* Decorative pattern */}
+              <div className="absolute inset-0 opacity-20" style={{
+                backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0)',
+                backgroundSize: '8px 8px'
+              }} />
               {project.logo ? (
-                <img src={project.logo} alt="" className="w-6 h-6 rounded-lg" />
+                <img src={project.logo} alt="" className="w-6 h-6 rounded-lg relative z-10" />
               ) : (
-                <div className="i-ph:code text-lg" />
+                <div className="i-ph:code text-lg relative z-10" />
               )}
             </div>
             
