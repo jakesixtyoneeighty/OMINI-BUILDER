@@ -72,6 +72,20 @@ interface ProjectCard {
   source: 'local' | 'cloud';
 }
 
+/* ===== Time grouping ===== */
+type TimeGroup = 'today' | 'yesterday' | 'thisWeek' | 'older';
+
+function getTimeGroup(timestamp: string): TimeGroup {
+  if (!timestamp) return 'older';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return 'thisWeek';
+  return 'older';
+}
+
 /* ===== Main client content ===== */
 function ProjectsContent() {
   const t = useT();
@@ -278,6 +292,23 @@ function ProjectsContent() {
     return CARD_ICONS[hash % CARD_ICONS.length];
   };
 
+  // Group projects by time period
+  const groupedProjects = filtered.reduce<Record<TimeGroup, ProjectCard[]>>((acc, project) => {
+    const group = getTimeGroup(project.timestamp);
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(project);
+    return acc;
+  }, { today: [], yesterday: [], thisWeek: [], older: [] });
+
+  const groupLabels: Record<TimeGroup, string> = {
+    today: t('projects.today'),
+    yesterday: t('projects.yesterday'),
+    thisWeek: t('projects.thisWeek'),
+    older: t('projects.older'),
+  };
+
+  const groupOrder: TimeGroup[] = ['today', 'yesterday', 'thisWeek', 'older'];
+
   return (
     <div className="flex-1 overflow-auto bg-bolt-elements-bg-depth-1">
       <div className="max-w-7xl mx-auto p-6">
@@ -350,7 +381,7 @@ function ProjectsContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 overflow-hidden animate-pulse">
-                <div className="w-full h-32 bg-gradient-to-br from-bolt-elements-bg-depth-3 to-bolt-elements-bg-depth-2" />
+                <div className="w-full h-40 bg-gradient-to-br from-bolt-elements-bg-depth-3 to-bolt-elements-bg-depth-2" />
                 <div className="p-5 space-y-3">
                   <div className="h-5 w-3/4 bg-bolt-elements-bg-depth-3 rounded-lg" />
                   <div className="h-4 w-1/2 bg-bolt-elements-bg-depth-3 rounded-lg" />
@@ -361,165 +392,53 @@ function ProjectsContent() {
           </div>
         )}
 
-        {/* Projects grid - modern cards */}
+        {/* Projects grouped by time - modern layout with previews */}
         {!loading && filtered.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filtered.map((project) => (
-              <div
-                key={project.id}
-                className={`group rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 relative ${menuOpenId === project.id ? 'z-[10000] overflow-visible' : 'overflow-hidden'}`}
-              >
-                {/* Card visual header - modern gradient */}
-                <a href={`/chat/${project.id}`} className="block">
-                  <div className={`relative w-full h-32 bg-gradient-to-br ${getAccent(project.id)} overflow-hidden`}>
-                    {/* Decorative grid pattern */}
-                    <div className="absolute inset-0 opacity-10" style={{
-                      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-                      backgroundSize: '20px 20px'
-                    }} />
-                    
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      {project.logo ? (
-                        <img src={project.logo} alt="" className="w-14 h-14 rounded-xl shadow-xl ring-2 ring-white/10" />
-                      ) : (
-                        <div className={`${getIcon(project.id)} text-5xl text-white/10 group-hover:text-white/20 group-hover:scale-110 transition-all duration-500`} />
-                      )}
+          <div className="space-y-10">
+            {groupOrder.map((group) => {
+              const projectsInGroup = groupedProjects[group];
+              if (projectsInGroup.length === 0) return null;
+              
+              return (
+                <div key={group}>
+                  {/* Section header - modern style */}
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${group === 'today' ? 'bg-violet-500/20 text-violet-400' : group === 'yesterday' ? 'bg-blue-500/20 text-blue-400' : group === 'thisWeek' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary'}`}>
+                      <div className={group === 'today' ? 'i-ph:sun-horizon text-sm' : group === 'yesterday' ? 'i-ph:moon-stars text-sm' : group === 'thisWeek' ? 'i-ph:calendar-blank text-sm' : 'i-ph:clock-clockwise text-sm'} />
                     </div>
-                    
-                    {/* Hover overlay - glass morphism */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 flex items-end justify-center pb-4 transition-all duration-300">
-                      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-2 ring-white/20">
-                        <div className="i-ph:play-bold text-xl text-white" />
-                      </div>
-                    </div>
-                    
-                    {/* Source badge - modern pill */}
-                    {project.source === 'cloud' && (
-                      <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-violet-500/30 backdrop-blur-md text-violet-200 font-semibold border border-violet-400/20">
-                        <div className="i-ph:cloud text-xs" />
-                        {t('sidebar.cloud')}
-                      </span>
-                    )}
-                    
-                    {/* Menu button - glass effect */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setMenuOpenId(menuOpenId === project.id ? null : project.id);
-                      }}
-                      className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-black/40 backdrop-blur-md text-white/60 hover:text-white hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 border border-white/10 hover:border-white/20"
-                    >
-                      <div className="i-ph:dots-three-vertical text-base" />
-                    </button>
+                    <h2 className="text-sm font-semibold text-bolt-elements-textSecondary uppercase tracking-wide">
+                      {groupLabels[group]}
+                    </h2>
+                    <div className="h-px flex-1 bg-gradient-to-r from-bolt-elements-borderColor/50 to-transparent" />
+                    <span className="text-xs text-bolt-elements-textTertiary bg-bolt-elements-bg-depth-2 px-2 py-1 rounded-full">
+                      {projectsInGroup.length}
+                    </span>
                   </div>
-                </a>
 
-                {/* Dropdown menu - modern glass morphism */}
-                {menuOpenId === project.id && (
-                  <div className="absolute top-8 right-3 z-[9999] w-48 bg-bolt-elements-bg-depth-2/95 backdrop-blur-xl border border-bolt-elements-borderColor rounded-xl shadow-2xl shadow-black/30 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    <div className="p-1.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpenId(null);
-                          setEditingId(project.id);
-                          setEditName(project.name);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                          <div className="i-ph:pencil-simple text-sm" />
-                        </div>
-                        {t('projects.rename')}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpenId(null);
-                          navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
-                          toast.success(t('projects.linkCopied'));
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                          <div className="i-ph:link text-sm" />
-                        </div>
-                        {t('projects.copyLink')}
-                      </button>
-                      <div className="h-px bg-bolt-elements-borderColor my-1.5" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpenId(null);
-                          setDialogContent({ type: 'delete', project });
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left rounded-lg"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
-                          <div className="i-ph:trash text-sm" />
-                        </div>
-                        {t('projects.delete')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Card content - modern typography */}
-                <div className="p-5">
-                  {editingId === project.id ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRenameProject(project.id, editName);
-                          if (e.key === 'Escape') setEditingId(null);
-                        }}
-                        autoFocus
-                        className="flex-1 px-3 py-2 bg-bolt-elements-bg-depth-3 border border-violet-500/50 rounded-lg text-sm text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
+                  {/* Projects grid for this group with previews */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {projectsInGroup.map((project) => (
+                      <ProjectCardWithPreview
+                        key={project.id}
+                        project={project}
+                        menuOpenId={menuOpenId}
+                        setMenuOpenId={setMenuOpenId}
+                        editingId={editingId}
+                        setEditingId={setEditingId}
+                        editName={editName}
+                        setEditName={setEditName}
+                        handleRenameProject={handleRenameProject}
+                        setDialogContent={setDialogContent}
+                        getAccent={getAccent}
+                        getIcon={getIcon}
+                        formatDate={formatDate}
+                        t={t}
                       />
-                      <button
-                        onClick={() => handleRenameProject(project.id, editName)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500 text-white hover:bg-emerald-400 transition-all"
-                      >
-                        <div className="i-ph:check text-sm" />
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-red-500/10 hover:text-red-400 transition-all"
-                      >
-                        <div className="i-ph:x text-sm" />
-                      </button>
-                    </div>
-                  ) : (
-                    <a href={`/chat/${project.id}`} className="block">
-                      <h3 className="text-base font-semibold text-bolt-elements-textPrimary truncate group-hover:text-violet-400 transition-colors mb-1">
-                        {project.name || t('projects.untitled')}
-                      </h3>
-                    </a>
-                  )}
-                  {project.description && (
-                    <p className="text-xs text-bolt-elements-textTertiary truncate mb-3">{project.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-[11px] text-bolt-elements-textTertiary">
-                    {project.timestamp && (
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
-                        <div className="i-ph:clock text-xs" />
-                        <span>{formatDate(project.timestamp)}</span>
-                      </div>
-                    )}
-                    {project.messageCount > 0 && (
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
-                        <div className="i-ph:chat-circle-dots text-xs" />
-                        <span>{project.messageCount} {t('projects.messages')}</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -616,6 +535,220 @@ function ProjectsContent() {
           onClick={() => setMenuOpenId(null)}
         />
       )}
+    </div>
+  );
+}
+
+/* ===== Project Card with Preview Component ===== */
+interface ProjectCardProps {
+  project: ProjectCard;
+  menuOpenId: string | null;
+  setMenuOpenId: (id: string | null) => void;
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+  editName: string;
+  setEditName: (name: string) => void;
+  handleRenameProject: (id: string, name: string) => void;
+  setDialogContent: (content: { type: 'delete'; project: ProjectCard } | null) => void;
+  getAccent: (id: string) => string;
+  getIcon: (id: string) => string;
+  formatDate: (timestamp: string) => string;
+  t: (key: string) => string;
+}
+
+function ProjectCardWithPreview({
+  project,
+  menuOpenId,
+  setMenuOpenId,
+  editingId,
+  setEditingId,
+  editName,
+  setEditName,
+  handleRenameProject,
+  setDialogContent,
+  getAccent,
+  getIcon,
+  formatDate,
+  t,
+}: ProjectCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const accent = getAccent(project.id);
+  
+  // Generate preview URL - fallback to gradient if screenshot fails
+  const previewUrl = !imageError ? `/api/screenshot?url=${encodeURIComponent(`https://preview.omnibuilder.dev/project/${project.id}`)}` : null;
+
+  return (
+    <div
+      className={`group rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 relative ${menuOpenId === project.id ? 'z-[10000] overflow-visible' : 'overflow-hidden'}`}
+    >
+      {/* Card visual header with preview */}
+      <a href={`/chat/${project.id}`} className="block">
+        <div className={`relative w-full h-40 bg-gradient-to-br ${accent} overflow-hidden`}>
+          {/* Decorative grid pattern */}
+          <div className="absolute inset-0 opacity-10" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }} />
+          
+          {/* Preview image overlay */}
+          {previewUrl && !imageError && (
+            <div className="absolute inset-0">
+              <img
+                src={previewUrl}
+                alt={`${project.name} preview`}
+                className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500"
+                onError={() => setImageError(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-bolt-elements-bg-depth-2 via-transparent to-transparent" />
+            </div>
+          )}
+          
+          <div className="absolute inset-0 flex items-center justify-center">
+            {project.logo ? (
+              <img src={project.logo} alt="" className="w-14 h-14 rounded-xl shadow-xl ring-2 ring-white/10" />
+            ) : (
+              <div className={`${getIcon(project.id)} text-5xl text-white/10 group-hover:text-white/20 group-hover:scale-110 transition-all duration-500`} />
+            )}
+          </div>
+          
+          {/* Hover overlay - glass morphism */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 flex items-end justify-center pb-4 transition-all duration-300">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-2 ring-white/20">
+              <div className="i-ph:play-bold text-xl text-white" />
+            </div>
+          </div>
+          
+          {/* Source badge - modern pill */}
+          {project.source === 'cloud' && (
+            <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-violet-500/30 backdrop-blur-md text-violet-200 font-semibold border border-violet-400/20">
+              <div className="i-ph:cloud text-xs" />
+              {t('sidebar.cloud')}
+            </span>
+          )}
+          
+          {/* Preview indicator badge */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white/60 text-[10px] opacity-0 group-hover:opacity-100 transition-all duration-200">
+            <div className="i-ph:image text-xs" />
+            <span>Preview</span>
+          </div>
+          
+          {/* Menu button - glass effect */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpenId(menuOpenId === project.id ? null : project.id);
+            }}
+            className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-black/40 backdrop-blur-md text-white/60 hover:text-white hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 border border-white/10 hover:border-white/20"
+          >
+            <div className="i-ph:dots-three-vertical text-base" />
+          </button>
+        </div>
+      </a>
+
+      {/* Dropdown menu - modern glass morphism */}
+      {menuOpenId === project.id && (
+        <div className="absolute top-40 right-3 z-[9999] w-48 bg-bolt-elements-bg-depth-2/95 backdrop-blur-xl border border-bolt-elements-borderColor rounded-xl shadow-2xl shadow-black/30 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="p-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpenId(null);
+                setEditingId(project.id);
+                setEditName(project.name);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
+            >
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <div className="i-ph:pencil-simple text-sm" />
+              </div>
+              {t('projects.rename')}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpenId(null);
+                navigator.clipboard.writeText(`${window.location.origin}/chat/${project.id}`);
+                toast.success(t('projects.linkCopied'));
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left rounded-lg"
+            >
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <div className="i-ph:link text-sm" />
+              </div>
+              {t('projects.copyLink')}
+            </button>
+            <div className="h-px bg-bolt-elements-borderColor my-1.5" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpenId(null);
+                setDialogContent({ type: 'delete', project });
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left rounded-lg"
+            >
+              <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                <div className="i-ph:trash text-sm" />
+              </div>
+              {t('projects.delete')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Card content - modern typography */}
+      <div className="p-5">
+        {editingId === project.id ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRenameProject(project.id, editName);
+                if (e.key === 'Escape') setEditingId(null);
+              }}
+              autoFocus
+              className="flex-1 px-3 py-2 bg-bolt-elements-bg-depth-3 border border-violet-500/50 rounded-lg text-sm text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
+            />
+            <button
+              onClick={() => handleRenameProject(project.id, editName)}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500 text-white hover:bg-emerald-400 transition-all"
+            >
+              <div className="i-ph:check text-sm" />
+            </button>
+            <button
+              onClick={() => setEditingId(null)}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-bg-depth-3 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-red-500/10 hover:text-red-400 transition-all"
+            >
+              <div className="i-ph:x text-sm" />
+            </button>
+          </div>
+        ) : (
+          <a href={`/chat/${project.id}`} className="block">
+            <h3 className="text-base font-semibold text-bolt-elements-textPrimary truncate group-hover:text-violet-400 transition-colors mb-1">
+              {project.name || t('projects.untitled')}
+            </h3>
+          </a>
+        )}
+        {project.description && (
+          <p className="text-xs text-bolt-elements-textTertiary truncate mb-3">{project.description}</p>
+        )}
+        <div className="flex items-center gap-4 text-[11px] text-bolt-elements-textTertiary">
+          {project.timestamp && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
+              <div className="i-ph:clock text-xs" />
+              <span>{formatDate(project.timestamp)}</span>
+            </div>
+          )}
+          {project.messageCount > 0 && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bolt-elements-bg-depth-3">
+              <div className="i-ph:chat-circle-dots text-xs" />
+              <span>{project.messageCount} {t('projects.messages')}</span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
