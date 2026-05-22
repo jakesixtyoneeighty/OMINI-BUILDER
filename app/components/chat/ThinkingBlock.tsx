@@ -192,9 +192,9 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           gap: 8,
           padding: '10px 16px',
           borderRadius: 12,
-          background: 'rgba(255, 255, 255, 0.06)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          color: 'rgba(255, 255, 255, 0.9)',
+          background: 'rgba(120, 120, 120, 0.15)',
+          border: '1px solid rgba(150, 150, 150, 0.2)',
+          color: 'rgba(200, 200, 200, 0.9)',
           fontSize: 13,
           fontWeight: 500,
           cursor: 'pointer',
@@ -204,15 +204,15 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
           backdropFilter: 'blur(8px)',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
+          e.currentTarget.style.background = 'rgba(140, 140, 140, 0.25)';
+          e.currentTarget.style.borderColor = 'rgba(170, 170, 170, 0.3)';
+          e.currentTarget.style.color = 'rgba(220, 220, 220, 1)';
           e.currentTarget.style.transform = 'translateY(-1px)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+          e.currentTarget.style.background = 'rgba(120, 120, 120, 0.15)';
+          e.currentTarget.style.borderColor = 'rgba(150, 150, 150, 0.2)';
+          e.currentTarget.style.color = 'rgba(200, 200, 200, 0.9)';
           e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
