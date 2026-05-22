@@ -713,14 +713,14 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             className={classNames(
               'flex items-center gap-2 px-3 py-1.5 rounded-l-lg text-xs font-semibold shadow-sm transition-all relative overflow-hidden',
               hasError
-                ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white hover:from-red-500 hover:to-orange-500'
+                ? 'bg-red-500/90 text-white hover:bg-red-500 border border-red-400/30'
                 : isInProgress
-                  ? 'bg-gray-600/80 text-white cursor-wait'
+                  ? 'bg-bolt-elements-bg-depth-3 text-bolt-elements-textPrimary cursor-wait border border-bolt-elements-borderColor'
                   : deployResult && deployPhase === 'success'
-                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500'
+                    ? 'bg-emerald-500/90 text-white hover:bg-emerald-500 border border-emerald-400/30'
                     : hasVercel
-                      ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 hover:shadow-md active:scale-[0.97]'
-                      : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 hover:shadow-md active:scale-[0.97]',
+                      ? 'bg-bolt-elements-button-secondary-background text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor active:scale-[0.97]'
+                      : 'bg-orange-500/90 text-white hover:bg-orange-500 border border-orange-400/30 hover:shadow-md active:scale-[0.97]',
             )}
           >
             {hasError ? (
@@ -751,12 +751,12 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
             onClick={() => setOpen(!open)}
             disabled={isInProgress}
             className={classNames(
-              'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-white/10',
+              'flex items-center px-1.5 py-1.5 rounded-r-lg text-xs font-semibold shadow-sm transition-all border-l border-bolt-elements-borderColor',
               isInProgress
-                ? 'bg-gray-600/80 text-white cursor-wait'
+                ? 'bg-bolt-elements-bg-depth-3 text-bolt-elements-textPrimary cursor-wait'
                 : hasVercel
-                  ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700'
-                  : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400',
+                  ? 'bg-bolt-elements-button-secondary-background text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover'
+                  : 'bg-orange-500/90 text-white hover:bg-orange-500 border-orange-400/30',
             )}
           >
             <div className="i-ph:caret-down text-[10px] opacity-70" />

@@ -126,7 +126,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
           className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
             autoSaveOn && user
               ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25 hover:bg-emerald-500/20'
-              : 'text-bolt-elements-textTertiary bg-bolt-elements-item-backgroundActive border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundAccent'
+              : 'text-bolt-elements-textTertiary bg-bolt-elements-bg-depth-3 border-bolt-elements-borderColor hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive'
           }`}
           title={autoSaveOn && user ? t('saveProject.autoSaveOn') : t('saveProject.autoSaveOff')}
         >
@@ -137,7 +137,7 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
         <button
           onClick={handleSave}
           disabled={saving || autoSaving}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-all text-xs font-medium shadow-sm"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-600/90 text-white hover:bg-emerald-500 disabled:opacity-50 transition-all text-xs font-medium shadow-sm border border-emerald-500/30"
           title={lastSaved ? `Salvo ${lastSaved.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : user ? t('saveProject.saveToCloud') : t('saveProject.loginToSaveShort')}
         >
           {saving || autoSaving ? (
