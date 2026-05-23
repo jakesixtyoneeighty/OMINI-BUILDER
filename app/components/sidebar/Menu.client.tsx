@@ -25,6 +25,7 @@ import { ClientOnly } from 'remix-utils/client-only';
 import { StorageBar } from './StorageBar.client';
 import { useT } from '~/lib/i18n/useT';
 import { BrandAsset } from '~/components/ui/BrandAsset';
+import { DeployButton } from '~/components/header/DeployButton.client';
 
 const sidebarVariants = {
   closed: {
@@ -646,6 +647,27 @@ export function Menu() {
             <div className="i-ph:cloud text-xs text-bolt-elements-textTertiary" title={t('sidebar.cloudStorage')} />
           </div>
         )}
+
+        {/* Deploy button */}
+        <div className={`border-b border-bolt-elements-borderColor ${collapsed ? 'px-1.5 py-2' : 'px-3 py-2'}`}>
+          <ClientOnly>
+            {() => (
+              <div className={collapsed ? 'flex justify-center' : ''}>
+                {collapsed ? (
+                  <button
+                    onClick={() => setAccountSettingsOpen(true)}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover transition-all"
+                    title="Deploy"
+                  >
+                    <div className="i-ph:rocket-launch text-base" />
+                  </button>
+                ) : (
+                  <DeployButton onOpenSettings={() => setAccountSettingsOpen(true)} />
+                )}
+              </div>
+            )}
+          </ClientOnly>
+        </div>
 
         {/* Social links + theme switch */}
         <div className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-1 px-4'} py-2.5`}>
