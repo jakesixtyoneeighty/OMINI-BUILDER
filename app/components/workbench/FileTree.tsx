@@ -163,24 +163,30 @@ function Folder({ folder: { depth, name }, collapsed, selected = false, onClick 
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-150 ease-out rounded-lg',
+        'group transition-all duration-200 ease-in-out rounded-md my-0.5',
         {
-          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50':
+          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40':
             !selected,
-          'bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border-l-2 border-bolt-elements-item-contentAccent': selected,
+          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent ring-1 ring-bolt-elements-item-contentAccent/20': selected,
         },
       )}
       depth={depth}
       iconClasses={classNames(
-        'transition-all duration-200 text-base shrink-0',
+        'transition-transform duration-200 text-base shrink-0',
         {
-          'i-ph:folder text-blue-400/60': collapsed,
-          'i-ph:folder-open text-blue-400': !collapsed,
+          'i-ph:caret-right text-bolt-elements-textTertiary/50': collapsed,
+          'i-ph:caret-down text-bolt-elements-item-contentAccent rotate-0': !collapsed,
         },
       )}
       onClick={onClick}
     >
-      <span className="font-medium text-sm truncate">{name}</span>
+      <div className="flex items-center gap-2">
+        <div className={classNames(
+          "text-lg shrink-0",
+          collapsed ? "i-ph:folder-duotone text-bolt-elements-textTertiary/70" : "i-ph:folder-open-duotone text-bolt-elements-item-contentAccent/70"
+        )} />
+        <span className="font-semibold text-[13px] truncate tracking-tight">{name}</span>
+      </div>
     </NodeButton>
   );
 }
@@ -198,25 +204,21 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-150 ease-out rounded-lg flex items-center gap-2',
+        'group transition-all duration-200 ease-in-out rounded-md my-0.5',
         {
-          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50':
+          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40':
             !selected,
-          'bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border-l-2 border-bolt-elements-item-contentAccent': selected,
+          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent ring-1 ring-bolt-elements-item-contentAccent/20': selected,
         },
       )}
       depth={depth}
-      iconClasses={classNames(
-        'shrink-0 text-sm transition-all duration-200',
-        fileIcon.color,
-      )}
-      icon={fileIcon.icon}
       onClick={onClick}
     >
-      <div className="flex items-center flex-1 min-w-0 gap-1.5">
-        <div className="flex-1 truncate text-xs font-medium">{name}</div>
+      <div className="flex items-center flex-1 min-w-0 gap-2.5">
+        <div className={classNames('shrink-0 text-lg transition-all duration-200', fileIcon.color, fileIcon.icon)} />
+        <div className="flex-1 truncate text-[13px] font-medium tracking-tight">{name}</div>
         {unsavedChanges && (
-          <span className="i-ph:circle-fill scale-50 shrink-0 text-amber-400 flex-shrink-0" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
         )}
       </div>
     </NodeButton>
@@ -225,24 +227,24 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
 
 interface ButtonProps {
   depth: number;
-  iconClasses: string;
+  iconClasses?: string;
   children: ReactNode;
   className?: string;
   onClick?: () => void;
   icon?: string;
 }
 
-function NodeButton({ depth, iconClasses, onClick, className, children, icon }: ButtonProps) {
+function NodeButton({ depth, iconClasses, onClick, className, children }: ButtonProps) {
   return (
     <button
       className={classNames(
-        'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors duration-150',
+        'flex items-center gap-1.5 w-full px-2 py-1.5 text-left transition-all duration-200',
         className,
       )}
-      style={{ paddingLeft: `${10 + depth * NODE_PADDING_LEFT}px` }}
+      style={{ paddingLeft: `${8 + depth * NODE_PADDING_LEFT}px` }}
       onClick={() => onClick?.()}
     >
-      <div className={classNames('shrink-0', icon || iconClasses)}></div>
+      {iconClasses && <div className={classNames('shrink-0', iconClasses)}></div>}
       <div className="truncate w-full">{children}</div>
     </button>
   );

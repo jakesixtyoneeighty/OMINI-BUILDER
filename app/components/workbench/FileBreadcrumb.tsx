@@ -83,21 +83,21 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
         const isActive = activeIndex === index;
 
         return (
-          <div key={index} className="relative flex items-center gap-1">
+          <div key={index} className="relative flex items-center gap-1.5">
+            {index > 0 && <div className="i-ph:caret-right text-[10px] text-bolt-elements-textTertiary/30" />}
             <DropdownMenu.Root open={isActive} modal={false}>
               <DropdownMenu.Trigger asChild>
                 <button
                   ref={(ref) => (segmentRefs.current[index] = ref)}
                   className={classNames(
-                    'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer shrink-0',
+                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0 tracking-wide',
                     {
-                      'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50': !isActive,
-                      'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/15': isActive,
+                      'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40': !isActive,
+                      'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/10 ring-1 ring-bolt-elements-item-contentAccent/20': isActive,
                     },
                   )}
                   onClick={() => handleSegmentClick(index)}
                 >
-                  {isLast ? <div className="i-ph:file-duotone text-base" /> : <div className="i-ph:folder-duotone text-base" />}
                   <span className="truncate max-w-[120px]">{segment}</span>
                 </button>
               </DropdownMenu.Trigger>

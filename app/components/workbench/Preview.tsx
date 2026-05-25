@@ -397,45 +397,49 @@ export const Preview = memo(function Preview() {
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
     return (
-      <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
-        <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
-          <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
-          <IconButton
-            icon="i-ph:arrow-square-out"
-            onClick={() => {
-              if (activePreview?.baseUrl) {
-                const previewPageUrl = `/preview?url=${encodeURIComponent(activePreview.baseUrl)}`;
-                window.open(previewPageUrl, '_blank');
-              }
-            }}
-            title={t('workbench.newTab')}
-            disabled={!activePreview?.baseUrl}
-          />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium shrink-0">
-            <div className="i-ph:cube-duotone text-sm" />
-            <span className="hidden sm:inline">{t('appSettings.webcontainer')}</span>
+      <div className="w-full h-full flex flex-col bg-bolt-elements-bg-depth-1">
+        <div className="flex items-center h-12 px-4 gap-3 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/30">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/20 text-xs font-semibold">
+            <div className="i-ph:globe-duotone text-base" />
+            <span>Preview</span>
           </div>
-          <div className="flex-1 hidden sm:flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary truncate">
+          
+          <div className="h-6 w-[1px] bg-bolt-elements-borderColor/20 mx-1" />
+          
+          <div className="flex-1 flex items-center bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor/30 rounded-full px-4 py-1.5 text-[11px] text-bolt-elements-textTertiary font-medium truncate">
+            <div className="i-ph:link-duotone mr-2 opacity-50" />
             {activePreview?.baseUrl || t('preview.noPreviewAvailable')}
           </div>
-          {/* Inspector toggle */}
-          <div className="relative">
-            <AppInspector
-              isActive={inspectorActive}
-              onToggle={() => setInspectorActive(!inspectorActive)}
-            />
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={refresh}
+              className="p-1.5 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all"
+              title={t('workbench.refresh')}
+            >
+              <div className="i-ph:arrow-clockwise text-lg" />
+            </button>
+            <button
+              onClick={() => {
+                if (activePreview?.baseUrl) {
+                  const previewPageUrl = `/preview?url=${encodeURIComponent(activePreview.baseUrl)}`;
+                  window.open(previewPageUrl, '_blank');
+                }
+              }}
+              className="p-1.5 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all"
+              title={t('workbench.newTab')}
+              disabled={!activePreview?.baseUrl}
+            >
+              <div className="i-ph:arrow-square-out text-lg" />
+            </button>
+            <div className="h-6 w-[1px] bg-bolt-elements-borderColor/20 mx-1" />
+            <div className="relative">
+              <AppInspector
+                isActive={inspectorActive}
+                onToggle={() => setInspectorActive(!inspectorActive)}
+              />
+            </div>
           </div>
-          {previews.length > 0 && (
-            <PortDropdown
-              activePreviewIndex={activePreviewIndex}
-              setActivePreviewIndex={setActivePreviewIndex}
-              isDropdownOpen={isPortDropdownOpen}
-              setIsDropdownOpen={setIsPortDropdownOpen}
-              setHasSelectedPreview={() => {}}
-              previews={previews}
-            />
-          )}
         </div>
         <div className="flex-1 relative overflow-hidden" data-preview-content style={{ minHeight: 0 }}>
           {activePreview ? (

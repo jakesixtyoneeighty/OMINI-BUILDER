@@ -122,35 +122,47 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   return (
     <div
       className={classNames(
-        showWorkbench ? 'flex-1 min-w-0 h-full overflow-hidden opacity-100' : 'w-0 min-w-0 h-0 overflow-hidden opacity-0 pointer-events-none',
+        'transition-[width,opacity] duration-300 ease-in-out',
+        showWorkbench ? 'flex-1 min-w-0 h-full opacity-100' : 'w-0 min-w-0 h-0 opacity-0 overflow-hidden pointer-events-none',
       )}
     >
-      <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden m-0.5">
-        <div className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border-b border-bolt-elements-borderColor">
+      <div className="h-full flex flex-col bg-bolt-elements-bg-depth-1 border-l border-bolt-elements-borderColor shadow-2xl overflow-hidden">
+        <div className="flex items-center px-4 py-2 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/50 min-h-[52px]">
           <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
-          <div className="ml-auto" />
-          {selectedView === 'code' && (
-            <PanelHeaderButton
-              className="mr-1 text-sm"
+          
+          <div className="ml-auto flex items-center gap-2">
+            {selectedView === 'code' && (
+              <button
+                className={classNames(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border",
+                  workbenchStore.showTerminal.get() 
+                    ? "bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/30"
+                    : "text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 border-transparent"
+                )}
+                onClick={() => {
+                  workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
+                }}
+              >
+                <div className="i-ph:terminal-window text-base" />
+                <span className="hidden md:inline">{t('workbench.toggleTerminal')}</span>
+              </button>
+            )}
+            
+            <div className="w-px h-4 bg-bolt-elements-borderColor/30 mx-1" />
+            
+            <IconButton
+              icon="i-ph:x"
+              size="lg"
+              className="text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all duration-200"
               onClick={() => {
-                workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
+                workbenchStore.showWorkbench.set(false);
+                mobileViewStore.set('chat');
               }}
-            >
-              <div className="i-ph:terminal" />
-              <span className="hidden sm:inline">{t('workbench.toggleTerminal')}</span>
-            </PanelHeaderButton>
-          )}
-          <IconButton
-            icon="i-ph:x-circle"
-            className="-mr-1"
-            size="xl"
-            onClick={() => {
-              workbenchStore.showWorkbench.set(false);
-              mobileViewStore.set('chat');
-            }}
-          />
+            />
+          </div>
         </div>
-        <div className="relative flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+        
+        <div className="relative flex-1 overflow-hidden">
           <View visible={selectedView === 'preview'}>
             <Preview key={previewMode} />
           </View>

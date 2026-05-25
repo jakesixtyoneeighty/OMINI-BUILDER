@@ -210,124 +210,120 @@ export const EditorPanel = memo(
           <PanelGroup direction="horizontal" className="h-full">
 
             {/* ── Sidebar: File Tree ── */}
-            <Panel ref={fileTreePanelRef} defaultSize={18} minSize={10} collapsible>
-              <div className="flex flex-col h-full bg-bolt-elements-bg-depth-2">
+            <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
+              <div className="flex flex-col h-full bg-bolt-elements-bg-depth-2 border-r border-bolt-elements-borderColor/30">
                 {/* Sidebar header */}
-                <div className="flex items-center justify-between px-3 h-12 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
-                  <div className="flex items-center gap-2.5">
-                    <div className="i-ph:folder-open text-lg text-blue-500/70" />
-                    <span className="text-xs font-semibold uppercase tracking-widest text-bolt-elements-textTertiary">
-                      Files
+                <div className="flex items-center justify-between px-4 h-12 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/30">
+                  <div className="flex items-center gap-2">
+                    <div className="i-ph:files-duotone text-lg text-bolt-elements-item-contentAccent" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-bolt-elements-textSecondary">
+                      Explorer
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <IconButton
-                      icon="i-ph:file-plus"
-                      size="sm"
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="p-1 rounded-md text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-colors"
                       title="New File"
-                      className="text-xs rounded-md hover:bg-bolt-elements-item-backgroundActive"
-                      onClick={() => {/* TODO */}}
-                    />
-                    <IconButton
-                      icon="i-ph:folder-plus"
-                      size="sm"
-                      title="New Folder"
-                      className="text-xs rounded-md hover:bg-bolt-elements-item-backgroundActive"
-                      onClick={() => {/* TODO */}}
-                    />
+                    >
+                      <div className="i-ph:file-plus text-sm" />
+                    </button>
+                    <button
+                      className="p-1 rounded-md text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-colors"
+                      title="Refresh"
+                    >
+                      <div className="i-ph:arrow-counter-clockwise text-sm" />
+                    </button>
                   </div>
                 </div>
+                
                 {/* File tree container */}
-                <FileTree
-                  className="file-tree-container h-full overflow-y-auto bg-bolt-elements-bg-depth-2 px-1 py-2"
-                  files={files}
-                  hideRoot
-                  unsavedFiles={unsavedFiles}
-                  rootFolder={WORK_DIR}
-                  selectedFile={selectedFile}
-                  onFileSelect={onFileSelect}
-                />
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  <FileTree
+                    className="file-tree-container px-2 py-3"
+                    files={files}
+                    hideRoot
+                    unsavedFiles={unsavedFiles}
+                    rootFolder={WORK_DIR}
+                    selectedFile={selectedFile}
+                    onFileSelect={onFileSelect}
+                  />
+                </div>
               </div>
             </Panel>
 
-            {/* Divider */}
-            <PanelResizeHandle className="w-px bg-bolt-elements-borderColor/30 hover:bg-bolt-elements-item-contentAccent/50 active:bg-bolt-elements-item-contentAccent/70 transition-colors duration-200 cursor-col-resize" />
+            {/* Custom Divider */}
+            <PanelResizeHandle className="w-[1px] bg-bolt-elements-borderColor/20 hover:bg-bolt-elements-item-contentAccent/40 transition-colors duration-300" />
 
             {/* ── Editor Panel ── */}
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
 
-              {/* Editor header bar */}
-              <div className="flex items-center h-12 px-4 gap-3 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
+              {/* Editor header bar (Tab style) */}
+              <div className="flex items-center h-12 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/30 overflow-x-auto no-scrollbar">
+                
+                {/* Sidebar toggle */}
+                {!showFileTree && (
+                  <button
+                    onClick={toggleFileTree}
+                    className="flex items-center justify-center w-12 h-12 border-r border-bolt-elements-borderColor/20 text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all"
+                  >
+                    <div className="i-ph:sidebar-simple text-lg" />
+                  </button>
+                )}
 
-                {/* File tree toggle */}
-                <button
-                  onClick={toggleFileTree}
-                  className={classNames(
-                    'flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200',
-                    showFileTree
-                      ? 'text-bolt-elements-textPrimary bg-bolt-elements-item-backgroundActive/50'
-                      : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50'
-                  )}
-                  title={showFileTree ? 'Hide files' : 'Show files'}
-                >
-                  <div className={classNames('text-base', showFileTree ? 'i-ph:sidebar-simple' : 'i-ph:sidebar-simple-duotone')} />
-                </button>
+                {/* Active Tab */}
+                {editorDocument && (
+                  <div className="flex items-center h-full px-4 border-r border-bolt-elements-borderColor/30 bg-bolt-elements-bg-depth-2 min-w-[120px] max-w-[240px]">
+                    <div className="i-ph:file-code-duotone mr-2.5 text-bolt-elements-item-contentAccent text-lg" />
+                    <span className="text-xs font-medium text-bolt-elements-textPrimary truncate mr-2">
+                      {editorDocument.filePath.split('/').pop()}
+                    </span>
+                    {activeFileUnsaved && (
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    )}
+                  </div>
+                )}
 
-                {/* File breadcrumb */}
-                <div className="flex-1 min-w-0 overflow-hidden">
+                {/* Breadcrumbs (Minimalist) */}
+                <div className="flex-1 px-4 flex items-center overflow-hidden">
+                  <div className="h-4 w-[1px] bg-bolt-elements-borderColor/30 mr-4 hidden sm:block" />
                   {activeFileSegments?.length ? (
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
-                  ) : (
-                    <span className="text-xs text-bolt-elements-textTertiary">
-                      Select a file to start editing
-                    </span>
-                  )}
+                  ) : null}
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2">
+                {/* Editor Actions */}
+                <div className="flex items-center px-4 gap-2">
                   {activeFileUnsaved && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-1.5"
+                    <motion.button
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      onClick={onFileSave}
+                      className="flex items-center gap-2 px-4 h-8 rounded-full bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 text-[11px] font-bold uppercase tracking-wider transition-all"
                     >
-                      <button
-                        onClick={onFileSave}
-                        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
-                      >
-                        <div className="i-ph:floppy-disk-duotone text-sm" />
-                        <span className="hidden sm:inline">{t('common.save')}</span>
-                      </button>
-                      <button
-                        onClick={onFileReset}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary transition-all hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
-                        title="Reset changes"
-                      >
-                        <div className="i-ph:arrow-counter-clockwise text-sm" />
-                      </button>
-                    </motion.div>
+                      <div className="i-ph:check-circle-duotone text-sm" />
+                      {t('common.save')}
+                    </motion.button>
                   )}
 
-                  {/* Terminal toggle button */}
-                  <div className="h-6 w-px bg-bolt-elements-borderColor/20" />
+                  <div className="h-6 w-[1px] bg-bolt-elements-borderColor/20 mx-1" />
+
                   <button
                     onClick={() => workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get())}
                     className={classNames(
-                      'flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all',
-                      showTerminal
-                        ? 'bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/30'
-                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50'
+                      'flex items-center justify-center w-8 h-8 rounded-lg transition-all',
+                      showTerminal 
+                        ? 'bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent shadow-sm ring-1 ring-bolt-elements-item-contentAccent/30'
+                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50'
                     )}
+                    title="Toggle Terminal"
                   >
-                    <div className={classNames('text-sm', showTerminal ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
-                    <span className="hidden sm:inline">{t('workbench.terminal')}</span>
+                    <div className="i-ph:terminal-window text-lg" />
                   </button>
                 </div>
               </div>
 
               {/* Code editor body */}
-              <div className="flex-1 overflow-hidden bg-bolt-elements-code-background">
+              <div className="flex-1 overflow-hidden relative">
                 {editorDocument ? (
                   <CodeMirrorEditor
                     theme={theme}
@@ -340,12 +336,29 @@ export const EditorPanel = memo(
                     onSave={onFileSave}
                   />
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center gap-4 select-none">
-                    <div className="i-ph:code-duotone text-5xl text-bolt-elements-textTertiary/30" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-bolt-elements-textTertiary">No file open</p>
-                      <p className="text-xs text-bolt-elements-textTertiary/60 mt-1">Select a file from the panel to start editing</p>
-                    </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-bolt-elements-bg-depth-1/50 backdrop-blur-sm select-none">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center gap-6"
+                    >
+                      <div className="w-24 h-24 rounded-3xl bg-bolt-elements-bg-depth-2 flex items-center justify-center shadow-xl border border-bolt-elements-borderColor/20 ring-4 ring-bolt-elements-borderColor/5">
+                        <div className="i-bolt:logo text-6xl text-bolt-elements-item-contentAccent/40" />
+                      </div>
+                      <div className="text-center space-y-2">
+                        <h3 className="text-lg font-bold text-bolt-elements-textPrimary">Select a file</h3>
+                        <p className="text-sm text-bolt-elements-textTertiary max-w-[240px]">
+                          Choose a file from the explorer to start building your application
+                        </p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor/20 text-[11px] text-bolt-elements-textTertiary">
+                          <kbd className="bg-bolt-elements-bg-depth-3 px-1.5 py-0.5 rounded border border-bolt-elements-borderColor/30 font-sans">⌘</kbd>
+                          <kbd className="bg-bolt-elements-bg-depth-3 px-1.5 py-0.5 rounded border border-bolt-elements-borderColor/30 font-sans">P</kbd>
+                          <span>Quick Open</span>
+                        </div>
+                      </div>
+                    </motion.div>
                   </div>
                 )}
               </div>
