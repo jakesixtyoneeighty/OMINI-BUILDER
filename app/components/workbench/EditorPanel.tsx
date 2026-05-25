@@ -210,35 +210,37 @@ export const EditorPanel = memo(
           <PanelGroup direction="horizontal">
 
             {/* ── File Tree Panel ── */}
-            <Panel ref={fileTreePanelRef} defaultSize={20} minSize={10} collapsible>
-              <div className="flex flex-col h-full bg-bolt-elements-bg-depth-2 border-r border-bolt-elements-borderColor">
+            <Panel ref={fileTreePanelRef} defaultSize={18} minSize={10} collapsible>
+              <div className="flex flex-col h-full rounded-3xl overflow-hidden bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor/15 shadow-sm">
 
                 {/* File tree header */}
-                <div className="flex items-center justify-between px-3 h-10 shrink-0 border-b border-bolt-elements-borderColor">
+                <div className="flex items-center justify-between px-3 h-11 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
                   <div className="flex items-center gap-2">
-                    <div className="i-ph:folders-duotone text-sm text-bolt-elements-textTertiary" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-bolt-elements-textTertiary">
+                    <div className="i-ph:folders-duotone text-base text-bolt-elements-textTertiary" />
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-bolt-elements-textTertiary">
                       Files
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <IconButton
                       icon="i-ph:file-plus"
                       size="sm"
                       title="New File"
+                      className="rounded-full border border-bolt-elements-borderColor/10 bg-bolt-elements-bg-depth-1 text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
                       onClick={() => {/* TODO */}}
                     />
                     <IconButton
                       icon="i-ph:folder-plus"
                       size="sm"
                       title="New Folder"
+                      className="rounded-full border border-bolt-elements-borderColor/10 bg-bolt-elements-bg-depth-1 text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
                       onClick={() => {/* TODO */}}
                     />
                   </div>
                 </div>
 
                 <FileTree
-                  className="h-full overflow-y-auto"
+                  className="h-full overflow-y-auto bg-bolt-elements-bg-depth-2"
                   files={files}
                   hideRoot
                   unsavedFiles={unsavedFiles}
@@ -250,28 +252,26 @@ export const EditorPanel = memo(
             </Panel>
 
             {/* Resize handle */}
-            <PanelResizeHandle className="w-px bg-bolt-elements-borderColor hover:bg-bolt-elements-item-contentAccent/40 transition-colors duration-150 data-[resize-handle-active]:bg-bolt-elements-item-contentAccent/60" />
+            <PanelResizeHandle className="w-px bg-bolt-elements-borderColor/20 hover:bg-bolt-elements-item-contentAccent/40 transition-colors duration-150 data-[resize-handle-active]:bg-bolt-elements-item-contentAccent/60" />
 
             {/* ── Editor Panel ── */}
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
 
               {/* Editor top bar */}
-              <div className="flex items-center h-10 px-2 gap-1.5 shrink-0 bg-bolt-elements-bg-depth-2 border-b border-bolt-elements-borderColor">
+              <div className="flex items-center h-12 px-3 gap-2 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20 shadow-sm">
 
                 {/* Sidebar toggle */}
                 <button
                   onClick={toggleFileTree}
-                  className="flex items-center justify-center w-7 h-7 rounded-md transition-all text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
+                  className="flex items-center justify-center w-9 h-9 rounded-full transition-all text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80"
                   title={showFileTree ? 'Hide files' : 'Show files'}
                 >
                   <div className={classNames('text-sm', showFileTree ? 'i-ph:sidebar-simple' : 'i-ph:sidebar-simple-duotone')} />
                 </button>
 
-                <div className="w-px h-4 bg-bolt-elements-borderColor shrink-0" />
-
                 {/* Breadcrumb / placeholder */}
                 {activeFileSegments?.length ? (
-                  <div className="flex items-center flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center flex-1 min-w-0 overflow-hidden rounded-full bg-bolt-elements-bg-depth-2 px-3 py-2">
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
                   </div>
                 ) : (
@@ -280,39 +280,27 @@ export const EditorPanel = memo(
                   </span>
                 )}
 
-                {/* Unsaved indicator dot */}
-                {activeFileUnsaved && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-2 h-2 rounded-full bg-amber-400 shrink-0"
-                    title="Unsaved changes"
-                  />
-                )}
-
-                {/* Action buttons */}
-                <div className="flex items-center gap-0.5 ml-1">
+                <div className="flex items-center gap-2">
                   {activeFileUnsaved && (
                     <motion.div
                       initial={{ opacity: 0, x: 4 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-0.5"
+                      className="flex items-center gap-2"
                     >
                       <button
                         onClick={onFileSave}
-                        className="flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs font-medium transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 hover:border-emerald-500/35"
+                        className="flex items-center gap-2 px-3 h-9 rounded-full text-xs font-semibold transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
                       >
                         <div className="i-ph:floppy-disk-duotone text-sm" />
                         <span className="hidden sm:inline">{t('common.save')}</span>
                       </button>
                       <button
                         onClick={onFileReset}
-                        className="flex items-center gap-1.5 px-2 h-7 rounded-md text-xs transition-all text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
+                        className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary transition-all hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80"
                         title="Reset changes"
                       >
                         <div className="i-ph:arrow-counter-clockwise text-sm" />
                       </button>
-                      <div className="w-px h-4 bg-bolt-elements-borderColor mx-1 shrink-0" />
                     </motion.div>
                   )}
 
@@ -320,10 +308,10 @@ export const EditorPanel = memo(
                   <button
                     onClick={() => workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get())}
                     className={classNames(
-                      'flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs font-medium transition-all border',
+                      'flex items-center gap-2 px-3 h-9 rounded-full text-xs font-semibold transition-all border',
                       showTerminal
                         ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/25'
-                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive border-transparent'
+                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 border-transparent'
                     )}
                   >
                     <div className={classNames('text-sm', showTerminal ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
@@ -374,7 +362,7 @@ export const EditorPanel = memo(
           <div className="h-full flex flex-col bg-bolt-elements-terminals-background">
 
             {/* Terminal tab bar */}
-            <div className="flex items-center h-9 px-2 gap-1 shrink-0 bg-bolt-elements-bg-depth-2 border-b border-bolt-elements-borderColor">
+            <div className="flex items-center h-11 px-3 gap-2 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
               {Array.from({ length: terminalCount }, (_, index) => {
                 const isActive = activeTerminal === index;
                 return (
@@ -382,10 +370,10 @@ export const EditorPanel = memo(
                     key={index}
                     onClick={() => setActiveTerminal(index)}
                     className={classNames(
-                      'flex items-center gap-1.5 px-2.5 h-6 rounded-md text-[11px] font-medium whitespace-nowrap transition-all border',
+                      'flex items-center gap-1.5 px-3 h-9 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border',
                       isActive
                         ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/25'
-                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive border-transparent'
+                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 border-transparent'
                     )}
                   >
                     <div className={classNames('text-xs', isActive ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
@@ -397,20 +385,20 @@ export const EditorPanel = memo(
               {terminalCount < MAX_TERMINALS && (
                 <button
                   onClick={addTerminal}
-                  className="flex items-center justify-center w-5 h-5 rounded text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive transition-all ml-0.5"
+                  className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 transition-all"
                   title="Add terminal"
                 >
-                  <div className="i-ph:plus text-xs" />
+                  <div className="i-ph:plus text-sm" />
                 </button>
               )}
 
-              <div className="ml-auto flex items-center">
+              <div className="ml-auto flex items-center gap-2">
                 <button
                   onClick={() => workbenchStore.toggleTerminal(false)}
-                  className="flex items-center justify-center w-6 h-6 rounded text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                  className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 transition-all"
                   title={t('common.close')}
                 >
-                  <div className="i-ph:x text-xs" />
+                  <div className="i-ph:x text-sm" />
                 </button>
               </div>
             </div>

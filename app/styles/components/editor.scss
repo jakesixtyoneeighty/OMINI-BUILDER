@@ -178,17 +178,30 @@ html[data-theme='dark'] {
 
 /* CodeMirror enhancements */
 .cm-editor {
-  border-radius: 0 !important;
+  border-radius: 1rem !important;
+  overflow: hidden;
 }
 
 .cm-editor.cm-focused {
   outline: none !important;
 }
 
+.cm-scroller {
+  padding: 0.5rem 0 !important;
+}
+
 /* Gutter styling */
 .cm-gutters {
-  border-right: 1px solid var(--bolt-elements-borderColor) !important;
-  background: var(--bolt-elements-bg-depth-2) !important;
+  border-right: none !important;
+  background: transparent !important;
+}
+
+.cm-gutter {
+  background: transparent !important;
+}
+
+.cm-activeLine {
+  background: var(--cm-activeLineBackgroundColor) !important;
 }
 
 /* Active line highlight */

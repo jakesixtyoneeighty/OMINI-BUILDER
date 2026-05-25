@@ -7,6 +7,7 @@ export interface EditorSettings {
   fontSize?: string;
   gutterFontSize?: string;
   tabSize?: number;
+  fontFamily?: string;
 }
 
 export const darkTheme = EditorView.theme({}, { dark: true });
@@ -26,24 +27,27 @@ export function reconfigureTheme(theme: Theme) {
 function getEditorTheme(settings: EditorSettings) {
   return EditorView.theme({
     '&': {
-      fontSize: settings.fontSize ?? '12px',
+      fontSize: settings.fontSize ?? '13px',
+      fontFamily: settings.fontFamily ?? "'Inter', 'IBM Plex Mono', 'Roboto Mono', monospace",
     },
     '&.cm-editor': {
       height: '100%',
       background: 'var(--cm-backgroundColor)',
       color: 'var(--cm-textColor)',
+      borderRadius: '1rem',
     },
     '.cm-cursor': {
       borderLeft: 'var(--cm-cursor-width) solid var(--cm-cursor-backgroundColor)',
     },
     '.cm-scroller': {
-      lineHeight: '1.5',
+      lineHeight: '1.65',
+      padding: '0.5rem 0',
       '&:focus-visible': {
         outline: 'none',
       },
     },
     '.cm-line': {
-      padding: '0 0 0 4px',
+      padding: '0 0 0 6px',
     },
     '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
       backgroundColor: 'var(--cm-selection-backgroundColorFocused) !important',
