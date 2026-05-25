@@ -163,24 +163,24 @@ function Folder({ folder: { depth, name }, collapsed, selected = false, onClick 
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-200 ease-out',
+        'group transition-all duration-150 ease-out rounded-lg',
         {
-          'bg-transparent text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive hover:bg-gradient-to-r hover:from-bolt-elements-item-backgroundActive/50 hover:to-transparent':
+          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50':
             !selected,
-          'bg-gradient-to-r from-bolt-elements-item-backgroundAccent/80 to-bolt-elements-item-backgroundAccent/30 text-bolt-elements-item-contentAccent shadow-sm': selected,
+          'bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border-l-2 border-bolt-elements-item-contentAccent': selected,
         },
       )}
       depth={depth}
       iconClasses={classNames(
-        'transition-transform duration-200 text-blue-400 dark:text-blue-300',
+        'transition-all duration-200 text-base shrink-0',
         {
-          'i-ph:caret-right rotate-0': collapsed,
-          'i-ph:caret-down rotate-0': !collapsed,
+          'i-ph:folder text-blue-400/60': collapsed,
+          'i-ph:folder-open text-blue-400': !collapsed,
         },
       )}
       onClick={onClick}
     >
-      <span className="font-medium tracking-wide">{name}</span>
+      <span className="font-medium text-sm truncate">{name}</span>
     </NodeButton>
   );
 }
@@ -198,31 +198,25 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-200 ease-out',
+        'group transition-all duration-150 ease-out rounded-lg flex items-center gap-2',
         {
-          'bg-transparent hover:bg-gradient-to-r hover:from-bolt-elements-item-backgroundActive/50 hover:to-transparent text-bolt-elements-item-contentDefault': !selected,
-          'bg-gradient-to-r from-bolt-elements-item-backgroundAccent/80 to-bolt-elements-item-backgroundAccent/30 text-bolt-elements-item-contentAccent shadow-sm': selected,
+          'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50':
+            !selected,
+          'bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border-l-2 border-bolt-elements-item-contentAccent': selected,
         },
       )}
       depth={depth}
       iconClasses={classNames(
-        'scale-110 shrink-0 transition-all duration-200',
+        'shrink-0 text-sm transition-all duration-200',
         fileIcon.color,
-        {
-          'group-hover:scale-115': !selected,
-        },
       )}
       icon={fileIcon.icon}
       onClick={onClick}
     >
-      <div
-        className={classNames('flex items-center flex-1 min-w-0', {
-          'group-hover:text-bolt-elements-item-contentActive': !selected,
-        })}
-      >
-        <div className="flex-1 truncate pr-2 font-mono text-xs tracking-tight">{name}</div>
+      <div className="flex items-center flex-1 min-w-0 gap-1.5">
+        <div className="flex-1 truncate text-xs font-medium">{name}</div>
         {unsavedChanges && (
-          <span className="i-ph:circle-fill scale-70 shrink-0 text-orange-500 animate-pulse" style={{ marginLeft: '4px' }} />
+          <span className="i-ph:circle-fill scale-50 shrink-0 text-amber-400 flex-shrink-0" />
         )}
       </div>
     </NodeButton>
@@ -242,14 +236,14 @@ function NodeButton({ depth, iconClasses, onClick, className, children, icon }: 
   return (
     <button
       className={classNames(
-        'flex items-center gap-2 w-full pr-3 border-2 border-transparent text-faded py-1.5 rounded-md mx-1 my-0.5',
+        'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors duration-150',
         className,
       )}
-      style={{ paddingLeft: `${8 + depth * NODE_PADDING_LEFT}px` }}
+      style={{ paddingLeft: `${10 + depth * NODE_PADDING_LEFT}px` }}
       onClick={() => onClick?.()}
     >
       <div className={classNames('shrink-0', icon || iconClasses)}></div>
-      <div className="truncate w-full text-left">{children}</div>
+      <div className="truncate w-full">{children}</div>
     </button>
   );
 }
@@ -260,43 +254,46 @@ function NodeButton({ depth, iconClasses, onClick, className, children, icon }: 
 function getFileIcon(fileName: string): { icon: string; color: string } {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   
+  // Default icon for unknown files
+  const defaultIcon = { icon: 'i-ph:file-duotone', color: 'text-bolt-elements-textTertiary' };
+  
   const iconMap: Record<string, { icon: string; color: string }> = {
     // JavaScript/TypeScript
-    js: { icon: 'i-ph:file-js-duotone', color: 'text-yellow-400 dark:text-yellow-300' },
-    ts: { icon: 'i-ph:file-ts-duotone', color: 'text-blue-500 dark:text-blue-400' },
-    tsx: { icon: 'i-ph:file-ts-duotone', color: 'text-cyan-500 dark:text-cyan-400' },
-    jsx: { icon: 'i-ph:file-js-duotone', color: 'text-teal-400 dark:text-teal-300' },
+    js: { icon: 'i-ph:file-js-duotone', color: 'text-yellow-500' },
+    ts: { icon: 'i-ph:file-ts-duotone', color: 'text-blue-500' },
+    tsx: { icon: 'i-ph:file-ts-duotone', color: 'text-cyan-500' },
+    jsx: { icon: 'i-ph:file-js-duotone', color: 'text-teal-500' },
     
     // CSS
-    css: { icon: 'i-ph:file-css-duotone', color: 'text-blue-400 dark:text-blue-300' },
-    scss: { icon: 'i-ph:file-css-duotone', color: 'text-pink-400 dark:text-pink-300' },
-    sass: { icon: 'i-ph:file-css-duotone', color: 'text-pink-500 dark:text-pink-400' },
-    less: { icon: 'i-ph:file-css-duotone', color: 'text-blue-300 dark:text-blue-200' },
+    css: { icon: 'i-ph:file-css-duotone', color: 'text-blue-500' },
+    scss: { icon: 'i-ph:file-css-duotone', color: 'text-pink-500' },
+    sass: { icon: 'i-ph:file-css-duotone', color: 'text-pink-500' },
+    less: { icon: 'i-ph:file-css-duotone', color: 'text-blue-400' },
     
     // HTML
-    html: { icon: 'i-ph:file-html-duotone', color: 'text-orange-500 dark:text-orange-400' },
+    html: { icon: 'i-ph:file-html-duotone', color: 'text-orange-500' },
     
     // JSON
-    json: { icon: 'i-ph:file-json-duotone', color: 'text-green-400 dark:text-green-300' },
+    json: { icon: 'i-ph:file-json-duotone', color: 'text-green-500' },
     
     // Markdown
-    md: { icon: 'i-ph:file-text-duotone', color: 'text-gray-400 dark:text-gray-300' },
-    mdx: { icon: 'i-ph:file-text-duotone', color: 'text-gray-500 dark:text-gray-400' },
+    md: { icon: 'i-ph:file-text-duotone', color: 'text-gray-500' },
+    mdx: { icon: 'i-ph:file-text-duotone', color: 'text-gray-500' },
     
     // Python
-    py: { icon: 'i-ph:file-python-duotone', color: 'text-yellow-500 dark:text-yellow-400' },
+    py: { icon: 'i-ph:file-python-duotone', color: 'text-yellow-500' },
     
     // Rust
-    rs: { icon: 'i-ph:file-code-duotone', color: 'text-orange-400 dark:text-orange-300' },
+    rs: { icon: 'i-ph:file-code-duotone', color: 'text-orange-500' },
     
     // Go
-    go: { icon: 'i-ph:file-code-duotone', color: 'text-cyan-400 dark:text-cyan-300' },
+    go: { icon: 'i-ph:file-code-duotone', color: 'text-cyan-500' },
     
     // Ruby
-    rb: { icon: 'i-ph:file-code-duotone', color: 'text-red-400 dark:text-red-300' },
+    rb: { icon: 'i-ph:file-code-duotone', color: 'text-red-500' },
     
     // PHP
-    php: { icon: 'i-ph:file-php-duotone', color: 'text-purple-400 dark:text-purple-300' },
+    php: { icon: 'i-ph:file-php-duotone', color: 'text-purple-500' },
     
     // Shell
     sh: { icon: 'i-ph:terminal-window-duotone', color: 'text-green-500 dark:text-green-400' },

@@ -205,42 +205,41 @@ export const EditorPanel = memo(
     };
 
     return (
-      <PanelGroup direction="vertical">
+      <PanelGroup direction="vertical" className="h-full">
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
-          <PanelGroup direction="horizontal">
+          <PanelGroup direction="horizontal" className="h-full">
 
-            {/* ── File Tree Panel ── */}
+            {/* ── Sidebar: File Tree ── */}
             <Panel ref={fileTreePanelRef} defaultSize={18} minSize={10} collapsible>
-              <div className="flex flex-col h-full rounded-3xl overflow-hidden bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor/15 shadow-sm">
-
-                {/* File tree header */}
-                <div className="flex items-center justify-between px-3 h-11 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
-                  <div className="flex items-center gap-2">
-                    <div className="i-ph:folders-duotone text-base text-bolt-elements-textTertiary" />
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-bolt-elements-textTertiary">
+              <div className="flex flex-col h-full bg-bolt-elements-bg-depth-2">
+                {/* Sidebar header */}
+                <div className="flex items-center justify-between px-3 h-12 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
+                  <div className="flex items-center gap-2.5">
+                    <div className="i-ph:folder-open text-lg text-blue-500/70" />
+                    <span className="text-xs font-semibold uppercase tracking-widest text-bolt-elements-textTertiary">
                       Files
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <IconButton
                       icon="i-ph:file-plus"
                       size="sm"
                       title="New File"
-                      className="rounded-full border border-bolt-elements-borderColor/10 bg-bolt-elements-bg-depth-1 text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
+                      className="text-xs rounded-md hover:bg-bolt-elements-item-backgroundActive"
                       onClick={() => {/* TODO */}}
                     />
                     <IconButton
                       icon="i-ph:folder-plus"
                       size="sm"
                       title="New Folder"
-                      className="rounded-full border border-bolt-elements-borderColor/10 bg-bolt-elements-bg-depth-1 text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
+                      className="text-xs rounded-md hover:bg-bolt-elements-item-backgroundActive"
                       onClick={() => {/* TODO */}}
                     />
                   </div>
                 </div>
-
+                {/* File tree container */}
                 <FileTree
-                  className="h-full overflow-y-auto bg-bolt-elements-bg-depth-2"
+                  className="file-tree-container h-full overflow-y-auto bg-bolt-elements-bg-depth-2 px-1 py-2"
                   files={files}
                   hideRoot
                   unsavedFiles={unsavedFiles}
@@ -251,52 +250,58 @@ export const EditorPanel = memo(
               </div>
             </Panel>
 
-            {/* Resize handle */}
-            <PanelResizeHandle className="w-px bg-bolt-elements-borderColor/20 hover:bg-bolt-elements-item-contentAccent/40 transition-colors duration-150 data-[resize-handle-active]:bg-bolt-elements-item-contentAccent/60" />
+            {/* Divider */}
+            <PanelResizeHandle className="w-px bg-bolt-elements-borderColor/30 hover:bg-bolt-elements-item-contentAccent/50 active:bg-bolt-elements-item-contentAccent/70 transition-colors duration-200 cursor-col-resize" />
 
             {/* ── Editor Panel ── */}
             <Panel className="flex flex-col" defaultSize={80} minSize={20}>
 
-              {/* Editor top bar */}
-              <div className="flex items-center h-12 px-3 gap-2 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20 shadow-sm">
+              {/* Editor header bar */}
+              <div className="flex items-center h-12 px-4 gap-3 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
 
-                {/* Sidebar toggle */}
+                {/* File tree toggle */}
                 <button
                   onClick={toggleFileTree}
-                  className="flex items-center justify-center w-9 h-9 rounded-full transition-all text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80"
+                  className={classNames(
+                    'flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200',
+                    showFileTree
+                      ? 'text-bolt-elements-textPrimary bg-bolt-elements-item-backgroundActive/50'
+                      : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50'
+                  )}
                   title={showFileTree ? 'Hide files' : 'Show files'}
                 >
-                  <div className={classNames('text-sm', showFileTree ? 'i-ph:sidebar-simple' : 'i-ph:sidebar-simple-duotone')} />
+                  <div className={classNames('text-base', showFileTree ? 'i-ph:sidebar-simple' : 'i-ph:sidebar-simple-duotone')} />
                 </button>
 
-                {/* Breadcrumb / placeholder */}
-                {activeFileSegments?.length ? (
-                  <div className="flex items-center flex-1 min-w-0 overflow-hidden rounded-full bg-bolt-elements-bg-depth-2 px-3 py-2">
+                {/* File breadcrumb */}
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  {activeFileSegments?.length ? (
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
-                  </div>
-                ) : (
-                  <span className="text-xs text-bolt-elements-textTertiary flex-1 select-none">
-                    No file open
-                  </span>
-                )}
+                  ) : (
+                    <span className="text-xs text-bolt-elements-textTertiary">
+                      Select a file to start editing
+                    </span>
+                  )}
+                </div>
 
+                {/* Action buttons */}
                 <div className="flex items-center gap-2">
                   {activeFileUnsaved && (
                     <motion.div
-                      initial={{ opacity: 0, x: 4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-2"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-1.5"
                     >
                       <button
                         onClick={onFileSave}
-                        className="flex items-center gap-2 px-3 h-9 rounded-full text-xs font-semibold transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
+                        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
                       >
                         <div className="i-ph:floppy-disk-duotone text-sm" />
                         <span className="hidden sm:inline">{t('common.save')}</span>
                       </button>
                       <button
                         onClick={onFileReset}
-                        className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary transition-all hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary transition-all hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive"
                         title="Reset changes"
                       >
                         <div className="i-ph:arrow-counter-clockwise text-sm" />
@@ -304,14 +309,15 @@ export const EditorPanel = memo(
                     </motion.div>
                   )}
 
-                  {/* Terminal toggle */}
+                  {/* Terminal toggle button */}
+                  <div className="h-6 w-px bg-bolt-elements-borderColor/20" />
                   <button
                     onClick={() => workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get())}
                     className={classNames(
-                      'flex items-center gap-2 px-3 h-9 rounded-full text-xs font-semibold transition-all border',
+                      'flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all',
                       showTerminal
-                        ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/25'
-                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 border-transparent'
+                        ? 'bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/30'
+                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50'
                     )}
                   >
                     <div className={classNames('text-sm', showTerminal ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
@@ -362,40 +368,41 @@ export const EditorPanel = memo(
           <div className="h-full flex flex-col bg-bolt-elements-terminals-background">
 
             {/* Terminal tab bar */}
-            <div className="flex items-center h-11 px-3 gap-2 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
+            <div className="flex items-center h-12 px-4 gap-2 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/20">
               {Array.from({ length: terminalCount }, (_, index) => {
                 const isActive = activeTerminal === index;
                 return (
-                  <button
+                  <motion.button
                     key={index}
                     onClick={() => setActiveTerminal(index)}
                     className={classNames(
-                      'flex items-center gap-1.5 px-3 h-9 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border',
+                      'flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
                       isActive
-                        ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/25'
-                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 border-transparent'
+                        ? 'bg-bolt-elements-item-backgroundAccent/20 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/30'
+                        : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50'
                     )}
+                    layoutId={`terminal-tab-${index}`}
                   >
-                    <div className={classNames('text-xs', isActive ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
+                    <div className={classNames('text-sm', isActive ? 'i-ph:terminal-window-fill' : 'i-ph:terminal-window')} />
                     <span>{t('workbench.terminal')}{terminalCount > 1 ? ` ${index + 1}` : ''}</span>
-                  </button>
+                  </motion.button>
                 );
               })}
 
               {terminalCount < MAX_TERMINALS && (
                 <button
                   onClick={addTerminal}
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 transition-all"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 transition-all"
                   title="Add terminal"
                 >
                   <div className="i-ph:plus text-sm" />
                 </button>
               )}
 
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-1">
                 <button
                   onClick={() => workbenchStore.toggleTerminal(false)}
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/80 transition-all"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 transition-all"
                   title={t('common.close')}
                 >
                   <div className="i-ph:x text-sm" />

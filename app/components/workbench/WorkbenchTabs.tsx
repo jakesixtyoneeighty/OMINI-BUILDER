@@ -17,34 +17,27 @@ interface WorkbenchTabsProps<T extends string> {
 
 export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSelected }: WorkbenchTabsProps<T>) => {
   return (
-    <div className="flex items-center gap-0.5 bg-bolt-elements-background-depth-1 overflow-hidden rounded-full p-0.5 sm:p-1">
+    <div className="flex items-center gap-1 bg-bolt-elements-bg-depth-2 rounded-lg p-1 sm:p-1.5 border border-bolt-elements-borderColor/10">
       {options.map((option) => {
         const isSelected = selected === option.value;
 
         return (
-          <button
+          <motion.button
             key={option.value}
             onClick={() => setSelected(option.value)}
             className={classNames(
-              'relative flex items-center gap-1 sm:gap-1.5 text-sm px-2 sm:px-3 py-1 rounded-full transition-colors',
+              'relative flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3 py-1.5 rounded-lg transition-all duration-200',
               isSelected
-                ? 'text-bolt-elements-item-contentAccent'
-                : 'text-bolt-elements-item-contentDefault hover:text-bolt-elements-item-contentActive',
+                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/15 border border-bolt-elements-item-contentAccent/30'
+                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50',
             )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             title={option.label}
           >
-            <span className="relative z-10 flex items-center gap-1 sm:gap-1.5">
-              <div className={classNames(option.icon, 'text-base')} />
-              <span className="text-xs font-medium hidden sm:inline">{option.label}</span>
-            </span>
-            {isSelected && (
-              <motion.span
-                layoutId="pill-tab"
-                transition={{ duration: 0.2, ease: cubicEasingFn }}
-                className="absolute inset-0 z-0 bg-bolt-elements-item-backgroundAccent rounded-full"
-              />
-            )}
-          </button>
+            <div className={classNames(option.icon, 'text-base')} />
+            <span className="font-medium hidden sm:inline whitespace-nowrap">{option.label}</span>
+          </motion.button>
         );
       })}
     </div>

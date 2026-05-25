@@ -72,12 +72,12 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
+    <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor/30 select-none">
       {/* LEFT: Logo */}
-      <div className="flex items-center px-3 shrink-0">
+      <div className="flex items-center px-4 shrink-0">
         <a
           href="/"
-          className="flex items-center rounded-lg px-2 py-1.5 hover:bg-bolt-elements-item-backgroundActive transition-all"
+          className="flex items-center rounded-lg px-2 py-1.5 hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
           title="Home"
         >
           <BrandAsset src="/omini-logo.html" title="Omini" className="h-10 w-[190px] max-w-full omni-logo-themed" />
@@ -85,15 +85,15 @@ export function Header() {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-bolt-elements-borderColor hidden sm:block" />
+      <div className="w-px h-6 bg-bolt-elements-borderColor/20 hidden sm:block mx-2" />
 
       {/* Model Picker */}
-      <div>
+      <div className="hidden sm:block">
         <ClientOnly>{() => <ModelPicker />}</ClientOnly>
       </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-bolt-elements-borderColor hidden sm:block" />
+      <div className="w-px h-6 bg-bolt-elements-borderColor/20 hidden sm:block mx-2" />
 
       {/* CENTER: Editable project name */}
       <div className="flex-1 hidden sm:flex items-center justify-center px-3 min-w-0">
@@ -101,7 +101,7 @@ export function Header() {
       </div>
 
       {/* RIGHT: Action buttons */}
-      <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 shrink-0 relative z-[50]">
+      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 shrink-0 relative z-[50]">
         <ClientOnly>
           {() => (
             <>
@@ -126,17 +126,17 @@ export function Header() {
               <div ref={moreRef} className="relative">
                 <button
                   onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all duration-200"
                   title="More"
                 >
-                  <div className="i-ph:dots-three-vertical text-base" />
+                  <div className="i-ph:dots-three-vertical text-lg" />
                 </button>
 
                 {moreMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[100] overflow-hidden">
                     {/* Save options */}
                     {chat.started && (
-                      <div className="p-1 border-b border-bolt-elements-borderColor">
+                      <div className="p-1.5 border-b border-bolt-elements-borderColor/20">
                         <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
                         <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                       </div>
@@ -144,19 +144,19 @@ export function Header() {
 
                     {/* Actions */}
                     {chat.started && (
-                      <div className="p-1 border-b border-bolt-elements-borderColor">
+                      <div className="p-1.5 border-b border-bolt-elements-borderColor/20">
                         <ClientOnly>{() => <GitHubPush />}</ClientOnly>
                       </div>
                     )}
 
                     {/* Settings & Theme */}
-                    <div className="p-1">
+                    <div className="p-1.5">
                       <button
                         onClick={() => {
                           toggleTheme();
                           setMoreMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all text-left"
                       >
                         <div
                           className={
@@ -170,12 +170,12 @@ export function Header() {
 
                       {/* Language sub-menu */}
                       <div className="relative group/lang">
-                        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left">
+                        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all text-left">
                           <span className="text-base">{LANGUAGE_FLAGS[currentLang]}</span>
                           <span>{LANGUAGE_NAMES[currentLang]}</span>
                           <div className="i-ph:caret-right text-[10px] ml-auto" />
                         </button>
-                        <div className="absolute left-full top-0 ml-1 w-40 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[110] overflow-hidden p-1 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all">
+                        <div className="absolute left-full top-0 ml-1 w-40 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[110] overflow-hidden p-1.5 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all">
                           {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
                             <button
                               key={lang}
@@ -187,8 +187,8 @@ export function Header() {
                               className={classNames(
                                 'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all text-left',
                                 currentLang === lang
-                                  ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentAccent'
-                                  : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary',
+                                  ? 'bg-bolt-elements-item-backgroundActive/50 text-bolt-elements-item-contentAccent'
+                                  : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 hover:text-bolt-elements-textPrimary',
                               )}
                             >
                               <span className="text-sm">{LANGUAGE_FLAGS[lang]}</span>
@@ -211,13 +211,13 @@ export function Header() {
                         <div className="i-ph:gear-six text-base" />
                         <span>{t('header.apiKeysSettings')}</span>
                       </button>
-                      <div className="border-t border-bolt-elements-borderColor my-1" />
+                      <div className="border-t border-bolt-elements-borderColor/20 my-1.5" />
                       <button
                         onClick={() => {
                           openProjectSettings('general');
                           setMoreMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all text-left"
                       >
                         <div className="i-ph:folder-open text-base" />
                         <span>{t('header.projectSettings')}</span>
@@ -225,7 +225,7 @@ export function Header() {
                       <a
                         href="/gallery"
                         onClick={() => setMoreMenuOpen(false)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all text-left"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all text-left"
                       >
                         <div className="i-ph:storefront text-base" />
                         <span>{t('header.gallery')}</span>
@@ -283,14 +283,14 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       <div className="w-0 sm:w-4 shrink-0" />
 
       {/* CENTER: Search bar */}
-      <div className="flex-1 flex items-center justify-center px-4 max-w-xl mx-auto">
+      <div className="flex-1 flex items-center justify-center px-4 max-w-2xl mx-auto">
         <button
           onClick={onSearchOpen}
-          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:border-bolt-elements-borderColorActive transition-all cursor-text text-left"
+          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 hover:border-bolt-elements-borderColor/50 transition-all duration-200 cursor-text text-left"
         >
-          <div className="i-ph:magnifying-glass text-sm text-bolt-elements-textTertiary" />
-          <span className="text-sm text-bolt-elements-textTertiary">{t('search.placeholder')}</span>
-          <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
+          <div className="i-ph:magnifying-glass text-base text-bolt-elements-textTertiary" />
+          <span className="text-sm text-bolt-elements-textTertiary flex-1">{t('search.placeholder')}</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor/30">
             Ctrl+K
           </kbd>
         </button>

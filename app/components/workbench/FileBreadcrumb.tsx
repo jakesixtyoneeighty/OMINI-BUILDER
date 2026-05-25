@@ -70,7 +70,7 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
   }
 
   return (
-    <div className="flex">
+    <div className="flex items-center gap-1">
       {pathSegments.map((segment, index) => {
         const isLast = index === pathSegments.length - 1;
 
@@ -83,23 +83,24 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
         const isActive = activeIndex === index;
 
         return (
-          <div key={index} className="relative flex items-center">
+          <div key={index} className="relative flex items-center gap-1">
             <DropdownMenu.Root open={isActive} modal={false}>
               <DropdownMenu.Trigger asChild>
-                <span
+                <button
                   ref={(ref) => (segmentRefs.current[index] = ref)}
-                  className={classNames('flex items-center gap-1.5 cursor-pointer shrink-0', {
-                    'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary': !isActive,
-                    'text-bolt-elements-textPrimary underline': isActive,
-                    'pr-4': isLast,
-                  })}
+                  className={classNames(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer shrink-0',
+                    {
+                      'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50': !isActive,
+                      'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/15': isActive,
+                    },
+                  )}
                   onClick={() => handleSegmentClick(index)}
                 >
-                  {isLast && <div className="i-ph:file-duotone" />}
-                  {segment}
-                </span>
+                  {isLast ? <div className="i-ph:file-duotone text-base" /> : <div className="i-ph:folder-duotone text-base" />}
+                  <span className="truncate max-w-[120px]">{segment}</span>
+                </button>
               </DropdownMenu.Trigger>
-              {index > 0 && !isLast && <span className="i-ph:caret-right inline-block mx-1" />}
               <AnimatePresence>
                 {isActive && (
                   <DropdownMenu.Portal>
@@ -117,8 +118,8 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
                         exit="close"
                         variants={contextMenuVariants}
                       >
-                        <div className="rounded-lg overflow-hidden">
-                          <div className="max-h-[50vh] min-w-[300px] overflow-scroll bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor shadow-sm rounded-lg">
+                        <div className="rounded-xl overflow-hidden border border-bolt-elements-borderColor/20 shadow-lg bg-bolt-elements-bg-depth-1">
+                          <div className="max-h-[60vh] min-w-[280px] overflow-y-auto">
                             <FileTree
                               files={files}
                               hideRoot
