@@ -90,10 +90,10 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
                 <button
                   ref={(ref) => (segmentRefs.current[index] = ref)}
                   className={classNames(
-                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0 tracking-wide',
+                    'flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-all duration-150 cursor-pointer shrink-0',
                     {
-                      'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40': !isActive,
-                      'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/10 ring-1 ring-bolt-elements-item-contentAccent/20': isActive,
+                      'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/30': !isActive,
+                      'text-bolt-elements-item-contentAccent bg-bolt-elements-item-backgroundAccent/10': isActive,
                     },
                   )}
                   onClick={() => handleSegmentClick(index)}
@@ -118,8 +118,8 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
                         exit="close"
                         variants={contextMenuVariants}
                       >
-                        <div className="rounded-xl overflow-hidden border border-bolt-elements-borderColor/20 shadow-lg bg-bolt-elements-bg-depth-1">
-                          <div className="max-h-[60vh] min-w-[280px] overflow-y-auto">
+                        <div className="modern-dropdown">
+                          <div className="max-h-[60vh] min-w-[260px] overflow-y-auto">
                             <FileTree
                               files={files}
                               hideRoot

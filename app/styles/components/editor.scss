@@ -4,88 +4,49 @@
   --cm-fontSize: 13px;
   --cm-lineHeight: 1.65;
 
-  /* Gutter */
   --cm-gutter-backgroundColor: var(--bolt-elements-editor-gutter-backgroundColor, var(--cm-backgroundColor));
   --cm-gutter-textColor: var(--bolt-elements-editor-gutter-textColor, var(--bolt-elements-textSecondary));
   --cm-gutter-activeLineTextColor: var(--bolt-elements-editor-gutter-activeLineTextColor, var(--cm-gutter-textColor));
 
-  /* Fold Gutter */
   --cm-foldGutter-textColor: var(--bolt-elements-editor-foldGutter-textColor, var(--cm-gutter-textColor));
   --cm-foldGutter-textColorHover: var(--bolt-elements-editor-foldGutter-textColorHover, var(--cm-gutter-textColor));
 
-  /* Active Line */
   --cm-activeLineBackgroundColor: var(--bolt-elements-editor-activeLineBackgroundColor, rgb(99 102 241 / 5%));
 
-  /* Cursor */
   --cm-cursor-width: 2px;
   --cm-cursor-backgroundColor: var(--bolt-elements-editor-cursorColor, var(--bolt-elements-textSecondary));
 
-  /* Matching Brackets */
   --cm-matching-bracket: var(--bolt-elements-editor-matchingBracketBackgroundColor, rgb(99 102 241 / 0.15));
 
-  /* Selection */
   --cm-selection-backgroundColorFocused: var(--bolt-elements-editor-selection-backgroundColor, #42b4ff);
   --cm-selection-backgroundOpacityFocused: var(--bolt-elements-editor-selection-backgroundOpacity, 0.25);
   --cm-selection-backgroundColorBlured: var(--bolt-elements-editor-selection-inactiveBackgroundColor, #c9e9ff);
   --cm-selection-backgroundOpacityBlured: var(--bolt-elements-editor-selection-inactiveBackgroundOpacity, 0.2);
 
-  /* Panels */
   --cm-panels-borderColor: var(--bolt-elements-editor-panels-borderColor, var(--bolt-elements-borderColor));
 
-  /* Search */
   --cm-search-backgroundColor: var(--bolt-elements-editor-search-backgroundColor, var(--cm-backgroundColor));
   --cm-search-textColor: var(--bolt-elements-editor-search-textColor, var(--bolt-elements-textSecondary));
   --cm-search-closeButton-backgroundColor: var(--bolt-elements-editor-search-closeButton-backgroundColor, transparent);
-  --cm-search-closeButton-backgroundColorHover: var(
-    --bolt-elements-editor-search-closeButton-backgroundColorHover,
-    var(--bolt-elements-item-backgroundActive)
-  );
-  --cm-search-closeButton-textColor: var(
-    --bolt-elements-editor-search-closeButton-textColor,
-    var(--bolt-elements-item-contentDefault)
-  );
-  --cm-search-closeButton-textColorHover: var(
-    --bolt-elements-editor-search-closeButton-textColorHover,
-    var(--bolt-elements-item-contentActive)
-  );
-  --cm-search-button-backgroundColor: var(
-    --bolt-elements-editor-search-button-backgroundColor,
-    var(--bolt-elements-item-backgroundDefault)
-  );
-  --cm-search-button-backgroundColorHover: var(
-    --bolt-elements-editor-search-button-backgroundColorHover,
-    var(--bolt-elements-item-backgroundActive)
-  );
+  --cm-search-closeButton-backgroundColorHover: var(--bolt-elements-editor-search-closeButton-backgroundColorHover, var(--bolt-elements-item-backgroundActive));
+  --cm-search-closeButton-textColor: var(--bolt-elements-editor-search-closeButton-textColor, var(--bolt-elements-item-contentDefault));
+  --cm-search-closeButton-textColorHover: var(--bolt-elements-editor-search-closeButton-textColorHover, var(--bolt-elements-item-contentActive));
+  --cm-search-button-backgroundColor: var(--bolt-elements-editor-search-button-backgroundColor, var(--bolt-elements-item-backgroundDefault));
+  --cm-search-button-backgroundColorHover: var(--bolt-elements-editor-search-button-backgroundColorHover, var(--bolt-elements-item-backgroundActive));
   --cm-search-button-textColor: var(--bolt-elements-editor-search-button-textColor, var(--bolt-elements-textSecondary));
-  --cm-search-button-textColorHover: var(
-    --bolt-elements-editor-search-button-textColorHover,
-    var(--bolt-elements-textPrimary)
-  );
+  --cm-search-button-textColorHover: var(--bolt-elements-editor-search-button-textColorHover, var(--bolt-elements-textPrimary));
   --cm-search-button-borderColor: var(--bolt-elements-editor-search-button-borderColor, transparent);
   --cm-search-button-borderColorHover: var(--bolt-elements-editor-search-button-borderColorHover, transparent);
-  --cm-search-button-borderColorFocused: var(
-    --bolt-elements-editor-search-button-borderColorFocused,
-    var(--bolt-elements-borderColorActive)
-  );
+  --cm-search-button-borderColorFocused: var(--bolt-elements-editor-search-button-borderColorFocused, var(--bolt-elements-borderColorActive));
   --cm-search-input-backgroundColor: var(--bolt-elements-editor-search-input-backgroundColor, transparent);
   --cm-search-input-textColor: var(--bolt-elements-editor-search-input-textColor, var(--bolt-elements-textPrimary));
   --cm-search-input-borderColor: var(--bolt-elements-editor-search-input-borderColor, var(--bolt-elements-borderColor));
-  --cm-search-input-borderColorFocused: var(
-    --bolt-elements-editor-search-input-borderColorFocused,
-    var(--bolt-elements-borderColorActive)
-  );
+  --cm-search-input-borderColorFocused: var(--bolt-elements-editor-search-input-borderColorFocused, var(--bolt-elements-borderColorActive));
 
-  /* Tooltip */
   --cm-tooltip-backgroundColor: var(--bolt-elements-editor-tooltip-backgroundColor, var(--cm-backgroundColor));
   --cm-tooltip-textColor: var(--bolt-elements-editor-tooltip-textColor, var(--bolt-elements-textPrimary));
-  --cm-tooltip-backgroundColorSelected: var(
-    --bolt-elements-editor-tooltip-backgroundColorSelected,
-    theme('colors.alpha.accent.30')
-  );
-  --cm-tooltip-textColorSelected: var(
-    --bolt-elements-editor-tooltip-textColorSelected,
-    var(--bolt-elements-textPrimary)
-  );
+  --cm-tooltip-backgroundColorSelected: var(--bolt-elements-editor-tooltip-backgroundColorSelected, theme('colors.alpha.accent.30'));
+  --cm-tooltip-textColorSelected: var(--bolt-elements-editor-tooltip-textColorSelected, var(--bolt-elements-textPrimary));
   --cm-tooltip-borderColor: var(--bolt-elements-editor-tooltip-borderColor, var(--bolt-elements-borderColor));
   --cm-searchMatch-backgroundColor: var(--bolt-elements-editor-searchMatch-backgroundColor, rgba(234, 92, 0, 0.33));
 }
@@ -112,103 +73,7 @@ html[data-theme='dark'] {
   --bolt-elements-editor-search-button-backgroundColorHover: theme('colors.alpha.white.10');
 }
 
-/* ===== Editor Enhancements ===== */
-
-/* Smooth panel resize handles */
-[data-panel-resize-handle-id] {
-  transition: background-color 0.15s ease;
-}
-
-[data-panel-resize-handle-id]:hover {
-  background-color: var(--bolt-elements-item-contentAccent, rgba(99,102,241,0.3));
-}
-
-[data-resize-handle-state="drag"] {
-  background-color: var(--bolt-elements-item-contentAccent, rgba(99,102,241,0.5)) !important;
-}
-
-/* Editor tab animations */
-@keyframes tab-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-  50% { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
-}
-
-/* Unsaved indicator animation */
-.unsaved-indicator {
-  animation: tab-pulse 2s ease-in-out infinite;
-}
-
-/* Terminal panel improvements */
-.terminal-tab-active {
-  position: relative;
-}
-
-.terminal-tab-active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 8px;
-  right: 8px;
-  height: 2px;
-  background: var(--bolt-elements-item-contentAccent);
-  border-radius: 1px;
-}
-
-/* CodeMirror enhancements */
-.cm-editor {
-  border-radius: 1rem !important;
-  overflow: hidden;
-}
-
-.cm-editor.cm-focused {
-  outline: none !important;
-}
-
-.cm-scroller {
-  padding: 0.5rem 0 !important;
-}
-
-/* Gutter styling */
-.cm-gutters {
-  border-right: none !important;
-  background: transparent !important;
-}
-
-.cm-gutter {
-  background: transparent !important;
-}
-
-.cm-activeLine {
-  background: var(--cm-activeLineBackgroundColor) !important;
-}
-
-/* Active line highlight */
-.cm-activeLineGutter {
-  background: rgba(99, 102, 241, 0.06) !important;
-}
-
-/* Selection color */
-.cm-selectionBackground {
-  background: rgba(99, 102, 241, 0.2) !important;
-}
-
-/* Cursor styling */
-.cm-cursor {
-  border-left-width: 2px !important;
-  border-left-color: var(--bolt-elements-item-contentAccent) !important;
-}
-
-/* File tree item hover */
-.file-tree-item:hover {
-  background: var(--bolt-elements-item-backgroundActive);
-}
-
-.file-tree-item.selected {
-  background: var(--bolt-elements-item-backgroundAccent);
-  color: var(--bolt-elements-item-contentAccent);
-}
-
-/* Scrollbar styling for editor */
+/* ===== Modern Scrollbar Styling ===== */
 .cm-scroller::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -219,19 +84,21 @@ html[data-theme='dark'] {
 }
 
 .cm-scroller::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.08);
   border-radius: 4px;
   transition: background 0.2s ease;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .cm-scroller::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.18);
+  background-clip: content-box;
 }
 
-/* File tree scrollbar */
 .file-tree-container::-webkit-scrollbar,
 .overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .file-tree-container::-webkit-scrollbar-track,
@@ -241,12 +108,231 @@ html[data-theme='dark'] {
 
 .file-tree-container::-webkit-scrollbar-thumb,
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.08);
-  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: 2px;
   transition: background 0.2s ease;
 }
 
 .file-tree-container::-webkit-scrollbar-thumb:hover,
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+/* ===== Editor Empty State ===== */
+.editor-empty-state {
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-empty-state::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ===== Search Panel Styling ===== */
+.cm-search {
+  background: var(--bolt-elements-bg-depth-2) !important;
+  border-bottom: 1px solid var(--bolt-elements-borderColor) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.cm-search label {
+  font-size: 12px !important;
+  color: var(--bolt-elements-textSecondary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.cm-search input {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--bolt-elements-borderColor) !important;
+  background: var(--bolt-elements-bg-depth-3) !important;
+  color: var(--bolt-elements-textPrimary) !important;
+  outline: none !important;
+  min-width: 160px !important;
+}
+
+.cm-search input:focus {
+  border-color: var(--bolt-elements-item-contentAccent) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+}
+
+.cm-search .cm-button {
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--bolt-elements-borderColor) !important;
+  background: var(--bolt-elements-bg-depth-3) !important;
+  color: var(--bolt-elements-textSecondary) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.cm-search .cm-button:hover {
+  background: var(--bolt-elements-bg-depth-4) !important;
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+/* Panel header - modern minimal */
+.panel-header-modern {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 12px;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--bolt-elements-textSecondary);
+  border-bottom: 1px solid var(--bolt-elements-borderColor);
+  background: var(--bolt-elements-bg-depth-1);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Tab bar - VS Code style */
+.editor-tab-bar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--bolt-elements-bg-depth-1);
+  border-bottom: 1px solid var(--bolt-elements-borderColor);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.editor-tab-bar::-webkit-scrollbar {
+  height: 0;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bolt-elements-textSecondary);
+  border-right: 1px solid var(--bolt-elements-borderColor);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: transparent;
+  position: relative;
+}
+
+.editor-tab:hover {
+  color: var(--bolt-elements-textPrimary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.editor-tab.active {
+  color: var(--bolt-elements-textPrimary);
+  border-bottom-color: var(--bolt-elements-item-contentAccent);
+  background: var(--bolt-elements-bg-depth-2);
+}
+
+.editor-tab .tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.15s ease;
+  font-size: 12px;
+  color: var(--bolt-elements-textTertiary);
+}
+
+.editor-tab:hover .tab-close {
+  opacity: 1;
+}
+
+.editor-tab .tab-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Terminal - modern minimal */
+.terminal-container {
+  background: var(--bolt-elements-terminals-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-tab-bar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  gap: 2px;
+  background: var(--bolt-elements-bg-depth-1);
+  border-bottom: 1px solid var(--bolt-elements-borderColor);
+  flex-shrink: 0;
+}
+
+.terminal-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--bolt-elements-textTertiary);
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+}
+
+.terminal-tab-item:hover {
+  color: var(--bolt-elements-textSecondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.terminal-tab-item.active {
+  color: var(--bolt-elements-textPrimary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Skeleton loading for editor */
+@keyframes editor-skeleton {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.3; }
+}
+
+.editor-skeleton {
+  animation: editor-skeleton 1.5s ease-in-out infinite;
+}
+
+/* Modern dropdown for file tree breadcrumb */
+.modern-dropdown {
+  border-radius: 12px !important;
+  border: 1px solid var(--bolt-elements-borderColor) !important;
+  background: var(--bolt-elements-bg-depth-1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
+  backdrop-filter: blur(12px) !important;
+  overflow: hidden !important;
 }

@@ -163,29 +163,29 @@ function Folder({ folder: { depth, name }, collapsed, selected = false, onClick 
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-200 ease-in-out rounded-md my-0.5',
+        'group transition-all duration-150 rounded-md my-[1px]',
         {
           'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40':
             !selected,
-          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent ring-1 ring-bolt-elements-item-contentAccent/20': selected,
+          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent': selected,
         },
       )}
       depth={depth}
       iconClasses={classNames(
-        'transition-transform duration-200 text-base shrink-0',
+        'transition-transform duration-150 text-sm shrink-0',
         {
           'i-ph:caret-right text-bolt-elements-textTertiary/50': collapsed,
-          'i-ph:caret-down text-bolt-elements-item-contentAccent rotate-0': !collapsed,
+          'i-ph:caret-down text-bolt-elements-item-contentAccent': !collapsed,
         },
       )}
       onClick={onClick}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 min-w-0">
         <div className={classNames(
-          "text-lg shrink-0",
-          collapsed ? "i-ph:folder-duotone text-bolt-elements-textTertiary/70" : "i-ph:folder-open-duotone text-bolt-elements-item-contentAccent/70"
+          "text-base shrink-0",
+          collapsed ? "i-ph:folder-duotone text-bolt-elements-textTertiary/60" : "i-ph:folder-open-duotone text-bolt-elements-item-contentAccent/60"
         )} />
-        <span className="font-semibold text-[13px] truncate tracking-tight">{name}</span>
+        <span className="font-medium text-[12.5px] truncate tracking-tight">{name}</span>
       </div>
     </NodeButton>
   );
@@ -204,21 +204,21 @@ function File({ file: { depth, name }, onClick, selected, unsavedChanges = false
   return (
     <NodeButton
       className={classNames(
-        'group transition-all duration-200 ease-in-out rounded-md my-0.5',
+        'group transition-all duration-150 rounded-md my-[1px]',
         {
           'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/40':
             !selected,
-          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent ring-1 ring-bolt-elements-item-contentAccent/20': selected,
+          'bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent': selected,
         },
       )}
       depth={depth}
       onClick={onClick}
     >
-      <div className="flex items-center flex-1 min-w-0 gap-2.5">
-        <div className={classNames('shrink-0 text-lg transition-all duration-200', fileIcon.color, fileIcon.icon)} />
-        <div className="flex-1 truncate text-[13px] font-medium tracking-tight">{name}</div>
+      <div className="flex items-center flex-1 min-w-0 gap-2">
+        <div className={classNames('shrink-0 text-sm transition-all duration-150', fileIcon.color, fileIcon.icon)} />
+        <div className="flex-1 truncate text-[12.5px] font-medium tracking-tight">{name}</div>
         {unsavedChanges && (
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)] shrink-0" />
         )}
       </div>
     </NodeButton>
@@ -238,10 +238,10 @@ function NodeButton({ depth, iconClasses, onClick, className, children }: Button
   return (
     <button
       className={classNames(
-        'flex items-center gap-1.5 w-full px-2 py-1.5 text-left transition-all duration-200',
+        'flex items-center gap-1 w-full px-2 py-1 text-left transition-all duration-150',
         className,
       )}
-      style={{ paddingLeft: `${8 + depth * NODE_PADDING_LEFT}px` }}
+      style={{ paddingLeft: `${6 + depth * NODE_PADDING_LEFT}px` }}
       onClick={() => onClick?.()}
     >
       {iconClasses && <div className={classNames('shrink-0', iconClasses)}></div>}

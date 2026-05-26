@@ -28,19 +28,18 @@ function getEditorTheme(settings: EditorSettings) {
   return EditorView.theme({
     '&': {
       fontSize: settings.fontSize ?? '13px',
-      fontFamily: settings.fontFamily ?? "'Inter', 'IBM Plex Mono', 'Roboto Mono', monospace",
+      fontFamily: settings.fontFamily ?? "'Geist Mono', 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace",
     },
     '&.cm-editor': {
       height: '100%',
       background: 'var(--cm-backgroundColor)',
       color: 'var(--cm-textColor)',
-      borderRadius: '1rem',
     },
     '.cm-cursor': {
       borderLeft: 'var(--cm-cursor-width) solid var(--cm-cursor-backgroundColor)',
     },
     '.cm-scroller': {
-      lineHeight: '1.65',
+      lineHeight: '1.7',
       padding: '0.5rem 0',
       '&:focus-visible': {
         outline: 'none',
