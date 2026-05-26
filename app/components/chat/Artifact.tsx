@@ -12,9 +12,6 @@ interface ArtifactProps {
   messageId: string;
 }
 
-/**
- * Determines if a shell action is a build command.
- */
 function isBuildCommand(content: string): boolean {
   const lower = content?.toLowerCase() || '';
   return (
@@ -31,9 +28,6 @@ function isBuildCommand(content: string): boolean {
   );
 }
 
-/**
- * Determines if a shell action is an install command.
- */
 function isInstallCommand(content: string): boolean {
   const lower = content?.toLowerCase() || '';
   return (
@@ -44,6 +38,22 @@ function isInstallCommand(content: string): boolean {
     lower.includes('yarn add') ||
     lower.includes('pip install')
   );
+}
+
+function getActionLabels(action: ActionState): { active: string; done: string; icon: string } {
+  if (action.type === 'file') {
+    const isNew = action.isNewFile !== false;
+    return {
+      active: isNew ? 'Creating' : 'Editing',
+      done: isNew ? 'Created' : 'Edited',
+      icon: isNew ? 'i-ph:file-plus' : 'i-ph:pencil-simple',
+    };
+  }
+  return {
+    active: 'Running',
+    done: 'Runned',
+    icon: 'i-ph:terminal',
+  };
 }
 
 export const Artifact = memo(({ messageId }: ArtifactProps) => {
@@ -57,7 +67,6 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     }),
   );
 
-  // Check if any action is still running or pending (for animated border)
   const isProcessing = useMemo(() => {
     return actions.some((a) => a.status === 'running' || a.status === 'pending');
   }, [actions]);
@@ -70,123 +79,15 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
     }
   }, [actions]);
 
-  // Group actions: files by created/edited, shells by type (install, build, other)
-  const { createdFiles, editedFiles, installActions, buildActions, otherShellActions } = useMemo(() => {
-    const created: ActionState[] = [];
-    const edited: ActionState[] = [];
-    const installs: ActionState[] = [];
-    const builds: ActionState[] = [];
-    const otherShell: ActionState[] = [];
-
-    for (const action of actions) {
-      if (action.type === 'file') {
-        const isCreated = action.isNewFile !== false;
-        if (isCreated) {
-          created.push(action);
-        } else {
-          edited.push(action);
-        }
-      } else if (action.type === 'shell') {
-        if (isBuildCommand(action.content)) {
-          builds.push(action);
-        } else if (isInstallCommand(action.content)) {
-          installs.push(action);
-        } else {
-          otherShell.push(action);
-        }
-      }
-    }
-
-    return {
-      createdFiles: created,
-      editedFiles: edited,
-      installActions: installs,
-      buildActions: builds,
-      otherShellActions: otherShell,
-    };
-  }, [actions]);
-
   const hasContent = actions.length > 0;
-
-  // Section definitions in display order
-  const sections = useMemo(() => {
-    const result: { key: string; label: string; icon: string; iconColor: string; actions: ActionState[] }[] = [];
-
-    if (installActions.length > 0) {
-      result.push({
-        key: 'install',
-        label: t('artifact.installedPackages'),
-        icon: 'i-ph:download-simple',
-        iconColor: 'text-blue-500',
-        actions: installActions,
-      });
-    }
-
-    if (createdFiles.length > 0) {
-      result.push({
-        key: 'created',
-        label:
-          createdFiles.length > 1
-            ? t('artifact.createdPlural', { count: createdFiles.length })
-            : t('artifact.created', { count: createdFiles.length }),
-        icon: 'i-ph:file-plus',
-        iconColor: 'text-emerald-500',
-        actions: createdFiles,
-      });
-    }
-
-    if (editedFiles.length > 0) {
-      result.push({
-        key: 'edited',
-        label:
-          editedFiles.length > 1
-            ? t('artifact.editedPlural', { count: editedFiles.length })
-            : t('artifact.edited', { count: editedFiles.length }),
-        icon: 'i-ph:pencil-simple',
-        iconColor: 'text-amber-500',
-        actions: editedFiles,
-      });
-    }
-
-    if (otherShellActions.length > 0) {
-      result.push({
-        key: 'shell',
-        label:
-          otherShellActions.length > 1
-            ? t('artifact.ranPlural', { count: otherShellActions.length })
-            : t('artifact.ran', { count: otherShellActions.length }),
-        icon: 'i-ph:terminal',
-        iconColor: 'text-slate-500',
-        actions: otherShellActions,
-      });
-    }
-
-    if (buildActions.length > 0) {
-      result.push({
-        key: 'built',
-        label: t('artifact.built'),
-        icon: 'i-ph:wrench',
-        iconColor: 'text-slate-500',
-        actions: buildActions,
-      });
-    }
-
-    return result;
-  }, [createdFiles, editedFiles, installActions, buildActions, otherShellActions, t]);
-
-  // Calculate totals for header
-  const totalFiles = createdFiles.length + editedFiles.length;
-  const totalInstalls = installActions.length;
-  const totalBuilds = buildActions.length;
 
   return (
     <div
       className={classNames(
         'my-3 rounded-xl overflow-hidden transition-all duration-300 border border-bolt-elements-borderColor/60 bg-bolt-elements-bg-depth-2',
-        isProcessing && 'artifact-processing-ring',
+        isProcessing ? 'artifact-processing-ring' : '',
       )}
     >
-      {/* Header - Action History */}
       <div
         className="flex items-center gap-2.5 px-4 py-3 cursor-pointer hover:bg-bolt-elements-item-backgroundActive/50 transition-colors border-b border-bolt-elements-borderColor/60"
         onClick={() => {
@@ -204,14 +105,12 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         <div className="i-ph:arrow-square-out text-xs text-bolt-elements-textTertiary" />
       </div>
 
-      {/* Subtitle */}
       <div className="px-4 py-2 border-b border-bolt-elements-borderColor/40">
         <p className="text-xs text-bolt-elements-textSecondary">
           {t('artifact.actionsSubtitle')}
         </p>
       </div>
 
-      {/* Action Timeline */}
       <AnimatePresence>
         {showActions && hasContent && (
           <motion.div
@@ -221,53 +120,24 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             transition={{ duration: 0.2, ease: cubicEasingFn }}
             className="overflow-hidden"
           >
-            <div>
-              {sections.map((section, sIdx) => (
-                <div
-                  key={section.key}
-                  className={sIdx < sections.length - 1 ? 'border-b border-bolt-elements-borderColor/30' : ''}
-                >
-                  {/* Section header */}
-                  <div className="flex items-center gap-2 px-4 py-2.5">
-                    <div className={`${section.icon} text-sm ${section.iconColor} shrink-0`} />
-                    <span className="text-sm font-medium text-bolt-elements-textPrimary">
-                      {section.label}
-                    </span>
-                  </div>
-
-                  {/* Action items - clean list with checkmarks */}
-                  {section.actions.length > 0 && section.key !== 'install' && section.key !== 'built' && (
-                    <ul className="list-none pb-1">
-                      {section.actions.map((action, index) => (
-                        <motion.li
-                          key={`${section.key}-${index}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.2, delay: index * 0.03 }}
-                        >
-                          <FileActionItem action={action} />
-                        </motion.li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {/* Install section - show packages as tags */}
-                  {section.key === 'install' && section.actions.length > 0 && (
-                    <InstallActionItems actions={section.actions} />
-                  )}
-
-                  {/* Build section - show build info */}
-                  {section.key === 'built' && section.actions.length > 0 && (
-                    <BuildActionItems actions={section.actions} />
-                  )}
-                </div>
-              ))}
+            <div className="px-3 py-2">
+              <div className="flex flex-wrap gap-2">
+                {actions.map((action, index) => (
+                  <motion.div
+                    key={`action-${index}`}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.15, delay: index * 0.02 }}
+                  >
+                    <ActionChip action={action} />
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Empty state */}
       {!hasContent && (
         <div className="px-4 py-6 text-center">
           <div className="i-ph:cube text-2xl text-bolt-elements-textTertiary mx-auto mb-2" />
@@ -275,7 +145,6 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
         </div>
       )}
 
-      {/* Inline keyframes for animated border when processing */}
       {isProcessing && (
         <style>{`
           @keyframes gradientShift {
@@ -283,13 +152,11 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             50% { --gradient-angle: 180deg; }
             100% { --gradient-angle: 360deg; }
           }
-
           @property --gradient-angle {
             syntax: "<angle>";
             initial-value: 0deg;
             inherits: false;
           }
-
           .artifact-processing-ring {
             position: relative;
             border: 1px solid transparent;
@@ -303,121 +170,72 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
   );
 });
 
-/* ===== File Action Item - Clean with checkmark ===== */
-
-function FileActionItem({ action }: { action: ActionState }) {
-  const fileName = action.filePath?.split('/').pop() || '';
-
+function ActionChip({ action }: { action: ActionState }) {
+  const labels = getActionLabels(action);
   const isComplete = action.status === 'complete';
   const isRunning = action.status === 'running';
   const isFailed = action.status === 'failed';
+  const [expanded, setExpanded] = useState(false);
 
-  return (
-    <div className="flex items-center gap-3 px-4 py-1.5 group">
-      {/* File path */}
-      <span className="text-xs text-bolt-elements-textSecondary truncate font-mono flex-1 pl-6">
-        {action.filePath || fileName}
-      </span>
+  const displayName = action.type === 'file'
+    ? (action.filePath?.split('/').pop() || action.filePath || '')
+    : (action.content?.trim().split('\n')[0] || 'cmd');
 
-      {/* Status icon - clean checkmark circle */}
-      <div className="shrink-0 w-5 h-5 flex items-center justify-center">
-        {isRunning ? (
-          <div className="i-svg-spinners:90-ring-with-bg text-xs text-indigo-400" />
-        ) : isComplete ? (
-          <div className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center">
-            <div className="i-ph:check text-[10px] text-emerald-500" />
-          </div>
-        ) : isFailed ? (
-          <div className="w-4 h-4 rounded-full bg-red-500/15 flex items-center justify-center">
-            <div className="i-ph:x text-[10px] text-red-400" />
-          </div>
-        ) : (
-          <div className="w-4 h-4 rounded-full bg-bolt-elements-textTertiary/10 flex items-center justify-center">
-            <div className="i-ph:circle text-[8px] text-bolt-elements-textTertiary" />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+  const fullPath = action.type === 'file' ? action.filePath : '';
 
-/* ===== Install Action Items - Package tags ===== */
-
-function InstallActionItems({ actions }: { actions: ActionState[] }) {
-  const t = useT();
-
-  // Extract all packages from install commands
-  const allPackages = useMemo(() => {
-    const packages: string[] = [];
-    for (const action of actions) {
-      const content = action.content?.trim() || '';
-      const npmMatch = content.match(/npm\s+(?:install|i)\s+(.+)/);
-      const pnpmMatch = content.match(/pnpm\s+(?:add|install)\s+(.+)/);
-      const yarnMatch = content.match(/yarn\s+add\s+(.+)/);
-      const pipMatch = content.match(/pip\s+install\s+(.+)/);
-
-      const match = npmMatch || pnpmMatch || yarnMatch || pipMatch;
-      if (match) {
-        const pkgs = match[1].trim().split(/\s+/);
-        packages.push(...pkgs);
-      }
+  useEffect(() => {
+    if (isComplete || isFailed) {
+      const timer = setTimeout(() => setExpanded(false), 500);
+      return () => clearTimeout(timer);
     }
-    return packages;
-  }, [actions]);
+  }, [isComplete, isFailed]);
 
-  if (allPackages.length === 0) {
-    return (
-      <div className="px-4 pb-3">
-        <span className="text-xs text-bolt-elements-textSecondary font-mono">
-          {actions.map(a => a.content?.trim() || '').join(', ')}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="px-4 pb-3">
-      <div className="flex flex-wrap gap-1.5">
-        {allPackages.map((pkg, i) => (
-          <span
-            key={`${pkg}-${i}`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-medium"
-          >
-            <div className="i-ph:package text-[10px]" />
-            {pkg}
-          </span>
-        ))}
-      </div>
-    </div>
+  const chipClass = classNames(
+    'action-chip',
+    isRunning ? 'action-chip-active' : isFailed ? 'action-chip-failed' : 'action-chip-done',
   );
-}
 
-/* ===== Build Action Items ===== */
-
-function BuildActionItems({ actions }: { actions: ActionState[] }) {
-  const t = useT();
+  const iconClass = classNames(
+    'action-chip-icon',
+    labels.icon,
+    isRunning ? 'text-indigo-400' : isFailed ? 'text-red-400' : 'text-bolt-elements-textTertiary',
+  );
 
   return (
-    <div className="px-4 pb-3">
-      {actions.map((action, index) => (
-        <div key={index} className="flex items-center gap-2 py-0.5">
-          <span className="text-xs text-bolt-elements-textSecondary font-mono truncate">
-            {action.content?.trim().split('\n')[0] || 'build'}
-          </span>
-          {action.status === 'running' && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
-              <div className="i-svg-spinners:90-ring-with-bg text-[10px]" />
-              {t('artifact.building')}
-            </span>
-          )}
-          {action.status === 'complete' && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500">
-              <div className="i-ph:check-circle text-[10px]" />
-              {t('artifact.buildSuccess')}
-            </span>
-          )}
-        </div>
-      ))}
+    <div className="action-chips-container" style={{ gap: 0 }}>
+      <button
+        type="button"
+        className={chipClass}
+        onClick={() => setExpanded(!expanded)}
+        title={isRunning ? `${labels.active} ${displayName}` : `${labels.done} ${displayName}`}
+      >
+        <div className={iconClass} style={{ fontSize: 10 }} />
+        <span className="action-chip-label">
+          {isRunning ? labels.active : labels.done}
+        </span>
+        <span className="action-chip-name">{displayName}</span>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: cubicEasingFn }}
+            className="overflow-hidden"
+          >
+            <div className="action-chip-content-panel">
+              {fullPath && (
+                <div style={{ fontSize: 10, opacity: 0.6, marginBottom: 4 }}>
+                  {fullPath}
+                </div>
+              )}
+              {action.content}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

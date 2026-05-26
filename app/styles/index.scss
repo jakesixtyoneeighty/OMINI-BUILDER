@@ -559,6 +559,129 @@ body {
 }
 
 /* Count badge inside reveal button */
+
+/* ===== Action Status Chips — Real-time file/command indicators ===== */
+
+/* Container for the live action chips */
+.action-chips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+/* Individual action chip row — inline, compact */
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 100%;
+  user-select: none;
+}
+
+/* Active (processing) state — gradient shimmer like "Pensando..." */
+.action-chip-active {
+  background: linear-gradient(
+    90deg,
+    rgba(99,102,241,0.12) 0%,
+    rgba(168,85,247,0.15) 35%,
+    rgba(99,102,241,0.10) 55%,
+    rgba(168,85,247,0.15) 75%,
+    rgba(99,102,241,0.12) 100%
+  );
+  background-size: 300% auto;
+  border: 1px solid rgba(99,102,241,0.2);
+  color: var(--bolt-elements-item-contentAccent, #818cf8);
+  animation: thinking-shine 4s linear infinite;
+}
+
+.action-chip-active:hover {
+  border-color: rgba(99,102,241,0.35);
+  background: rgba(99,102,241,0.15);
+}
+
+/* Completed state — gray, subtle */
+.action-chip-done {
+  background: var(--bolt-elements-bg-depth-2);
+  border: 1px solid var(--bolt-elements-borderColor);
+  color: var(--bolt-elements-textTertiary);
+}
+
+.action-chip-done:hover {
+  border-color: var(--bolt-elements-borderColorActive);
+  background: var(--bolt-elements-item-backgroundActive);
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Failed state — red tint */
+.action-chip-failed {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: #ef4444;
+}
+
+.action-chip-failed:hover {
+  border-color: rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.12);
+}
+
+/* Icon inside chip */
+.action-chip-icon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Label text inside chip */
+.action-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 280px;
+}
+
+/* File/command name inside chip */
+.action-chip-name {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Expandable content panel — shown on click */
+.action-chip-content-panel {
+  margin-left: 8px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bolt-elements-bg-depth-3);
+  border: 1px solid var(--bolt-elements-borderColor);
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--bolt-elements-textSecondary);
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .thinking-count-badge {
   font-size: 10px;
   font-weight: 400;
