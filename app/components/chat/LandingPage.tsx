@@ -53,25 +53,25 @@ export function LandingPage({ children }: LandingPageProps) {
         }
       `}</style>
 
-      <div className="flex flex-col items-center w-full px-4 sm:px-6 pt-20 sm:pt-24 pb-16 max-w-3xl mx-auto font-geist">
+      <div className="flex flex-col items-center w-full px-3 sm:px-6 pt-6 sm:pt-24 pb-8 sm:pb-16 max-w-3xl mx-auto font-geist safe-bottom">
 
         {/* Headline - clean and bold */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-4 sm:mb-8"
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.05 }}
         >
-          <h1 className="text-4xl sm:text-5xl md:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-5xl md:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-gray-900 dark:text-white mb-1 sm:mb-2">
             What do you want to build?
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mt-3 max-w-lg mx-auto">
+          <p className="text-sm sm:text-lg text-gray-600 dark:text-gray-400 mt-1 sm:mt-3 max-w-lg mx-auto">
             Describe your idea and watch it come to life. Full-stack apps, dashboards, websites — no code required.
           </p>
         </motion.div>
 
         {/* Input (injected child) */}
         <motion.div
-          className="w-full max-w-2xl mb-6"
+          className="w-full max-w-2xl mb-4 sm:mb-6"
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.1 }}
         >
@@ -80,7 +80,7 @@ export function LandingPage({ children }: LandingPageProps) {
 
         {/* Cycling examples - minimal */}
         <motion.div
-          className="flex items-center gap-2 mb-12 text-sm text-gray-500 dark:text-gray-400"
+          className="flex items-center gap-2 mb-6 sm:mb-12 text-xs sm:text-sm text-gray-500 dark:text-gray-400"
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.15 }}
         >
@@ -90,17 +90,17 @@ export function LandingPage({ children }: LandingPageProps) {
 
         {/* Quick start options - horizontal row like Bolt/Lovable */}
         <motion.div
-          className="w-full max-w-xl mb-12"
+          className="w-full max-w-xl mb-6 sm:mb-12"
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.2 }}
         >
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors">
-              <div className="i-ph:github-logo text-lg" />
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+            <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors">
+              <div className="i-ph:github-logo text-base sm:text-lg" />
               Import from GitHub
             </button>
-            <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors">
-              <div className="i-ph:globe-duotone text-lg" />
+            <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors">
+              <div className="i-ph:globe-duotone text-base sm:text-lg" />
               Clone any website
             </button>
           </div>
@@ -112,10 +112,10 @@ export function LandingPage({ children }: LandingPageProps) {
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.25 }}
         >
-          <p className="text-center text-[10px] uppercase tracking-[0.2em] mb-5 font-semibold text-gray-500 dark:text-gray-500">
+          <p className="text-center text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-3 sm:mb-5 font-semibold text-gray-500 dark:text-gray-500">
             Popular categories
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             {[
               { icon: 'i-ph:globe-hemisphere-west-duotone', label: 'Web Apps' },
               { icon: 'i-ph:game-controller-duotone', label: 'Games' },
@@ -129,12 +129,12 @@ export function LandingPage({ children }: LandingPageProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 + i * 0.05 }}
-                className="flex flex-col items-center gap-2 py-3 px-2 rounded-xl bg-gray-100/50 dark:bg-white/3 hover:bg-gray-200/70 dark:hover:bg-white/8 transition-all cursor-pointer border border-transparent hover:border-gray-300/50 dark:hover:border-white/10"
+                className="flex flex-col items-center gap-1 sm:gap-2 py-2 sm:py-3 px-1 sm:px-2 rounded-lg sm:rounded-xl bg-gray-100/50 dark:bg-white/3 hover:bg-gray-200/70 dark:hover:bg-white/8 transition-all cursor-pointer border border-transparent hover:border-gray-300/50 dark:hover:border-white/10 active:scale-[0.97]"
               >
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <div className={cat.icon} />
                 </div>
-                <span className="text-[11px] font-medium text-gray-600 dark:text-gray-400 leading-tight">
+                <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 dark:text-gray-400 leading-tight">
                   {cat.label}
                 </span>
               </motion.div>

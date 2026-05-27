@@ -435,6 +435,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'workbench.database': 'Banco de Dados',
     'workbench.toggleTerminal': 'Alternar Terminal',
     'workbench.failedUpdateFile': 'Falha ao atualizar conteudo do arquivo',
+    'workbench.noPreviewYet': 'Envie uma mensagem para comecar a construir. A preview do seu app aparecera aqui.',
 
     // === Inspector ===
     'inspector.selectElement': 'Selecionar elemento',
@@ -1495,6 +1496,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'workbench.database': 'Database',
     'workbench.toggleTerminal': 'Toggle Terminal',
     'workbench.failedUpdateFile': 'Failed to update file content',
+    'workbench.noPreviewYet': 'Send a message to start building. Your app preview will appear here.',
 
     // === Inspector ===
     'inspector.selectElement': 'Select element',
@@ -2555,6 +2557,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'workbench.database': 'Base de Datos',
     'workbench.toggleTerminal': 'Alternar Terminal',
     'workbench.failedUpdateFile': 'Error al actualizar contenido del archivo',
+    'workbench.noPreviewYet': 'Envia un mensaje para empezar a construir. La vista previa de tu app aparecera aqui.',
 
     // === Inspector ===
     'inspector.selectElement': 'Seleccionar elemento',
@@ -3615,6 +3618,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'workbench.database': '数据库',
     'workbench.toggleTerminal': '切换终端',
     'workbench.failedUpdateFile': '更新文件内容失败',
+    'workbench.noPreviewYet': '发送消息开始构建。您的应用预览将显示在这里。',
 
     // === Inspector ===
     'inspector.selectElement': '选择元素',

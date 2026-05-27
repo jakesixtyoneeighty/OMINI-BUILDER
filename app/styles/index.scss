@@ -1100,3 +1100,14 @@ body {
     font-size: 16px !important;
   }
 }
+
+/* ===== iOS Safe Area Support ===== */
+/* Support for iPhone notch/home indicator areas */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(48px + env(safe-area-inset-bottom, 0px));
+}

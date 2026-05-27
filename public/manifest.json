@@ -1,0 +1,22 @@
+{
+  "name": "Omni Builder",
+  "short_name": "Omni Builder",
+  "description": "AI-powered full-stack app builder - Create web apps, dashboards, and websites with no code required",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#6366f1",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/omini-favicon.png",
+      "sizes": "413x396",
+      "type": "image/png"
+    },
+    {
+      "src": "/omini-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

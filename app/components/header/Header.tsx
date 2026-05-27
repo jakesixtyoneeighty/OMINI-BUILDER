@@ -282,18 +282,21 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       {/* LEFT: spacing only */}
       <div className="w-0 sm:w-4 shrink-0" />
 
-      {/* CENTER: Search bar */}
-      <div className="flex-1 flex items-center justify-center px-4 max-w-2xl mx-auto">
+      {/* CENTER: Search bar + Model Picker */}
+      <div className="flex-1 flex items-center justify-center px-2 sm:px-4 max-w-3xl mx-auto gap-2">
         <button
           onClick={onSearchOpen}
-          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 hover:border-bolt-elements-borderColor/50 transition-all duration-200 cursor-text text-left"
+          className="flex-1 flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 hover:border-bolt-elements-borderColor/50 transition-all duration-200 cursor-text text-left min-w-0"
         >
-          <div className="i-ph:magnifying-glass text-base text-bolt-elements-textTertiary" />
-          <span className="text-sm text-bolt-elements-textTertiary flex-1">{t('search.placeholder')}</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor/30">
+          <div className="i-ph:magnifying-glass text-base text-bolt-elements-textTertiary shrink-0" />
+          <span className="text-sm text-bolt-elements-textTertiary truncate">{t('search.placeholder')}</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs font-mono text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor/30 shrink-0">
             Ctrl+K
           </kbd>
         </button>
+        <div className="shrink-0">
+          <ClientOnly>{() => <ModelPicker />}</ClientOnly>
+        </div>
       </div>
 
       {/* RIGHT: Navigation links */}

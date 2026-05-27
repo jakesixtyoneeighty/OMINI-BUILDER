@@ -1168,15 +1168,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             </div>
           )}
 
-          {/* Workbench panel - on landing page hidden. On mobile show full width when active */}
+          {/* Workbench panel - on mobile show full width when active (even before chat started for preview) */}
           <div
             className={classNames(
-              !chatStarted
-                ? 'hidden'
-                : _mobile
-                  ? mobileView === 'workbench'
-                    ? 'flex-1 w-full min-h-0'
-                    : 'hidden'
+              _mobile
+                ? mobileView === 'workbench'
+                  ? 'flex-1 w-full min-h-0'
+                  : 'hidden'
+                : !chatStarted
+                  ? 'hidden'
                   : showWorkbench
                     ? 'flex-1 min-w-0'
                     : 'w-0 min-w-0 overflow-hidden',
@@ -1189,9 +1189,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           {/* Settings Modal - rendered as overlay, not in sidebar */}
           <ClientOnly>{() => <AppSettingsDialog />}</ClientOnly>
 
-          {/* Mobile bottom tab bar - only when chat started */}
-          {_mobile && chatStarted && (
-            <div className="flex items-center shrink-0 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 h-12">
+          {/* Mobile bottom tab bar - always visible on mobile */}
+          {_mobile && (
+            <div className="flex items-center shrink-0 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 h-12 safe-bottom-nav">
               <button
                 type="button"
                 onClick={() => mobileViewStore.set('chat')}
