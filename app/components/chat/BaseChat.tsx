@@ -531,9 +531,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 ? mobileView === 'chat'
                   ? 'flex-1 w-full min-h-0'
                   : 'hidden'
-                : chatStarted && showWorkbench
-                  ? 'shrink-0'
-                  : 'flex-1',
+                : _mobile && !chatStarted
+                  ? 'flex-1 w-full'
+                  : chatStarted && showWorkbench
+                    ? 'shrink-0'
+                    : 'flex-1',
             )}
             style={
               chatStarted && !_mobile
@@ -1168,11 +1170,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             </div>
           )}
 
-          {/* Workbench panel - on mobile show full width when active (even before chat started for preview) */}
+          {/* Workbench panel - only visible on mobile when chat has started and workbench is active */}
           <div
             className={classNames(
               _mobile
-                ? mobileView === 'workbench'
+                ? chatStarted && mobileView === 'workbench' && showWorkbench
                   ? 'flex-1 w-full min-h-0'
                   : 'hidden'
                 : !chatStarted
@@ -1189,18 +1191,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           {/* Settings Modal - rendered as overlay, not in sidebar */}
           <ClientOnly>{() => <AppSettingsDialog />}</ClientOnly>
 
-          {/* Mobile bottom tab bar - always visible on mobile */}
-          {_mobile && (
+          {/* Mobile bottom tab bar - only when chat has started */}
+          {_mobile && chatStarted && (
             <div className="flex items-center shrink-0 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 h-12 safe-bottom-nav">
               <button
                 type="button"
                 onClick={() => mobileViewStore.set('chat')}
                 className={classNames(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all',
                   mobileView === 'chat' ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary',
                 )}
               >
-                <div className="i-ph:chat-circle-dots text-base" />
+                <div className="i-ph:chat-circle-dots text-lg" />
                 Chat
               </button>
               <button
@@ -1210,13 +1212,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   workbenchStore.showWorkbench.set(true);
                 }}
                 className={classNames(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-all',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all',
                   mobileView === 'workbench'
                     ? 'text-bolt-elements-item-contentAccent'
                     : 'text-bolt-elements-textTertiary',
                 )}
               >
-                <div className="i-ph:eye text-base" />
+                <div className="i-ph:eye text-lg" />
                 Preview
               </button>
             </div>

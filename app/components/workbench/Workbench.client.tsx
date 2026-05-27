@@ -118,39 +118,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   }, []);
 
   if (!chatStarted && !hasPreview) {
-    // Show empty preview state on mobile even without chat
-    return (
-      <div className="flex-1 h-full flex flex-col bg-bolt-elements-bg-depth-1 overflow-hidden">
-        <div className="flex items-center px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor min-h-[44px]">
-          <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              className="flex items-center justify-center w-7 h-7 rounded-md text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
-              onClick={() => {
-                workbenchStore.showWorkbench.set(false);
-                mobileViewStore.set('chat');
-              }}
-              title={t('workbench.close')}
-            >
-              <div className="i-ph:x text-sm" />
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center bg-bolt-elements-bg-depth-2">
-          <div className="flex flex-col items-center gap-3 text-center px-6">
-            <div className="w-14 h-14 rounded-2xl bg-bolt-elements-item-backgroundActive/20 flex items-center justify-center">
-              <div className="i-ph:eye-duotone text-2xl text-bolt-elements-textTertiary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">{t('workbench.preview')}</p>
-              <p className="text-xs text-bolt-elements-textTertiary max-w-[240px]">
-                {t('workbench.noPreviewYet') || 'Send a message to start building. Your app preview will appear here.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
