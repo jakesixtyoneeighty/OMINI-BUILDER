@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo.svg" alt="Omni-Builder Logo" width="80" height="80" />
+<img src="public/omini-favicon.png" alt="Omni-Builder Logo" width="80" height="80" />
 
 # Omni-Builder
 
