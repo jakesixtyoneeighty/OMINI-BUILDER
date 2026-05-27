@@ -7,7 +7,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig((config) => {
   return {
-    envPrefix: ['VITE_', 'SUPABASE_', 'WEBCONTAINER_', 'VERCEL_TOKEN'],
+    // Only expose VITE_ and WEBCONTAINER_ prefixed env vars to the client.
+    // NEVER expose SUPABASE_ (includes SERVICE_ROLE_KEY) or VERCEL_TOKEN here —
+    // they are server-side secrets that must NOT be embedded in the client bundle.
+    envPrefix: ['VITE_', 'WEBCONTAINER_'],
     server: {
       host: '0.0.0.0',
       port: 5000,

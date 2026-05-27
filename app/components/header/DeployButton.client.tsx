@@ -30,8 +30,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
   const project = projects[projectId] ?? getActiveProject();
   const settings = project?.settings;
 
-  // Vercel is the default deploy provider — uses VERCEL_TOKEN env var or user-configured token
-  const vercelToken = settings?.vercel?.token || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VERCEL_TOKEN || '' : '');
+  // Vercel is the default deploy provider — uses user-configured token from settings only.
+  // Server-side VERCEL_TOKEN is NEVER exposed to the client bundle.
+  const vercelToken = settings?.vercel?.token || '';
   const hasVercel = !!vercelToken;
   const cloudflareProject = settings?.cloudflare?.projectName || '';
   const hasUserNetlifyToken = !!(settings?.netlify?.token);
