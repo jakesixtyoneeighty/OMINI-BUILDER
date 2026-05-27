@@ -128,7 +128,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
         showWorkbench || !chatStarted ? 'flex-1 min-w-0 h-full opacity-100' : 'w-0 min-w-0 h-0 opacity-0 overflow-hidden pointer-events-none',
       )}
     >
-      <div className="h-full flex flex-col bg-bolt-elements-bg-depth-1 border-l border-bolt-elements-borderColor overflow-hidden">
+      <div className="h-full flex flex-col bg-bolt-elements-bg-depth-1 sm:border-l border-bolt-elements-borderColor overflow-hidden">
         {/* Modern Minimal Toolbar */}
         <div className="flex items-center px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor min-h-[44px]">
           <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />

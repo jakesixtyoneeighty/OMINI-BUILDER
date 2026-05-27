@@ -4,7 +4,7 @@
   "description": "AI-powered full-stack app builder - Create web apps, dashboards, and websites with no code required",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0b",
+  "background_color": "#ffffff",
   "theme_color": "#6366f1",
   "orientation": "any",
   "icons": [

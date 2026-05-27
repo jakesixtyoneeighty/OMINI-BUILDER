@@ -17,7 +17,7 @@ interface WorkbenchTabsProps<T extends string> {
 
 export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSelected }: WorkbenchTabsProps<T>) => {
   return (
-    <div className="flex items-center gap-1 p-0.5 bg-bolt-elements-bg-depth-2 rounded-lg border border-bolt-elements-borderColor/30">
+    <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 bg-bolt-elements-bg-depth-2 rounded-lg border border-bolt-elements-borderColor/30">
       {options.map((option) => {
         const isSelected = selected === option.value;
 
@@ -26,7 +26,7 @@ export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSel
             key={option.value}
             onClick={() => setSelected(option.value)}
             className={classNames(
-              'relative flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200',
+              'relative flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md transition-all duration-200 min-h-[36px]',
               isSelected
                 ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-bg-depth-1 shadow-sm'
                 : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/30',

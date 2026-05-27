@@ -551,14 +551,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <div className="relative z-prompt">
                     <style>{landingInputGlowKeyframes}</style>
                     <div
-                      className="relative w-full max-w-chat mx-auto rounded-[18px] p-[1px] overflow-hidden"
+                      className="relative w-full max-w-chat mx-auto rounded-2xl sm:rounded-[18px] p-[1px] overflow-hidden"
                       style={{
                         background: 'var(--bolt-elements-item-contentAccent, rgba(124,58,237,0.15))',
                       }}
                     >
                       {/* Rotating shine line */}
                       <div
-                        className="absolute inset-0 rounded-[18px]"
+                        className="absolute inset-0 rounded-2xl sm:rounded-[18px]"
                         style={{
                           background: 'conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(139,92,246,0.9) 350deg, rgba(96,165,250,0.9) 358deg, transparent 360deg)',
                           animation: 'landing-input-spin 4s linear infinite',
@@ -573,8 +573,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         )}
                       >
                         {/* Card header */}
-                        <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                          <span className="text-sm font-semibold text-bolt-elements-textPrimary">
+                        <div className="flex items-center gap-2 px-3 sm:px-4 pt-2 sm:pt-3 pb-1">
+                          <span className="text-xs sm:text-sm font-semibold text-bolt-elements-textPrimary">
                             {t('landing.letsBuild')}
                           </span>
                         </div>
@@ -693,7 +693,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         )}
 
                         {/* Textarea area */}
-                        <div className="px-4 pt-1 pb-1">
+                        <div className="px-3 sm:px-4 pt-1 pb-1">
                           {/* Think mode blue chip */}
                           {thinkMode && (
                             <span
@@ -729,10 +729,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </div>
 
                         {/* Divider */}
-                        <div className="mx-4 border-t border-bolt-elements-borderColor" />
+                        <div className="mx-3 sm:mx-4 border-t border-bolt-elements-borderColor" />
 
                         {/* Toolbar row with build modes + Build now button */}
-                        <div className="flex items-center justify-between px-2 sm:px-3 py-2.5 gap-1 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center justify-between px-2 sm:px-3 py-2 sm:py-2.5 gap-1 flex-wrap sm:flex-nowrap">
                           {/* Left group: + button + mode options */}
                           <div className="flex items-center gap-1.5">
                             {/* + file upload */}
@@ -815,8 +815,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     {/* End input card */}
 
                     {/* "or start from" row - GitHub/ZIP/Folder + Clone Site */}
-                    <div className="mt-3 flex items-center justify-center gap-3">
-                      <span className="text-xs text-bolt-elements-textTertiary">{t('landing.orStartFrom')}</span>
+                    <div className="mt-2 sm:mt-3 flex items-center justify-center gap-2 sm:gap-3">
+                      <span className="text-[10px] sm:text-xs text-bolt-elements-textTertiary">{t('landing.orStartFrom')}</span>
                       <div className="flex items-center gap-2">
                         {importFromGithub && (
                           <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
