@@ -105,11 +105,6 @@ export const SaveProjectButton = memo(function SaveProjectButton() {
     }
   }, [user, doSave]);
 
-  // Don't render if no user — AFTER all hooks
-  if (!user) {
-    return null;
-  }
-
   return (
     <>
       <div className="flex items-center gap-1.5">

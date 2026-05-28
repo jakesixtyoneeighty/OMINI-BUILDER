@@ -1,9 +1,19 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Client-side Supabase config uses VITE_ prefixed env vars only.
-// Server-side env vars (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) are NEVER exposed to the client.
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Extend Window to include server-injected Supabase config
+declare global {
+  interface Window {
+    __SUPABASE_CONFIG__?: { url: string; anonKey: string };
+  }
+}
+
+// Client-side Supabase config uses VITE_ prefixed env vars first,
+// then falls back to server-injected config from Cloudflare Pages env vars
+// (SUPABASE_URL, SUPABASE_ANON_KEY without VITE_ prefix).
+const serverConfig = typeof window !== 'undefined' ? window.__SUPABASE_CONFIG__ : undefined;
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || serverConfig?.url || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || serverConfig?.anonKey || '';
 
 // Singleton: cache the client so we never create multiple GoTrueClient instances
 let _supabaseClient: SupabaseClient | null = null;

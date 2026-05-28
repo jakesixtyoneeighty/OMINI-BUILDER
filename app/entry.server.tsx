@@ -11,7 +11,7 @@ export default async function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-  _loadContext: AppLoadContext,
+  loadContext: AppLoadContext,
 ) {
   const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
     signal: request.signal,
@@ -25,10 +25,20 @@ export default async function handleRequest(
     start(controller) {
       const head = renderHeadToString({ request, remixContext, Head });
 
+      // Inject server-side Supabase config so the client can use SUPABASE_URL and SUPABASE_ANON_KEY
+      // (without VITE_ prefix) that are set in Cloudflare Pages environment variables.
+      const env = loadContext?.cloudflare?.env ?? loadContext?.env ?? (process.env as any);
+      const supabaseUrl = env?.SUPABASE_URL || '';
+      const supabaseAnonKey = env?.SUPABASE_ANON_KEY || '';
+      const supabaseConfigScript =
+        supabaseUrl || supabaseAnonKey
+          ? `<script>window.__SUPABASE_CONFIG__=${JSON.stringify({ url: supabaseUrl, anonKey: supabaseAnonKey })}</script>`
+          : '';
+
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}${supabaseConfigScript}</head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );
