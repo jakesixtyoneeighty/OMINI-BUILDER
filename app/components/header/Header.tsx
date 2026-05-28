@@ -108,19 +108,13 @@ export function Header() {
               {chat.started && (
                 <>
                   {/* Save button */}
-                  <div className="hidden sm:block">
-                    <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
-                  </div>
+                  <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
 
                   {/* Deploy button */}
-                  <div className="hidden sm:block">
-                    <DeployButton onOpenSettings={openDeploySettings} />
-                  </div>
+                  <DeployButton onOpenSettings={openDeploySettings} />
 
                   {/* Share button */}
-                  <div className="hidden sm:block">
-                    <ShareButton onOpenSettings={openDeploySettings} />
-                  </div>
+                  <ShareButton onOpenSettings={openDeploySettings} />
 
                   {/* Publish / Gallery */}
                   <ClientOnly>{() => <PublishToGalleryButton />}</ClientOnly>
@@ -139,13 +133,6 @@ export function Header() {
 
                 {moreMenuOpen && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[100] overflow-hidden">
-                    {/* Save options (mobile only - on desktop save is already visible) */}
-                    {chat.started && (
-                      <div className="p-1.5 border-b border-bolt-elements-borderColor/20 sm:hidden">
-                        <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
-                      </div>
-                    )}
-
                     {/* Actions */}
                     {chat.started && (
                       <div className="p-1.5 border-b border-bolt-elements-borderColor/20">

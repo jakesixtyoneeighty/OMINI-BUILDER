@@ -685,9 +685,9 @@ export function AppSettingsDialog() {
       <style>{`
         .settings-modal { font-family: 'Geist', system-ui, sans-serif; }
         .settings-tab-active {
-          background: rgba(99,102,241,.15) !important;
+          background: var(--bolt-elements-item-backgroundAccent) !important;
           color: var(--bolt-elements-item-contentAccent) !important;
-          border-color: rgba(99,102,241,.3) !important;
+          border-color: var(--bolt-elements-item-contentAccent) !important;
         }
         .settings-tab-active .tab-icon { color: var(--bolt-elements-item-contentAccent) !important; }
         .settings-tab:hover:not(.settings-tab-active) {
@@ -1338,7 +1338,7 @@ export function AppSettingsDialog() {
                       onBlur={saveVercelSettings}
                       className={
                         monoInputClass +
-                        " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center]"
+                        " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center]"
                       }
                     >
                       {VERCEL_FRAMEWORKS.map((fw) => (
@@ -1405,7 +1405,7 @@ export function AppSettingsDialog() {
                       onBlur={saveCloudRunSettings}
                       className={
                         monoInputClass +
-                        " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center] focus:ring-blue-500/30 focus:border-blue-500/50"
+                        " cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_12px_center] focus:ring-blue-500/30 focus:border-blue-500/50"
                       }
                     >
                       <option value="us-central1">us-central1 (Iowa)</option>

@@ -276,7 +276,7 @@ function getFileIcon(fileName: string): { icon: string; color: string } {
     html: { icon: 'i-ph:file-html-duotone', color: 'text-orange-500' },
     
     // JSON
-    json: { icon: 'i-ph:brackets-curly-duotone', color: 'text-amber-500' },
+    json: { icon: 'i-ph:brackets-curly-duotone', color: 'text-amber-500 dark:text-amber-400' },
     
     // Markdown
     md: { icon: 'i-ph:file-text-duotone', color: 'text-gray-500' },

@@ -251,12 +251,65 @@ export function UserMessage({ message }: UserMessageProps) {
         </div>
       )}
 
-      {/* Message text */}
-      <Markdown limitedMarkdown>{sanitizeUserMessage(message.content)}</Markdown>
+      {/* Message text - slash commands highlighted in light blue */}
+      <SlashCommandHighlight content={sanitizeUserMessage(message.content)} />
     </div>
   );
 }
 
 function sanitizeUserMessage(content: string) {
   return content.replace(modificationsRegex, '').trim();
+}
+
+/**
+ * Component that highlights slash commands in user messages.
+ * When a user types /command some text, the /command part appears in light blue
+ * and the rest of the text appears as normal.
+ */
+function SlashCommandHighlight({ content }: { content: string }) {
+  // Match /command at the start of a line or after whitespace
+  const slashCommandRegex = /(^|\s)(\/[a-zA-Z][\w-]*)/g;
+
+  const parts: Array<{ type: 'text' | 'command'; content: string; prefix?: string }> = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = slashCommandRegex.exec(content)) !== null) {
+    const prefix = match[1]; // whitespace or empty
+    const command = match[2]; // /command
+
+    // Add text before this match
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+    }
+
+    parts.push({ type: 'command', content: command, prefix });
+    lastIndex = slashCommandRegex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', content: content.slice(lastIndex) });
+  }
+
+  // If no slash commands found, just render with Markdown
+  if (parts.length === 0) {
+    return <Markdown limitedMarkdown>{content}</Markdown>;
+  }
+
+  return (
+    <div className="whitespace-pre-wrap leading-relaxed">
+      {parts.map((part, i) => {
+        if (part.type === 'command') {
+          return (
+            <span key={i}>
+              {part.prefix}
+              <span className="slash-cmd-highlight">{part.content}</span>
+            </span>
+          );
+        }
+        return <span key={i}>{part.content}</span>;
+      })}
+    </div>
+  );
 }
