@@ -107,6 +107,11 @@ export function Header() {
             <>
               {chat.started && (
                 <>
+                  {/* Save button */}
+                  <div className="hidden sm:block">
+                    <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
+                  </div>
+
                   {/* Deploy button */}
                   <div className="hidden sm:block">
                     <DeployButton onOpenSettings={openDeploySettings} />
@@ -134,17 +139,17 @@ export function Header() {
 
                 {moreMenuOpen && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[100] overflow-hidden">
-                    {/* Save options */}
+                    {/* Save options (mobile only - on desktop save is already visible) */}
                     {chat.started && (
-                      <div className="p-1.5 border-b border-bolt-elements-borderColor/20">
+                      <div className="p-1.5 border-b border-bolt-elements-borderColor/20 sm:hidden">
                         <ClientOnly>{() => <SaveProjectButton />}</ClientOnly>
-                        <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                       </div>
                     )}
 
                     {/* Actions */}
                     {chat.started && (
                       <div className="p-1.5 border-b border-bolt-elements-borderColor/20">
+                        <ClientOnly>{() => <SaveToDrive />}</ClientOnly>
                         <ClientOnly>{() => <GitHubPush />}</ClientOnly>
                       </div>
                     )}

@@ -106,7 +106,7 @@ const fileIconMap: Record<string, string> = {
   scss: 'i-ph:file-css text-pink-400',
   sass: 'i-ph:file-css text-pink-400',
   html: 'i-ph:file-html text-orange-400',
-  json: 'i-ph:file-json text-green-400',
+  json: 'i-ph:brackets-curly text-amber-500',
   md: 'i-ph:file-text text-gray-400',
   mdx: 'i-ph:file-text text-gray-400',
   py: 'i-ph:file-python text-yellow-400',
