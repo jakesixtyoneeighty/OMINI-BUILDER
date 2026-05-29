@@ -1051,8 +1051,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 </span>
                               )
                             ))}
-                            <span className="invisible">{input.endsWith('
-') ? '.' : ''}</span>
+                            <span className="invisible">{input.endsWith('\n') ? '.' : ''}</span>
                           </div>
                           <textarea
                             ref={textareaRef}
@@ -1180,8 +1179,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             </span>
                           )
                         ))}
-                        <span className="invisible">{input.endsWith('
-') ? '.' : ''}</span>
+                        <span className="invisible">{input.endsWith('\n') ? '.' : ''}</span>
                       </div>
                       <textarea
                         ref={textareaRef}
