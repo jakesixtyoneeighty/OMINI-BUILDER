@@ -346,6 +346,43 @@ function NewTabPreview() {
   );
 }
 
+
+// Wrapper that adds annotation mode and watermark
+function PreviewWithAnnotations({ children, mode }: { children: React.ReactNode; mode: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [annotationActive, setAnnotationActive] = useState(false);
+
+  const supportsAnnotation = ['webcontainer', 'sandpack', 'iframe'].includes(mode);
+
+  return (
+    <div ref={containerRef} className="relative w-full h-full">
+      {children}
+      
+      {supportsAnnotation && !annotationActive && (
+        <button
+          className="annotation-fab"
+          onClick={() => setAnnotationActive(true)}
+          title="Annotate & Send to Chat"
+        >
+          <div className="i-ph:pencil-simple-line-duotone text-lg" />
+        </button>
+      )}
+
+      {annotationActive && (
+        <AnnotationMode
+          containerRef={containerRef as any}
+          onExit={() => setAnnotationActive(false)}
+        />
+      )}
+
+      <div className="preview-watermark">
+        <img src="/omini-favicon.png" alt="Omni" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <span>Criado no Omni Builder</span>
+      </div>
+    </div>
+  );
+}
+
 export const Preview = memo(function Preview() {
   const t = useT();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -354,6 +391,8 @@ export const Preview = memo(function Preview() {
   const [inspectorActive, setInspectorActive] = useState(false);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [showNoPreview, setShowNoPreview] = useState(true);
+  const [annotationActive, setAnnotationActive] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   const previews = useStore(workbenchStore.previews);
   const activePreview = previews[activePreviewIndex];
   const activeId = useStore(activeProjectIdStore);
@@ -398,6 +437,7 @@ export const Preview = memo(function Preview() {
   // WebContainer mode (default)
   if (previewMode === 'webcontainer') {
     return (
+      <PreviewWithAnnotations mode="webcontainer">
       <div className="w-full h-full flex flex-col bg-bolt-elements-bg-depth-1">
         <div className="flex items-center h-12 px-4 gap-3 shrink-0 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/30">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/20 text-xs font-semibold">
@@ -523,12 +563,14 @@ export const Preview = memo(function Preview() {
           )}
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // Sandpack mode — full Sandpack with React/Vue/HTML support
   if (previewMode === 'sandpack') {
     return (
+      <PreviewWithAnnotations mode="sandpack">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
@@ -552,12 +594,14 @@ export const Preview = memo(function Preview() {
           <SandpackPreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // Iframe srcdoc mode — uses Sandpack for React, srcdoc for static
   if (previewMode === 'iframe') {
     return (
+      <PreviewWithAnnotations mode="iframe">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
@@ -581,12 +625,14 @@ export const Preview = memo(function Preview() {
           <IframePreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // React Live mode
   if (previewMode === 'reactlive') {
     return (
+      <PreviewWithAnnotations mode="reactlive">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrow-clockwise" onClick={refresh} title={t('workbench.refresh')} />
@@ -603,12 +649,14 @@ export const Preview = memo(function Preview() {
           <ReactLivePreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // PlayCode mode
   if (previewMode === 'playcode') {
     return (
+      <PreviewWithAnnotations mode="playcode">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title={t('preview.fullscreen')} />
@@ -624,12 +672,14 @@ export const Preview = memo(function Preview() {
           <PlayCodePreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // Piston mode — code execution engine
   if (previewMode === 'piston') {
     return (
+      <PreviewWithAnnotations mode="piston">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium shrink-0">
@@ -645,12 +695,14 @@ export const Preview = memo(function Preview() {
           <PistonPreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
   // New Tab mode
   if (previewMode === 'newtab') {
     return (
+      <PreviewWithAnnotations mode="newtab">
       <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
         <div className="bg-bolt-elements-background-depth-2 px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-2 border-b border-bolt-elements-borderColor shrink-0 overflow-x-auto">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink-500/10 text-pink-400 text-xs font-medium shrink-0">
@@ -666,6 +718,7 @@ export const Preview = memo(function Preview() {
           <NewTabPreview />
         </div>
       </div>
+      </PreviewWithAnnotations>
     );
   }
 
@@ -674,42 +727,4 @@ export const Preview = memo(function Preview() {
 });
 
 
-interface PreviewWrapperProps {
-  children: ReactNode;
-  onAnnotationCapture?: (imageDataUrl: string) => void;
-}
-
-function PreviewWrapper({ children, onAnnotationCapture }: PreviewWrapperProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [annotationMode, setAnnotationMode] = useState(false);
-
-  const handleCapture = useCallback((imageDataUrl: string) => {
-    if (onAnnotationCapture) {
-      onAnnotationCapture(imageDataUrl);
-    }
-    setAnnotationMode(false);
-  }, [onAnnotationCapture]);
-
-  return (
-    <div ref={containerRef} className="relative w-full h-full">
-      {children}
-      {annotationMode && (
-        <AnnotationMode
-          previewRef={containerRef as any}
-          onCapture={handleCapture}
-        />
-      )}
-      {!annotationMode && onAnnotationCapture && (
-        <div className="absolute top-2 right-2 z-50">
-          <IconButton
-            icon="i-ph:pencil-simple-line-duotone"
-            title="Annotation Mode - Draw on preview and send to chat"
-            onClick={() => setAnnotationMode(true)}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export { PREVIEW_OPTIONS, getPreviewOptions, PreviewWrapper };
+export { PREVIEW_OPTIONS, getPreviewOptions };
