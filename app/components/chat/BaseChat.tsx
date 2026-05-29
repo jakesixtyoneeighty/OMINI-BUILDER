@@ -1,3 +1,4 @@
+// Build trigger: forcing new deployment to fix cached build error
 import type { Message } from 'ai';
 import React, { type RefCallback, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
