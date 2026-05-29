@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { memo, useRef, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
+import { AnnotationMode } from './AnnotationMode';
 import {
   SandpackProvider,
   SandpackPreview as SPPreview,
@@ -672,4 +673,43 @@ export const Preview = memo(function Preview() {
   return null;
 });
 
-export { PREVIEW_OPTIONS, getPreviewOptions };
+
+interface PreviewWrapperProps {
+  children: ReactNode;
+  onAnnotationCapture?: (imageDataUrl: string) => void;
+}
+
+function PreviewWrapper({ children, onAnnotationCapture }: PreviewWrapperProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [annotationMode, setAnnotationMode] = useState(false);
+
+  const handleCapture = useCallback((imageDataUrl: string) => {
+    if (onAnnotationCapture) {
+      onAnnotationCapture(imageDataUrl);
+    }
+    setAnnotationMode(false);
+  }, [onAnnotationCapture]);
+
+  return (
+    <div ref={containerRef} className="relative w-full h-full">
+      {children}
+      {annotationMode && (
+        <AnnotationMode
+          previewRef={containerRef as any}
+          onCapture={handleCapture}
+        />
+      )}
+      {!annotationMode && onAnnotationCapture && (
+        <div className="absolute top-2 right-2 z-50">
+          <IconButton
+            icon="i-ph:pencil-simple-line-duotone"
+            title="Annotation Mode - Draw on preview and send to chat"
+            onClick={() => setAnnotationMode(true)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { PREVIEW_OPTIONS, getPreviewOptions, PreviewWrapper };

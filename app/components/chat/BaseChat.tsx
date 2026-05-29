@@ -4,6 +4,7 @@ import React, { type RefCallback, useState, useCallback, useRef, useEffect, useM
 import { AnimatePresence } from 'framer-motion';
 import { ClientOnly } from 'remix-utils/client-only';
 import { useStore } from '@nanostores/react';
+import { annotationCaptureStore, clearAnnotationCapture } from '~/lib/stores/annotation';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { ErrorBanner } from './ErrorBanner';

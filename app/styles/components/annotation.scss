@@ -1,0 +1,118 @@
+
+.annotation-mode {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.annotation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.annotation-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  z-index: 101;
+}
+
+.dark .annotation-toolbar {
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.annotation-toolbar .icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.annotation-toolbar .icon-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.dark .annotation-toolbar .icon-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.annotation-toolbar .icon-button.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.annotation-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0 4px;
+}
+
+.dark .annotation-divider {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.annotation-color-picker {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.annotation-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.annotation-color-picker::-webkit-color-swatch {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+.dark .annotation-color-picker::-webkit-color-swatch {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.annotation-width-select {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dark .annotation-width-select {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.annotation-width-select:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .annotation-width-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}

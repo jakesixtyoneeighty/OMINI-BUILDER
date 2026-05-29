@@ -1071,6 +1071,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
   },
   en: {
     // === Landing Page ===
+    'chat.annotationAttached': 'Annotation attached to chat!',
     'landing.headline': 'What will you',
     'landing.headlineAccent': 'build',
     'landing.headlineEnd': 'today?',
@@ -3193,6 +3194,7 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
   },
   zh: {
     // === Landing Page ===
+    'chat.annotationAttached': '注释已添加到聊天!',
     'landing.headline': '你今天要',
     'landing.headlineAccent': '构建',
     'landing.headlineEnd': '什么？',
