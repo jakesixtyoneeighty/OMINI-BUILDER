@@ -31,6 +31,7 @@ import {
   type InspectorElement,
 } from '~/lib/stores/inspector';
 import { useT } from '~/lib/i18n/useT';
+import { toast } from 'react-toastify';
 import { useIsMobile } from '~/utils/mobile';
 import { LandingPage } from './LandingPage';
 import { SlashCommandsDropdown, type SlashCommand } from './SlashCommands';
@@ -126,6 +127,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       { id: string; name: string; type: string; size: number; preview: string; content: string }[]
     >([]);
     const [buildMode, setBuildMode] = useState<BuildMode>('standard');
+
+    // Watch for annotation captures and add them as attachments
+    const annotationCapture = useStore(annotationCaptureStore);
+    useEffect(() => {
+      if (annotationCapture?.imageDataUrl) {
+        const newAttachment = {
+          id: annotationCapture.id,
+          name: `annotation-${Date.now()}.png`,
+          type: 'image/png',
+          size: 0,
+          preview: annotationCapture.imageDataUrl,
+          content: annotationCapture.imageDataUrl,
+        };
+        setAttachedFiles((prev) => [...prev, newAttachment]);
+        clearAnnotationCapture();
+        toast.success(t('annotation.attachedToChat') || 'Annotation attached to chat!');
+      }
+    }, [annotationCapture]);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user } = useStore(authStore);
     const inspectorElements = useStore(inspectorStore).selectedElements;
