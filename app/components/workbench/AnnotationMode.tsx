@@ -250,6 +250,8 @@ export function AnnotationMode({ containerRef, onExit }: AnnotationModeProps) {
       alert('Failed to capture screenshot. Please try again.');
     }
 
+  }, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
