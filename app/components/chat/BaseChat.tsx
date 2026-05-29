@@ -737,8 +737,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                               )
                             ))}
                             {/* Invisible trailing space to match textarea behavior */}
-                            <span className="invisible">{input.endsWith('
-') ? '.' : ''}</span>
+                            <span className="invisible">{input.endsWith('\n') ? '.' : ''}</span>
+
                           </div>
                           <textarea
                             ref={textareaRef}
