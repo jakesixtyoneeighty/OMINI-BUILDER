@@ -1,14 +1,4 @@
-
-.annotation-mode {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  pointer-events: none;
-}
-
+/* Annotation Mode Styles */
 .annotation-canvas {
   position: absolute;
   top: 0;
@@ -17,102 +7,180 @@
   height: 100%;
   pointer-events: auto;
   cursor: crosshair;
+  z-index: 51;
 }
 
 .annotation-toolbar {
   position: absolute;
-  top: 10px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  align-items: center;
   gap: 4px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 6px 10px;
+  background: var(--bolt-elements-bg-depth-2, #1a1a2e);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--bolt-elements-borderColor, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   z-index: 101;
+  animation: ann-toolbar-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dark .annotation-toolbar {
-  background: rgba(30, 30, 30, 0.95);
+@keyframes ann-toolbar-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
-.annotation-toolbar .icon-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  transition: all 0.2s;
+.annotation-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bolt-elements-textSecondary, #a0a0b0);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.annotation-toolbar .icon-button:hover {
-  background: rgba(0, 0, 0, 0.1);
+.annotation-tool-btn:hover {
+  background: var(--bolt-elements-item-backgroundActive, rgba(255, 255, 255, 0.1));
+  color: var(--bolt-elements-textPrimary, #fff);
 }
 
-.dark .annotation-toolbar .icon-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+.annotation-tool-btn.active {
+  background: var(--bolt-elements-item-backgroundAccent, #6366f1);
+  color: var(--bolt-elements-item-contentAccent, #fff);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
-.annotation-toolbar .icon-button.active {
-  background: #3b82f6;
-  color: white;
+.annotation-tool-btn.capture-btn {
+  width: auto;
+  padding: 0 12px;
+  background: var(--bolt-elements-item-backgroundAccent, #6366f1);
+  color: var(--bolt-elements-item-contentAccent, #fff);
+}
+
+.annotation-tool-btn.capture-btn:hover { opacity: 0.9; }
+
+.annotation-tool-btn.exit-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
 .annotation-divider {
   width: 1px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.2);
+  height: 20px;
+  background: var(--bolt-elements-borderColor, rgba(255, 255, 255, 0.1));
   margin: 0 4px;
 }
 
-.dark .annotation-divider {
-  background: rgba(255, 255, 255, 0.2);
-}
-
 .annotation-color-picker {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--bolt-elements-borderColor, rgba(255, 255, 255, 0.1));
+  border-radius: 50%;
   cursor: pointer;
   background: transparent;
   padding: 0;
 }
 
-.annotation-color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.annotation-color-picker::-webkit-color-swatch {
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-}
-
-.dark .annotation-color-picker::-webkit-color-swatch {
-  border-color: rgba(255, 255, 255, 0.1);
-}
+.annotation-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+.annotation-color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
 
 .annotation-width-select {
-  height: 36px;
+  height: 28px;
   padding: 0 8px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bolt-elements-borderColor, rgba(255, 255, 255, 0.1));
   border-radius: 6px;
-  background: white;
+  background: var(--bolt-elements-bg-depth-3, #0f0f1a);
+  color: var(--bolt-elements-textPrimary, #fff);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 500;
+  outline: none;
 }
 
-.dark .annotation-width-select {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: white;
+.annotation-width-select:hover { border-color: var(--bolt-elements-item-contentAccent, #6366f1); }
+
+/* Annotation FAB */
+.annotation-fab {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--bolt-elements-borderColor, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  background: var(--bolt-elements-bg-depth-2, #1a1a2e);
+  backdrop-filter: blur(12px);
+  color: var(--bolt-elements-textSecondary, #a0a0b0);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.annotation-width-select:hover {
-  background: rgba(0, 0, 0, 0.05);
+.annotation-fab:hover {
+  background: var(--bolt-elements-item-backgroundAccent, #6366f1);
+  color: var(--bolt-elements-item-contentAccent, #fff);
+  border-color: var(--bolt-elements-item-backgroundAccent, #6366f1);
+  transform: scale(1.05);
 }
 
-.dark .annotation-width-select:hover {
-  background: rgba(255, 255, 255, 0.15);
+/* Preview Watermark */
+.preview-watermark {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.preview-watermark:hover { opacity: 1; }
+
+.preview-watermark img {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.preview-watermark span {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .annotation-toolbar {
+    top: 8px;
+    padding: 4px 8px;
+    gap: 2px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+  }
+  .annotation-tool-btn { width: 28px; height: 28px; min-width: 28px; }
+  .annotation-fab { width: 32px; height: 32px; top: 8px; right: 8px; }
+  .preview-watermark { bottom: 8px; right: 8px; padding: 3px 8px 3px 5px; }
+  .preview-watermark span { font-size: 9px; }
 }
