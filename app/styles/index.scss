@@ -1322,3 +1322,720 @@ body {
   background-color: rgba(147, 197, 253, 0.20);
   box-shadow: 0 2px 4px rgba(147, 197, 253, 0.20);
 }
+
+
+/* ===== Dark Theme Enhancement - Professional Polish ===== */
+
+/* Force dark backgrounds on all main containers */
+[data-theme="dark"] main,
+[data-theme="dark"] section,
+[data-theme="dark"] article,
+[data-theme="dark"] aside {
+  background-color: var(--bolt-elements-background);
+}
+
+/* Ensure all panels are dark */
+[data-theme="dark"] .panel,
+[data-theme="dark"] [class*="panel"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+}
+
+/* Dark theme: Force all buttons to be dark unless explicitly styled */
+[data-theme="dark"] button:not([class*="bg-bolt-elements"]):not([class*="bg-gradient"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: var(--bolt-elements-button-secondary-background);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Ensure all links are properly styled */
+[data-theme="dark"] a {
+  color: var(--bolt-elements-messages-linkColor);
+}
+
+/* Dark theme: Improve card styling */
+[data-theme="dark"] [class*="card"],
+[data-theme="dark"] [class*="Card"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Table styling */
+[data-theme="dark"] table {
+  background-color: var(--bolt-elements-bg-depth-2);
+}
+
+[data-theme="dark"] th {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] td {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve list styling */
+[data-theme="dark"] ul,
+[data-theme="dark"] ol {
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Code blocks in messages */
+[data-theme="dark"] pre {
+  background-color: var(--bolt-elements-code-background);
+  color: var(--bolt-elements-code-text);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] code:not([class*="bg-"]) {
+  background-color: var(--bolt-elements-code-background);
+  color: var(--bolt-elements-code-text);
+}
+
+/* Dark theme: Improve form elements */
+[data-theme="dark"] fieldset {
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] legend {
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Dark theme: Improve dropdown menus */
+[data-theme="dark"] [role="menu"],
+[data-theme="dark"] [role="listbox"],
+[data-theme="dark"] [role="combobox"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] [role="menuitem"],
+[data-theme="dark"] [role="option"] {
+  color: var(--bolt-elements-textPrimary);
+}
+
+[data-theme="dark"] [role="menuitem"]:hover,
+[data-theme="dark"] [role="option"]:hover {
+  background-color: var(--bolt-elements-item-backgroundActive);
+}
+
+/* Dark theme: Improve toast notifications */
+[data-theme="dark"] .Toastify__toast {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve modals and dialogs */
+[data-theme="dark"] [role="dialog"],
+[data-theme="dark"] [data-radix-dialog-content] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark theme: Improve tabs */
+[data-theme="dark"] [role="tablist"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+}
+
+[data-theme="dark"] [role="tab"] {
+  color: var(--bolt-elements-textSecondary);
+  border-color: transparent;
+}
+
+[data-theme="dark"] [role="tab"][aria-selected="true"] {
+  color: var(--bolt-elements-textPrimary);
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-item-contentAccent);
+}
+
+/* Dark theme: Improve progress bars */
+[data-theme="dark"] [role="progressbar"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+/* Dark theme: Improve tooltips */
+[data-theme="dark"] [role="tooltip"],
+[data-theme="dark"] [data-radix-tooltip-content] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Force dark on all Radix UI components */
+[data-theme="dark"] [data-radix-popper-content-wrapper] > div {
+  background-color: var(--bolt-elements-bg-depth-2) !important;
+  border-color: var(--bolt-elements-borderColor) !important;
+  color: var(--bolt-elements-textPrimary) !important;
+}
+
+/* Dark theme: Improve accordion/collapsible */
+[data-theme="dark"] [data-state="open"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+}
+
+/* Dark theme: Improve switch/toggle */
+[data-theme="dark"] [role="switch"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+[data-theme="dark"] [role="switch"][data-state="checked"] {
+  background-color: var(--bolt-elements-item-contentAccent);
+}
+
+/* Dark theme: Improve checkbox and radio */
+[data-theme="dark"] [role="checkbox"],
+[data-theme="dark"] [role="radio"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] [role="checkbox"][data-state="checked"],
+[data-theme="dark"] [role="radio"][data-state="checked"] {
+  background-color: var(--bolt-elements-item-contentAccent);
+  border-color: var(--bolt-elements-item-contentAccent);
+}
+
+/* Dark theme: Improve sliders */
+[data-theme="dark"] [role="slider"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+/* Dark theme: Force dark on all overlays */
+[data-theme="dark"] [data-radix-dialog-overlay],
+[data-theme="dark"] [data-radix-alert-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Dark theme: Improve badge/pill styling */
+[data-theme="dark"] [class*="badge"],
+[data-theme="dark"] [class*="Badge"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textSecondary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve divider/separator */
+[data-theme="dark"] hr,
+[data-theme="dark"] [role="separator"] {
+  border-color: var(--bolt-elements-dividerColor);
+}
+
+/* Dark theme: Improve avatar styling */
+[data-theme="dark"] [class*="avatar"],
+[data-theme="dark"] [class*="Avatar"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve skeleton loading */
+[data-theme="dark"] [class*="skeleton"],
+[data-theme="dark"] [class*="Skeleton"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+/* Dark theme: Improve empty states */
+[data-theme="dark"] [class*="empty"],
+[data-theme="dark"] [class*="Empty"] {
+  color: var(--bolt-elements-textTertiary);
+}
+
+/* Dark theme: Improve error states */
+[data-theme="dark"] [class*="error"],
+[data-theme="dark"] [class*="Error"] {
+  color: var(--bolt-elements-icon-error);
+}
+
+/* Dark theme: Improve success states */
+[data-theme="dark"] [class*="success"],
+[data-theme="dark"] [class*="Success"] {
+  color: var(--bolt-elements-icon-success);
+}
+
+/* Dark theme: Improve warning states */
+[data-theme="dark"] [class*="warning"],
+[data-theme="dark"] [class*="Warning"] {
+  color: #fcd34d;
+}
+
+/* Dark theme: Force dark on all dropdown items */
+[data-theme="dark"] [class*="dropdown-item"],
+[data-theme="dark"] [class*="DropdownItem"] {
+  background-color: transparent;
+  color: var(--bolt-elements-textPrimary);
+}
+
+[data-theme="dark"] [class*="dropdown-item"]:hover,
+[data-theme="dark"] [class*="DropdownItem"]:hover {
+  background-color: var(--bolt-elements-item-backgroundActive);
+}
+
+/* Dark theme: Improve navigation items */
+[data-theme="dark"] nav a,
+[data-theme="dark"] nav button {
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] nav a:hover,
+[data-theme="dark"] nav button:hover {
+  color: var(--bolt-elements-textPrimary);
+  background-color: var(--bolt-elements-item-backgroundActive);
+}
+
+[data-theme="dark"] nav a[aria-current="page"],
+[data-theme="dark"] nav a.active {
+  color: var(--bolt-elements-textPrimary);
+  background-color: var(--bolt-elements-item-backgroundActive);
+}
+
+/* Dark theme: Improve header */
+[data-theme="dark"] header {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve footer */
+[data-theme="dark"] footer {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Dark theme: Improve sidebar */
+[data-theme="dark"] aside {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve main content area */
+[data-theme="dark"] main {
+  background-color: var(--bolt-elements-background);
+}
+
+/* Dark theme: Improve container */
+[data-theme="dark"] .container {
+  background-color: var(--bolt-elements-background);
+}
+
+/* Dark theme: Improve wrapper */
+[data-theme="dark"] .wrapper {
+  background-color: var(--bolt-elements-background);
+}
+
+/* Dark theme: Force dark on all scrollable areas */
+[data-theme="dark"] .overflow-y-auto,
+[data-theme="dark"] .overflow-x-auto,
+[data-theme="dark"] .overflow-auto {
+  background-color: var(--bolt-elements-background);
+}
+
+/* Dark theme: Improve iframe containers */
+[data-theme="dark"] iframe {
+  background-color: var(--bolt-elements-bg-depth-1);
+}
+
+/* Dark theme: Improve image placeholders */
+[data-theme="dark"] img[class*="placeholder"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+/* Dark theme: Improve loading spinners */
+[data-theme="dark"] [class*="spinner"],
+[data-theme="dark"] [class*="Spinner"],
+[data-theme="dark"] [class*="loader"],
+[data-theme="dark"] [class*="Loader"] {
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Dark theme: Improve notification badges */
+[data-theme="dark"] [class*="badge"]:not([class*="bg-"]) {
+  background-color: var(--bolt-elements-item-contentAccent);
+  color: white;
+}
+
+/* Dark theme: Improve counter badges */
+[data-theme="dark"] [class*="counter"],
+[data-theme="dark"] [class*="Counter"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Dark theme: Improve tag/chip styling */
+[data-theme="dark"] [class*="tag"],
+[data-theme="dark"] [class*="Tag"],
+[data-theme="dark"] [class*="chip"],
+[data-theme="dark"] [class*="Chip"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textSecondary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve file tree */
+[data-theme="dark"] [class*="file-tree"],
+[data-theme="dark"] [class*="FileTree"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+}
+
+/* Dark theme: Improve editor toolbar */
+[data-theme="dark"] [class*="toolbar"],
+[data-theme="dark"] [class*="Toolbar"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve status bar */
+[data-theme="dark"] [class*="status-bar"],
+[data-theme="dark"] [class*="StatusBar"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+  color: var(--bolt-elements-textSecondary);
+}
+
+/* Dark theme: Improve breadcrumb */
+[data-theme="dark"] [class*="breadcrumb"],
+[data-theme="dark"] [class*="Breadcrumb"] {
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] [class*="breadcrumb"] a,
+[data-theme="dark"] [class*="Breadcrumb"] a {
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] [class*="breadcrumb"] a:hover,
+[data-theme="dark"] [class*="Breadcrumb"] a:hover {
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve pagination */
+[data-theme="dark"] [class*="pagination"],
+[data-theme="dark"] [class*="Pagination"] {
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] [class*="pagination"] button,
+[data-theme="dark"] [class*="Pagination"] button {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textSecondary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] [class*="pagination"] button:hover,
+[data-theme="dark"] [class*="Pagination"] button:hover {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textPrimary);
+}
+
+[data-theme="dark"] [class*="pagination"] button[aria-current="page"],
+[data-theme="dark"] [class*="Pagination"] button.active {
+  background-color: var(--bolt-elements-item-backgroundAccent);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve search input */
+[data-theme="dark"] input[type="search"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] input[type="search"]::placeholder {
+  color: var(--bolt-elements-textTertiary);
+}
+
+/* Dark theme: Improve date/time inputs */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="datetime-local"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve color picker */
+[data-theme="dark"] input[type="color"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve range input */
+[data-theme="dark"] input[type="range"] {
+  background-color: transparent;
+}
+
+/* Dark theme: Improve file input */
+[data-theme="dark"] input[type="file"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve textarea */
+[data-theme="dark"] textarea {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] textarea::placeholder {
+  color: var(--bolt-elements-textTertiary);
+}
+
+/* Dark theme: Improve select dropdown */
+[data-theme="dark"] select {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+[data-theme="dark"] select option {
+  background-color: var(--bolt-elements-bg-depth-2);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve checkbox label */
+[data-theme="dark"] label {
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve help text */
+[data-theme="dark"] [class*="help-text"],
+[data-theme="dark"] [class*="HelpText"],
+[data-theme="dark"] [class*="description"],
+[data-theme="dark"] [class*="Description"] {
+  color: var(--bolt-elements-textTertiary);
+}
+
+/* Dark theme: Improve form group */
+[data-theme="dark"] [class*="form-group"],
+[data-theme="dark"] [class*="FormGroup"] {
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve form field */
+[data-theme="dark"] [class*="form-field"],
+[data-theme="dark"] [class*="FormField"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve form validation */
+[data-theme="dark"] [class*="validation-error"],
+[data-theme="dark"] [class*="ValidationError"] {
+  color: var(--bolt-elements-icon-error);
+}
+
+[data-theme="dark"] [class*="validation-success"],
+[data-theme="dark"] [class*="ValidationSuccess"] {
+  color: var(--bolt-elements-icon-success);
+}
+
+/* Dark theme: Improve alert/message boxes */
+[data-theme="dark"] [class*="alert"],
+[data-theme="dark"] [class*="Alert"],
+[data-theme="dark"] [class*="message-box"],
+[data-theme="dark"] [class*="MessageBox"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve info boxes */
+[data-theme="dark"] [class*="info"],
+[data-theme="dark"] [class*="Info"] {
+  background-color: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.2);
+  color: #93c5fd;
+}
+
+/* Dark theme: Improve warning boxes */
+[data-theme="dark"] [class*="warning"],
+[data-theme="dark"] [class*="Warning"] {
+  background-color: rgba(252, 211, 77, 0.1);
+  border-color: rgba(252, 211, 77, 0.2);
+  color: #fcd34d;
+}
+
+/* Dark theme: Improve error boxes */
+[data-theme="dark"] [class*="error"],
+[data-theme="dark"] [class*="Error"] {
+  background-color: rgba(248, 120, 120, 0.1);
+  border-color: rgba(248, 120, 120, 0.2);
+  color: #f87878;
+}
+
+/* Dark theme: Improve success boxes */
+[data-theme="dark"] [class*="success"],
+[data-theme="dark"] [class*="Success"] {
+  background-color: rgba(88, 214, 141, 0.1);
+  border-color: rgba(88, 214, 141, 0.2);
+  color: #58d68d;
+}
+
+/* Dark theme: Improve tooltip arrows */
+[data-theme="dark"] [class*="tooltip-arrow"],
+[data-theme="dark"] [class*="TooltipArrow"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+}
+
+/* Dark theme: Improve popover arrows */
+[data-theme="dark"] [class*="popover-arrow"],
+[data-theme="dark"] [class*="PopoverArrow"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+}
+
+/* Dark theme: Improve dropdown arrows */
+[data-theme="dark"] [class*="dropdown-arrow"],
+[data-theme="dark"] [class*="DropdownArrow"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+}
+
+/* Dark theme: Improve modal close button */
+[data-theme="dark"] [class*="modal-close"],
+[data-theme="dark"] [class*="ModalClose"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] [class*="modal-close"]:hover,
+[data-theme="dark"] [class*="ModalClose"]:hover {
+  background-color: var(--bolt-elements-bg-depth-4);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve dialog close button */
+[data-theme="dark"] [class*="dialog-close"],
+[data-theme="dark"] [class*="DialogClose"] {
+  background-color: var(--bolt-elements-bg-depth-3);
+  color: var(--bolt-elements-textSecondary);
+}
+
+[data-theme="dark"] [class*="dialog-close"]:hover,
+[data-theme="dark"] [class*="DialogClose"]:hover {
+  background-color: var(--bolt-elements-bg-depth-4);
+  color: var(--bolt-elements-textPrimary);
+}
+
+/* Dark theme: Improve drawer */
+[data-theme="dark"] [class*="drawer"],
+[data-theme="dark"] [class*="Drawer"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve sheet */
+[data-theme="dark"] [class*="sheet"],
+[data-theme="dark"] [class*="Sheet"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve command palette */
+[data-theme="dark"] [class*="command"],
+[data-theme="dark"] [class*="Command"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve context menu */
+[data-theme="dark"] [class*="context-menu"],
+[data-theme="dark"] [class*="ContextMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve menu */
+[data-theme="dark"] [class*="menu"],
+[data-theme="dark"] [class*="Menu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve menubar */
+[data-theme="dark"] [class*="menubar"],
+[data-theme="dark"] [class*="Menubar"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve navigation menu */
+[data-theme="dark"] [class*="nav-menu"],
+[data-theme="dark"] [class*="NavMenu"] {
+  background-color: var(--bolt-elements-bg-depth-1);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve user menu */
+[data-theme="dark"] [class*="user-menu"],
+[data-theme="dark"] [class*="UserMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve profile menu */
+[data-theme="dark"] [class*="profile-menu"],
+[data-theme="dark"] [class*="ProfileMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve account menu */
+[data-theme="dark"] [class*="account-menu"],
+[data-theme="dark"] [class*="AccountMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve settings menu */
+[data-theme="dark"] [class*="settings-menu"],
+[data-theme="dark"] [class*="SettingsMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve preferences menu */
+[data-theme="dark"] [class*="preferences-menu"],
+[data-theme="dark"] [class*="PreferencesMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve options menu */
+[data-theme="dark"] [class*="options-menu"],
+[data-theme="dark"] [class*="OptionsMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve actions menu */
+[data-theme="dark"] [class*="actions-menu"],
+[data-theme="dark"] [class*="ActionsMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve tools menu */
+[data-theme="dark"] [class*="tools-menu"],
+[data-theme="dark"] [class*="ToolsMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve help menu */
+[data-theme="dark"] [class*="help-menu"],
+[data-theme="dark"] [class*="HelpMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
+
+/* Dark theme: Improve about menu */
+[data-theme="dark"] [class*="about-menu"],
+[data-theme="dark"] [class*="AboutMenu"] {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border-color: var(--bolt-elements-borderColor);
+}
