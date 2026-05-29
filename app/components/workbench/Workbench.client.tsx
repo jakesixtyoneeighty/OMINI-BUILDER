@@ -130,17 +130,17 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     >
       <div className="h-full flex flex-col bg-bolt-elements-bg-depth-1 sm:border-l border-bolt-elements-borderColor overflow-hidden">
         {/* Modern Minimal Toolbar */}
-        <div className="flex items-center px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor min-h-[44px]">
+        <div className="flex items-center px-3 py-2 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor/80 min-h-[44px]">
           <WorkbenchTabs selected={selectedView} options={tabOptions} setSelected={setSelectedView} />
           
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-2">
             {selectedView === 'code' && (
               <button
                 className={classNames(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
                   workbenchStore.showTerminal.get() 
-                    ? "bg-bolt-elements-item-backgroundAccent/10 text-bolt-elements-item-contentAccent"
-                    : "text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/30"
+                    ? "bg-bolt-elements-item-backgroundAccent/15 text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent/20"
+                    : "text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/40 border border-transparent"
                 )}
                 onClick={() => {
                   workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
@@ -151,17 +151,17 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
               </button>
             )}
             
-            <div className="w-px h-3.5 bg-bolt-elements-borderColor/30 mx-1" />
+            <div className="w-px h-4 bg-bolt-elements-borderColor/40 mx-1" />
             
             <button
-              className="flex items-center justify-center w-7 h-7 rounded-md text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textTertiary hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
               onClick={() => {
                 workbenchStore.showWorkbench.set(false);
                 mobileViewStore.set('chat');
               }}
               title={t('workbench.close')}
             >
-              <div className="i-ph:x text-sm" />
+              <div className="i-ph:x text-base" />
             </button>
           </div>
         </div>
@@ -201,11 +201,12 @@ interface ViewProps {
 const View = memo(({ children, visible }: ViewProps) => {
   return (
     <div
-      className="absolute inset-0 transition-opacity duration-200"
+      className="absolute inset-0"
       style={{
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
         zIndex: visible ? 1 : 0,
+        transition: 'opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {children}

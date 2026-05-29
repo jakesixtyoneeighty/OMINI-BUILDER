@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { memo } from 'react';
 import { classNames } from '~/utils/classNames';
-import { cubicEasingFn } from '~/utils/easings';
 
 export interface TabOption<T extends string> {
   value: T;
@@ -17,7 +16,7 @@ interface WorkbenchTabsProps<T extends string> {
 
 export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSelected }: WorkbenchTabsProps<T>) => {
   return (
-    <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 bg-bolt-elements-bg-depth-2 rounded-lg border border-bolt-elements-borderColor/30">
+    <div className="flex items-center gap-1 p-1 bg-bolt-elements-bg-depth-2/80 rounded-xl border border-bolt-elements-borderColor/40 shadow-sm">
       {options.map((option) => {
         const isSelected = selected === option.value;
 
@@ -26,17 +25,22 @@ export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSel
             key={option.value}
             onClick={() => setSelected(option.value)}
             className={classNames(
-              'relative flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md transition-all duration-200 min-h-[36px]',
+              'relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 min-h-[34px]',
               isSelected
-                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-bg-depth-1 shadow-sm'
-                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/30',
+                ? 'text-bolt-elements-item-contentAccent bg-bolt-elements-bg-depth-1 shadow-md'
+                : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/40',
             )}
-            whileTap={{ scale: 0.97 }}
+            whileHover={!isSelected ? { scale: 1.02 } : undefined}
+            whileTap={{ scale: 0.96 }}
             title={option.label}
           >
-            <div className={classNames(option.icon, 'text-sm', isSelected ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary')} />
+            <div className={classNames(
+              option.icon, 
+              'text-base transition-colors duration-200',
+              isSelected ? 'text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textTertiary'
+            )} />
             <span className={classNames(
-              "text-xs font-medium whitespace-nowrap transition-colors duration-200",
+              "text-xs font-semibold whitespace-nowrap transition-colors duration-200 tracking-tight",
               isSelected ? "text-bolt-elements-textPrimary" : "hidden sm:inline"
             )}>
               {option.label}
@@ -44,9 +48,9 @@ export const WorkbenchTabs = memo(<T extends string>({ selected, options, setSel
             {isSelected && (
               <motion.div
                 layoutId="active-workbench-tab"
-                className="absolute inset-0 bg-bolt-elements-item-backgroundAccent/5 rounded-md -z-10"
+                className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg -z-10 border border-bolt-elements-item-contentAccent/20"
                 initial={false}
-                transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
           </motion.button>

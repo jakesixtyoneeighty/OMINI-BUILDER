@@ -336,3 +336,85 @@ html[data-theme='dark'] {
   backdrop-filter: blur(12px) !important;
   overflow: hidden !important;
 }
+
+
+/* ===== Professional Editor Refinements ===== */
+
+/* Active tab indicator animation */
+.editor-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--bolt-elements-item-contentAccent), transparent);
+  animation: tabSlideIn 0.3s ease-out;
+}
+
+/* Editor tab hover effect */
+.editor-tab:not(.active):hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+}
+
+/* File tree item hover effect */
+.file-tree-container button:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+}
+
+/* File tree selected item */
+.file-tree-container button[class*="bg-bolt-elements-item-backgroundAccent"] {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.04) 100%);
+  border-left: 2px solid var(--bolt-elements-item-contentAccent);
+}
+
+/* Terminal container refinement */
+.terminal-container {
+  background: linear-gradient(180deg, var(--bolt-elements-bg-depth-1) 0%, var(--bolt-elements-bg-depth-2) 100%);
+}
+
+/* Terminal tab active refinement */
+.terminal-tab-item.active {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+  color: var(--bolt-elements-item-contentAccent);
+}
+
+/* Panel header refinement */
+.panel-header-modern {
+  background: linear-gradient(180deg, var(--bolt-elements-bg-depth-1) 0%, var(--bolt-elements-bg-depth-2) 100%);
+  border-bottom: 1px solid var(--bolt-elements-borderColor);
+}
+
+/* CodeMirror line number refinement */
+.cm-gutters {
+  border-right: 1px solid var(--bolt-elements-borderColor) !important;
+  background: var(--bolt-elements-bg-depth-1) !important;
+}
+
+.cm-lineNumbers .cm-gutterElement {
+  padding: 0 12px 0 16px !important;
+  min-width: 40px !important;
+  text-align: right !important;
+  color: var(--bolt-elements-textTertiary) !important;
+  transition: color 0.15s ease;
+}
+
+.cm-lineNumbers .cm-gutterElement:hover {
+  color: var(--bolt-elements-textSecondary) !important;
+}
+
+/* Active line refinement */
+.cm-activeLine {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%) !important;
+}
+
+/* Selection refinement */
+.cm-selectionBackground {
+  border-radius: 2px !important;
+}
+
+/* Focus ring for editor */
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+

@@ -245,13 +245,20 @@ export const EditorPanel = memo(
                 <div className="panel-header-modern justify-between">
                   <div className="flex items-center gap-2">
                     <div className="i-ph:files-duotone text-sm text-bolt-elements-item-contentAccent" />
-                    <span>Explorer</span>
+                    <span className="tracking-wide">Explorer</span>
                   </div>
-                  <div className="flex items-center gap-0.5">
-                    <button className="p-1 rounded text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all" title="New File">
+                  <div className="flex items-center gap-1">
+                    <button 
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/60 transition-all" 
+                      title="New File"
+                    >
                       <div className="i-ph:file-plus text-xs" />
                     </button>
-                    <button onClick={toggleFileTree} className="p-1 rounded text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all" title="Close sidebar">
+                    <button 
+                      onClick={toggleFileTree} 
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-bolt-elements-textTertiary hover:text-red-400 hover:bg-red-500/10 transition-all" 
+                      title="Close sidebar"
+                    >
                       <div className="i-ph:x text-xs" />
                     </button>
                   </div>
@@ -291,9 +298,9 @@ export const EditorPanel = memo(
                 {editorDocument ? (
                   <div className="editor-tab active h-full">
                     <div className={classNames('text-sm shrink-0', getFileIcon(editorDocument.filePath))} />
-                    <span className="truncate max-w-[140px]">{editorDocument.filePath.split('/').pop()}</span>
+                    <span className="truncate max-w-[160px] font-medium">{editorDocument.filePath.split('/').pop()}</span>
                     {activeFileUnsaved && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.4)] shrink-0" />
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)] shrink-0" />
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); onFileSave?.(); }}
@@ -358,25 +365,35 @@ export const EditorPanel = memo(
                     onSave={onFileSave}
                   />
                 ) : (
-                  <div className="editor-empty-state absolute inset-0 flex flex-col items-center justify-center bg-bolt-elements-bg-depth-1/30 select-none">
+                  <div className="editor-empty-state absolute inset-0 flex flex-col items-center justify-center bg-bolt-elements-bg-depth-1/50 select-none">
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex flex-col items-center gap-5"
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex flex-col items-center gap-6"
                     >
-                      <div className="w-20 h-20 rounded-2xl bg-bolt-elements-bg-depth-2 flex items-center justify-center border border-bolt-elements-borderColor/30">
-                        <div className="i-ph:code-duotone text-4xl text-bolt-elements-item-contentAccent/30" />
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center border border-bolt-elements-borderColor/40 shadow-lg">
+                          <div className="i-ph:code-duotone text-5xl text-bolt-elements-item-contentAccent/50" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                          <div className="i-ph:sparkle text-sm text-emerald-400" />
+                        </div>
                       </div>
-                      <div className="text-center space-y-1.5">
-                        <h3 className="text-sm font-semibold text-bolt-elements-textPrimary">Select a file to edit</h3>
-                        <p className="text-xs text-bolt-elements-textTertiary max-w-[220px] leading-relaxed">
-                          Choose a file from the explorer to start editing your code
+                      <div className="text-center space-y-2">
+                        <h3 className="text-base font-semibold text-bolt-elements-textPrimary tracking-tight">
+                          Select a file to edit
+                        </h3>
+                        <p className="text-sm text-bolt-elements-textTertiary max-w-[260px] leading-relaxed">
+                          Choose a file from the explorer panel to start editing your code
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor/20 text-[11px] text-bolt-elements-textTertiary">
-                        <kbd className="bg-bolt-elements-bg-depth-3 px-1.5 py-0.5 rounded border border-bolt-elements-borderColor/30 font-sans">⌘</kbd>
-                        <kbd className="bg-bolt-elements-bg-depth-3 px-1.5 py-0.5 rounded border border-bolt-elements-borderColor/30 font-sans">P</kbd>
-                        <span className="ml-1">Quick Open</span>
+                      <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-bolt-elements-bg-depth-2/80 border border-bolt-elements-borderColor/30 text-xs text-bolt-elements-textTertiary shadow-sm">
+                        <div className="flex items-center gap-1.5">
+                          <kbd className="bg-bolt-elements-bg-depth-3 px-2 py-1 rounded-md border border-bolt-elements-borderColor/40 font-sans text-[11px] font-medium shadow-sm">⌘</kbd>
+                          <kbd className="bg-bolt-elements-bg-depth-3 px-2 py-1 rounded-md border border-bolt-elements-borderColor/40 font-sans text-[11px] font-medium shadow-sm">P</kbd>
+                        </div>
+                        <span className="text-bolt-elements-textTertiary/80">Quick Open</span>
                       </div>
                     </motion.div>
                   </div>

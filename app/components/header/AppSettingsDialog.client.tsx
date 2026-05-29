@@ -683,28 +683,83 @@ export function AppSettingsDialog() {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <style>{`
-        .settings-modal { font-family: 'Geist', system-ui, sans-serif; }
+        .settings-modal {
+          font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+          background: var(--bolt-elements-bg-depth-2);
+        }
+        
+        .settings-tab {
+          position: relative;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
         .settings-tab-active {
-          background: var(--bolt-elements-item-backgroundAccent) !important;
+          background: linear-gradient(135deg, var(--bolt-elements-item-backgroundAccent), transparent) !important;
           color: var(--bolt-elements-item-contentAccent) !important;
           border-color: var(--bolt-elements-item-contentAccent) !important;
+          box-shadow: 0 2px 8px -2px rgba(99, 102, 241, 0.15);
         }
-        .settings-tab-active .tab-icon { color: var(--bolt-elements-item-contentAccent) !important; }
+        
+        .settings-tab-active .tab-icon {
+          color: var(--bolt-elements-item-contentAccent) !important;
+          filter: drop-shadow(0 0 4px currentColor);
+        }
+        
         .settings-tab:hover:not(.settings-tab-active) {
           background: var(--bolt-elements-item-backgroundActive) !important;
           color: var(--bolt-elements-textSecondary) !important;
+          transform: translateY(-1px);
+        }
+        
+        .settings-tab:hover:not(.settings-tab-active) .tab-icon {
+          color: var(--bolt-elements-textSecondary) !important;
+        }
+        
+        /* Smooth scrollbar for content */
+        .settings-content {
+          scrollbar-width: thin;
+          scrollbar-color: var(--bolt-elements-borderColor) transparent;
+        }
+        
+        .settings-content::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .settings-content::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .settings-content::-webkit-scrollbar-thumb {
+          background: var(--bolt-elements-borderColor);
+          border-radius: 3px;
+        }
+        
+        .settings-content::-webkit-scrollbar-thumb:hover {
+          background: var(--bolt-elements-textTertiary);
+        }
+        
+        /* Input focus animations */
+        input:focus, textarea:focus, select:focus {
+          transition: all 0.2s ease;
+        }
+        
+        /* Button hover effects */
+        button:not(:disabled) {
+          transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
 
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[8px]"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl"
         onClick={closeSettingsPanel}
+        style={{ animation: 'fadeIn 0.2s ease-out' }}
       />
 
       {/* Modal */}
       <div
-        className="settings-modal relative w-[92vw] max-w-[900px] h-[88vh] max-h-[820px] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/50 rounded-[20px] shadow-2xl"
+        className="settings-modal relative w-[92vw] max-w-[900px] h-[88vh] max-h-[820px] flex flex-col overflow-hidden border border-bolt-elements-borderColor/60 rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
+        style={{ animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
 
       {/* ====== HEADER BAR ====== */}
@@ -766,7 +821,7 @@ export function AppSettingsDialog() {
       </div>
 
       {/* ====== CONTENT AREA ====== */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      <div className="settings-content flex-1 overflow-y-auto px-6 py-5">
           {/* ====== GENERAL TAB ====== */}
           {tab === 'general' && (
             <div className="space-y-5">
