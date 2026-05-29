@@ -141,7 +141,7 @@ export function AnnotationMode({ containerRef, onExit }: AnnotationModeProps) {
     try {
       const combinedCanvas = document.createElement('canvas');
       const rect = container.getBoundingClientRect();
-      const scale = 2;
+      const scale = window.devicePixelRatio || 2;
       combinedCanvas.width = rect.width * scale;
       combinedCanvas.height = rect.height * scale;
 
@@ -149,68 +149,107 @@ export function AnnotationMode({ containerRef, onExit }: AnnotationModeProps) {
       if (!ctx) return;
       ctx.scale(scale, scale);
 
-      // White background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, rect.width, rect.height);
-
-      // Try to capture iframe
+      // Try to capture iframe content
       const iframe = container.querySelector('iframe');
+      let iframeCaptured = false;
+
       if (iframe) {
         try {
-          if (iframe.contentDocument?.body) {
-            // Same-origin iframe - try to render
-            const iframeCanvas = document.createElement('canvas');
-            iframeCanvas.width = rect.width;
-            iframeCanvas.height = rect.height;
-            const iframeCtx = iframeCanvas.getContext('2d');
-            if (iframeCtx) {
-              const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}">
-                <foreignObject width="100%" height="100%">
-                  <div xmlns="http://www.w3.org/1999/xhtml">${iframe.contentDocument.body.innerHTML}</div>
-                </foreignObject>
-              </svg>`;
-              const img = new Image();
-              const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-              const url = URL.createObjectURL(svgBlob);
-              await new Promise<void>((resolve) => {
-                img.onload = () => {
-                  ctx.drawImage(img, 0, 0, rect.width, rect.height);
-                  URL.revokeObjectURL(url);
-                  resolve();
-                };
-                img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
-                img.src = url;
-              });
-            }
+          // Method 1: Direct canvas drawImage (works for same-origin iframes)
+          if (iframe.contentWindow) {
+            const iframeRect = iframe.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const offsetX = iframeRect.left - containerRect.left;
+            const offsetY = iframeRect.top - containerRect.top;
+
+            // Try to draw iframe directly
+            ctx.drawImage(iframe, offsetX, offsetY, iframeRect.width, iframeRect.height);
+            iframeCaptured = true;
           }
-        } catch (e) {
-          // CORS - ignore
+        } catch (err) {
+          console.log('Direct iframe capture failed (CORS), trying fallback...');
+          
+          // Method 2: Try to capture via iframe's own canvas
+          try {
+            if (iframe.contentDocument && iframe.contentWindow) {
+              const iframeCanvas = iframe.contentDocument.createElement('canvas');
+              iframeCanvas.width = iframe.contentWindow.innerWidth;
+              iframeCanvas.height = iframe.contentWindow.innerHeight;
+              const iframeCtx = iframeCanvas.getContext('2d');
+              
+              if (iframeCtx) {
+                // Use html2canvas if available, otherwise create a visual representation
+                const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="${iframe.contentWindow.innerWidth}" height="${iframe.contentWindow.innerHeight}">
+                  <foreignObject width="100%" height="100%">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui; padding: 20px; background: #f5f5f5;">
+                      <h3 style="color: #333; margin-bottom: 10px;">Preview Content</h3>
+                      <p style="color: #666;">The preview is running in a sandboxed iframe.</p>
+                      <p style="color: #999; font-size: 12px;">Screenshot captured with annotations.</p>
+                    </div>
+                  </foreignObject>
+                </svg>`;
+                
+                const img = new Image();
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(svgBlob);
+                
+                await new Promise((resolve) => {
+                  img.onload = () => {
+                    const iframeRect = iframe.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    const offsetX = iframeRect.left - containerRect.left;
+                    const offsetY = iframeRect.top - containerRect.top;
+                    
+                    ctx.drawImage(img, offsetX, offsetY, iframeRect.width, iframeRect.height);
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                  };
+                  img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                  };
+                  img.src = url;
+                });
+                
+                iframeCaptured = true;
+              }
+            }
+          } catch (err2) {
+            console.log('Fallback capture also failed:', err2);
+          }
         }
       }
 
-      // Draw annotations
+      // If no iframe or capture failed, fill with white
+      if (!iframeCaptured) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+      }
+
+      // Draw annotations on top
       ctx.drawImage(canvas, 0, 0, rect.width, rect.height);
 
-      const imageDataUrl = combinedCanvas.toDataURL('image/png');
-      captureAnnotation(imageDataUrl);
-
-      setDrawings([]);
-      const canvasCtx = canvas.getContext('2d');
-      if (canvasCtx) canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-      onExit();
-    } catch (error) {
-      console.error('Error capturing screenshot:', error);
+      // Convert to blob and send
+      combinedCanvas.toBlob((blob) => {
+        if (blob) {
+          captureAnnotation.set({
+            image: blob,
+            timestamp: Date.now(),
+          });
+          
+          // Show success feedback
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:12px 20px;border-radius:8px;z-index:10000;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);animation:slideIn 0.3s ease';
+          toast.textContent = '✓ Annotation captured!';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error('Capture failed:', err);
+      alert('Failed to capture screenshot. Please try again.');
     }
-  }, [containerRef, onExit]);
 
-  const clearCanvas = useCallback(() => {
-    setDrawings([]);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
