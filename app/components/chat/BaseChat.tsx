@@ -710,9 +710,39 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                               </button>
                             </span>
                           )}
+                          <div className="relative">
+                          {/* Highlight overlay for / commands */}
+                          <div
+                            aria-hidden="true"
+                            className="absolute inset-0 pointer-events-none py-2 px-1 text-[15px] leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
+                            style={{ color: 'transparent' }}
+                          >
+                            {input.split(/(\/[\w-]*)/g).map((part, i) => (
+                              /^\/[\w-]*$/.test(part) ? (
+                                <span
+                                  key={i}
+                                  className="text-blue-400"
+                                  style={{
+                                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                                    borderRadius: '4px',
+                                    padding: '0 2px',
+                                  }}
+                                >
+                                  {part}
+                                </span>
+                              ) : (
+                                <span key={i} className="text-bolt-elements-textPrimary">
+                                  {part}
+                                </span>
+                              )
+                            ))}
+                            {/* Invisible trailing space to match textarea behavior */}
+                            <span className="invisible">{input.endsWith('
+') ? '.' : ''}</span>
+                          </div>
                           <textarea
                             ref={textareaRef}
-                            className="w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
+                            className="relative w-full py-2 px-1 focus:outline-none resize-none text-[15px] text-transparent caret-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[48px]"
                             onKeyDown={handleKeyDown}
                             value={input}
                             onChange={(event) => {
@@ -726,6 +756,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             rows={2}
                             style={{ maxHeight: 180 }}
                           />
+                        </div>
                         </div>
 
                         {/* Divider */}
@@ -994,22 +1025,52 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             </button>
                           </span>
                         )}
-                        <textarea
-                          ref={textareaRef}
-                          className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
-                          onKeyDown={handleKeyDown}
-                          value={input}
-                          onChange={(event) => {
-                            handleInputChangeWithMention(event);
-                            const el = event.target;
-                            el.style.height = 'auto';
-                            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-                          }}
-                          placeholder={t('landing.placeholder')}
-                          translate="no"
-                          rows={1}
-                          style={{ maxHeight: 180 }}
-                        />
+                        <div className="relative">
+                          {/* Highlight overlay for / commands */}
+                          <div
+                            aria-hidden="true"
+                            className="absolute inset-0 pointer-events-none py-1 px-1 text-[15px] leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
+                            style={{ color: 'transparent' }}
+                          >
+                            {input.split(/(\/[\w-]*)/g).map((part, i) => (
+                              /^\/[\w-]*$/.test(part) ? (
+                                <span
+                                  key={i}
+                                  className="text-blue-400"
+                                  style={{
+                                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                                    borderRadius: '4px',
+                                    padding: '0 2px',
+                                  }}
+                                >
+                                  {part}
+                                </span>
+                              ) : (
+                                <span key={i} className="text-bolt-elements-textPrimary">
+                                  {part}
+                                </span>
+                              )
+                            ))}
+                            <span className="invisible">{input.endsWith('
+') ? '.' : ''}</span>
+                          </div>
+                          <textarea
+                            ref={textareaRef}
+                            className="relative w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-transparent caret-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
+                            onKeyDown={handleKeyDown}
+                            value={input}
+                            onChange={(event) => {
+                              handleInputChangeWithMention(event);
+                              const el = event.target;
+                              el.style.height = 'auto';
+                              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+                            }}
+                            placeholder={t('landing.placeholder')}
+                            translate="no"
+                            rows={1}
+                            style={{ maxHeight: 180 }}
+                          />
+                        </div>
                       </div>
 
                       {/* Divider */}
@@ -1093,22 +1154,52 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         </button>
                       </span>
                     )}
-                    <textarea
-                      ref={textareaRef}
-                      className="w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
-                      onKeyDown={handleKeyDown}
-                      value={input}
-                      onChange={(event) => {
-                        handleInputChangeWithMention(event);
-                        const el = event.target;
-                        el.style.height = 'auto';
-                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                      }}
-                      placeholder={t('landing.placeholder')}
-                      translate="no"
-                      rows={1}
-                      style={{ maxHeight: 300 }}
-                    />
+                    <div className="relative">
+                      {/* Highlight overlay for / commands */}
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 pointer-events-none py-1 px-1 text-[15px] leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
+                        style={{ color: 'transparent' }}
+                      >
+                        {input.split(/(\/[\w-]*)/g).map((part, i) => (
+                          /^\/[\w-]*$/.test(part) ? (
+                            <span
+                              key={i}
+                              className="text-blue-400"
+                              style={{
+                                backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                                borderRadius: '4px',
+                                padding: '0 2px',
+                              }}
+                            >
+                              {part}
+                            </span>
+                          ) : (
+                            <span key={i} className="text-bolt-elements-textPrimary">
+                              {part}
+                            </span>
+                          )
+                        ))}
+                        <span className="invisible">{input.endsWith('
+') ? '.' : ''}</span>
+                      </div>
+                      <textarea
+                        ref={textareaRef}
+                        className="relative w-full py-1 px-1 focus:outline-none resize-none text-[15px] text-transparent caret-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent leading-relaxed min-h-[32px]"
+                        onKeyDown={handleKeyDown}
+                        value={input}
+                        onChange={(event) => {
+                          handleInputChangeWithMention(event);
+                          const el = event.target;
+                          el.style.height = 'auto';
+                          el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                        }}
+                        placeholder={t('landing.placeholder')}
+                        translate="no"
+                        rows={1}
+                        style={{ maxHeight: 300 }}
+                      />
+                    </div>
                   </div>
 
                   {/* Right side buttons */}
