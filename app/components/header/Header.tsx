@@ -69,12 +69,12 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor/30 select-none">
+    <header className="mojo-glass flex items-center h-[var(--header-height)] select-none z-10">
       {/* LEFT: Logo */}
       <div className="flex items-center px-2 sm:px-4 shrink-0">
         <a
           href="/"
-          className="flex items-center rounded-lg px-1 py-1.5 hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
+          className="flex items-center rounded-xl px-1 py-1.5 mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
           title="Home"
         >
           <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
@@ -82,7 +82,7 @@ export function Header() {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-bolt-elements-borderColor/20 hidden sm:block mx-2" />
+      <div className="w-px h-6 bg-bolt-elements-borderColor hidden sm:block mx-2" />
 
       {/* Model Picker - visible on all screens */}
       <div className="shrink-0">
@@ -129,7 +129,7 @@ export function Header() {
                 </button>
 
                 {moreMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[100] overflow-hidden">
+                  <div className="mojo-dropdown absolute right-0 top-full mt-2 w-56 z-[100] overflow-hidden">
                     {/* Actions */}
                     {chat.started && (
                       <div className="p-1.5 border-b border-bolt-elements-borderColor/20">
@@ -151,7 +151,7 @@ export function Header() {
                           className={
                             themeStore.get() === 'dark'
                               ? 'i-ph:sun-dim-duotone text-base text-amber-400'
-                              : 'i-ph:moon-stars-duotone text-base text-indigo-400'
+                              : 'i-ph:moon-stars-duotone text-base text-mojo-sky'
                           }
                         />
                         <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
@@ -234,12 +234,12 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   }, [resourcesOpen]);
 
   return (
-    <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
+    <header className="mojo-glass flex items-center h-[var(--header-height)] select-none z-10">
       {/* LEFT: Logo on mobile, spacing on desktop */}
       <div className="flex items-center pl-3 sm:pl-4 shrink-0">
         <a
           href="/"
-          className="flex items-center rounded-lg px-1 py-1 hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
+          className="flex items-center rounded-xl px-1 py-1 mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
           title="Home"
         >
           <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
@@ -251,7 +251,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
         {/* Search - hidden on mobile, shown on sm+ */}
         <button
           onClick={onSearchOpen}
-          className="hidden sm:flex flex-1 items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 hover:border-bolt-elements-borderColor/50 transition-all duration-200 cursor-text text-left min-w-0"
+          className="hidden sm:flex flex-1 items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor mojo-interactive hover:border-mojo-sky/30 cursor-text text-left min-w-0"
         >
           <div className="i-ph:magnifying-glass text-base text-bolt-elements-textTertiary shrink-0" />
           <span className="text-sm text-bolt-elements-textTertiary truncate">{t('search.placeholder')}</span>
@@ -289,7 +289,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
             />
           </button>
           {resourcesOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">
+            <div className="mojo-dropdown absolute right-0 top-full mt-1 w-48 z-[100] overflow-hidden p-1">
               <a
                 href="/gallery"
                 onClick={() => setResourcesOpen(false)}
@@ -337,7 +337,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           </button>
 
           {mobileMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-56 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[100] overflow-hidden">
+            <div className="mojo-dropdown absolute right-0 top-full mt-1 w-56 z-[100] overflow-hidden">
               {/* Theme toggle */}
               <div className="p-1.5">
                 <button
@@ -351,7 +351,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
                     className={
                       themeStore.get() === 'dark'
                         ? 'i-ph:sun-dim-duotone text-lg text-amber-400'
-                        : 'i-ph:moon-stars-duotone text-lg text-indigo-400'
+                        : 'i-ph:moon-stars-duotone text-lg text-mojo-sky'
                     }
                   />
                   <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>

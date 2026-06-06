@@ -50,12 +50,10 @@ export const DialogButton = memo(({ type, children, onClick }: DialogButtonProps
   return (
     <button
       className={classNames(
-        'inline-flex h-[35px] items-center justify-center rounded-lg px-4 text-sm leading-none focus:outline-none',
+        'inline-flex h-[36px] items-center justify-center rounded-xl px-4 text-sm font-medium leading-none focus:outline-none transition-all duration-200 active:scale-[0.98]',
         {
-          'bg-bolt-elements-button-primary-background text-bolt-elements-button-primary-text hover:bg-bolt-elements-button-primary-backgroundHover':
-            type === 'primary',
-          'bg-bolt-elements-button-secondary-background text-bolt-elements-button-secondary-text hover:bg-bolt-elements-button-secondary-backgroundHover':
-            type === 'secondary',
+          'mojo-btn-gradient shadow-sm': type === 'primary',
+          'mojo-btn-secondary': type === 'secondary',
           'bg-bolt-elements-button-danger-background text-bolt-elements-button-danger-text hover:bg-bolt-elements-button-danger-backgroundHover':
             type === 'danger',
         },
@@ -104,7 +102,7 @@ export const Dialog = memo(({ className, children, onBackdrop, onClose }: Dialog
     <RadixDialog.Portal>
       <RadixDialog.Overlay onClick={onBackdrop} asChild>
         <motion.div
-          className="bg-black/50 fixed inset-0 z-max"
+          className="bg-black/60 backdrop-blur-sm fixed inset-0 z-max"
           initial="closed"
           animate="open"
           exit="closed"
@@ -114,7 +112,7 @@ export const Dialog = memo(({ className, children, onBackdrop, onClose }: Dialog
       <RadixDialog.Content asChild>
         <motion.div
           className={classNames(
-            'fixed top-[50%] left-[50%] z-max max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] border border-bolt-elements-borderColor rounded-lg bg-bolt-elements-background-depth-2 shadow-lg focus:outline-none overflow-hidden',
+            'fixed top-[50%] left-[50%] z-max max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] border border-bolt-elements-borderColor rounded-2xl bg-bolt-elements-background-depth-2 shadow-2xl shadow-black/40 focus:outline-none overflow-hidden backdrop-blur-xl',
             className,
           )}
           initial="closed"

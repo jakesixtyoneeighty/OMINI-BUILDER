@@ -35,17 +35,25 @@ const BASE_COLORS = {
     950: '#0A0A0A',
   },
   accent: {
-    50: '#EEF9FF',
-    100: '#D8F1FF',
-    200: '#BAE7FF',
-    300: '#8ADAFF',
-    400: '#53C4FF',
-    500: '#2BA6FF',
-    600: '#1488FC',
-    700: '#0D6FE8',
-    800: '#1259BB',
-    900: '#154E93',
-    950: '#122F59',
+    50: '#EBF4FC',
+    100: '#D1E8F9',
+    200: '#A3D1F3',
+    300: '#6BB3EB',
+    400: '#4A90E2',
+    500: '#4A90E2',
+    600: '#1D4E89',
+    700: '#163D6E',
+    800: '#102D52',
+    900: '#0A1E37',
+    950: '#050F1C',
+  },
+  mojo: {
+    orange: '#F16529',
+    burnt: '#D34C26',
+    blue: '#1D4E89',
+    sky: '#4A90E2',
+    cream: '#F5E6D3',
+    black: '#000000',
   },
   green: {
     50: '#F0FDF4',
@@ -103,6 +111,16 @@ export default defineConfig({
     'transition-theme': 'transition-[background-color,border-color,color] duration-150 bolt-ease-cubic-bezier',
     kdb: 'bg-bolt-elements-code-background text-bolt-elements-code-text py-1 px-1.5 rounded-md',
     'max-w-chat': 'max-w-[var(--chat-max-width)]',
+    'mojo-btn-primary':
+      'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-gradient-to-r from-mojo-blue to-mojo-sky hover:brightness-110 hover:shadow-lg hover:shadow-mojo-sky/25 transition-all duration-200 active:scale-[0.98]',
+    'mojo-btn-secondary':
+      'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-bolt-elements-textSecondary bg-bolt-elements-button-secondary-background border border-bolt-elements-borderColor hover:text-bolt-elements-textPrimary hover:border-mojo-orange/40 hover:bg-bolt-elements-button-secondary-backgroundHover transition-all duration-200',
+    'mojo-glass':
+      'backdrop-blur-xl bg-bolt-elements-background-depth-1/85 border-b border-bolt-elements-borderColor',
+    'mojo-card':
+      'rounded-2xl border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:border-bolt-elements-borderColorActive/30 transition-all duration-200',
+    'mojo-glow-focus':
+      'focus-within:shadow-[0_0_0_1px_rgba(74,144,226,0.25),0_0_24px_-4px_rgba(74,144,226,0.2)]',
   },
   rules: [
     /**

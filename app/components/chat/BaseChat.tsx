@@ -574,14 +574,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div
                       className="relative w-full max-w-chat mx-auto rounded-2xl sm:rounded-[18px] p-[1px] overflow-hidden"
                       style={{
-                        background: 'var(--bolt-elements-item-contentAccent, rgba(124,58,237,0.15))',
+                        background: 'rgba(74, 144, 226, 0.15)',
                       }}
                     >
                       {/* Rotating shine line */}
                       <div
                         className="absolute inset-0 rounded-2xl sm:rounded-[18px]"
                         style={{
-                          background: 'conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(139,92,246,0.9) 350deg, rgba(96,165,250,0.9) 358deg, transparent 360deg)',
+                          background: 'conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(241,101,41,0.9) 340deg, rgba(74,144,226,0.9) 358deg, transparent 360deg)',
                           animation: 'landing-input-spin 4s linear infinite',
                           filter: 'blur(1px)',
                         }}
@@ -590,7 +590,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       <div
                         className={classNames(
                           'relative border border-transparent rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col overflow-hidden',
-                          planMode || buildMode === 'plan' ? 'shadow-[0_0_0_2px_rgba(129,140,248,0.12)]' : 'shadow-sm',
+                          planMode || buildMode === 'plan' ? 'shadow-[0_0_0_2px_rgba(74,144,226,0.15)]' : 'shadow-sm',
                         )}
                       >
                         {/* Card header */}
@@ -850,12 +850,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                               !input && !isStreaming && attachedFiles.length === 0 && inspectorElements.length === 0
                             }
                             className={classNames(
-                              'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]',
+                              'build-now-button flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]',
                               isStreaming
                                 ? 'text-bolt-elements-textSecondary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundAccent'
                                 : input || attachedFiles.length > 0 || inspectorElements.length > 0
-                                  ? 'text-white bg-bolt-elements-item-contentAccent hover:brightness-110 shadow-sm'
-                                  : 'text-white bg-bolt-elements-item-contentAccent/60 cursor-not-allowed',
+                                  ? 'text-white mojo-btn-gradient shadow-sm'
+                                  : 'text-white bg-mojo-sky/40 cursor-not-allowed',
                             )}
                           >
                             {t('landing.buildNow')}
@@ -914,8 +914,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       className={classNames(
                         'border rounded-2xl bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] transition-all duration-200 flex flex-col',
                         planMode
-                          ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(129,140,248,0.1)]'
-                          : 'border-bolt-elements-borderColor shadow-sm',
+                          ? 'border-bolt-elements-item-contentAccent/50 shadow-[0_0_0_2px_rgba(74,144,226,0.12)] mojo-glow-focus'
+                          : 'border-bolt-elements-borderColor shadow-sm mojo-glow-focus',
                       )}
                     >
                       {/* Mentioned files chips */}

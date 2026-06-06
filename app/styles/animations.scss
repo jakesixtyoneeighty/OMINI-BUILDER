@@ -100,11 +100,93 @@
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 8px rgba(74, 144, 226, 0);
   }
+}
+
+@keyframes mojo-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+@keyframes mojo-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes mojo-glow-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes mojo-border-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.mojo-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--mojo-sky, #4a90e2) 0%,
+    var(--mojo-cream, #f5e6d3) 40%,
+    var(--mojo-orange, #f16529) 60%,
+    var(--mojo-sky, #4a90e2) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: mojo-shimmer 6s linear infinite;
+}
+
+.mojo-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: mojo-glow-pulse 8s ease-in-out infinite;
+}
+
+.mojo-hover-lift {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mojo-hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.mojo-interactive {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mojo-interactive:hover {
+  border-color: rgba(74, 144, 226, 0.35);
+  background-color: var(--bolt-elements-item-backgroundActive);
+}
+
+.mojo-interactive:active {
+  transform: scale(0.98);
 }
 
 /* Editor tab animations */

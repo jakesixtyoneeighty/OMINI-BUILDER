@@ -38,7 +38,7 @@ export function AuthButton() {
           setOpen(true);
         }}
         disabled={supabaseEnabled && !authInit}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 hover:bg-bolt-elements-item-backgroundActive text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all disabled:opacity-50"
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm border border-bolt-elements-borderColor bg-bolt-elements-bg-depth-2 mojo-interactive hover:border-mojo-sky/30 text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all disabled:opacity-50"
       >
         {user && userAvatar ? (
           <img src={userAvatar} alt={displayName} className="w-5 h-5 rounded-full object-cover" />

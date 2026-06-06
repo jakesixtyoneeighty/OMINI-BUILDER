@@ -152,7 +152,7 @@ export function ModelPicker() {
   const dropdownContent = open ? (
     <div
       ref={dropdownRef}
-      className="fixed z-[9999] w-[320px] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden"
+      className="mojo-dropdown fixed z-[9999] w-[320px] overflow-hidden"
       style={{ top: dropdownPos.top, left: dropdownPos.left }}
     >
       <div className="p-2 border-b border-bolt-elements-borderColor">
@@ -251,7 +251,7 @@ export function ModelPicker() {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
+        className="model-picker flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary mojo-interactive border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
         title={t('model.selectModel')}
       >
         <BrandAsset src={currentLogo} title={provider} className="w-4 h-4" />

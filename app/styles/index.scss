@@ -28,6 +28,50 @@ body {
   filter: brightness(0) invert(1);
 }
 
+/* ===== Mojo Builder Premium Utilities ===== */
+
+.mojo-gradient-text {
+  background: linear-gradient(135deg, var(--mojo-sky, #4a90e2) 0%, var(--mojo-orange, #f16529) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mojo-btn-gradient {
+  background: linear-gradient(135deg, var(--mojo-blue, #1d4e89) 0%, var(--mojo-sky, #4a90e2) 100%);
+  color: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mojo-btn-gradient:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 20px rgba(74, 144, 226, 0.35);
+  transform: translateY(-1px);
+}
+
+.mojo-btn-gradient:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.mojo-dropdown {
+  background-color: var(--bolt-elements-bg-depth-2);
+  border: 1px solid var(--bolt-elements-borderColor);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(74, 144, 226, 0.05);
+  backdrop-filter: blur(16px);
+  animation: fadeMoveDown 0.18s forwards;
+}
+
+.mojo-menu-item {
+  border-radius: 10px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mojo-menu-item:hover {
+  background-color: var(--bolt-elements-item-backgroundActive);
+  color: var(--bolt-elements-textPrimary);
+}
+
 /* ===== Dark Theme Enhancements ===== */
 
 /* Subtle noise texture overlay for depth */
@@ -73,12 +117,12 @@ body {
 
 /* Prompt input glow on focus */
 [data-theme="dark"] .z-prompt:focus-within {
-  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2), 0 0 20px -5px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 1px rgba(74, 144, 226, 0.25), 0 0 24px -4px rgba(74, 144, 226, 0.2);
 }
 
 /* Artifact cards subtle border glow */
 [data-theme="dark"] .artifact-processing {
-  box-shadow: 0 0 15px -5px rgba(129, 140, 248, 0.15);
+  box-shadow: 0 0 15px -5px rgba(74, 144, 226, 0.2);
 }
 
 /* ===== Dark Theme: Force dark backgrounds on dropdown menus/popovers ===== */
@@ -163,8 +207,8 @@ body {
 
 /* Selection color */
 [data-theme="dark"] ::selection {
-  background: rgba(129, 140, 248, 0.25);
-  color: #f0f0f3;
+  background: rgba(74, 144, 226, 0.3);
+  color: #f5e6d3;
 }
 
 /* Better focus rings */
@@ -193,16 +237,16 @@ body {
   backdrop-filter: blur(12px);
 }
 
-/* Send button - modern gradient style */
+/* Send button - Mojo gradient style */
 [data-theme="dark"] .send-button {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(200, 200, 200, 0.9) 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #1d4e89 0%, #4a90e2 100%);
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
   transition: all 0.2s ease;
 }
 
 [data-theme="dark"] .send-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
 }
 
 /* File chips - modern pill style */
@@ -363,18 +407,18 @@ body {
   color: rgba(255, 255, 255, 0.95);
 }
 
-/* Build now button - modern gradient */
+/* Build now button - Mojo gradient */
 [data-theme="dark"] .build-now-button {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(220, 220, 220, 0.85) 100%);
+  background: linear-gradient(135deg, #1d4e89 0%, #4a90e2 100%);
   border-radius: 10px;
   font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
 }
 
 [data-theme="dark"] .build-now-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
 }
 
 /* Divider line - subtle modern style */
@@ -382,18 +426,20 @@ body {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Landing page - modern gradient background */
+/* Landing page - Mojo ambient background */
 [data-theme="dark"] .landing-background {
-  background: radial-gradient(ellipse at center top, rgba(30, 30, 35, 0.8) 0%, rgba(9, 9, 11, 1) 70%);
+  background: radial-gradient(ellipse at 30% 0%, rgba(211, 76, 38, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 0%, rgba(29, 78, 137, 0.15) 0%, transparent 50%),
+    #000000;
 }
 
-/* Hero text - modern typography */
+/* Hero text - Mojo typography */
 [data-theme="dark"] .hero-headline {
   font-size: 48px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.7) 100%);
+  background: linear-gradient(180deg, #f5e6d3 0%, rgba(245, 230, 211, 0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -465,7 +511,7 @@ body {
 
 /* Light theme prompt card shadow */
 [data-theme="light"] .z-prompt:focus-within {
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 20px -5px rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 1px rgba(74, 144, 226, 0.2), 0 0 24px -4px rgba(74, 144, 226, 0.1);
 }
 
 /* Light theme sidebar shadow */
@@ -508,8 +554,8 @@ body {
   position: relative;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.04);
-  border: 1px solid rgba(59, 130, 246, 0.1);
+  background: rgba(74, 144, 226, 0.05);
+  border: 1px solid rgba(74, 144, 226, 0.12);
   max-height: 200px;
   overflow-y: auto;
 }
@@ -593,21 +639,21 @@ body {
 .action-chip-active {
   background: linear-gradient(
     90deg,
-    rgba(99,102,241,0.12) 0%,
-    rgba(168,85,247,0.15) 35%,
-    rgba(99,102,241,0.10) 55%,
-    rgba(168,85,247,0.15) 75%,
-    rgba(99,102,241,0.12) 100%
+    rgba(29, 78, 137, 0.12) 0%,
+    rgba(74, 144, 226, 0.15) 35%,
+    rgba(241, 101, 41, 0.1) 55%,
+    rgba(74, 144, 226, 0.15) 75%,
+    rgba(29, 78, 137, 0.12) 100%
   );
   background-size: 300% auto;
-  border: 1px solid rgba(99,102,241,0.2);
-  color: var(--bolt-elements-item-contentAccent, #818cf8);
+  border: 1px solid rgba(74, 144, 226, 0.25);
+  color: var(--bolt-elements-item-contentAccent, #4a90e2);
   animation: thinking-shine 4s linear infinite;
 }
 
 .action-chip-active:hover {
-  border-color: rgba(99,102,241,0.35);
-  background: rgba(99,102,241,0.15);
+  border-color: rgba(74, 144, 226, 0.4);
+  background: rgba(74, 144, 226, 0.15);
 }
 
 /* Completed state — gray, subtle */

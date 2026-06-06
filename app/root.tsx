@@ -64,7 +64,7 @@ const inlineThemeCode = stripIndents`
     let theme = localStorage.getItem('bolt_theme');
 
     if (!theme) {
-      theme = 'light';
+      theme = 'dark';
     }
 
     document.querySelector('html')?.setAttribute('data-theme', theme);
@@ -75,7 +75,7 @@ export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Mojo Builder" />
@@ -249,7 +249,7 @@ export function ErrorBoundary() {
               </div>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors px-2 py-1 rounded-lg hover:bg-purple-500/10"
+                className="flex items-center gap-1.5 text-xs text-mojo-sky hover:text-mojo-orange transition-colors px-2 py-1 rounded-lg hover:bg-mojo-sky/10"
               >
                 <div className={`i-ph:${copied ? 'check' : 'copy'} text-sm`} />
                 {copied ? t('errorBoundary.copied') : t('errorBoundary.copyAll')}
@@ -338,7 +338,7 @@ export function ErrorBoundary() {
           </button>
           <button
             onClick={handleReload}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all"
+            className="mojo-btn-gradient flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all"
           >
             <div className="i-ph:arrow-clockwise text-base" />
             {t('errorBoundary.reload')}
