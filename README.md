@@ -1,186 +1,211 @@
 <div align="center">
 
-<img src="public/omini-favicon.png" alt="Omni-Builder Logo" width="80" height="80" />
+<img src="public/omini-favicon.png" alt="Mojo Builder" width="80" height="80" />
 
-# Omni-Builder
+# Mojo Builder
 
-### AI-Powered Full-Stack Web App Builder
+### AI-powered full-stack web app builder
 
-**Desenvolvido por [Pedro Berbis Freire](https://github.com/Pedro21062014)** com assistência de IA da [Z.ai](https://z.ai)
+Build, edit, run, and deploy web applications in the browser — no local setup required.
 
-**Baseado no projeto open-source [Bolt.new](https://github.com/stackblitz/bolt.new) por [StackBlitz](https://stackblitz.com/)**
+Based on the open-source [Bolt.new](https://github.com/stackblitz/bolt.new) project by [StackBlitz](https://stackblitz.com/)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![Remix](https://img.shields.io/badge/Remix-2.x-blue.svg)](https://remix.run/)
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-orange.svg)](https://pages.cloudflare.com/)
 [![WebContainers](https://img.shields.io/badge/WebContainers-StackBlitz-green.svg)](https://webcontainers.io/)
 
-**Acesse agora:** [https://opensouce-app-builder--omini-builder.pages.dev](https://opensouce-app-builder--omini-builder.pages.dev/)
-
 </div>
 
 ---
 
-## Sobre o Omni-Builder
+## About Mojo Builder
 
-O **Omni-Builder** é uma ferramenta open-source de desenvolvimento web com IA que permite criar, editar, executar e fazer deploy de aplicações full-stack diretamente no navegador — sem necessidade de configuração local. O projeto nasceu como um **fork expandido do [Bolt.new](https://github.com/stackblitz/bolt.new)**, o famoso AI web app builder open-source criado pela **StackBlitz**. O Omni-Builder mantém toda a base do Bolt.new e adiciona novas funcionalidades como múltiplos modos de preview, integração com GitHub/Netlify, persistência de arquivos, importação de projetos e muito mais.
+**Mojo Builder** is an open-source AI web development platform. Describe what you want in chat, and the AI generates code in real time with a live preview, integrated terminal, and one-click deploy.
 
-## Funcionalidades
+The project extends [Bolt.new](https://github.com/stackblitz/bolt.new) with additional capabilities: multiple preview modes, GitHub and cloud deploy integrations, project persistence, a community gallery, **Mojo DB** (built-in database), and **Agent Mojo** (free default AI model when the server key is configured).
 
-### Desenvolvimento com IA
-- Chat inteligente com múltiplos modelos de IA (Claude, Gemini, OpenAI, etc.)
-- Geração de código completa com criação automática de arquivos
-- Edição e refatoração assistida por IA
-- Enhance prompt — otimize suas instruções antes de enviar
+## Features
 
-### 6 Modos de Preview
-| Modo | Descrição |
-|------|-----------|
-| **WebContainer** | Preview completo com servidor, terminal e hot reload |
-| **Sandpack** | Preview rápido no navegador com React, Vue e HTML (Vite) |
-| **Iframe SrcDoc** | Preview leve via iframe com suporte a React/JSX |
-| **React Live** | Preview interativo com renderização ao vivo via react-live |
-| **PlayCode** | Preview em iframe auto-contido, funciona offline |
-| **New Tab** | Abre o preview em uma nova aba do navegador |
+### AI development
 
-### Importação de Projetos
-- Importar repositórios do **GitHub** diretamente
-- Importar arquivos **ZIP**
-- Importar **pastas locais** do computador
-- Persistência de arquivos no **localStorage** (sobrevive a reloads de página)
+- Chat with multiple AI providers (Anthropic, Google Gemini, OpenRouter, and more)
+- **Agent Mojo** — default free model powered by the server-side API key
+- Full code generation with automatic file creation and editing
+- Prompt enhancement before sending
+- Plan mode — review the AI plan before code is applied
+
+### Preview modes
+
+| Mode | Description |
+|------|-------------|
+| **WebContainer** | Full preview with dev server, terminal, and hot reload |
+| **Sandpack** | Fast in-browser preview for React, Vue, and HTML |
+| **Iframe SrcDoc** | Lightweight iframe rendering with React/JSX support |
+| **React Live** | Live React component preview via react-live |
+| **PlayCode** | CodeSandbox embed for complex builds |
+| **New Tab** | Open the preview as a standalone page |
+
+### Project import and storage
+
+- Import from **GitHub** repositories
+- Import **ZIP** archives or local **folders**
+- Save projects to the cloud (Supabase-backed)
+- Export to **Google Drive** under a `mojo/` folder
+- Auto-save and project snapshots
+
+### Mojo DB
+
+Built-in document database for each project:
+
+- 100 MB free storage per app
+- No external database setup required
+- REST API with collections and auth helpers
+- AI configures schemas and integration code automatically
 
 ### Deploy
-- **GitHub**: Push direto com opção de repositório público ou privado
-- **Netlify**: Deploy com um clique usando token de API
-- Atualização de repositórios existentes no GitHub
 
-### Interface
-- Editor de código com **CodeMirror** (syntax highlighting, autocomplete)
-- Terminal integrado com suporte a Node.js
-- Gerenciador de arquivos visual (File Tree)
-- Sistema de temas (claro/escuro)
-- Configurações de projeto (variáveis de ambiente, preview, snapshots)
+- **Cloudflare Pages** — free deploy, no API key required
+- **Netlify**, **Vercel**, and **Google Cloud Run** with your tokens
+- **Deploy with AI** — let the assistant prepare and publish
+- **Mojo Builder preview** — share a live WebContainer deploy link
+- Push to **GitHub** (public or private repos)
 
-## Arquitetura
+### Workbench
 
-O Omni-Builder é construído com tecnologias modernas:
+- **CodeMirror** editor with syntax highlighting and autocomplete
+- Integrated terminal (Node.js via WebContainer)
+- Visual file tree
+- Light and dark themes
+- Project settings: env vars, preview mode, deploy providers, AI rules, security tests
+- Community **gallery** to publish and explore projects
 
-- **Frontend**: [Remix](https://remix.run/) + [React](https://react.dev/) + [Tailwind CSS](https://tailwindcss.com/)
-- **Sandbox**: [WebContainers](https://webcontainers.io/) (StackBlitz) + [Sandpack](https://sandpack.codesandbox.io/) (CodeSandbox)
-- **AI**: [Vercel AI SDK](https://sdk.vercel.ai/) com suporte a múltiplos provedores
-- **Deploy**: [Cloudflare Pages](https://pages.cloudflare.com/) + [Workers](https://workers.cloudflare.com/)
-- **Estado**: [Nanostores](https://nanostores.githhub.io/) para gerenciamento de estado reativo
-- **Editor**: [CodeMirror 6](https://codemirror.net/)
-- **Styling**: [UnoCSS](https://unocss.dev/) + [Framer Motion](https://www.framer.com/motion/)
+## Architecture
 
-## Diferença entre Omni-Builder e Bolt.new
+| Layer | Stack |
+|-------|--------|
+| Frontend | [Remix](https://remix.run/) + [React](https://react.dev/) + [UnoCSS](https://unocss.dev/) |
+| Sandbox | [WebContainers](https://webcontainers.io/) + [Sandpack](https://sandpack.codesandbox.io/) |
+| AI | [Vercel AI SDK](https://sdk.vercel.ai/) |
+| Deploy target | [Cloudflare Pages](https://pages.cloudflare.com/) + Workers |
+| State | [Nanostores](https://github.com/nanostores/nanostores) |
+| Editor | [CodeMirror 6](https://codemirror.net/) |
 
-| | **Omni-Builder** | **Bolt.new** |
+## Mojo Builder vs Bolt.new
+
+| | **Mojo Builder** | **Bolt.new** |
 |---|---|---|
-| Preview modes | 6 modos (WebContainer, Sandpack, Iframe, React Live, PlayCode, New Tab) | 1 modo (WebContainer) |
-| Importação | GitHub, ZIP, Pasta local | Apenas prompt |
-| GitHub | Push/pull com público/privado | Não integrado |
-| Netlify | Deploy com 1 clique | Não integrado |
-| Persistência | localStorage (arquivos sobrevivem reload) | Não |
-| Multi-modelo IA | Claude, Gemini, OpenAI, etc. | Claude apenas |
-| Error Boundary | Tela de erro com botão voltar | Padrão Remix |
-| Open Source | MIT (com modificações) | MIT |
+| Preview modes | 6 modes | WebContainer only |
+| Import | GitHub, ZIP, local folder | Chat-only |
+| GitHub / Netlify / Vercel | Integrated | Not built in |
+| Built-in database | Mojo DB | No |
+| Cloud project storage | Yes | No |
+| Multi-provider AI | Yes + Agent Mojo | Claude-focused |
+| Gallery | Yes | No |
+| License | MIT (extended fork) | MIT |
 
-## Primeiros Passos
+## Getting started
 
-### Pré-requisitos
+### Requirements
 
-- Node.js (v20.15.1+)
-- pnpm (v9.4.0+)
+- Node.js 18.18+
+- [pnpm](https://pnpm.io/) 9.4+
 
-### Ou acesse direto no navegador
-
-Sem precisar instalar nada, acesse o Omni-Builder online:
-
-👉 **[https://opensouce-app-builder--omini-builder.pages.dev](https://opensouce-app-builder--omini-builder.pages.dev/)**
-
-### Instalação Local
+### Clone and install
 
 ```bash
-# Clone o repositório
-git clone https://github.com/Pedro21062014/Opensouce-App-builder.-Omini-builder..git
-
-# Entre no diretório
-cd Opensouce-App-builder.-Omini-builder.
-
-# Instale as dependências
+git clone https://github.com/jakesixtyoneeighty/OMINI-BUILDER.git
+cd OMINI-BUILDER
 pnpm install
 ```
 
-### Configuração
+### Environment variables
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Create `.env.local` in the project root:
 
-```
-# Chave de API da Anthropic (Claude)
+```env
+# Required for AI chat (at least one provider)
 ANTHROPIC_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
 
-# Opcional: nível de debug
+# Optional: cloud auth and storage (Supabase)
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: debug logging
 VITE_LOG_LEVEL=debug
 ```
 
-> ⚠️ Nunca commite seu `.env.local` no versionamento.
+Never commit `.env.local` or real API keys to version control.
 
-### Desenvolvimento
+Users can also add their own API keys in the in-app **Settings** dialog; keys are stored in the browser localStorage only.
+
+### Development
 
 ```bash
-# Inicie o servidor de desenvolvimento
 pnpm run dev
 ```
 
-### Build
+Open the URL printed in the terminal (typically `http://localhost:5173`).
+
+### Build and preview
 
 ```bash
-# Build de produção
 pnpm run build
-
-# Preview local do build
 pnpm run preview
 ```
 
-### Deploy
+### Deploy to Cloudflare Pages
 
 ```bash
-# Deploy para Cloudflare Pages
 pnpm run deploy
 ```
 
-## Scripts Disponíveis
+Configure `wrangler.toml` and Cloudflare credentials for your account.
 
-| Comando | Descrição |
-|---------|-----------|
-| `pnpm run dev` | Inicia o servidor de desenvolvimento |
-| `pnpm run build` | Build de produção |
-| `pnpm run start` | Roda o build localmente via Wrangler Pages |
-| `pnpm run preview` | Build + preview local |
-| `pnpm test` | Roda os testes com Vitest |
-| `pnpm run typecheck` | Verificação de tipos TypeScript |
-| `pnpm run typegen` | Gera tipos TypeScript via Wrangler |
-| `pnpm run deploy` | Build + deploy para Cloudflare Pages |
+## Scripts
 
-## Créditos
+| Command | Description |
+|---------|-------------|
+| `pnpm run dev` | Start the development server |
+| `pnpm run build` | Production build |
+| `pnpm run start` | Serve the build locally with Wrangler Pages |
+| `pnpm run preview` | Build and preview locally |
+| `pnpm test` | Run Vitest tests |
+| `pnpm run typecheck` | TypeScript check |
+| `pnpm run typegen` | Generate Wrangler types |
+| `pnpm run deploy` | Build and deploy to Cloudflare Pages |
+| `pnpm run lint` | ESLint |
 
-- **Criador e Mantenedor**: [Pedro Berbis Freire](https://github.com/Pedro21062014)
-- **Assistência de IA**: [Z.ai](https://z.ai)
-- **Projeto Base**: [Bolt.new](https://github.com/stackblitz/bolt.new) — Criado e mantido pela [StackBlitz](https://stackblitz.com/). O Omni-Builder utiliza o código open-source do Bolt.new (licença MIT) como base e expande suas funcionalidades significativamente.
-- **WebContainers**: [StackBlitz](https://stackblitz.com/) — Tecnologia core que permite rodar Node.js completo no navegador
-- **Sandpack**: [CodeSandbox](https://codesandbox.io/) — Sandbox de código para preview rápido no navegador
-- **Remix**: [Remix Run](https://remix.run/) — Framework full-stack utilizado na construção do app
-- **AI SDK**: [Vercel](https://vercel.com/) — SDK de integração com modelos de IA
+## Project structure (high level)
 
-## Licença
+```
+app/
+  components/     # UI: chat, header, workbench, sidebar
+  lib/            # Stores, i18n, LLM helpers, persistence
+  routes/         # Remix routes and API endpoints
+public/           # Static assets, PWA manifest, Mojo DB SDK
+```
 
-Este projeto está licenciado sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+UI copy is **English-only**. Translations live in `app/lib/i18n/translations.ts`.
+
+## Credits
+
+- **Base project**: [Bolt.new](https://github.com/stackblitz/bolt.new) by [StackBlitz](https://stackblitz.com/) (MIT)
+- **WebContainers**: StackBlitz — run Node.js in the browser
+- **Sandpack**: CodeSandbox — in-browser code sandbox
+- **Remix**: Remix Run — full-stack React framework
+- **AI SDK**: Vercel — LLM integration layer
+
+## License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
 
-**Omni-Builder** — Construído com 💜 por Pedro Berbis Freire + Z.ai | Baseado no [Bolt.new](https://github.com/stackblitz/bolt.new) da StackBlitz
+**Mojo Builder** — Built on [Bolt.new](https://github.com/stackblitz/bolt.new) from StackBlitz
 
 </div>
