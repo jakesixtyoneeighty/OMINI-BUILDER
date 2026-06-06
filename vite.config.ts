@@ -13,7 +13,8 @@ export default defineConfig((config) => {
     envPrefix: ['VITE_', 'WEBCONTAINER_'],
     server: {
       host: '0.0.0.0',
-      port: 5000,
+      // macOS AirPlay Receiver binds to 5000 by default — use 5173 locally.
+      port: Number(process.env.PORT) || 5173,
       strictPort: true,
       allowedHosts: true,
       hmr: {
