@@ -220,7 +220,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
     console.warn('[project] Cannot save to Supabase:', !sb ? 'no Supabase client' : 'no user');
     // If we need to create the project but can't connect to Supabase, throw
     if (!isValidUUID(id)) {
-      throw new Error(!user ? 'Faça login para salvar projetos na nuvem.' : 'Banco de dados não configurado. Verifique as variáveis SUPABASE_URL e SUPABASE_ANON_KEY.');
+      throw new Error(!user ? 'Sign in to save projects to the cloud.' : 'Database not configured. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
     }
     return; // For existing projects, just save locally
   }
@@ -308,7 +308,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       // New project creation — check the project limit first
       const currentCount = await getProjectCount();
       if (currentCount >= MAX_PROJECTS_PER_USER) {
-        throw new Error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`);
+        throw new Error(`Project limit of ${MAX_PROJECTS_PER_USER} reached. Delete a project before creating a new one.`);
       }
 
       // If gmail_config column is missing, remove it from the insert payload
@@ -325,7 +325,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
           const { data: retryResult, error: retryError } = await sb.from('projects').insert(retryData).select().single();
           if (retryError) {
             console.error('[project] Failed to insert project (retry):', retryError.message, retryError.details, retryError.code);
-            throw new Error(`Falha ao criar projeto: ${retryError.message}`);
+            throw new Error(`Failed to create project: ${retryError.message}`);
           }
           if (retryResult) {
             console.log('[project] Project created in Supabase (without gmail_config):', retryResult.id);
@@ -340,7 +340,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
           }
         }
         console.error('[project] Failed to insert project:', insertError.message, insertError.details, insertError.code);
-        throw new Error(`Falha ao criar projeto: ${insertError.message}`);
+        throw new Error(`Failed to create project: ${insertError.message}`);
       }
       if (data) {
         console.log('[project] Project created in Supabase:', data.id);
@@ -354,7 +354,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
         }
       } else {
         console.error('[project] Insert returned no data');
-        throw new Error('Falha ao criar projeto: servidor não retornou dados.');
+        throw new Error('Failed to create project: server returned no data.');
       }
     }
   }

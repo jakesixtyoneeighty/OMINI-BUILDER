@@ -217,7 +217,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const slug = serviceName
       ? serviceName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63)
-      : `omni-builder-${Date.now().toString(36)}`;
+      : `mojo-builder-${Date.now().toString(36)}`;
 
     const baseUrl = `https://run.googleapis.com/v2/projects/${projectId}/locations/${region}`;
 
@@ -228,7 +228,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const tarData = await buildTarGz(files);
     const gzippedData = await gzipCompress(tarData);
 
-    const storageObjectName = `omni-builder-deployments/${slug}-${Date.now()}.tar.gz`;
+    const storageObjectName = `mojo-builder-deployments/${slug}-${Date.now()}.tar.gz`;
     const uploadUrl = `https://storage.googleapis.com/upload/storage/v1/b/${projectId}-cloudbuild/o?uploadType=media&name=${storageObjectName}`;
 
     const uploadRes = await fetch(uploadUrl, {

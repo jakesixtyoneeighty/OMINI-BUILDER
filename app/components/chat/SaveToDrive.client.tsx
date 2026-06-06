@@ -9,7 +9,7 @@ import { autosaveDriveEnabled, toggleAutosaveDrive } from '~/lib/stores/drive';
 import { useT } from '~/lib/i18n/useT';
 
 const DRIVE_SAVE_PENDING_KEY = 'bolt.drive.save_pending';
-const OMINI_FOLDER_NAME = 'omini';
+const MOJO_FOLDER_NAME = 'mojo';
 
 export function SaveToDrive() {
   const isSupabase = supabaseEnabled;
@@ -89,9 +89,9 @@ export function SaveToDrive() {
   /**
    * Search for the "omini" parent folder in root. Create if not found.
    */
-  const ensureOminiFolder = async (token: string): Promise<string> => {
+  const ensureMojoFolder = async (token: string): Promise<string> => {
     const query = encodeURIComponent(
-      `name='${OMINI_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
+      `name='${MOJO_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
     );
     const res = await fetch(
       `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&fields=files(id,name)&pageSize=1`,
@@ -110,7 +110,7 @@ export function SaveToDrive() {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: OMINI_FOLDER_NAME,
+        name: MOJO_FOLDER_NAME,
         mimeType: 'application/vnd.google-apps.folder',
       }),
     });
@@ -293,8 +293,8 @@ export function SaveToDrive() {
       setStep('creating');
 
       const project = getActiveProject();
-      const projectName = project.name || 'Omni-Builder Project';
-      const safeName = projectName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Omni-Builder-Project';
+      const projectName = project.name || 'Mojo Builder Project';
+      const safeName = projectName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Mojo-Builder-Project';
 
       // Salva arquivos nao salvos primeiro
       await workbenchStore.saveAllFiles();
@@ -319,7 +319,7 @@ export function SaveToDrive() {
       setTotalFiles(fileEntries.length);
 
       // Ensure the "omini" parent folder exists
-      const ominiFolderId = await ensureOminiFolder(token);
+      const ominiFolderId = await ensureMojoFolder(token);
       toast.info(t('saveToDrive.checkingFolder'));
 
       // Verifica se pasta do projeto ja existe dentro de omini
@@ -544,7 +544,7 @@ export function SaveToDrive() {
                 <div className="flex flex-col items-center py-8 gap-3">
                   <div className="i-svg-spinners:90-ring-with-bg text-2xl text-blue-400" />
                   <p className="text-sm text-bolt-elements-textSecondary">{t('saveToDrive.preparingProject')}</p>
-                  <p className="text-xs text-bolt-elements-textTertiary">{t('saveToDrive.creatingFolderInOmini')}</p>
+                  <p className="text-xs text-bolt-elements-textTertiary">{t('saveToDrive.creatingFolderInMojo')}</p>
                 </div>
               )}
 
@@ -580,7 +580,7 @@ export function SaveToDrive() {
                     <div className="text-center">
                       <p className="text-sm font-semibold text-green-400">{t('saveToDrive.projectSaved')}</p>
                       <p className="text-xs text-bolt-elements-textTertiary mt-1">{totalFiles} {t('saveToDrive.filesUploadedSuccess')}</p>
-                      <p className="text-xs text-bolt-elements-textTertiary mt-0.5">Pasta: omini/{getActiveProject().name || 'Omni-Builder Project'}</p>
+                      <p className="text-xs text-bolt-elements-textTertiary mt-0.5">Folder: mojo/{getActiveProject().name || 'Mojo Builder Project'}</p>
                     </div>
                   </div>
 
@@ -693,11 +693,11 @@ export async function autosaveToDrive(): Promise<boolean> {
     }
 
     const project = getProject();
-    const projectName = (project.name || 'Omni-Builder Project').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Omni-Builder-Project';
+    const projectName = (project.name || 'Mojo Builder Project').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'Mojo-Builder-Project';
 
     // Ensure the "omini" parent folder exists
     const ominiQuery = encodeURIComponent(
-      `name='${OMINI_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
+      `name='${MOJO_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`,
     );
     const ominiSearchRes = await fetch(
       `https://www.googleapis.com/drive/v3/files?spaces=drive&q=${ominiQuery}&fields=files(id)&pageSize=1`,
@@ -713,7 +713,7 @@ export async function autosaveToDrive(): Promise<boolean> {
         const ominiCreateRes = await fetch('https://www.googleapis.com/drive/v3/files', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: OMINI_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
+          body: JSON.stringify({ name: MOJO_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
         });
         const ominiCreateData = await ominiCreateRes.json();
         ominiFolderId = ominiCreateData.id;

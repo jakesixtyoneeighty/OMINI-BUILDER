@@ -36,7 +36,7 @@ const dbTypeConfig = {
     passwordFields: ['apiKey', 'appId'],
   },
   omni: {
-    label: 'Omni DB',
+    label: 'Mojo DB',
     placeholder: {},
     passwordFields: [],
   },
@@ -62,10 +62,10 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
               </div>
               <div>
                 <h2 className="text-lg font-bold text-bolt-elements-textPrimary">
-                  Omni DB - Banco de Dados Integrado
+                  {t('dbRequest.mojoDbTitle')}
                 </h2>
                 <p className="text-xs text-bolt-elements-textTertiary mt-0.5">
-                  100 MB grátis por aplicativo, sem configuração necessária
+                  {t('dbRequest.mojoDbSubtitle')}
                 </p>
               </div>
             </div>
@@ -80,24 +80,24 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
               <ul className="text-sm text-bolt-elements-textSecondary space-y-2">
                 <li className="flex items-start gap-2">
                   <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                  <span><b>100 MB de armazenamento</b> gratuito por aplicativo</span>
+                  <span><b>{t('dbRequest.mojoFeatureStorage')}</b></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                  <span><b>API REST completa</b> — CRUD, queries, filtros avançados</span>
+                  <span><b>{t('dbRequest.mojoFeatureApi')}</b></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                  <span><b>IA configura tudo</b> — schemas, SDK, e código gerado automaticamente</span>
+                  <span><b>{t('dbRequest.mojoFeatureAi')}</b></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                  <span><b>Coleções flexíveis</b> com schema definido e validação</span>
+                  <span><b>{t('dbRequest.mojoFeatureCollections')}</b></span>
                 </li>
               </ul>
             </div>
             <p className="text-xs text-bolt-elements-textTertiary">
-              A IA vai criar as coleções e gerar o código de integração automaticamente.
+              {t('dbRequest.mojoAiHint')}
             </p>
           </div>
 
@@ -107,14 +107,14 @@ export function DbRequestModal({ fields, dbType, onClose, onSave }: DbRequestMod
               onClick={onClose}
               className="px-4 py-2.5 text-sm font-medium text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => onSave('omni', { enabled: 'true' })}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center gap-2"
             >
               <div className="i-ph:cube text-base" />
-              Ativar Omni DB
+              {t('dbRequest.activateMojoDb')}
             </button>
           </div>
         </div>

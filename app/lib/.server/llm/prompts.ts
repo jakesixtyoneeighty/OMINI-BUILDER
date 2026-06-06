@@ -364,7 +364,7 @@ After the user provides the values, you will receive a confirmation message with
 <db_request_instructions>
 When you need database credentials to make the project work, you MUST request them from the user using the \`<db_request>\` tag. This opens a modal where the user can fill in their credentials.
 
-**IMPORTANT: Omni DB is the PREFERRED and RECOMMENDED database option.** It is a built-in database provided by Omni Builder that requires NO configuration from the user. Each project gets 100MB of free storage. ALWAYS prefer Omni DB over Supabase or Firebase unless the user explicitly requests a different database.
+**IMPORTANT: Mojo DB is the PREFERRED and RECOMMENDED database option.** It is a built-in database provided by Mojo Builder that requires NO configuration from the user. Each project gets 100MB of free storage. ALWAYS prefer Mojo DB over Supabase or Firebase unless the user explicitly requests a different database.
 
 **Rules for using <db_request>:**
 1. Only use it when you truly NEED database credentials that the user must provide.
@@ -373,9 +373,9 @@ When you need database credentials to make the project work, you MUST request th
 4. The \`type\` attribute MUST be either "omni", "supabase", or "firebase".
 5. IMPORTANT: Output the tag as raw HTML directly in your response text, NOT inside a code block.
 
-**Format for Omni DB (RECOMMENDED - output this EXACTLY as raw text, not in a code block):**
+**Format for Mojo DB (RECOMMENDED - output this EXACTLY as raw text, not in a code block):**
 <db_request type="omni">
-  <field name="enabled" description="Enable Omni DB built-in database (100MB free, no configuration needed)" />
+  <field name="enabled" description="Enable Mojo DB built-in database (100MB free, no configuration needed)" />
 </db_request>
 
 **Format for Supabase (output this EXACTLY as raw text, not in a code block):**
@@ -435,7 +435,7 @@ After the user selects an option, you will receive their choice as a message and
 ULTRA IMPORTANT: Do NOT be verbose and DO NOT explain anything unless the user is asking for more information. That is VERY important.
 
 <language_instruction>
-${LANGUAGE_INSTRUCTIONS[language || 'pt'] || LANGUAGE_INSTRUCTIONS['pt']}
+${LANGUAGE_INSTRUCTIONS[language || 'en'] || LANGUAGE_INSTRUCTIONS['en']}
 </language_instruction>
 
 <file_creation_rules>
@@ -492,7 +492,7 @@ THINK MODE IS ACTIVE. You are in deep reasoning mode. The user wants you to thin
 IMPORTANT RULES:
 1. You MUST wrap ALL your reasoning, analysis, and thinking process in <think>...</think> XML tags.
 2. The <think> tag should appear at the VERY BEGINNING of EVERY assistant response.
-3. Within the <think> tags, write your complete thought process in natural language (Portuguese, as specified):
+3. Within the <think> tags, write your complete thought process in natural language (English, as specified):
    - Analyze the user's request thoroughly
    - Consider multiple approaches and their trade-offs
    - Plan the file structure, architecture, and implementation steps
@@ -504,7 +504,7 @@ IMPORTANT RULES:
 
 Example format:
 <think>
-[Your detailed reasoning in Portuguese - analyze the request, plan the approach, consider alternatives]
+[Your detailed reasoning in English - analyze the request, plan the approach, consider alternatives]
 </think>
 
 [Your normal response with explanations, boltArtifact tags, code, etc.]
@@ -513,16 +513,16 @@ Example format:
 
 ${dbContext && dbContext.type !== 'none' ? `
 <database_context>
-The user has configured a ${dbContext.type === 'firebase' ? 'Firebase' : dbContext.type === 'supabase' ? 'Supabase' : 'Omni DB'} database for this project. You can and SHOULD use this database in the code you generate.
+The user has configured a ${dbContext.type === 'firebase' ? 'Firebase' : dbContext.type === 'supabase' ? 'Supabase' : 'Mojo DB'} database for this project. You can and SHOULD use this database in the code you generate.
 
-${dbContext.type === 'omni' ? `**Omni DB Configuration:**
+${dbContext.type === 'omni' ? `**Mojo DB Configuration:**
 - Project ID: "${dbContext.omni?.projectId || ''}"
 - Storage Quota: 100MB per project (free)
 - API Endpoint: POST ${serverOrigin || ''}/api/db
 - Server Origin: ${serverOrigin || 'same origin'}
 
-**CRITICAL Omni DB Instructions:**
-Omni DB is a built-in document/collection database. It uses a REST API for all operations. You MUST follow these instructions when generating code that uses Omni DB:
+**CRITICAL Mojo DB Instructions:**
+Mojo DB is a built-in document/collection database. It uses a REST API for all operations. You MUST follow these instructions when generating code that uses Mojo DB:
 
 **STEP 1 - Create collections using the omni_db tool:**
 Before generating any code, you MUST use the \`omni_db\` tool to create all the collections the app needs. This ensures they are immediately visible in the Database panel. For each collection, call:
@@ -533,16 +533,16 @@ omni_db({ action: "createCollection", collection: "users", schema: { name: { typ
 
 Do this for EVERY collection the app needs BEFORE writing the SDK code. The collections must exist in the database first.
 
-**STEP 2 - Add the Omni DB SDK to the project:**
-Create \`lib/omni-db.js\` (or \`lib/omni-db.ts\`) with the following code. IMPORTANT: Use the FULL server URL as the default baseUrl so the database works even when the app is deployed to Netlify, Vercel, or any other hosting:
+**STEP 2 - Add the Mojo DB SDK to the project:**
+Create \`lib/mojo-db.js\` (or \`lib/omni-db.ts\`) with the following code. IMPORTANT: Use the FULL server URL as the default baseUrl so the database works even when the app is deployed to Netlify, Vercel, or any other hosting:
 
 \`\`\`javascript
-// Omni DB SDK - Built-in database for Omni Builder
-class OmniDB {
+// Mojo DB SDK - Built-in database for Mojo Builder
+class MojoDB {
   constructor(projectId, options = {}) {
-    if (!projectId) throw new Error('OmniDB: projectId is required');
+    if (!projectId) throw new Error('MojoDB: projectId is required');
     this.projectId = projectId;
-    // Use the Omni Builder server URL so the database works from ANY hosting (Netlify, Vercel, etc.)
+    // Use the Mojo Builder server URL so the database works from ANY hosting (Netlify, Vercel, etc.)
     this.baseUrl = options.baseUrl || '${serverOrigin || '/api/db'}/api/db';
   }
 
@@ -553,7 +553,7 @@ class OmniDB {
       body: JSON.stringify({ action, projectId: this.projectId, ...extra }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Omni DB request failed');
+    if (!res.ok) throw new Error(data.error || 'Mojo DB request failed');
     return data;
   }
 
@@ -602,14 +602,14 @@ class OmniDB {
   }
 }
 
-export default OmniDB;
-// Usage: const db = new OmniDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
+export default MojoDB;
+// Usage: const db = new MojoDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
 \`\`\`
 
 **STEP 3 - Initialize the SDK in the app:**
 \`\`\`javascript
-import OmniDB from './lib/omni-db.js';
-const db = new OmniDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
+import MojoDB from './lib/mojo-db.js';
+const db = new MojoDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
 \`\`\`
 
 **STEP 4 - CRUD Operations in app code:**
@@ -639,8 +639,8 @@ const db = new OmniDB('${dbContext.omni?.projectId || 'PROJECT_ID'}');
 1. ALWAYS use the \`omni_db\` tool to create collections FIRST, before writing any app code.
 2. Always use the FULL server URL (${serverOrigin || '/api/db'}/api/db) as the default baseUrl in the SDK so the database works from ANY hosting platform (Netlify, Vercel, Cloudflare, etc.).
 3. Always create collections BEFORE inserting data. Use try/catch for error handling.
-4. When the user asks to build an app that needs data storage (todo lists, blogs, e-commerce, dashboards, etc.), ALWAYS use Omni DB as the database. Do NOT ask the user to set up Supabase or Firebase unless they explicitly want to.
-5. For React/Vue/Svelte apps: Create a context/provider or hook that wraps the OmniDB instance so components can easily access it.
+4. When the user asks to build an app that needs data storage (todo lists, blogs, e-commerce, dashboards, etc.), ALWAYS use Mojo DB as the database. Do NOT ask the user to set up Supabase or Firebase unless they explicitly want to.
+5. For React/Vue/Svelte apps: Create a context/provider or hook that wraps the MojoDB instance so components can easily access it.
 6. The API supports CORS from any origin, so the SDK works from any domain.
 ` : dbContext.type === 'firebase' ? `**Firebase Configuration:**
 - apiKey: "${dbContext.firebase?.apiKey || ''}"

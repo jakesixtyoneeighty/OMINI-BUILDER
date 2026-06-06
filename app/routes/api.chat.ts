@@ -122,7 +122,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
   // Virtual models (Agent Omini) use the server's API key
   if (!apiKey && !isVirtual) {
     throw new Response(
-      JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes. Obtenha uma chave gratuita em https://openrouter.ai` }),
+      JSON.stringify({ error: `Missing API key for provider "${provider}". Configure your key in Settings. Get a free key at https://openrouter.ai` }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
@@ -131,7 +131,7 @@ function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
     const providerName = realProvider === 'google' ? 'GOOGLE_GENERATIVE_AI_API_KEY' : realProvider === 'openrouter' ? 'OPENROUTER_API_KEY' : `${realProvider.toUpperCase()}_API_KEY`;
     throw new Response(
       JSON.stringify({
-        error: `O servidor nao possui a chave de API configurada (${providerName}). O Agent Omini precisa desta chave para funcionar. Voce pode: (1) aguardar o administrador configurar a chave no servidor, ou (2) usar seu proprio modelo nas Configuracoes > API Keys.`,
+        error: `The server does not have the API key configured (${providerName}). Agent Mojo needs this key to work. You can: (1) wait for the administrator to configure the key on the server, or (2) use your own model in Settings > API Keys.`,
         errorType: 'MISSING_API_KEY',
       }),
       { status: 400, headers: { 'content-type': 'application/json' } },
@@ -204,7 +204,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const planMode = body.planMode ?? false;
   const thinkMode = body.thinkMode ?? false;
   const customRules = body.customRules;
-  const language = body.language || 'pt';
+  const language = body.language || 'en';
 
   // Get Supabase credentials for Omni DB tool
   const supabaseUrl = env.SUPABASE_URL || '';
@@ -296,32 +296,32 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       console.log('[chat] Client disconnected (abort signal)');
       return new Response(null, { status: 499 });
     } else if (message.includes('abort') || message.includes('cancel') || message.includes('Timeout') || message.includes('ETIMEDOUT') || message.includes('timed out')) {
-      message = `O modelo demorou demais para responder. Isso pode acontecer com modelos gratuitos ou quando o servidor esta sobrecarregado. Tente novamente em alguns segundos.`;
+      message = `The model took too long to respond. This can happen with free models or when the server is overloaded. Try again in a few seconds.`;
       errorType = 'TIMEOUT';
     } else if (message.includes('Not Found') || message.includes('"error":"Not Found"') || statusCode === 404) {
-      message = `O modelo "${selection.model}" nao foi encontrado no OpenRouter. Pode ser que este modelo tenha sido descontinuado ou renomeado. Tente selecionar outro modelo.`;
+      message = `Model "${selection.model}" was not found on OpenRouter. This model may have been discontinued or renamed. Try selecting another model.`;
       errorType = 'MODEL_NOT_FOUND';
     } else if (message.includes('401') || message.includes('Unauthorized') || message.includes('Authentication') || statusCode === 401) {
-      message = `Chave de API invalida ou expirada para o OpenRouter. Se voce esta usando o Agent Omini (modelo gratuito), o servidor precisa de uma chave valida. Voce pode adicionar sua propria chave gratuita nas Configuracoes > API Keys > OpenRouter. Obtenha em https://openrouter.ai`;
+      message = `Invalid or expired API key for OpenRouter. If you are using Agent Mojo (free model), the server needs a valid key. You can add your own free key in Settings > API Keys > OpenRouter. Get one at https://openrouter.ai`;
       errorType = 'AUTH_ERROR';
     } else if (message.includes('403') || statusCode === 403) {
-      message = `Acesso negado pelo OpenRouter. Sua chave de API pode nao ter permissao para usar o modelo "${selection.model}". Verifique sua chave nas Configuracoes.`;
+      message = `Access denied by OpenRouter. Your API key may not have permission to use model "${selection.model}". Check your key in Settings.`;
       errorType = 'FORBIDDEN';
     } else if (message.includes('429') || message.includes('rate') || message.includes('Rate') || statusCode === 429) {
-      message = `Limite de requisicoes atingido para o OpenRouter. Modelos gratuitos tem limites de uso. Aguarde alguns segundos e tente novamente.`;
+      message = `Request limit reached for OpenRouter. Free models have usage limits. Wait a few seconds and try again.`;
       errorType = 'RATE_LIMITED';
     } else if (message.includes('503') || message.includes('Service Unavailable') || message.includes('Overloaded') || statusCode === 503) {
-      message = `O servidor do modelo esta temporariamente indisponivel ou sobrecarregado. Modelos gratuitos podem ter disponibilidade limitada. Tente novamente em alguns segundos.`;
+      message = `The model server is temporarily unavailable or overloaded. Free models may have limited availability. Try again in a few seconds.`;
       errorType = 'SERVICE_UNAVAILABLE';
     } else if (message.includes('Provider returned error') || message.includes('Failed after')) {
       // Generic AI SDK error — give helpful message without revealing internal provider
-      message = `O Agent Omini retornou um erro. Possiveis causas: (1) A chave de API do servidor esta invalida ou expirada, (2) O modelo esta temporariamente indisponivel, (3) Limite de uso atingido. Tente novamente em alguns segundos. Se o problema persistir, configure sua propria chave de API nas Configuracoes.`;
+      message = `Agent Mojo returned an error. Possible causes: (1) The server API key is invalid or expired, (2) The model is temporarily unavailable, (3) Usage limit reached. Try again in a few seconds. If the problem persists, configure your own API key in Settings.`;
       errorType = 'PROVIDER_ERROR';
     } else if (message.includes('Invalid') && message.includes('API key')) {
-      message = `Chave de API invalida para o OpenRouter. Obtenha uma chave gratuita em https://openrouter.ai e adicione nas Configuracoes.`;
+      message = `Invalid API key for OpenRouter. Get a free key at https://openrouter.ai and add it in Settings.`;
       errorType = 'INVALID_KEY';
     } else if (message.includes('Insufficient') || message.includes('credits') || message.includes('balance')) {
-      message = `Saldo insuficiente na conta OpenRouter. Modelos gratuitos nao exigem saldo, mas sua chave pode estar vinculada a uma conta sem acesso aos modelos gratuitos.`;
+      message = `Insufficient balance on OpenRouter account. Free models do not require balance, but your key may be linked to an account without access to free models.`;
       errorType = 'INSUFFICIENT_CREDITS';
     }
 

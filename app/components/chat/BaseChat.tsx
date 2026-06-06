@@ -1393,7 +1393,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     const val = textareaRef.current.value;
                     const newVal = val.replace(/\/debug\s*$/, '').replace(/\/\s*$/, '');
                     const syntheticEvent = {
-                      target: { value: newVal + 'Analise e corrija os erros no código: ' },
+                      target: { value: newVal + 'Analyze and fix errors in the code: ' },
                     } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
                     handleInputChange?.(syntheticEvent);
                   }
@@ -1402,7 +1402,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     const val = textareaRef.current.value;
                     const newVal = val.replace(/\/docs\s*$/, '').replace(/\/\s*$/, '');
                     const syntheticEvent = {
-                      target: { value: newVal + 'Gere documentação para ' },
+                      target: { value: newVal + 'Generate documentation for ' },
                     } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
                     handleInputChange?.(syntheticEvent);
                   }
@@ -1411,7 +1411,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     const val = textareaRef.current.value;
                     const newVal = val.replace(/\/image\s*$/, '').replace(/\/\s*$/, '');
                     const syntheticEvent = {
-                      target: { value: newVal + 'Gere uma imagem de ' },
+                      target: { value: newVal + 'Generate an image of ' },
                     } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
                     handleInputChange?.(syntheticEvent);
                   }

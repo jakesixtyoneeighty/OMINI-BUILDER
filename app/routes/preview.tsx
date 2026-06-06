@@ -1,10 +1,11 @@
 import { type MetaFunction } from '@remix-run/cloudflare';
 import { useSearchParams } from '@remix-run/react';
 import { useState, useCallback } from 'react';
+import { useT } from '~/lib/i18n/useT';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Omni-Builder — Preview' },
+    { title: 'Mojo Builder — Preview' },
     { name: 'description', content: 'Full-screen preview of your app running in WebContainer' },
   ];
 };
@@ -13,11 +14,9 @@ export const meta: MetaFunction = () => {
  * /preview?url=<webcontainer_url>
  *
  * Full-page preview that embeds a WebContainer URL in an iframe.
- * This route exists because WebContainer URLs like /webcontainer/connect/xxx
- * are internal paths that only work inside an iframe context — opening them
- * directly as a top-level URL would result in a 404 from Remix.
  */
 export default function PreviewPage() {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const previewUrl = searchParams.get('url') || '';
   const [loaded, setLoaded] = useState(false);
@@ -37,16 +36,16 @@ export default function PreviewPage() {
         <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
           <div className="i-ph:link-break text-3xl text-red-400" />
         </div>
-        <h1 className="text-xl font-bold mb-2">URL do preview nao encontrada</h1>
+        <h1 className="text-xl font-bold mb-2">{t('previewPage.urlNotFound')}</h1>
         <p className="text-sm text-bolt-elements-textSecondary mb-6 text-center max-w-md">
-          Abra o preview a partir do Omni-Builder clicando no botao "Abrir em nova aba" no painel de preview.
+          {t('previewPage.openFromBuilder')}
         </p>
         <a
           href="/"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all"
         >
           <div className="i-ph:arrow-left text-base" />
-          Voltar ao Omni-Builder
+          {t('previewPage.backToBuilder')}
         </a>
       </div>
     );
@@ -54,7 +53,6 @@ export default function PreviewPage() {
 
   return (
     <div className="flex flex-col w-screen h-screen bg-bolt-elements-bg-depth-1 overflow-hidden">
-      {/* Minimal toolbar */}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-2 border-b border-bolt-elements-borderColor shrink-0">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium">
           <div className="i-ph:cube-duotone text-sm" />
@@ -71,21 +69,20 @@ export default function PreviewPage() {
             if (iframe) iframe.src = iframe.src;
           }}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-all"
-          title="Atualizar preview"
+          title={t('previewPage.refreshPreview')}
         >
           <div className="i-ph:arrow-clockwise text-sm" />
         </button>
         <a
           href="/"
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-all"
-          title="Voltar ao Omni-Builder"
+          title={t('previewPage.backToBuilder')}
         >
           <div className="i-ph:arrow-left text-sm" />
-          Voltar
+          {t('previewPage.back')}
         </a>
       </div>
 
-      {/* Preview iframe */}
       <div className="flex-1 relative" style={{ minHeight: 0 }}>
         {!loaded && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-bolt-elements-bg-depth-1 z-10">
@@ -97,8 +94,8 @@ export default function PreviewPage() {
                   <div className="i-ph:eye text-xl text-bolt-elements-textTertiary" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-bolt-elements-textSecondary">Carregando preview...</p>
-              <p className="text-xs text-bolt-elements-textTertiary mt-1">Aguarde enquanto o app e compilado</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary">{t('preview.loadingPreview')}</p>
+              <p className="text-xs text-bolt-elements-textTertiary mt-1">{t('previewPage.compilingWait')}</p>
               <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -114,8 +111,8 @@ export default function PreviewPage() {
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
                 <div className="i-ph:warning-circle text-3xl text-red-400" />
               </div>
-              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">Falha ao carregar o preview</p>
-              <p className="text-xs text-bolt-elements-textTertiary mb-4">O WebContainer pode ter sido encerrado ou a URL expirou.</p>
+              <p className="text-sm font-medium text-bolt-elements-textSecondary mb-1">{t('previewPage.loadFailed')}</p>
+              <p className="text-xs text-bolt-elements-textTertiary mb-4">{t('previewPage.webcontainerExpired')}</p>
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => {
@@ -127,13 +124,13 @@ export default function PreviewPage() {
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all"
                 >
                   <div className="i-ph:arrow-clockwise text-sm" />
-                  Tentar novamente
+                  {t('previewPage.tryAgain')}
                 </button>
                 <a
                   href="/"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all"
                 >
-                  Voltar ao Omni-Builder
+                  {t('previewPage.backToBuilder')}
                 </a>
               </div>
             </div>

@@ -53,7 +53,7 @@ export async function loader({ request }: ActionFunctionArgs) {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  return json({ status: 'ok', service: 'Omni DB API', version: '1.0' }, { headers: corsHeaders });
+  return json({ status: 'ok', service: 'Mojo DB API', version: '1.0' }, { headers: corsHeaders });
 }
 
 async function dbAction({ context, request }: ActionFunctionArgs) {

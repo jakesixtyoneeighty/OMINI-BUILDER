@@ -10,144 +10,144 @@ const SECURITY_TESTS = [
   {
     id: 'xss',
     name: 'XSS (Cross-Site Scripting)',
-    description: 'Testa se o projeto está vulnerável a ataques XSS, onde scripts maliciosos podem ser injetados em páginas web.',
+    description: 'Tests whether the project is vulnerable to XSS attacks, where malicious scripts can be injected into web pages.',
     icon: 'i-ph:bug-duotone',
     color: 'text-red-400',
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
-    prompt: `Execute uma análise completa de segurança XSS (Cross-Site Scripting) neste projeto. Para cada arquivo relevante:
+    prompt: `Run a complete XSS (Cross-Site Scripting) security analysis on this project. For each relevant file:
 
-1. Identifique TODOS os pontos onde dados do usuário são renderizados no DOM (innerHTML, dangerouslySetInnerHTML, document.write, etc.)
-2. Verifique se há sanitização adequada de input do usuário antes de exibição
-3. Teste se URLs e parâmetros de consulta são validados
-4. Verifique se cookies usam flags HttpOnly, Secure e SameSite
-5. Verifique se Content Security Policy (CSP) está configurada
-6. Verifique se há uso de eval(), Function() ou setTimeout/setInterval com strings
+1. Identify ALL points where user data is rendered in the DOM (innerHTML, dangerouslySetInnerHTML, document.write, etc.)
+2. Check whether user input is properly sanitized before display
+3. Test whether URLs and query parameters are validated
+4. Check whether cookies use HttpOnly, Secure, and SameSite flags
+5. Check whether Content Security Policy (CSP) is configured
+6. Check for use of eval(), Function(), or setTimeout/setInterval with strings
 
-Para cada vulnerabilidade encontrada, corrija o código removendo o uso inseguro e substituindo por alternativas seguras (textContent, sanitize, DOMPurify, etc.). Adicione headers de segurança se necessário. Explique cada correção.`,
+For each vulnerability found, fix the code by removing unsafe usage and replacing it with secure alternatives (textContent, sanitize, DOMPurify, etc.). Add security headers if needed. Explain each fix.`,
   },
   {
     id: 'sql-injection',
     name: 'SQL Injection',
-    description: 'Verifica se o projeto tem vulnerabilidades de injeção SQL em consultas ao banco de dados.',
+    description: 'Checks whether the project has SQL injection vulnerabilities in database queries.',
     icon: 'i-ph:database-duotone',
     color: 'text-orange-400',
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/20',
-    prompt: `Execute uma análise completa de segurança contra SQL Injection neste projeto. Para cada arquivo relevante:
+    prompt: `Run a complete SQL Injection security analysis on this project. For each relevant file:
 
-1. Identifique TODOS os pontos onde queries SQL são construídas com concatenação de strings ou template literals com input do usuário
-2. Verifique se prepared statements/parameterized queries são usados consistentemente
-3. Verifique se ORMs estão configurados corretamente e não permitem raw queries inseguras
-4. Teste se validação de input é feita antes de usar em queries
-5. Verifique se há proteção contra NoSQL injection (para MongoDB, etc.)
+1. Identify ALL points where SQL queries are built with string concatenation or template literals using user input
+2. Check whether prepared statements/parameterized queries are used consistently
+3. Check whether ORMs are configured correctly and do not allow unsafe raw queries
+4. Test whether input validation is performed before use in queries
+5. Check for protection against NoSQL injection (for MongoDB, etc.)
 
-Para cada vulnerabilidade encontrada, corrija o código usando prepared statements, ORMs seguros ou validação rigorosa de input. Explique cada correção.`,
+For each vulnerability found, fix the code using prepared statements, secure ORMs, or rigorous input validation. Explain each fix.`,
   },
   {
     id: 'auth',
-    name: 'Autenticação & Autorização',
-    description: 'Analisa falhas em sistemas de login, sessões, tokens JWT, controle de acesso e permissões.',
+    name: 'Authentication & Authorization',
+    description: 'Analyzes flaws in login systems, sessions, JWT tokens, access control, and permissions.',
     icon: 'i-ph:shield-check-duotone',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/20',
-    prompt: `Execute uma análise completa de segurança de Autenticação e Autorização neste projeto. Para cada arquivo relevante:
+    prompt: `Run a complete Authentication and Authorization security analysis on this project. For each relevant file:
 
-1. Verifique se senhas são hasheadas com algoritmos seguros (bcrypt, argon2) e não armazenadas em texto plano
-2. Verifique se JWTs são validados corretamente (assinatura, expiração, issuer)
-3. Verifique se há proteção contra brute force (rate limiting, account lockout)
-4. Verifique se sessões são invalidadas corretamente no logout
-5. Verifique se há controle de acesso adequado (RBAC/ABAC) em todas as rotas protegidas
-6. Verifique se tokens são transmitidos apenas via HTTPS e cookies seguros
-7. Verifique se há proteção contra CSRF em formulários
-8. Verifique se não há hardcoded credentials ou API keys no código
+1. Check whether passwords are hashed with secure algorithms (bcrypt, argon2) and not stored in plain text
+2. Check whether JWTs are validated correctly (signature, expiration, issuer)
+3. Check for brute force protection (rate limiting, account lockout)
+4. Check whether sessions are properly invalidated on logout
+5. Check for adequate access control (RBAC/ABAC) on all protected routes
+6. Check whether tokens are transmitted only over HTTPS and secure cookies
+7. Check for CSRF protection on forms
+8. Check for hardcoded credentials or API keys in the code
 
-Para cada vulnerabilidade encontrada, corrija o código implementando as práticas de segurança adequadas. Explique cada correção.`,
+For each vulnerability found, fix the code by implementing appropriate security practices. Explain each fix.`,
   },
   {
     id: 'secrets',
-    name: 'Vazamento de Segredos',
-    description: 'Detecta chaves de API, senhas, tokens e outras credenciais expostas no código-fonte.',
+    name: 'Secret Leakage',
+    description: 'Detects API keys, passwords, tokens, and other credentials exposed in source code.',
     icon: 'i-ph:key-duotone',
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10',
     border: 'border-yellow-500/20',
-    prompt: `Execute uma análise completa para detectar vazamento de segredos e credenciais neste projeto:
+    prompt: `Run a complete analysis to detect secret and credential leakage in this project:
 
-1. Procure por API keys hardcoded no código (padrões como sk-..., AIza..., ghpat..., etc.)
-2. Verifique se arquivos .env estão no .gitignore
-3. Procure por senhas, tokens e secrets em código-fonte e arquivos de configuração
-4. Verifique se credenciais de banco de dados estão expostas
-5. Verifique se há private keys, certificates ou secrets em arquivos commitados
-6. Verifique se o .gitignore inclui todos os arquivos sensíveis (.env, *.key, *.pem, etc.)
-7. Verifique se secrets são carregados de variáveis de ambiente e não hardcoded
+1. Search for hardcoded API keys in the code (patterns such as sk-..., AIza..., ghpat..., etc.)
+2. Check whether .env files are in .gitignore
+3. Search for passwords, tokens, and secrets in source code and configuration files
+4. Check whether database credentials are exposed
+5. Check for private keys, certificates, or secrets in committed files
+6. Check whether .gitignore includes all sensitive files (.env, *.key, *.pem, etc.)
+7. Check whether secrets are loaded from environment variables and not hardcoded
 
-Para cada segredo encontrado, mova para variáveis de ambiente (.env), adicione ao .gitignore, e substitua no código por process.env ou import.meta.env. Explique cada correção.`,
+For each secret found, move it to environment variables (.env), add it to .gitignore, and replace it in the code with process.env or import.meta.env. Explain each fix.`,
   },
   {
     id: 'deps',
-    name: 'Dependências Vulneráveis',
-    description: 'Verifica se as dependências do projeto possuem vulnerabilidades de segurança conhecidas.',
+    name: 'Vulnerable Dependencies',
+    description: 'Checks whether project dependencies have known security vulnerabilities.',
     icon: 'i-ph:package-duotone',
     color: 'text-purple-400',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
-    prompt: `Execute uma análise de segurança das dependências deste projeto:
+    prompt: `Run a dependency security analysis on this project:
 
-1. Verifique o package.json para dependências desatualizadas ou com vulnerabilidades conhecidas
-2. Execute npm audit ou verifique manualmente por vulnerabilidades comuns em dependências populares
-3. Verifique se há dependências não utilizadas que aumentam a superfície de ataque
-4. Verifique se as versões das dependências estão fixadas (lock file) para evitar supply chain attacks
-5. Verifique se há dependências com licenças incompatíveis
-6. Verifique se scripts postinstall ou preinstall são seguros
-7. Recomende alternativas mais seguras para dependências com problemas
+1. Check package.json for outdated dependencies or known vulnerabilities
+2. Run npm audit or manually check for common vulnerabilities in popular dependencies
+3. Check for unused dependencies that increase the attack surface
+4. Check whether dependency versions are pinned (lock file) to prevent supply chain attacks
+5. Check for dependencies with incompatible licenses
+6. Check whether postinstall or preinstall scripts are safe
+7. Recommend more secure alternatives for problematic dependencies
 
-Para cada problema encontrado, atualize a dependência, remova se não for necessária, ou substitua por alternativa segura. Execute npm audit fix se possível. Explique cada correção.`,
+For each issue found, update the dependency, remove it if unnecessary, or replace it with a secure alternative. Run npm audit fix if possible. Explain each fix.`,
   },
   {
     id: 'headers',
-    name: 'Headers de Segurança',
-    description: 'Verifica se os headers HTTP de segurança estão configurados corretamente (CSP, HSTS, X-Frame-Options, etc.).',
+    name: 'Security Headers',
+    description: 'Checks whether HTTP security headers are configured correctly (CSP, HSTS, X-Frame-Options, etc.).',
     icon: 'i-ph:shield-warning-duotone',
     color: 'text-cyan-400',
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
-    prompt: `Execute uma análise completa dos headers de segurança HTTP deste projeto:
+    prompt: `Run a complete HTTP security headers analysis on this project:
 
-1. Verifique se Content-Security-Policy (CSP) está configurada
-2. Verifique se X-Frame-Options está definido (previne clickjacking)
-3. Verifique se X-Content-Type-Options: nosniff está configurado
-4. Verifique se Strict-Transport-Security (HSTS) está habilitado
-5. Verifique se Referrer-Policy está configurado
-6. Verifique se Permissions-Policy está definido
-7. Verifique se X-XSS-Protection está configurado
-8. Verifique se não há headers sensíveis expostos (X-Powered-By, Server, etc.)
+1. Check whether Content-Security-Policy (CSP) is configured
+2. Check whether X-Frame-Options is set (prevents clickjacking)
+3. Check whether X-Content-Type-Options: nosniff is configured
+4. Check whether Strict-Transport-Security (HSTS) is enabled
+5. Check whether Referrer-Policy is configured
+6. Check whether Permissions-Policy is defined
+7. Check whether X-XSS-Protection is configured
+8. Check that sensitive headers are not exposed (X-Powered-By, Server, etc.)
 
-Para cada header faltante ou mal configurado, adicione ou corrija no código do servidor/middleware. Configure o CSP de forma restritiva mas funcional para o projeto. Explique cada correção.`,
+For each missing or misconfigured header, add or fix it in the server/middleware code. Configure CSP in a restrictive but functional way for the project. Explain each fix.`,
   },
   {
     id: 'full',
-    name: 'Teste Completo',
-    description: 'Executa todos os testes de segurança em uma única análise abrangente.',
+    name: 'Full Test',
+    description: 'Runs all security tests in a single comprehensive analysis.',
     icon: 'i-ph:shield-star-duotone',
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
-    prompt: `Execute uma auditoria de segurança COMPLETA e ABRANGENTE neste projeto. Analise TODOS os aspectos:
+    prompt: `Run a COMPLETE and COMPREHENSIVE security audit on this project. Analyze ALL aspects:
 
-1. **XSS**: Procure por innerHTML, dangerouslySetInnerHTML, eval(), document.write, e dados de usuário não sanitizados
-2. **SQL Injection**: Verifique queries SQL com concatenação, falta de prepared statements
-3. **Autenticação**: Senhas em texto plano, JWTs mal validados, falta de rate limiting, sessões não invalidadas
-4. **Vazamento de Segredos**: API keys hardcoded, senhas no código, arquivos .env não gitignored
-5. **Headers de Segurança**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
-6. **Dependências**: Versões vulneráveis, dependências desnecessárias
-7. **CSRF**: Falta de tokens CSRF em formulários
-8. **CORS**: Configuração permissiva demais
-9. **Input Validation**: Falta de validação/sanitização de input
-10. **File Upload**: Upload sem validação de tipo/tamanho
+1. **XSS**: Look for innerHTML, dangerouslySetInnerHTML, eval(), document.write, and unsanitized user data
+2. **SQL Injection**: Check SQL queries with concatenation, lack of prepared statements
+3. **Authentication**: Plain text passwords, improperly validated JWTs, missing rate limiting, sessions not invalidated
+4. **Secret Leakage**: Hardcoded API keys, passwords in code, .env files not gitignored
+5. **Security Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+6. **Dependencies**: Vulnerable versions, unnecessary dependencies
+7. **CSRF**: Missing CSRF tokens on forms
+8. **CORS**: Overly permissive configuration
+9. **Input Validation**: Missing input validation/sanitization
+10. **File Upload**: Upload without type/size validation
 
-Para CADA vulnerabilidade encontrada, classifique como CRÍTICA, ALTA, MÉDIA ou BAIXA, corrija o código implementando a solução segura, e explique a correção. No final, forneça um resumo com a contagem de vulnerabilidades por severidade.`,
+For EACH vulnerability found, classify it as CRITICAL, HIGH, MEDIUM, or LOW, fix the code by implementing the secure solution, and explain the fix. At the end, provide a summary with the count of vulnerabilities by severity.`,
   },
 ];
 

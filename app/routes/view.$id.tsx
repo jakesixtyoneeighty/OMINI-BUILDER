@@ -5,7 +5,7 @@ import { DeployViewer } from '~/components/viewer/DeployViewer.client';
 
 export const meta: MetaFunction = ({ params }) => {
   return [
-    { title: 'Omni-Builder — Deploy Preview' },
+    { title: 'Mojo Builder — Deploy Preview' },
     { name: 'description', content: 'Live preview of deployed project' },
   ];
 };

@@ -6,7 +6,7 @@ import { Header } from '~/components/header/Header';
 import { Menu } from '~/components/sidebar/Menu.client';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Omni-Builder' }, { name: 'description', content: 'Omni-Builder: AI-powered web app builder' }];
+  return [{ title: 'Mojo Builder' }, { name: 'description', content: 'Mojo Builder: AI-powered web app builder' }];
 };
 
 export const loader = () => json({});

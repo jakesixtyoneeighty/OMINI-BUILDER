@@ -60,7 +60,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
           {/* Header */}
           <div className="px-6 pt-7 pb-5 text-center border-b border-bolt-elements-borderColor/30">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-bolt-elements-item-backgroundAccent/15 mb-3">
-              <img src="/omini-favicon.png" alt="Omni" className="w-7 h-7" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src="/omini-favicon.png" alt="Mojo Builder" className="w-7 h-7" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
             <h2 className="text-lg font-semibold text-bolt-elements-textPrimary">
               {mode === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}

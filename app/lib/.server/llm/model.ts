@@ -24,7 +24,7 @@ export function getModel(provider: ProviderId, modelId: string, apiKey: string) 
         maxRetries: 0,
         headers: {
           'HTTP-Referer': 'https://bolt.new',
-          'X-Title': 'Omni-Builder',
+          'X-Title': 'Mojo Builder',
         },
       });
       return openrouter(modelId, {

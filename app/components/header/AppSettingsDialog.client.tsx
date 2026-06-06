@@ -1105,7 +1105,7 @@ export function AppSettingsDialog() {
                         value={githubRepo}
                         onChange={(e) => setGithubRepo(e.target.value)}
                         onBlur={saveGithubIntegrationSettings}
-                        placeholder="usuario/repositorio"
+                        placeholder="user/repository"
                         type="text"
                         className={monoInputClass + ' focus:ring-bolt-elements-item-contentAccent/30 focus:border-bolt-elements-item-contentAccent/50'}
                       />
@@ -1633,15 +1633,15 @@ export function AppSettingsDialog() {
                   const providerDetails: string[] = [];
                   if (netlifyToken.trim())
                     providerDetails.push(
-                      `Netlify (token configurado, ${netlifySiteId ? 'site: ' + netlifySiteId : 'novo site'})`,
+                      `Netlify (token configured, ${netlifySiteId ? 'site: ' + netlifySiteId : 'new site'})`,
                     );
                   if (vercelToken.trim())
                     providerDetails.push(
-                      `Vercel (token configurado, ${vercelProjectName ? 'projeto: ' + vercelProjectName : 'novo projeto'})`,
+                      `Vercel (token configured, ${vercelProjectName ? 'project: ' + vercelProjectName : 'new project'})`,
                     );
                   if (crProjectId.trim())
-                    providerDetails.push(`Google Cloud Run (projeto: ${crProjectId}, regiao: ${crRegion})`);
-                  if (providerDetails.length === 0) providerDetails.push('Netlify (chave padrao do servidor)');
+                    providerDetails.push(`Google Cloud Run (project: ${crProjectId}, region: ${crRegion})`);
+                  if (providerDetails.length === 0) providerDetails.push('Netlify (default server key)');
 
                   window.dispatchEvent(
                     new CustomEvent('deploy-requested', {

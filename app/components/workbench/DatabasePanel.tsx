@@ -84,7 +84,7 @@ export const DatabasePanel = memo(() => {
       currentId = activeProjectIdStore.get();
 
       if (!isValidUUID(currentId)) {
-        toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
+        toast.error(t('databasePanel.failedToCreateProject'));
         return null;
       }
 
@@ -94,17 +94,17 @@ export const DatabasePanel = memo(() => {
       return currentId;
     } catch (err) {
       console.error('[DatabasePanel] Failed to auto-create project:', err);
-      toast.error('Falha ao criar projeto na nuvem. Tente salvar primeiro.');
+      toast.error(t('databasePanel.failedToCreateProjectCloud'));
       return null;
     }
-  }, []);
+  }, [t]);
 
   // Omni DB API calls
   const omniApiCall = useCallback(async (action: string, extra: Record<string, any> = {}) => {
     // Ensure we have a valid project UUID before calling the API
     const projectId = await ensureProjectInSupabase();
     if (!projectId) {
-      throw new Error('Projeto não salvo. Envie uma mensagem no chat para salvar.');
+      throw new Error(t('databasePanel.projectNotSaved'));
     }
 
     const res = await fetch('/api/db', {
@@ -115,7 +115,7 @@ export const DatabasePanel = memo(() => {
     const data: any = await res.json();
     if (!res.ok) throw new Error(data.error || 'API call failed');
     return data;
-  }, [ensureProjectInSupabase]);
+  }, [ensureProjectInSupabase, t]);
 
   // Load Omni DB collections and quota
   const loadOmniData = useCallback(async () => {
@@ -219,7 +219,7 @@ export const DatabasePanel = memo(() => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Omni DB: Fetch collection data
   const fetchOmniCollectionData = useCallback(async (collectionName: string) => {
@@ -229,12 +229,12 @@ export const DatabasePanel = memo(() => {
       const res = await omniApiCall('query', { collection: collectionName, limit: 50 });
       setTableData(res.data || []);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to fetch data');
+      toast.error(err.message || t('databasePanel.failedToFetchData'));
       setTableData([]);
     } finally {
       setLoading(false);
     }
-  }, [omniApiCall]);
+  }, [omniApiCall, t]);
 
   const handleSaveDb = async () => {
     if (editType === 'omni') {
@@ -258,7 +258,7 @@ export const DatabasePanel = memo(() => {
       }));
 
       setEditingDb(false);
-      toast.success('Omni DB ativado! A IA vai configurar tudo automaticamente.');
+      toast.success(t('databasePanel.mojoDbActivated'));
 
       // Auto-init the DB
       try {
@@ -355,7 +355,7 @@ export const DatabasePanel = memo(() => {
   // Create collection
   const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) {
-      toast.error('Nome da coleção é obrigatório');
+      toast.error(t('databasePanel.collectionNameRequired'));
       return;
     }
 
@@ -365,34 +365,34 @@ export const DatabasePanel = memo(() => {
       if (newCollectionSchema.trim()) {
         const parsed = parseSchema(newCollectionSchema);
         if (parsed === null) {
-          toast.error('Schema inválido. Use um dos formatos:\n• Simples: name: string, email: string\n• JSON: {"name": {"type": "string", "required": true}}');
+          toast.error(t('databasePanel.invalidSchema'));
           return;
         }
         schema = parsed;
       }
 
       await omniApiCall('createCollection', { collection: newCollectionName.trim(), schema });
-      toast.success(`Coleção "${newCollectionName}" criada!`);
+      toast.success(t('databasePanel.collectionCreated', { name: newCollectionName }));
       setShowCreateCollection(false);
       setNewCollectionName('');
       setNewCollectionSchema('');
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao criar coleção');
+      toast.error(err.message || t('databasePanel.failedToCreateCollection'));
     }
   };
 
   // Drop collection
   const handleDropCollection = async (name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a coleção "${name}" e todos os seus dados?`)) return;
+    if (!confirm(t('databasePanel.confirmDropCollection', { name }))) return;
     try {
       await omniApiCall('dropCollection', { collection: name });
-      toast.success(`Coleção "${name}" excluída`);
+      toast.success(t('databasePanel.collectionDeleted', { name }));
       setSelectedTable(null);
       setTableData([]);
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao excluir coleção');
+      toast.error(err.message || t('databasePanel.failedToDeleteCollection'));
     }
   };
 
@@ -404,30 +404,30 @@ export const DatabasePanel = memo(() => {
       try {
         data = JSON.parse(newRowData);
       } catch {
-        toast.error('Dados inválidos. Use formato JSON: {"campo": "valor"}');
+        toast.error(t('databasePanel.invalidRowData'));
         return;
       }
       await omniApiCall('insert', { collection: selectedTable, data });
-      toast.success('Dados inseridos!');
+      toast.success(t('databasePanel.dataInserted'));
       setShowAddRow(false);
       setNewRowData('');
       await fetchOmniCollectionData(selectedTable);
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao inserir dados');
+      toast.error(err.message || t('databasePanel.failedToInsertData'));
     }
   };
 
   // Delete row
   const handleDeleteRow = async (rowId: string) => {
-    if (!selectedTable || !confirm('Excluir este registro?')) return;
+    if (!selectedTable || !confirm(t('databasePanel.confirmDeleteRow'))) return;
     try {
       await omniApiCall('delete', { collection: selectedTable, rowId });
-      toast.success('Registro excluído');
+      toast.success(t('databasePanel.rowDeleted'));
       await fetchOmniCollectionData(selectedTable);
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao excluir registro');
+      toast.error(err.message || t('databasePanel.failedToDeleteRow'));
     }
   };
 
@@ -443,45 +443,45 @@ export const DatabasePanel = memo(() => {
 
   const handleAuthRegister = async () => {
     if (!authEmail.trim() || !authPassword.trim()) {
-      toast.error('Email e senha são obrigatórios');
+      toast.error(t('databasePanel.emailPasswordRequired'));
       return;
     }
     try {
       await omniApiCall('authRegister', { email: authEmail.trim(), password: authPassword });
-      toast.success('Usuário registrado com sucesso!');
+      toast.success(t('databasePanel.userRegistered'));
       setAuthEmail('');
       setAuthPassword('');
       await loadAuthUsers();
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao registrar');
+      toast.error(err.message || t('databasePanel.failedToRegister'));
     }
   };
 
   const handleAuthLogin = async () => {
     if (!authEmail.trim() || !authPassword.trim()) {
-      toast.error('Email e senha são obrigatórios');
+      toast.error(t('databasePanel.emailPasswordRequired'));
       return;
     }
     try {
       const res = await omniApiCall('authLogin', { email: authEmail.trim(), password: authPassword });
-      toast.success(`Login OK! User ID: ${res.data?._id?.slice(0, 8)}...`);
+      toast.success(t('databasePanel.loginSuccess', { userId: res.data?._id?.slice(0, 8) || '' }));
       setAuthEmail('');
       setAuthPassword('');
     } catch (err: any) {
-      toast.error(err.message || 'Login falhou');
+      toast.error(err.message || t('databasePanel.loginFailed'));
     }
   };
 
   const handleDeleteAuthUser = async (userId: string) => {
-    if (!confirm('Excluir este usuário?')) return;
+    if (!confirm(t('databasePanel.confirmDeleteUser'))) return;
     try {
       await omniApiCall('delete', { collection: '_auth', rowId: userId });
-      toast.success('Usuário excluído');
+      toast.success(t('databasePanel.userDeleted'));
       await loadAuthUsers();
       await loadOmniData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao excluir');
+      toast.error(err.message || t('databasePanel.failedToDeleteUser'));
     }
   };
 
@@ -560,48 +560,48 @@ export const DatabasePanel = memo(() => {
                     type === 'supabase' ? 'i-ph:database' :
                     type === 'firebase' ? 'i-ph:flame' : 'i-ph:prohibit'
                   } />
-                  {type === 'omni' ? 'Omni DB' :
+                  {type === 'omni' ? t('databasePanel.mojoDb') :
                    type === 'none' ? t('appSettings.none') :
                    type.charAt(0).toUpperCase() + type.slice(1)}
                 </button>
               ))}
             </div>
 
-            {/* Omni DB Info */}
+            {/* Mojo DB Info */}
             {editType === 'omni' && (
               <div className="space-y-3">
                 <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="i-ph:cube-duotone text-purple-400 text-xl" />
                     <div>
-                      <h4 className="text-sm font-bold text-bolt-elements-textPrimary">Omni DB</h4>
-                      <p className="text-[10px] text-bolt-elements-textTertiary">Banco de dados integrado do Omni Builder</p>
+                      <h4 className="text-sm font-bold text-bolt-elements-textPrimary">{t('databasePanel.mojoDb')}</h4>
+                      <p className="text-[10px] text-bolt-elements-textTertiary">{t('databasePanel.mojoDbTagline')}</p>
                     </div>
                   </div>
                   <ul className="text-xs text-bolt-elements-textSecondary space-y-1.5 mb-3">
                     <li className="flex items-start gap-2">
                       <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                      <span><b>100 MB grátis</b> por aplicativo</span>
+                      <span>{t('databasePanel.mojoFeatureFreeStorage')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                      <span><b>IA configura tudo</b> automaticamente</span>
+                      <span>{t('databasePanel.mojoFeatureAiConfig')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                      <span><b>API REST</b> pronta para usar</span>
+                      <span>{t('databasePanel.mojoFeatureRestApi')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                      <span><b>Coleções flexíveis</b> com schema definido</span>
+                      <span>{t('databasePanel.mojoFeatureFlexibleCollections')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="i-ph:check-circle text-emerald-400 mt-0.5 shrink-0" />
-                      <span><b>Sem configuração</b> necessária - já está pronto!</span>
+                      <span>{t('databasePanel.mojoFeatureNoSetup')}</span>
                     </li>
                   </ul>
                   <div className="text-[10px] text-bolt-elements-textTertiary bg-bolt-elements-background-depth-2 rounded-lg p-2">
-                    <code className="text-purple-400">POST /api/db</code> — API completa de CRUD
+                    <code className="text-purple-400">POST /api/db</code> — {t('databasePanel.mojoApiCrudDescription')}
                   </div>
                 </div>
               </div>
@@ -673,7 +673,7 @@ export const DatabasePanel = memo(() => {
                 className="mt-4 w-full px-4 py-2.5 rounded-lg text-xs font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
               >
                 <div className="i-ph:floppy-disk text-sm" />
-                {editType === 'omni' ? 'Ativar Omni DB' : t('databasePanel.saveConfiguration')}
+                {editType === 'omni' ? t('databasePanel.activateMojoDb') : t('databasePanel.saveConfiguration')}
               </button>
             )}
             {editType === 'none' && (
@@ -695,7 +695,7 @@ export const DatabasePanel = memo(() => {
             {quota && (
               <div className="mb-4 p-3 rounded-xl bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider">Armazenamento</span>
+                  <span className="text-[10px] font-medium text-bolt-elements-textTertiary uppercase tracking-wider">{t('databasePanel.storage')}</span>
                   <span className="text-xs text-bolt-elements-textSecondary font-mono">
                     {formatBytes(quota.used_bytes)} / {formatBytes(quota.max_bytes)}
                   </span>
@@ -710,8 +710,8 @@ export const DatabasePanel = memo(() => {
                   />
                 </div>
                 <div className="flex items-center justify-between mt-2 text-[10px] text-bolt-elements-textTertiary">
-                  <span>{quota.collection_count} coleções</span>
-                  <span>{quota.row_count} registros</span>
+                  <span>{t('databasePanel.collectionsCount', { count: quota.collection_count })}</span>
+                  <span>{t('databasePanel.recordsCount', { count: quota.row_count })}</span>
                 </div>
               </div>
             )}
@@ -719,7 +719,7 @@ export const DatabasePanel = memo(() => {
             {/* Collections Header */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-bolt-elements-textSecondary uppercase tracking-wider">
-                Coleções
+                {t('databasePanel.collections')}
               </h3>
               <div className="flex items-center gap-2">
                 <button
@@ -727,7 +727,7 @@ export const DatabasePanel = memo(() => {
                   className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 bg-purple-500/10 px-2 py-1 rounded-lg"
                 >
                   <div className="i-ph:plus text-xs" />
-                  Nova
+                  {t('common.new')}
                 </button>
                 <button
                   onClick={loadOmniData}
@@ -747,13 +747,13 @@ export const DatabasePanel = memo(() => {
                     type="text"
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="Nome da coleção (ex: users, products)"
+                    placeholder={t('databasePanel.collectionNamePlaceholder')}
                     className="w-full px-3 py-2 rounded-lg text-xs font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <textarea
                     value={newCollectionSchema}
                     onChange={(e) => setNewCollectionSchema(e.target.value)}
-                    placeholder={'Simples: name: string, email: string required\nou JSON: {"name": {"type": "string", "required": true}}'}
+                    placeholder={t('databasePanel.schemaPlaceholder')}
                     className="w-full px-3 py-2 rounded-lg text-xs font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/30 min-h-[80px] resize-y"
                   />
                   <div className="flex gap-2">
@@ -761,13 +761,13 @@ export const DatabasePanel = memo(() => {
                       onClick={handleCreateCollection}
                       className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-all"
                     >
-                      Criar Coleção
+                      {t('databasePanel.createCollection')}
                     </button>
                     <button
                       onClick={() => { setShowCreateCollection(false); setNewCollectionName(''); setNewCollectionSchema(''); }}
                       className="px-3 py-1.5 rounded-lg text-xs text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
                     >
-                      Cancelar
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -777,15 +777,15 @@ export const DatabasePanel = memo(() => {
             {loading && tables.length === 0 && (
               <div className="flex items-center justify-center py-8 text-bolt-elements-textTertiary text-xs">
                 <div className="i-ph:spinner-gap animate-spin text-lg mr-2" />
-                Carregando coleções...
+                {t('databasePanel.loadingCollections')}
               </div>
             )}
 
             {!loading && tables.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 text-bolt-elements-textTertiary">
                 <div className="i-ph:table text-3xl mb-2 opacity-40" />
-                <p className="text-xs">Nenhuma coleção encontrada</p>
-                <p className="text-[10px] mt-1">Crie uma coleção ou peça para a IA criar!</p>
+                <p className="text-xs">{t('databasePanel.noCollectionsFound')}</p>
+                <p className="text-[10px] mt-1">{t('databasePanel.createCollectionHint')}</p>
               </div>
             )}
 
@@ -815,7 +815,7 @@ export const DatabasePanel = memo(() => {
                 <div className="flex items-center gap-2 mb-4">
                   <div className="i-ph:shield-check text-lg text-blue-400" />
                   <h3 className="text-sm font-bold text-bolt-elements-textPrimary">Auth</h3>
-                  <span className="text-[10px] text-bolt-elements-textTertiary">Autenticação de usuários</span>
+                  <span className="text-[10px] text-bolt-elements-textTertiary">{t('databasePanel.userAuthentication')}</span>
                 </div>
 
                 {/* Register/Login Form */}
@@ -828,7 +828,7 @@ export const DatabasePanel = memo(() => {
                         authMode === 'register' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary'
                       )}
                     >
-                      Registrar
+                      {t('databasePanel.register')}
                     </button>
                     <button
                       onClick={() => setAuthMode('login')}
@@ -837,38 +837,38 @@ export const DatabasePanel = memo(() => {
                         authMode === 'login' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary'
                       )}
                     >
-                      Login
+                      {t('databasePanel.login')}
                     </button>
                   </div>
                   <input
                     type="email"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="Email"
+                    placeholder={t('databasePanel.emailPlaceholder')}
                     className="w-full px-3 py-2 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                   <input
                     type="password"
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
-                    placeholder="Senha"
+                    placeholder={t('databasePanel.passwordPlaceholder')}
                     className="w-full px-3 py-2 rounded-lg text-xs bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                   <button
                     onClick={authMode === 'register' ? handleAuthRegister : handleAuthLogin}
                     className="w-full px-3 py-2 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-all"
                   >
-                    {authMode === 'register' ? 'Registrar Usuário' : 'Testar Login'}
+                    {authMode === 'register' ? t('databasePanel.registerUser') : t('databasePanel.testLogin')}
                   </button>
                 </div>
 
                 {/* Users List */}
                 <div>
                   <h4 className="text-[10px] font-semibold text-bolt-elements-textTertiary uppercase tracking-wider mb-2">
-                    Usuários Registrados ({authUsers.length})
+                    {t('databasePanel.registeredUsers', { count: authUsers.length })}
                   </h4>
                   {authUsers.length === 0 ? (
-                    <p className="text-[10px] text-bolt-elements-textTertiary text-center py-4">Nenhum usuário registrado</p>
+                    <p className="text-[10px] text-bolt-elements-textTertiary text-center py-4">{t('databasePanel.noRegisteredUsers')}</p>
                   ) : (
                     <div className="space-y-1">
                       {authUsers.map((u) => (
@@ -877,13 +877,13 @@ export const DatabasePanel = memo(() => {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-bolt-elements-textPrimary truncate">{u.email}</div>
                             <div className="text-[9px] text-bolt-elements-textTertiary">
-                              ID: {u._id.slice(0, 8)}... · Criado: {new Date(u._createdAt).toLocaleDateString('pt-BR')}
+                              {t('databasePanel.userMeta', { id: u._id.slice(0, 8), date: new Date(u._createdAt).toLocaleDateString('en-US') })}
                             </div>
                           </div>
                           <button
                             onClick={() => handleDeleteAuthUser(u._id)}
                             className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all shrink-0"
-                            title="Excluir usuário"
+                            title={t('databasePanel.deleteUser')}
                           >
                             <div className="i-ph:trash text-xs" />
                           </button>
@@ -918,7 +918,7 @@ export const DatabasePanel = memo(() => {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDropCollection(table.name); }}
                       className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all shrink-0"
-                      title="Excluir coleção"
+                      title={t('databasePanel.deleteCollection')}
                     >
                       <div className="i-ph:trash text-xs" />
                     </button>
@@ -939,7 +939,7 @@ export const DatabasePanel = memo(() => {
                     className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 bg-purple-500/10 px-2 py-1 rounded-lg"
                   >
                     <div className="i-ph:plus text-xs" />
-                    Adicionar
+                    {t('databasePanel.add')}
                   </button>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-bolt-elements-borderColor">
@@ -974,7 +974,7 @@ export const DatabasePanel = memo(() => {
                             <button
                               onClick={() => handleDeleteRow((row as any)._id)}
                               className="text-red-400/50 hover:text-red-400 transition-colors"
-                              title="Excluir registro"
+                              title={t('databasePanel.deleteRecord')}
                             >
                               <div className="i-ph:trash text-xs" />
                             </button>
@@ -990,11 +990,11 @@ export const DatabasePanel = memo(() => {
             {/* Add Row Form */}
             {showAddRow && selectedTable && (
               <div className="mt-4 p-3 rounded-xl bg-purple-500/5 border border-purple-500/20">
-                <h4 className="text-xs font-semibold text-purple-400 mb-2">Adicionar registro em {selectedTable}</h4>
+                <h4 className="text-xs font-semibold text-purple-400 mb-2">{t('databasePanel.addRecordTo', { collection: selectedTable })}</h4>
                 <textarea
                   value={newRowData}
                   onChange={(e) => setNewRowData(e.target.value)}
-                  placeholder='{"campo1": "valor1", "campo2": 123}'
+                  placeholder={t('databasePanel.rowDataPlaceholder')}
                   className="w-full px-3 py-2 rounded-lg text-xs font-mono bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/30 min-h-[80px] resize-y"
                 />
                 <div className="flex gap-2 mt-2">
@@ -1002,13 +1002,13 @@ export const DatabasePanel = memo(() => {
                     onClick={handleInsertRow}
                     className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-all"
                   >
-                    Inserir
+                    {t('databasePanel.insert')}
                   </button>
                   <button
                     onClick={() => { setShowAddRow(false); setNewRowData(''); }}
                     className="px-3 py-1.5 rounded-lg text-xs text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors"
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -1017,7 +1017,7 @@ export const DatabasePanel = memo(() => {
             {selectedTable && tableData.length === 0 && !loading && (
               <div className="mt-4 text-center text-bolt-elements-textTertiary text-xs py-4">
                 <div className="i-ph:empty text-2xl mb-1 opacity-40 mx-auto" />
-                Coleção vazia. Adicione dados ou peça para a IA criar!
+                {t('databasePanel.emptyCollection')}
               </div>
             )}
           </div>

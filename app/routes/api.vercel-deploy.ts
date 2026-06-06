@@ -180,7 +180,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     if (!vercelProjectId) {
       projectSlug = projectName
         ? projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 60)
-        : `omni-builder-${Date.now().toString(36)}`;
+        : `mojo-builder-${Date.now().toString(36)}`;
 
       const createProjectBody: Record<string, unknown> = {
         name: projectSlug,

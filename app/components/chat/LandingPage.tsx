@@ -1,7 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { languageStore } from '~/lib/stores/language';
 import { useT } from '~/lib/i18n/useT';
 import { themeStore } from '~/lib/stores/theme';
 import { useIsMobile } from '~/utils/mobile';

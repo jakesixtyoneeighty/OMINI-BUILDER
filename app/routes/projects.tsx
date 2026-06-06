@@ -13,7 +13,7 @@ import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from
 import { useT } from '~/lib/i18n/useT';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Projects — Omni-Builder' }, { name: 'description', content: 'View and manage your Omni-Builder projects' }];
+  return [{ title: 'Projects — Mojo Builder' }, { name: 'description', content: 'View and manage your Mojo Builder projects' }];
 };
 
 export const loader = () => json({});
@@ -491,7 +491,7 @@ function ProjectsContent() {
                 className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-violet-500/30 transition-all"
               >
                 <div className="i-ph:x text-sm" />
-                Limpar busca
+                {t('projects.clearSearch')}
               </button>
             )}
           </div>

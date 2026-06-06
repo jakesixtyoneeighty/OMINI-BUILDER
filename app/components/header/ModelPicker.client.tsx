@@ -142,7 +142,7 @@ export function ModelPicker() {
     (model === AGENT_OMINI_MODEL_ID
       ? AGENT_OMINI_LABEL
       : isFreeModel(model)
-        ? FREE_MODELS.find((m) => m.id === model)?.label || 'Agent Omini'
+        ? FREE_MODELS.find((m) => m.id === model)?.label || t('model.agentMojo')
         : model) ||
     t('model.selectModel');
 
@@ -175,7 +175,7 @@ export function ModelPicker() {
             const items = grouped[p];
             if (items.length === 0) return null;
             const isOmini = p === 'omini';
-            const groupLabel = isOmini ? 'Agent Omini' : PROVIDER_LABELS[p as ProviderId] || p;
+            const groupLabel = isOmini ? t('model.agentMojo') : PROVIDER_LABELS[p as ProviderId] || p;
             const groupLogo = isOmini ? '/omini-favicon.html' : PROVIDER_LOGOS[p as ProviderId];
             return (
               <div key={p}>

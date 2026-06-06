@@ -9,18 +9,17 @@ import { translations } from './translations';
  *   const t = useT();
  *   <button>{t('deploy.button')}</button>
  *
- * If a key is missing in the current language, it falls back to Portuguese (pt),
- * then to the raw key.
+ * If a key is missing, it falls back to the raw key.
  */
 export function useT() {
   const lang = useStore(languageStore);
 
   function t(key: string, params?: Record<string, string | number>): string {
-    let value = translations[lang]?.[key] || translations.pt?.[key] || key;
+    let value = translations[lang]?.[key] || translations.en?.[key] || key;
 
     if (params) {
       for (const [k, v] of Object.entries(params)) {
-        value = value.replace(new RegExp(`\{${k}\}`, 'g'), String(v));
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
       }
     }
 
@@ -38,11 +37,11 @@ export function getT() {
   const lang = languageStore.get();
 
   function t(key: string, params?: Record<string, string | number>): string {
-    let value = translations[lang as keyof typeof translations]?.[key] || translations.pt?.[key] || key;
+    let value = translations[lang as keyof typeof translations]?.[key] || translations.en?.[key] || key;
 
     if (params) {
       for (const [k, v] of Object.entries(params)) {
-        value = value.replace(new RegExp(`\{${k}\}`, 'g'), String(v));
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
       }
     }
 

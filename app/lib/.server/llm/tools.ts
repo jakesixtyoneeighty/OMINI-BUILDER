@@ -24,7 +24,7 @@ Always use this tool when the user asks about something that requires current/re
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; OmniBuilder/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; MojoBuilder/1.0)',
         },
       });
 
@@ -120,7 +120,7 @@ Provide the full URL of the page you want to read.`,
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; OmniBuilder/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; MojoBuilder/1.0)',
           'Accept': 'text/html,text/plain,text/markdown,application/json',
         },
       });
@@ -196,7 +196,7 @@ function extractTitle(content: string): string {
  */
 export function createOmniDbTool(projectId: string, supabaseUrl: string, supabaseKey: string) {
   return tool({
-    description: `Manage the Omni DB built-in database for this project. Use this tool to:
+    description: `Manage the Mojo DB built-in database for this project. Use this tool to:
 - Create collections with schemas (they will be immediately available in the Database panel)
 - Initialize the database for the project
 - Check storage stats
@@ -393,7 +393,7 @@ IMPORTANT: Before deploying, briefly review the project to make sure everything 
         action: 'deploy',
         provider: 'cloudflare',
         projectName: projectName || null,
-        message: 'Deploy iniciado! O projeto sera publicado no Cloudflare Pages (gratis, sem API key). O deploy sera feito automaticamente pela interface.',
+        message: 'Deploy started! The project will be published to Cloudflare Pages (free, no API key). The deploy will run automatically in the interface.',
         instructions: 'Tell the user that the deploy has been initiated and they will see the URL shortly. The site will be available at a *.pages.dev URL with automatic SSL.',
       };
     },

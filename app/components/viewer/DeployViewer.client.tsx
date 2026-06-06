@@ -246,7 +246,7 @@ server.listen(3000, () => {
       <div className="flex items-center gap-2 px-3 py-1.5 bg-bolt-elements-bg-depth-1 border-b border-bolt-elements-borderColor shrink-0">
         {/* Logo + Name */}
         <div className="flex items-center gap-2 shrink-0">
-          <BrandAsset src="/omini-favicon.html" title="Omini" className="h-5 w-5" />
+          <BrandAsset src="/omini-favicon.html" title="Mojo Builder" className="h-5 w-5" />
           <span className="text-xs font-semibold text-bolt-elements-textSecondary">
             {deployData?.deploy?.name || t('common.loading')}
           </span>
@@ -311,7 +311,7 @@ server.listen(3000, () => {
         {/* Powered by Omni Builder */}
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-400 text-[10px] font-medium shrink-0">
           <div className="i-ph:cube-duotone text-xs" />
-          {t('deployViewer.omniBuilder')}
+          {t('deployViewer.mojoBuilder')}
         </div>
       </div>
 

@@ -5,11 +5,11 @@ import { BrandAsset } from '~/components/ui/BrandAsset';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Documentacao — Omni-Builder' },
+    { title: 'Documentation — Mojo Builder' },
     {
       name: 'description',
       content:
-        'Documentacao completa do Omni-Builder. Aprenda a criar apps com IA, configurar provedores, fazer deploy e mais.',
+        'Complete Mojo Builder documentation. Aprenda a criar apps com IA, configurar provedores, fazer deploy e mais.',
     },
   ];
 };
@@ -30,7 +30,7 @@ const DOC_SECTIONS: DocSection[] = [
     titleKey: 'docs.gettingStarted',
     icon: 'i-ph:rocket-launch-duotone',
     subsections: [
-      { id: 'what-is-omni', titleKey: 'docs.whatIsOmni' },
+      { id: 'what-is-omni', titleKey: 'docs.whatIsMojo' },
       { id: 'first-steps', titleKey: 'docs.firstSteps' },
       { id: 'creating-account', titleKey: 'docs.creatingAccount' },
     ],
@@ -118,9 +118,9 @@ function GettingStartedContent({ activeSub }: { activeSub: string }) {
   if (activeSub === 'what-is-omni') {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('docs.whatIsOmni')}</h2>
-        <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsOmniDesc1')}</p>
-        <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsOmniDesc2')}</p>
+        <h2 className="text-2xl font-bold text-bolt-elements-textPrimary">{t('docs.whatIsMojo')}</h2>
+        <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsMojoDesc1')}</p>
+        <p className="text-bolt-elements-textSecondary leading-relaxed">{t('docs.whatIsMojoDesc2')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
           <FeatureCard
             icon="i-ph:chat-circle-dots-duotone"
@@ -696,7 +696,7 @@ export default function DocsPage() {
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-10 w-[180px] max-w-full omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-10 w-[180px] max-w-full omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">
@@ -797,7 +797,7 @@ export default function DocsPage() {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs text-bolt-elements-textTertiary mb-8">
             <a href="/" className="hover:text-bolt-elements-textSecondary transition-colors">
-              Omni Builder
+              Mojo Builder
             </a>
             <div className="i-ph:caret-right text-[10px]" />
             <span className="text-bolt-elements-textSecondary">{t('docs.documentation')}</span>
@@ -854,7 +854,7 @@ export default function DocsPage() {
       <footer className="border-t border-bolt-elements-borderColor mt-16">
         <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-bolt-elements-textTertiary">
           <div className="flex items-center gap-3">
-            <span>Omni-Builder Docs</span>
+            <span>Mojo Builder Docs</span>
             <span className="text-bolt-elements-textTertiary">&middot;</span>
             <span>{t('docs.madeWithAI')}</span>
           </div>

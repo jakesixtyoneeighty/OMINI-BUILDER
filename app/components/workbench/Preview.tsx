@@ -376,8 +376,8 @@ function PreviewWithAnnotations({ children, mode }: { children: React.ReactNode;
       )}
 
       <div className="preview-watermark">
-        <img src="/omini-favicon.png" alt="Omni" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        <span>Criado no Omni Builder</span>
+        <img src="/omini-favicon.png" alt="Mojo Builder" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <span>{t('workbench.builtWithMojo')}</span>
       </div>
     </div>
   );

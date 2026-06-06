@@ -1,5 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useT } from '~/lib/i18n/useT';
 
 // Inline shimmer animation — avoids CSS module keyframe mangling issues
 const shimmerKeyframes = `
@@ -79,6 +80,7 @@ function looksLikeCommand(text: string): boolean {
 }
 
 export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlockProps) => {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'reasoning' | 'commands'>('reasoning');
 
@@ -172,16 +174,16 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
         </svg>
 
         {/* Label text */}
-        <span>{isOpen ? 'Ocultar raciocínio' : 'Exibir raciocínio'}</span>
+        <span>{isOpen ? t('thinking.hideReasoning') : t('thinking.showReasoning')}</span>
 
         {/* Word/char count badge */}
         {(wordCount > 0 || charCount > 0) && (
           <span className="thinking-count-badge">
             {charCount >= 1000
-              ? `${(charCount / 1000).toFixed(1)}k caracteres`
+              ? t('thinking.charactersK', { count: (charCount / 1000).toFixed(1) })
               : wordCount > 50
-                ? `${wordCount} palavras`
-                : `${charCount} caracteres`}
+                ? `${wordCount} ${t('thinking.words')}`
+                : `${charCount} ${t('thinking.characters')}`}
           </span>
         )}
 
@@ -227,7 +229,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     }}
                     className={`thinking-tab ${activeTab === 'reasoning' ? 'thinking-tab-active' : 'thinking-tab-inactive'}`}
                   >
-                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>🧠</span> Raciocínio
+                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>🧠</span> {t('thinking.reasoning')}
                   </button>
                   <button
                     onClick={(e) => {
@@ -236,7 +238,7 @@ export const ThinkingBlock = memo(({ content, isStreaming = false }: ThinkingBlo
                     }}
                     className={`thinking-tab ${activeTab === 'commands' ? 'thinking-tab-active' : 'thinking-tab-inactive'}`}
                   >
-                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>⚡</span> Comandos ({commands.length})
+                    <span style={{ fontSize: 14, filter: 'grayscale(1)' }}>⚡</span> {t('thinking.commandsLabel')} ({commands.length})
                   </button>
                 </div>
               )}

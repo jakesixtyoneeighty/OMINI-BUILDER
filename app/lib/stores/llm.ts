@@ -14,11 +14,11 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 // The client uses a virtual model ID 'agent-omini' — the server translates it
 // to the real provider/model internally. The UI never reveals the real model.
 export const AGENT_OMINI_MODEL_ID = 'agent-omini';
-export const AGENT_OMINI_LABEL = 'Agent Omini';
+export const AGENT_OMINI_LABEL = 'Agent Mojo';
 
-// Omini models (virtual IDs — server translates to real models)
+// Virtual models (virtual IDs — server translates to real models)
 export const FREE_MODELS = [
-  { id: 'agent-omini', label: 'Agent Omini' },
+  { id: 'agent-omini', label: 'Agent Mojo' },
 ];
 
 export const FREE_MODEL_ID = AGENT_OMINI_MODEL_ID;

@@ -1,3 +1,4 @@
+import { useT, getT } from '~/lib/i18n/useT';
 import { useStore } from '@nanostores/react';
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import {
@@ -289,7 +290,7 @@ function SandpackErrorListener() {
             errorStore.addError({
               type: 'compile',
               source: 'Sandpack Preview',
-              message: 'Erro de compila\u00e7\u00e3o no preview',
+              message: getT()('workbench.compileError'),
               details: errMsg,
             });
           }

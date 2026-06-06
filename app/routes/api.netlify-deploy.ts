@@ -63,7 +63,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     // Create site if no siteId provided
     if (!targetSiteId) {
-      const name = siteName || `omni-builder-${Date.now().toString(36)}`;
+      const name = siteName || `mojo-builder-${Date.now().toString(36)}`;
       const createRes = await fetch(`${NETLIFY_API}/sites`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -154,7 +154,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         files: filesObject,
-        title: `Omni-Builder deploy - ${new Date().toISOString()}`,
+        title: `Mojo Builder deploy - ${new Date().toISOString()}`,
       }),
     });
 

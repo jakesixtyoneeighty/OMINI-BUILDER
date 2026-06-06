@@ -12,6 +12,7 @@ import {
 } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
+import { useT } from '~/lib/i18n/useT';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect, useState } from 'react';
@@ -77,7 +78,7 @@ export const Head = createHead(() => (
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Omni Builder" />
+    <meta name="apple-mobile-web-app-title" content="Mojo Builder" />
     <Meta />
     <Links />
     <script src="/coi-serviceworker.js"></script>
@@ -97,7 +98,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.querySelector('html')?.setAttribute('data-theme', theme);
 
     if (window.crossOriginIsolated === false) {
-      console.warn('A página não está isolada de origem cruzada. O WebContainer pode falhar.');
+      console.warn('The page is not cross-origin isolated. WebContainer may fail.');
     }
   }, [theme]);
 
@@ -117,11 +118,12 @@ export default function App() {
 export function ErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
+  const t = useT();
   const [showFullStack, setShowFullStack] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  let title = 'Erro Fatal na Aplicação';
-  let message = 'Ocorreu um erro inesperado.';
+  let title = t('errorBoundary.fatalTitle');
+  let message = t('errorBoundary.unexpected');
   let stackTrace = '';
   let errorName = '';
   let status = '';
@@ -133,23 +135,23 @@ export function ErrorBoundary() {
     status = String(error.status);
     statusText = error.statusText;
     title = `${error.status} — ${error.statusText}`;
-    message = error.data?.message || error.data || 'Erro de rota.';
+    message = error.data?.message || error.data || t('errorBoundary.routeError');
     errorData = error.data;
   } else if (error instanceof Error) {
     errorName = error.name || 'Error';
-    message = error.message || 'Ocorreu um erro inesperado.';
+    message = error.message || t('errorBoundary.unexpected');
     stackTrace = error.stack || '';
   } else if (typeof error === 'string') {
     rawError = error;
   } else if (error && typeof error === 'object') {
     rawError = JSON.stringify(error, null, 2);
-    message = (error as any)?.message || (error as any)?.error || rawError || 'Erro desconhecido.';
+    message = (error as any)?.message || (error as any)?.error || rawError || t('errorBoundary.unknown');
     stackTrace = (error as any)?.stack || '';
     errorName = (error as any)?.name || '';
   }
 
   const fullReport = [
-    '=== Omni-Builder — Relatório de Erro Fatal ===',
+    t('errorBoundary.reportHeader'),
     '',
     `Timestamp: ${new Date().toISOString()}`,
     `URL: ${typeof window !== 'undefined' ? window.location.href : 'unknown'}`,
@@ -242,7 +244,7 @@ export function ErrorBoundary() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                 <span className="text-xs font-semibold text-red-300 uppercase tracking-wider">
-                  Detalhes Completos do Erro
+                  {t('errorBoundary.fullDetails')}
                 </span>
               </div>
               <button
@@ -250,7 +252,7 @@ export function ErrorBoundary() {
                 className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors px-2 py-1 rounded-lg hover:bg-purple-500/10"
               >
                 <div className={`i-ph:${copied ? 'check' : 'copy'} text-sm`} />
-                {copied ? 'Copiado!' : 'Copiar Tudo'}
+                {copied ? t('errorBoundary.copied') : t('errorBoundary.copyAll')}
               </button>
             </div>
 
@@ -279,7 +281,7 @@ export function ErrorBoundary() {
                   onClick={() => setShowFullStack(!showFullStack)}
                   className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-button-secondary-backgroundHover transition-colors border-b border-bolt-elements-borderColor"
                 >
-                  <span className="font-medium">Stack Trace ({stackTrace.split('\n').length} linhas)</span>
+                  <span className="font-medium">{t('errorBoundary.stackTraceLines', { count: stackTrace.split('\n').length })}</span>
                   <div className={`i-ph:${showFullStack ? 'caret-up' : 'caret-down'} text-sm`} />
                 </button>
                 <pre
@@ -325,27 +327,27 @@ export function ErrorBoundary() {
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-bolt-elements-button-secondary-backgroundHover/80 hover:text-bolt-elements-textPrimary transition-all"
           >
             <div className="i-ph:arrow-left text-base" />
-            Voltar
+            {t('errorBoundary.goBack')}
           </button>
           <button
             onClick={handleClearAndReload}
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-bolt-elements-button-secondary-backgroundHover border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:bg-bolt-elements-button-secondary-backgroundHover/80 hover:text-bolt-elements-textPrimary transition-all"
           >
             <div className="i-ph:trash text-base" />
-            Limpar Cache
+            {t('errorBoundary.clearCache')}
           </button>
           <button
             onClick={handleReload}
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all"
           >
             <div className="i-ph:arrow-clockwise text-base" />
-            Recarregar
+            {t('errorBoundary.reload')}
           </button>
         </div>
 
         {/* Footer hint */}
         <p className="text-center text-xs text-bolt-elements-textTertiary mt-6">
-          Omni-Builder v1.0 — Se o erro persistir, copie os detalhes e abra uma issue no GitHub.
+          {t('errorBoundary.footer')}
         </p>
       </div>
     </div>

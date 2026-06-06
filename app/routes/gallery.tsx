@@ -9,8 +9,8 @@ import { BrandAsset } from '~/components/ui/BrandAsset';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Galeria — Omni-Builder' },
-    { name: 'description', content: 'Explore projetos publicados pela comunidade no Omni-Builder Gallery.' },
+    { title: 'Gallery — Mojo Builder' },
+    { name: 'description', content: 'Explore projects published by the community in the Mojo Builder Gallery.' },
   ];
 };
 
@@ -210,7 +210,7 @@ function GalleryContent() {
               <div className="i-ph:arrow-left text-lg" />
             </a>
             <a href="/" className="flex items-center">
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-10 w-[180px] max-w-full omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-10 w-[180px] max-w-full omni-logo-themed" />
             </a>
             <div className="hidden sm:block w-px h-5 bg-bolt-elements-borderColor" />
             <span className="hidden sm:flex items-center gap-2 text-sm font-semibold text-bolt-elements-textPrimary">
@@ -300,7 +300,7 @@ function GalleryContent() {
                 <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-bolt-elements-textPrimary mb-3 tracking-tight">
                   {t('gallery.galleryTitle')}{' '}
                   <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-                    Omni Builder
+                    Mojo Builder
                   </span>
                 </h1>
                 <p className="text-sm sm:text-lg text-bolt-elements-textSecondary max-w-xl mb-6 leading-relaxed">

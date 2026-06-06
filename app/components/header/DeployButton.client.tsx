@@ -172,9 +172,9 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
 
     // Include full error details for AI diagnosis
     const fullError = [
-      `Erro de ${buildError ? 'build' : 'deploy'}:`,
+      `${buildError ? 'Build' : 'Deploy'} error:`,
       errorMsg,
-      lastDeployStackRef.current ? `\nStack trace completo:\n${lastDeployStackRef.current}` : '',
+      lastDeployStackRef.current ? `\nFull stack trace:\n${lastDeployStackRef.current}` : '',
     ].filter(Boolean).join('\n');
 
     // Send error to the chat as a user message
@@ -297,7 +297,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           <div className="text-xs text-red-300 break-all">{errMsg}</div>
           {errStack && (
             <details className="mt-2">
-              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">View full error details</summary>
               <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
             </details>
           )}
@@ -380,7 +380,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           <div className="text-xs text-red-300 break-all">{errMsg}</div>
           {errStack && (
             <details className="mt-2">
-              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">View full error details</summary>
               <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
             </details>
           )}
@@ -453,11 +453,11 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
               deployedAt: new Date().toISOString(),
             },
           });
-          setDeployResult({ url: retryData.viewUrl, provider: 'Omni Builder' });
+          setDeployResult({ url: retryData.viewUrl, provider: 'Mojo Builder' });
           setDeployPhase('success');
           toast.success(
             <div className="flex flex-col gap-1">
-              <span className="font-semibold">{t('deploy.successOmni')}</span>
+              <span className="font-semibold">{t('deploy.successMojo')}</span>
               <a href={retryData.viewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{retryData.viewUrl}</a>
             </div>,
             { autoClose: 12000 },
@@ -488,12 +488,12 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
         },
       });
 
-      setDeployResult({ url: data.viewUrl, provider: 'Omni Builder' });
+      setDeployResult({ url: data.viewUrl, provider: 'Mojo Builder' });
       setDeployPhase('success');
 
       toast.success(
         <div className="flex flex-col gap-1">
-          <span className="font-semibold">{existingDeployId ? t('deploy.siteUpdated') || 'Site atualizado!' : t('deploy.successOmni')}</span>
+          <span className="font-semibold">{existingDeployId ? t('deploy.siteUpdated')  : t('deploy.successMojo')}</span>
           <a href={data.viewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs hover:text-blue-300 break-all">{data.viewUrl}</a>
         </div>,
         { autoClose: 12000 },
@@ -510,7 +510,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           <div className="text-xs text-red-300 break-all">{errMsg}</div>
           {errStack && (
             <details className="mt-2">
-              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">View full error details</summary>
               <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
             </details>
           )}
@@ -667,7 +667,7 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
           <div className="text-xs text-red-300 break-all">{errMsg}</div>
           {errStack && (
             <details className="mt-2">
-              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes completos do erro</summary>
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">View full error details</summary>
               <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[150px] whitespace-pre-wrap break-all opacity-80">{errStack}</pre>
             </details>
           )}
@@ -882,8 +882,8 @@ export const DeployButton = memo(function DeployButton({ onOpenSettings }: Deplo
                   <div className="i-ph:eye-duotone text-blue-400 text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">{t('deploy.previewOmni')}</p>
-                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">{t('deploy.previewOmniDesc')}</p>
+                  <p className="text-xs font-semibold text-bolt-elements-textPrimary">{t('deploy.previewMojo')}</p>
+                  <p className="text-[10px] text-bolt-elements-textTertiary truncate">{t('deploy.previewMojoDesc')}</p>
                 </div>
               </button>
 

@@ -404,7 +404,7 @@ export function Menu() {
           >
             <BrandAsset
               src="/omini-favicon.html"
-              title="Omini"
+              title="Mojo Builder"
               className="w-5 h-5 transition-all duration-200 group-hover:opacity-0 group-hover:scale-75"
             />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200">
@@ -419,7 +419,7 @@ export function Menu() {
               className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
               title={t('sidebar.startNewChat')}
             >
-              <BrandAsset src="/omini-logo.html" title="Omini" className="h-12 w-[150px] max-w-full omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-12 w-[150px] max-w-full omni-logo-themed" />
             </button>
             <button
               type="button"

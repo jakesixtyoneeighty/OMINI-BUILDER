@@ -1,6 +1,6 @@
 {
-  "name": "bolt",
-  "description": "StackBlitz AI Agent",
+  "name": "mojo-builder",
+  "description": "Mojo Builder — AI-powered full-stack web app builder",
   "private": true,
   "license": "MIT",
   "packageManager": "pnpm@9.4.0",

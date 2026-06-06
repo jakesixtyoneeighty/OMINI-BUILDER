@@ -184,7 +184,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
         currentProjectId = activeProjectIdStore.get();
 
         if (!isValidUUID(currentProjectId)) {
-          toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
+          toast.error(t('databasePanel.failedToCreateProject'));
           return;
         }
 
@@ -192,7 +192,7 @@ export const ShareButton = memo(function ShareButton({ onOpenSettings }: ShareBu
         await workbenchStore.saveEntireProject();
       } catch (err: any) {
         console.error('[ShareButton] Failed to auto-create project:', err);
-        toast.error(err?.message || 'Falha ao criar projeto na nuvem. Tente salvar primeiro.');
+        toast.error(err?.message || t('databasePanel.failedToCreateProjectCloud'));
         return;
       }
     }

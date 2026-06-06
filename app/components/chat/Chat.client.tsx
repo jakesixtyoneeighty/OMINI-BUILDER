@@ -14,7 +14,6 @@ import { activeProjectIdStore, projectsStore, getActiveProject, isValidUUID } fr
 import { addRecentlyViewed } from '~/lib/stores/recently-viewed';
 import { authStore } from '~/lib/stores/auth';
 import { getSupabase } from '~/lib/supabase';
-import { languageStore } from '~/lib/stores/language';
 import { useT } from '~/lib/i18n/useT';
 import { createAutoSnapshot, createPreActionSnapshot, restoreSnapshot, getLatestSnapshot } from '~/lib/stores/snapshots';
 import { autosaveToDrive, chatMessagesRef } from './SaveToDrive.client';
@@ -104,7 +103,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
   const llm = useStore(llmStore);
   const projectId = useStore(activeProjectIdStore);
   const projects = useStore(projectsStore);
-  const currentLang = useStore(languageStore);
+  const t = useT();
 
   const [animationScope, animate] = useAnimate();
 
@@ -134,8 +133,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
     planMode,
     thinkMode,
     customRules: (projects[projectId]?.settings?.customRules || '').trim() || undefined,
-    language: currentLang,
-  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, thinkMode, projects, projectId, currentLang]);
+    language: 'en',
+  }), [llm.provider, llm.model, llm.keys, databaseConfig, planMode, thinkMode, projects, projectId]);
 
   const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append, data } = useChat({
     api: '/api/chat',
@@ -208,12 +207,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         preActionSnapshotRef.current = null;
         const restored = await restoreSnapshot(snapId);
         if (restored) {
-          toast.info('Projeto restaurado para o estado anterior ao erro.', { autoClose: 5000 });
+          toast.info(t('toast.projectRestored'), { autoClose: 5000 });
         }
       }
 
-      // Extrair detalhes completos do erro
-      let errorMsg = 'Erro desconhecido';
+      // Extract full error details
+      let errorMsg = t('chat.error.unknown');
       let errorDetails = '';
 
       if (error instanceof Error) {
@@ -226,47 +225,47 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         errorDetails = (error as any)?.stack || '';
       }
 
-      // Translate common API errors to user-friendly Portuguese messages
-      // Note: We never reveal the real provider/model for Agent Omini
+      // Translate common API errors to user-friendly messages
+      // Note: We never reveal the real provider/model for Agent Mojo
       if (errorMsg.includes('abort') || errorMsg.includes('AbortError') || errorMsg.includes('The user aborted a request') || errorMsg.includes('The operation was aborted')) {
-        errorMsg = 'A requisicao foi cancelada. O modelo pode ter demorado demais para responder. Tente novamente em alguns segundos.';
+        errorMsg = t('chat.error.aborted');
       } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout') || errorMsg.includes('ETIMEDOUT') || errorMsg.includes('timed out')) {
-        errorMsg = 'O modelo demorou demais para responder. Isso pode acontecer com modelos gratuitos ou servidores sobrecarregados. Tente novamente em alguns segundos.';
+        errorMsg = t('chat.error.timeout');
       } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('Network request failed')) {
-        errorMsg = 'Erro de conexao com o servidor. Verifique sua internet e tente novamente. Se o problema persistir, o servidor pode estar temporariamente indisponivel.';
+        errorMsg = t('chat.error.network');
       } else if (errorMsg.includes('Not Found') || errorMsg.includes('"error":"Not Found"')) {
-        errorMsg = 'Modelo nao encontrado. Tente selecionar outro modelo no seletor acima, ou configure sua propria chave de API nas Configuracoes.';
+        errorMsg = t('chat.error.notFound');
       } else if (errorMsg.includes('Missing API key') || errorMsg.includes('MISSING_API_KEY') || errorMsg.includes('GOOGLE_GENERATIVE_AI_API_KEY') || errorMsg.includes('OPENROUTER_API_KEY')) {
-        errorMsg = 'Chave de API do servidor ausente. O Agent Omini precisa de uma chave configurada no servidor para funcionar. Tente novamente mais tarde ou configure sua propria chave de API nas Configuracoes.';
+        errorMsg = t('chat.error.missingApiKey');
       } else if (errorMsg.includes('Provider returned error') || errorMsg.includes('Failed after') || errorMsg.includes('PROVIDER_ERROR')) {
-        errorMsg = 'O Agent Omini retornou um erro. Possiveis causas: (1) Chave de API do servidor invalida ou expirada, (2) Modelo temporariamente indisponivel, (3) Limite de uso atingido. Tente novamente em alguns segundos. Se o problema persistir, configure sua propria chave de API nas Configuracoes.';
+        errorMsg = t('chat.error.providerError');
       } else if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('AUTH_ERROR')) {
-        errorMsg = 'Chave de API do servidor invalida ou expirada. Tente novamente mais tarde ou configure sua propria chave de API nas Configuracoes.';
+        errorMsg = t('chat.error.unauthorized');
       } else if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Rate limit') || errorMsg.includes('RATE_LIMITED')) {
-        errorMsg = 'Limite de requisicoes atingido. Aguarde alguns segundos e tente novamente.';
+        errorMsg = t('chat.error.rateLimited');
       } else if (errorMsg.includes('503') || errorMsg.includes('Service Unavailable') || errorMsg.includes('Overloaded') || errorMsg.includes('SERVICE_UNAVAILABLE')) {
-        errorMsg = 'O servidor esta temporariamente indisponivel ou sobrecarregado. Tente novamente em alguns segundos.';
+        errorMsg = t('chat.error.serviceUnavailable');
       } else if (errorMsg.includes('Insufficient') || errorMsg.includes('credits') || errorMsg.includes('balance') || errorMsg.includes('INSUFFICIENT_CREDITS')) {
-        errorMsg = 'Saldo insuficiente. Tente novamente mais tarde ou configure sua propria chave de API nas Configuracoes.';
+        errorMsg = t('chat.error.insufficientCredits');
       }
 
-      // Tentar extrair causa raiz de erros de API (fetch errors, etc.)
+      // Try to extract root cause from API errors (fetch errors, etc.)
       const cause = (error as any)?.cause;
       if (cause) {
         if (cause instanceof Error) {
-          errorDetails += '\n\nCausa: ' + cause.message + (cause.stack ? '\n' + cause.stack : '');
+          errorDetails += '\n\n' + t('chat.error.cause') + ' ' + cause.message + (cause.stack ? '\n' + cause.stack : '');
         } else if (typeof cause === 'object') {
-          errorDetails += '\n\nCausa: ' + JSON.stringify(cause, null, 2);
+          errorDetails += '\n\n' + t('chat.error.cause') + ' ' + JSON.stringify(cause, null, 2);
         }
       }
 
-      // Mostrar toast com detalhes — clicável para ver mais
+      // Show toast with details — clickable to see more
       if (errorDetails) {
         toast.error(
           <div className="max-w-[400px]">
             <div className="font-semibold text-sm mb-1">{errorMsg}</div>
             <details className="mt-1">
-              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">Ver detalhes técnicos</summary>
+              <summary className="text-[10px] opacity-70 cursor-pointer hover:opacity-100">{t('chat.error.viewTechnicalDetails')}</summary>
               <pre className="mt-1 text-[10px] font-mono bg-black/30 rounded p-2 overflow-auto max-h-[200px] whitespace-pre-wrap break-all opacity-80">
                 {errorDetails}
               </pre>
@@ -543,7 +542,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         const { getProjectCount, MAX_PROJECTS_PER_USER } = await import('~/lib/stores/project');
         const count = await getProjectCount();
         if (count >= MAX_PROJECTS_PER_USER) {
-          toast.error(`Limite de ${MAX_PROJECTS_PER_USER} projetos atingido. Exclua um projeto antes de criar um novo.`, { autoClose: 8000 });
+          toast.error(t('chat.error.projectLimit', { limit: MAX_PROJECTS_PER_USER }), { autoClose: 8000 });
           return;
         }
       }
@@ -692,7 +691,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         // If no fields were parsed from the AI response, use default fields based on db type
         const defaultFields: DbFieldRequest[] = reqType === 'omni'
           ? [
-              { name: 'enabled', description: 'Enable Omni DB built-in database (100MB free, no configuration needed)' },
+              { name: 'enabled', description: 'Enable Mojo DB built-in database (100MB free, no configuration needed)' },
             ]
           : reqType === 'supabase'
           ? [
@@ -768,12 +767,12 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, onAuthRequ
         if (type === 'omni') {
           append({
             role: 'user',
-            content: `I just activated the Omni DB built-in database for this project. The project ID is "${projectId}".
+            content: `I just activated the Mojo DB built-in database for this project. The project ID is "${projectId}".
 
 Please:
 1. FIRST: Use the omni_db tool to create all necessary collections with their schemas (this makes them appear in the Database panel immediately)
-2. Create a lib/omni-db.js file with the OmniDB SDK class
-3. Initialize the database with: const db = new OmniDB('${projectId}');
+2. Create a lib/mojo-db.js file with the MojoDB SDK class
+3. Initialize the database with: const db = new MojoDB('${projectId}');
 4. Generate all the CRUD operations and hooks needed for the app
 5. Make sure all components that need data use this database instance
 
@@ -819,22 +818,16 @@ The database is ready to use. Please configure the project to connect to it and 
 
       // Build context about configured providers
       const providerDetails: string[] = [];
-      if (hasNetlify) providerDetails.push(`- Netlify: Disponivel (chave padrao do servidor)${netlifySiteId ? `, Site ID: ${netlifySiteId} (atualizar mesmo URL)` : ' (criar novo site)'}`);
-      if (hasVercel) providerDetails.push(`- Vercel: Token configurado${vercelProjectName ? `, Projeto: ${vercelProjectName}` : ' (novo projeto)'}`);
-      if (hasCloudRun) providerDetails.push(`- Google Cloud Run: Projeto ${cloudRunServiceName || 'default'}, Regiao: ${cloudRunRegion}`);
+      if (hasNetlify) providerDetails.push(`- Netlify: Available (default server key)${netlifySiteId ? `, Site ID: ${netlifySiteId} (update same URL)` : ' (create new site)'}`);
+      if (hasVercel) providerDetails.push(`- Vercel: Token configured${vercelProjectName ? `, Project: ${vercelProjectName}` : ' (new project)'}`);
+      if (hasCloudRun) providerDetails.push(`- Google Cloud Run: Project ${cloudRunServiceName || 'default'}, Region: ${cloudRunRegion}`);
 
-      const deployPrompt = `Faca o deploy deste projeto agora!
+      const extraProviders = [
+        hasNetlify ? t('chat.prompt.deployNetlifyAvailable') : '',
+        hasVercel ? t('chat.prompt.deployVercelAvailable') : '',
+      ].filter(Boolean).join('\n');
 
-Cloudflare Pages esta disponivel (gratis, sem API key, URL *.pages.dev com SSL automatico).
-${hasNetlify ? 'Netlify tambem esta disponivel (token configurado).' : ''}
-${hasVercel ? 'Vercel tambem esta disponivel (token configurado).' : ''}
-
-Por favor:
-1. Revise todos os arquivos do projeto e garanta que esta tudo pronto para producao
-2. Verifique se o package.json tem os scripts corretos (build, start, etc.)
-3. Adicione um arquivo .gitignore se necessario
-4. Otimize a build para producao (minificacao, etc.)
-5. Use a ferramenta deploy para fazer o deploy automaticamente para Cloudflare Pages`;
+      const deployPrompt = t('chat.prompt.deploy', { extraProviders: extraProviders ? extraProviders + '\n' : '' });
 
       setTimeout(() => {
         append({ role: 'user', content: deployPrompt });
@@ -843,7 +836,7 @@ Por favor:
 
     window.addEventListener('deploy-requested', handleDeployRequest as EventListener);
     return () => window.removeEventListener('deploy-requested', handleDeployRequest as EventListener);
-  }, [append, chatStarted]);
+  }, [append, chatStarted, t]);
 
   // Listen for "Fix with AI" requests from DeployButton (build/deploy errors)
   useEffect(() => {
@@ -855,19 +848,10 @@ Por favor:
         runAnimation();
       }
 
-      const fixPrompt = `Ocorreu um erro de ${type === 'build' ? 'build' : 'deploy'} ao tentar fazer deploy do projeto:
-
-\`\`\`
-${error}
-\`\`\`
-
-Por favor, analise o erro acima e corrija os arquivos necessarios para que o deploy funcione. Verifique:
-1. Se ha erros de sintaxe nos arquivos
-2. Se as dependencias estao corretas no package.json
-3. Se os imports estao corretos
-4. Se falta alguma configuracao necessaria
-
-Apos corrigir, tente fazer o deploy novamente.`;
+      const fixPrompt = t('chat.prompt.deployFix', {
+        type: type === 'build' ? 'build' : 'deploy',
+        error,
+      });
 
       setTimeout(() => {
         append({ role: 'user', content: fixPrompt });
@@ -876,7 +860,7 @@ Apos corrigir, tente fazer o deploy novamente.`;
 
     window.addEventListener('ai-fix-requested', handleFixRequest as EventListener);
     return () => window.removeEventListener('ai-fix-requested', handleFixRequest as EventListener);
-  }, [append, chatStarted]);
+  }, [append, chatStarted, t]);
 
   // Listen for security test requests from SettingsDialog
   useEffect(() => {
@@ -907,7 +891,7 @@ Apos corrigir, tente fazer o deploy novamente.`;
         runAnimation();
       }
 
-      const inspectorPrompt = `Anotacoes do Inspetor de Elementos:\n\n${message}\n\nPor favor, revise os elementos indicados acima e faca as alteracoes solicitadas nos comentarios.`;
+      const inspectorPrompt = t('chat.prompt.inspector', { message });
 
       setTimeout(() => {
         append({ role: 'user', content: inspectorPrompt });
@@ -916,7 +900,7 @@ Apos corrigir, tente fazer o deploy novamente.`;
 
     window.addEventListener('inspector-annotations', handleInspectorAnnotations as EventListener);
     return () => window.removeEventListener('inspector-annotations', handleInspectorAnnotations as EventListener);
-  }, [append, chatStarted]);
+  }, [append, chatStarted, t]);
 
   const handleEnvSave = async (vars: { key: string; value: string }[]) => {
     setEnvModalOpen(false);
@@ -958,7 +942,7 @@ Apos corrigir, tente fazer o deploy novamente.`;
     if (type === 'omni') {
       const { updateActiveProjectSettings } = await import('~/lib/stores/project');
 
-      // Ensure project exists in Supabase before activating Omni DB
+      // Ensure project exists in Supabase before activating Mojo DB
       // (if projectId is not a valid UUID, updateActiveProjectSettings will auto-create)
       let realProjectId = projectId;
 
@@ -970,12 +954,12 @@ Apos corrigir, tente fazer o deploy novamente.`;
           realProjectId = activeProjectIdStore.get();
 
           if (!isValidUUID(realProjectId)) {
-            toast.error('Falha ao criar projeto. Envie uma mensagem no chat para salvar primeiro.');
+            toast.error(t('toast.projectCreateFailed'));
             return;
           }
         } catch (err: any) {
-          console.error('[Chat] Failed to auto-create project for Omni DB:', err);
-          toast.error(err?.message || 'Falha ao criar projeto na nuvem.');
+          console.error('[Chat] Failed to auto-create project for Mojo DB:', err);
+          toast.error(err?.message || t('toast.cloudProjectCreateFailed'));
           return;
         }
       }
@@ -1000,12 +984,12 @@ Apos corrigir, tente fazer o deploy novamente.`;
 
       append({
         role: 'user',
-        content: `I just activated the Omni DB built-in database for this project. The project ID is "${realProjectId}".
+        content: `I just activated the Mojo DB built-in database for this project. The project ID is "${realProjectId}".
 
 Please:
 1. FIRST: Use the omni_db tool to create all necessary collections with their schemas (this makes them appear in the Database panel immediately)
-2. Create a lib/omni-db.js file with the OmniDB SDK class
-3. Initialize the database with: const db = new OmniDB('${realProjectId}');
+2. Create a lib/mojo-db.js file with the MojoDB SDK class
+3. Initialize the database with: const db = new MojoDB('${realProjectId}');
 4. Generate all the CRUD operations and hooks needed for the app
 5. Make sure all components that need data use this database instance
 
@@ -1057,7 +1041,7 @@ The database is ready to use. Please configure the project to connect to it and 
   const importFromGithub = async (result: any) => {
     try {
       if (!result.files || result.files.length === 0) {
-        toast.error('Nenhum arquivo encontrado para importar.');
+        toast.error(t('toast.noFilesToImport'));
         return;
       }
 
@@ -1106,9 +1090,12 @@ The database is ready to use. Please configure the project to connect to it and 
       runAnimation();
 
       if (written > 0) {
-        toast.success(`${written} arquivo${written > 1 ? 's' : ''} importado${written > 1 ? 's' : ''} com sucesso!${failed > 0 ? ` (${failed} falharam)` : ''}`);
+        toast.success(t('toast.filesImported', {
+          count: written,
+          failedSuffix: failed > 0 ? t('toast.filesImportedFailedSuffix', { failed }) : '',
+        }));
       } else {
-        toast.error('Nenhum arquivo pôde ser escrito. Verifique o console para detalhes.');
+        toast.error(t('toast.noFilesImported'));
         return;
       }
 
@@ -1134,7 +1121,7 @@ The database is ready to use. Please configure the project to connect to it and 
 
             // Run npm install if there are dependencies
             if (hasDeps) {
-              toast.info('Instalando dependências...', { autoClose: 15000 });
+              toast.info(t('toast.installingDeps'), { autoClose: 15000 });
               const installProcess = await wc.spawn('npm', ['install']);
               const installExit = await installProcess.exit;
 
@@ -1145,12 +1132,12 @@ The database is ready to use. Please configure the project to connect to it and 
                 const fallbackExit = await fallbackProcess.exit;
 
                 if (fallbackExit !== 0) {
-                  toast.warning('npm install falhou, mas tentando rodar mesmo assim...', { autoClose: 5000 });
+                  toast.warning(t('toast.npmInstallFailed'), { autoClose: 5000 });
                 } else {
-                  toast.success('Dependências instaladas!', { autoClose: 3000 });
+                  toast.success(t('toast.depsInstalled'), { autoClose: 3000 });
                 }
               } else {
-                toast.success('Dependências instaladas!', { autoClose: 3000 });
+                toast.success(t('toast.depsInstalled'), { autoClose: 3000 });
               }
             }
 
@@ -1158,7 +1145,7 @@ The database is ready to use. Please configure the project to connect to it and 
             const startScript = pkg.scripts?.dev || pkg.scripts?.start;
             if (startScript) {
               const isDev = !!pkg.scripts?.dev;
-              toast.info(isDev ? 'Iniciando servidor de desenvolvimento...' : 'Iniciando servidor...', { autoClose: 5000 });
+              toast.info(isDev ? t('chat.prompt.startingDevServer') : t('chat.prompt.startingServer'), { autoClose: 5000 });
 
               const runProcess = await wc.spawn('npm', ['run', isDev ? 'dev' : 'start']);
 
@@ -1172,7 +1159,7 @@ The database is ready to use. Please configure the project to connect to it and 
               ).catch(() => {});
             } else if (pkg.devDependencies?.vite || pkg.dependencies?.vite) {
               // No start script but has Vite — try npx vite
-              toast.info('Iniciando servidor Vite...', { autoClose: 5000 });
+              toast.info(t('chat.prompt.startingVite'), { autoClose: 5000 });
               const viteProcess = await wc.spawn('npx', ['vite', '--host', '0.0.0.0']);
               viteProcess.output.pipeTo(
                 new WritableStream({
@@ -1184,7 +1171,7 @@ The database is ready to use. Please configure the project to connect to it and 
               const hasServerJs = result.files.some((f: any) => f.path === 'server.js' || f.path === '/server.js');
               const hasIndexJs = result.files.some((f: any) => f.path === 'index.js' || f.path === '/index.js');
               if (hasServerJs) {
-                toast.info('Iniciando servidor Node...', { autoClose: 5000 });
+                toast.info(t('chat.prompt.startingNodeServer'), { autoClose: 5000 });
                 const nodeProcess = await wc.spawn('node', ['server.js']);
                 nodeProcess.output.pipeTo(
                   new WritableStream({
@@ -1192,7 +1179,7 @@ The database is ready to use. Please configure the project to connect to it and 
                   }),
                 ).catch(() => {});
               } else if (hasIndexJs) {
-                toast.info('Iniciando aplicação Node...', { autoClose: 5000 });
+                toast.info(t('chat.prompt.startingNodeApp'), { autoClose: 5000 });
                 const nodeProcess = await wc.spawn('node', ['index.js']);
                 nodeProcess.output.pipeTo(
                   new WritableStream({
@@ -1211,7 +1198,7 @@ The database is ready to use. Please configure the project to connect to it and 
       }
     } catch (err) {
       console.error('Import error:', err);
-      toast.error(`Erro na importação: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+      toast.error(`${t('toast.importError')}: ${err instanceof Error ? err.message : t('chat.error.unknown')}`);
     }
   };
 
@@ -1241,17 +1228,17 @@ The database is ready to use. Please configure the project to connect to it and 
   const handleFixError = useCallback(
     (error: DetectedError) => {
       const errorContext = [
-        `Erro detectado - [${error.type.toUpperCase()}]`,
-        `Mensagem: ${error.message}`,
-        error.source ? `Fonte: ${error.source}` : '',
-        error.filePath ? `Arquivo: ${error.filePath}` : '',
-        error.details ? `Detalhes completos do erro:\n${error.details}` : '',
-        `Timestamp: ${new Date(error.timestamp).toISOString()}`,
+        t('chat.error.detected', { type: error.type.toUpperCase() }),
+        t('chat.error.messageLabel', { message: error.message }),
+        error.source ? t('chat.error.sourceLabel', { source: error.source }) : '',
+        error.filePath ? t('chat.error.fileLabel', { filePath: error.filePath }) : '',
+        error.details ? t('chat.error.detailsLabel', { details: error.details }) : '',
+        t('chat.error.timestampLabel', { timestamp: new Date(error.timestamp).toISOString() }),
       ]
         .filter(Boolean)
         .join('\n');
 
-      const fixPrompt = `Corrija o seguinte erro no projeto:\n\n${errorContext}\n\nAnalise o erro completo acima, identifique a causa raiz e corrija o código. Se o erro for em um arquivo específico, reescreva o arquivo com a correção. Se necessario, instale dependencias que estejam faltando. NAO omita nenhuma parte do erro - use todas as informacoes disponiveis para fazer a correção.`;
+      const fixPrompt = t('chat.prompt.fixError', { errorContext });
 
       if (!chatStarted) {
         runAnimation();
@@ -1259,7 +1246,7 @@ The database is ready to use. Please configure the project to connect to it and 
 
       append({ role: 'user', content: fixPrompt });
     },
-    [append, chatStarted],
+    [append, chatStarted, t],
   );
 
   return (

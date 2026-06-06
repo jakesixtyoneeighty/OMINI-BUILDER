@@ -45,7 +45,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
   );
 
   if (!apiKey && !isFreeModel) {
-    return new Response(JSON.stringify({ error: `Chave de API ausente para o provedor "${provider}". Configure sua chave nas Configuracoes.` }), {
+    return new Response(JSON.stringify({ error: `Missing API key for provider "${provider}". Configure your key in Settings.` }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
     });
@@ -104,7 +104,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     let message = error instanceof Error ? error.message : 'Internal Server Error';
 
     if (message.includes('Not Found') || message.includes('"error":"Not Found"')) {
-      message = `O modelo "${model}" nao foi encontrado. Verifique sua chave de API e o modelo selecionado.`;
+      message = `Model "${model}" was not found. Check your API key and selected model.`;
     }
 
     return new Response(JSON.stringify({ error: message }), {

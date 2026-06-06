@@ -1,6 +1,6 @@
 {
-  "name": "Omni Builder",
-  "short_name": "Omni Builder",
+  "name": "Mojo Builder",
+  "short_name": "Mojo Builder",
   "description": "AI-powered full-stack app builder - Create web apps, dashboards, and websites with no code required",
   "start_url": "/",
   "display": "standalone",

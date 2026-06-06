@@ -16,15 +16,12 @@ import { PublishToGalleryButton } from './PublishToGalleryButton.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { SearchDialog } from './SearchDialog.client';
 import { ModelPicker } from './ModelPicker.client';
-import { languageStore, type AppLanguage, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '~/lib/stores/language';
 import { useT } from '~/lib/i18n/useT';
-import { classNames } from '~/utils/classNames';
 import { BrandAsset } from '~/components/ui/BrandAsset';
 
 export function Header() {
   const chat = useStore(chatStore);
   const t = useT();
-  const currentLang = useStore(languageStore);
 
   const openProjectSettings = useCallback((tab?: SettingsTab) => {
     openSettingsPanel(tab);
@@ -80,7 +77,7 @@ export function Header() {
           className="flex items-center rounded-lg px-1 py-1.5 hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
           title="Home"
         >
-          <BrandAsset src="/omini-logo.html" title="Omini" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
         </a>
       </div>
 
@@ -160,39 +157,6 @@ export function Header() {
                         <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
                       </button>
 
-                      {/* Language sub-menu */}
-                      <div className="relative group/lang">
-                        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive/50 transition-all text-left">
-                          <span className="text-base">{LANGUAGE_FLAGS[currentLang]}</span>
-                          <span>{LANGUAGE_NAMES[currentLang]}</span>
-                          <div className="i-ph:caret-right text-[10px] ml-auto" />
-                        </button>
-                        <div className="absolute left-full top-0 ml-1 w-40 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor/30 rounded-xl shadow-xl z-[110] overflow-hidden p-1.5 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all">
-                          {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
-                            <button
-                              key={lang}
-                              type="button"
-                              onClick={() => {
-                                languageStore.set(lang);
-                                setMoreMenuOpen(false);
-                              }}
-                              className={classNames(
-                                'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all text-left',
-                                currentLang === lang
-                                  ? 'bg-bolt-elements-item-backgroundActive/50 text-bolt-elements-item-contentAccent'
-                                  : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 hover:text-bolt-elements-textPrimary',
-                              )}
-                            >
-                              <span className="text-sm">{LANGUAGE_FLAGS[lang]}</span>
-                              <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
-                              {currentLang === lang && (
-                                <div className="i-ph:check-bold text-[10px] ml-auto text-bolt-elements-item-contentAccent" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
                       <button
                         onClick={() => {
                           window.dispatchEvent(new CustomEvent('open-api-settings'));
@@ -242,11 +206,8 @@ export function Header() {
 function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const currentLang = useStore(languageStore);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
-  const langRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
   // Close mobile menu on outside click
@@ -272,17 +233,6 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [resourcesOpen]);
 
-  useEffect(() => {
-    if (!langOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [langOpen]);
-
   return (
     <header className="flex items-center h-[var(--header-height)] bg-bolt-elements-background-depth-1 border-b border-bolt-elements-borderColor select-none">
       {/* LEFT: Logo on mobile, spacing on desktop */}
@@ -292,7 +242,7 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           className="flex items-center rounded-lg px-1 py-1 hover:bg-bolt-elements-item-backgroundActive/30 transition-all duration-200"
           title="Home"
         >
-          <BrandAsset src="/omini-logo.html" title="Omini" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
         </a>
       </div>
 
@@ -327,47 +277,6 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
           <div className="i-ph:book-open-text text-sm mr-1.5" />
           {t('header.documentation')}
         </a>
-
-        {/* Language selector */}
-        <div ref={langRef} className="relative hidden lg:block">
-          <button
-            type="button"
-            onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
-          >
-            <span>{LANGUAGE_FLAGS[currentLang]}</span>
-            <span className="hidden xl:inline">{LANGUAGE_NAMES[currentLang]}</span>
-            <div
-              className={`i-ph:caret-down text-[10px] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {langOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl z-[100] overflow-hidden p-1">
-              {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => {
-                    languageStore.set(lang);
-                    setLangOpen(false);
-                  }}
-                  className={classNames(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left',
-                    currentLang === lang
-                      ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentAccent'
-                      : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive hover:text-bolt-elements-textPrimary',
-                  )}
-                >
-                  <span className="text-base">{LANGUAGE_FLAGS[lang]}</span>
-                  <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
-                  {currentLang === lang && (
-                    <div className="i-ph:check-bold text-xs ml-auto text-bolt-elements-item-contentAccent" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         <div ref={resourcesRef} className="relative hidden lg:block">
           <button
@@ -447,35 +356,6 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
                   />
                   <span>{themeStore.get() === 'dark' ? t('header.lightMode') : t('header.darkMode')}</span>
                 </button>
-              </div>
-
-              <div className="border-t border-bolt-elements-borderColor/20" />
-
-              {/* Language */}
-              <div className="p-1.5">
-                <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-bolt-elements-textTertiary font-semibold">{t('header.language') || 'Language'}</p>
-                {(['pt', 'en', 'es', 'zh'] as AppLanguage[]).map((lang) => (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => {
-                      languageStore.set(lang);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={classNames(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left',
-                      currentLang === lang
-                        ? 'bg-bolt-elements-item-backgroundActive/50 text-bolt-elements-item-contentAccent'
-                        : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive/50 hover:text-bolt-elements-textPrimary',
-                    )}
-                  >
-                    <span>{LANGUAGE_FLAGS[lang]}</span>
-                    <span className="font-medium">{LANGUAGE_NAMES[lang]}</span>
-                    {currentLang === lang && (
-                      <div className="i-ph:check-bold text-xs ml-auto text-bolt-elements-item-contentAccent" />
-                    )}
-                  </button>
-                ))}
               </div>
 
               <div className="border-t border-bolt-elements-borderColor/20" />

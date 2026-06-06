@@ -28,12 +28,12 @@ export function useErrorDetector() {
 
           const errorMsg = 'error' in action ? action.error : 'Action failed';
           const filePath = action.type === 'file' ? action.filePath : undefined;
-          const actionType = action.type === 'file' ? 'Arquivo' : 'Comando';
+          const actionType = action.type === 'file' ? 'File' : 'Command';
 
           errorStore.addError({
             type: 'action',
             source: `${actionType}: ${action.type === 'file' ? (action.filePath || 'unknown') : action.content?.substring(0, 80)}`,
-            message: `Falha ao ${action.type === 'file' ? 'escrever' : 'executar'} ${action.type === 'file' ? (filePath || 'arquivo') : 'comando'}`,
+            message: `Failed to ${action.type === 'file' ? 'write' : 'execute'} ${action.type === 'file' ? (filePath || 'file') : 'command'}`,
             details: errorMsg,
             filePath,
           });
@@ -136,7 +136,7 @@ function extractCleanErrorMessage(raw: string): string {
     msg = msg.substring(0, 197) + '...';
   }
 
-  return msg || 'Erro desconhecido';
+  return msg || 'Unknown error';
 }
 
 /**

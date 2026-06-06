@@ -1,5 +1,5 @@
 /**
- * Omni DB SDK - Built-in database for Omni Builder
+ * Mojo DB SDK - Built-in database for Mojo Builder
  *
  * Each project gets 100MB of free storage.
  * API Endpoint: POST {serverOrigin}/api/db
@@ -32,7 +32,7 @@ class OmniDB {
       throw new Error('OmniDB: projectId is required');
     }
     this.projectId = projectId;
-    // Use the Omni Builder server URL so the database works from ANY hosting (Netlify, Vercel, etc.)
+    // Use the Mojo Builder server URL so the database works from ANY hosting (Netlify, Vercel, etc.)
     // Falls back to same-origin /api/db for local development
     this.baseUrl = options.baseUrl || '/api/db';
   }
@@ -45,7 +45,7 @@ class OmniDB {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || `Omni DB request failed (${res.status})`);
+      throw new Error(data.error || `Mojo DB request failed (${res.status})`);
     }
     return data;
   }

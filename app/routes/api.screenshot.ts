@@ -25,7 +25,7 @@ export async function loader({ request, context }: { request: Request; context: 
 
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'Omni-Builder/1.0',
+        'User-Agent': 'Mojo-Builder/1.0',
       },
     });
 

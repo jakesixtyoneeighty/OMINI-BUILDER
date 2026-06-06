@@ -24,7 +24,7 @@ export function GitHubPush() {
   const [step, setStep] = useState<'config' | 'pushing' | 'done'>('config');
   const [repo, setRepo] = useState(project.settings.github.repo);
   const [branch, setBranch] = useState(project.settings.github.branch || 'main');
-  const [message, setMessage] = useState('Update from Omni-Builder');
+  const [message, setMessage] = useState('Update from Mojo Builder');
   const [loading, setLoading] = useState(false);
   const [pushResult, setPushResult] = useState<{ url: string; pushed: number; commit: string } | null>(null);
   const [repos, setRepos] = useState<Repo[]>([]);

@@ -44,7 +44,7 @@ function parseRepo(input: string): { owner: string; repo: string; ref?: string }
 async function gh(url: string, token?: string) {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'Omni-Builder',
+    'User-Agent': 'Mojo-Builder',
     'X-GitHub-Api-Version': '2022-11-28',
   };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -89,7 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const parsed = parseRepo(repoParam);
   if (!parsed) {
-    return json({ error: 'Repositório inválido. Use owner/name ou uma URL do github.com.' }, { status: 400 });
+    return json({ error: 'Invalid repository. Use owner/name or a github.com URL.' }, { status: 400 });
   }
 
   const { owner, repo } = parsed;
@@ -102,7 +102,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (!repoRes.ok) {
         const errText = await repoRes.text();
         if (repoRes.status === 404) {
-          return json({ error: `Repositório '${owner}/${repo}' não encontrado. Verifique o nome e se é público.` }, { status: 404 });
+          return json({ error: `Repository '${owner}/${repo}' not found. Check the name and that it is public.` }, { status: 404 });
         }
         if (repoRes.status === 403) {
           return json({ error: 'Rate limit do GitHub atingido. Tente novamente em alguns minutos ou adicione um token.' }, { status: 403 });
