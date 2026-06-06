@@ -1,7 +1,7 @@
 import { WebContainer } from '@webcontainer/api';
 import { map, type MapStore } from 'nanostores';
-import * as nodePath from 'node:path';
 import type { BoltAction, FileAction } from '~/types/actions';
+import { dirname } from '~/utils/path';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
@@ -160,7 +160,7 @@ export class ActionRunner {
     }
 
     // Ensure parent directories exist (recursive mkdir is safe even if they exist)
-    let folder = nodePath.dirname(action.filePath).replace(/\/+$/g, '');
+    const folder = dirname(action.filePath).replace(/\/+$/g, '');
     if (folder !== '.') {
       try {
         await wc.fs.mkdir(folder, { recursive: true });

@@ -13,7 +13,7 @@ import { TerminalStore } from './terminal';
 import { getSupabase } from '~/lib/supabase';
 import { activeProjectIdStore, isValidUUID } from './project';
 import { WORK_DIR } from '~/utils/constants';
-import * as nodePath from 'node:path';
+import { dirname } from '~/utils/path';
 
 export interface ArtifactState {
   id: string;
@@ -146,7 +146,7 @@ export class WorkbenchStore {
     // Criar diretórios necessários
     const dirs = new Set<string>();
     for (const file of files) {
-      const dir = nodePath.dirname(file.path);
+      const dir = dirname(file.path);
       if (dir && dir !== '.' && dir !== WORK_DIR) {
         dirs.add(dir.startsWith(WORK_DIR) ? dir.slice(WORK_DIR.length + 1) : dir);
       }

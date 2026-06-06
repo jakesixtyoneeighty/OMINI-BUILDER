@@ -822,7 +822,7 @@ export async function loadProjectMessages(projectId: string): Promise<Message[]>
 export async function writeEnvFile(envVars: EnvVar[]) {
   const { webcontainer } = await import('~/lib/webcontainer');
   const { WORK_DIR } = await import('~/utils/constants');
-  const nodePath = await import('node:path');
+  const { joinPaths } = await import('~/utils/path');
   const wc = await webcontainer;
-  await wc.fs.writeFile(nodePath.join(WORK_DIR, '.env'), envVarsToFile(envVars));
+  await wc.fs.writeFile(joinPaths(WORK_DIR, '.env'), envVarsToFile(envVars));
 }
