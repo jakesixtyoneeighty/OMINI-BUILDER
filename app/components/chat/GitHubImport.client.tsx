@@ -133,7 +133,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
       <div className="flex gap-2">
         <button
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+          className="mojo-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border-bolt-elements-item-contentAccent/30 hover:border-mojo-sky/40"
         >
           <div className="i-ph:github-logo text-lg" />
           {t('githubImport.github')}
@@ -142,7 +142,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
         <button
           onClick={() => zipInputRef.current?.click()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+          className="mojo-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50"
         >
           <div className="i-ph:archive text-lg" />
           {t('githubImport.zip')}
@@ -151,7 +151,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
         <button
           onClick={() => folderInputRef.current?.click()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+          className="mojo-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50"
         >
           <div className="i-ph:folder-open text-lg" />
           {t('githubImport.folder')}

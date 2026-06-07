@@ -416,10 +416,10 @@ export function Menu() {
             <button
               type="button"
               onClick={handleNewChat}
-              className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 hover:bg-bolt-elements-item-backgroundActive transition-all"
+              className="flex items-center flex-1 min-w-0 rounded-xl px-2 py-2 bg-transparent hover:bg-bolt-elements-item-backgroundActive transition-all"
               title={t('sidebar.startNewChat')}
             >
-              <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-12 w-[150px] max-w-full omni-logo-themed" />
+              <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-10 w-[140px] max-w-full omni-logo-themed" />
             </button>
             <button
               type="button"
@@ -471,7 +471,7 @@ export function Menu() {
             const cls = `flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'} rounded-lg transition-all duration-150 group relative ${
               item.active
                 ? 'bg-bolt-elements-item-backgroundActive text-bolt-elements-textPrimary font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:rounded-r-full before:bg-bolt-elements-item-contentAccent'
-                : 'text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
+                : 'bg-transparent text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive'
             }`;
 
             const titleAttr = collapsed ? item.label : undefined;
@@ -519,7 +519,7 @@ export function Menu() {
             <button
               type="button"
               onClick={() => setNavSection('main')}
-              className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
+              className={`flex items-center bg-transparent ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
               title={collapsed ? t('sidebar.back') : undefined}
             >
               <div className="i-ph:caret-left text-base shrink-0" />
@@ -573,7 +573,7 @@ export function Menu() {
             <button
               type="button"
               onClick={() => setNavSection('main')}
-              className={`flex items-center ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
+              className={`flex items-center bg-transparent ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-2 px-3 py-2 w-full'} rounded-lg text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all`}
               title={collapsed ? t('sidebar.back') : undefined}
             >
               <div className="i-ph:caret-left text-base shrink-0" />

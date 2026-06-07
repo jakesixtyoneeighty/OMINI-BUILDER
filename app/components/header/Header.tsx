@@ -74,10 +74,10 @@ export function Header() {
       <div className="flex items-center px-2 sm:px-4 shrink-0">
         <a
           href="/"
-          className="flex items-center rounded-xl px-1 py-1.5 mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
+          className="flex items-center rounded-xl px-1 py-1.5 bg-transparent mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
           title="Home"
         >
-          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-9 w-[100px] sm:w-[170px] max-w-full omni-logo-themed" />
         </a>
       </div>
 
@@ -239,10 +239,10 @@ function HomepageHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
       <div className="flex items-center pl-3 sm:pl-4 shrink-0">
         <a
           href="/"
-          className="flex items-center rounded-xl px-1 py-1 mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
+          className="flex items-center rounded-xl px-1 py-1 bg-transparent mojo-interactive hover:bg-bolt-elements-item-backgroundActive/40"
           title="Home"
         >
-          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-10 w-[100px] sm:w-[190px] max-w-full omni-logo-themed" />
+          <BrandAsset src="/omini-logo.html" title="Mojo Builder" className="h-8 sm:h-9 w-[100px] sm:w-[170px] max-w-full omni-logo-themed" />
         </a>
       </div>
 

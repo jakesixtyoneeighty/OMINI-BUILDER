@@ -69,10 +69,10 @@ export function LandingPage({ children }: LandingPageProps) {
           transition={{ ...fadeUp.transition, delay: 0.05 }}
         >
           <h1 className="text-xl sm:text-5xl md:text-[3.5rem] font-semibold leading-[1.15] tracking-tight text-bolt-elements-textPrimary mb-1 sm:mb-2">
-            What do you want to <span className="mojo-shimmer">build</span>?
+            Build. Cool. <span className="mojo-shimmer">Shit.</span>
           </h1>
           <p className="text-xs sm:text-lg text-bolt-elements-textSecondary mt-1 sm:mt-3 max-w-lg mx-auto leading-relaxed">
-            Describe your idea and watch it come to life. Full-stack apps, dashboards, websites — no code required.
+          Drop the idea. Mojo handles the build. Full-stack apps, dashboards, and websites from plain English, no code required.
           </p>
         </motion.div>
 

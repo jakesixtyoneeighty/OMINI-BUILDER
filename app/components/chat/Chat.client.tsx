@@ -1218,7 +1218,30 @@ The database is ready to use. Please configure the project to connect to it and 
       runAnimation();
     }
 
-    const prompt = `Clone this website: ${url}\n\nPlease analyze the website at this URL and recreate it as closely as possible. Use the web_reader tool to read the website content first, then:\n1. Create all necessary files (HTML, CSS, JS/React components)\n2. Match the layout, colors, typography, and design as closely as possible\n3. Implement the same functionality and interactions\n4. Make it responsive\n5. Use modern web technologies (React, Tailwind CSS)\n\nStart by using the web_reader tool to fetch the website content, then build the complete project.`;
+    const prompt = `You are an expert frontend engineer tasked with reverse-engineering and cloning a website.
+
+Target URL: ${url}
+
+You must follow a strict two-phase process: Discovery and Execution. Do not write any project files until Phase 1 is fully complete.
+
+PHASE 1: DISCOVERY & ARCHITECTURE MAP
+1. Use the web_reader tool to analyze the target URL's homepage.
+2. Identify and list all core sub-pages linked in the navigation, footer, or main body (e.g., /about, /pricing, /features). Use the web_reader on these sub-pages to understand the full scope of the site.
+3. Extract the core design system:
+   - Color Palette: Primary, secondary, background, and text hex codes.
+   - Typography: Font families, weights, and scale.
+   - Layout Patterns: Grid configurations, max-widths, and padding standards.
+4. Document the interactive features (e.g., modals, dropdowns, form validation, slider carousels).
+
+PHASE 2: COMPONENT & FILE ARCHITECTURE
+Based on your Phase 1 map, build the complete project using React and Tailwind CSS. Ensure you:
+1. Initialize a clean, modular file structure. Separate global layouts, reusable UI components (buttons, inputs), and feature-specific views/pages.
+2. Configure a centralized theme or Tailwind config mapping back to the extracted design tokens from Phase 1 to ensure absolute visual fidelity.
+3. Write fully responsive components (mobile-first approach using Tailwind's sm:, md:, lg: breakpoints).
+4. Implement all identified functionality, using React state to mock interactions (e.g., opening/closing modals, active nav states, form submissions) so the clone feels alive.
+5. Populate the components with the actual text content and asset placeholders derived from the web reader, avoiding generic "lorem ipsum" where possible.
+
+Begin by executing Phase 1 and mapping the site at ${url}.`;
 
     setTimeout(() => {
       append({ role: 'user', content: prompt });

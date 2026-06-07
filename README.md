@@ -23,7 +23,7 @@ Based on the open-source [Bolt.new](https://github.com/stackblitz/bolt.new) proj
 
 **Mojo Builder** is an open-source AI web development platform. Describe what you want in chat, and the AI generates code in real time with a live preview, integrated terminal, and one-click deploy.
 
-The project extends [Bolt.new](https://github.com/stackblitz/bolt.new) with additional capabilities: multiple preview modes, GitHub and cloud deploy integrations, project persistence, a community gallery, **Mojo DB** (built-in database), and **Agent Mojo** (free default AI model when the server key is configured).
+Agent Mojo is full of features, multiple preview modes, GitHub and cloud deploy integrations, project persistence, a community gallery, **Mojo DB** (built-in database), and **Agent Mojo** (free default AI model when the server key is configured).
 
 ## Features
 
@@ -91,18 +91,6 @@ Built-in document database for each project:
 | State | [Nanostores](https://github.com/nanostores/nanostores) |
 | Editor | [CodeMirror 6](https://codemirror.net/) |
 
-## Mojo Builder vs Bolt.new
-
-| | **Mojo Builder** | **Bolt.new** |
-|---|---|---|
-| Preview modes | 6 modes | WebContainer only |
-| Import | GitHub, ZIP, local folder | Chat-only |
-| GitHub / Netlify / Vercel | Integrated | Not built in |
-| Built-in database | Mojo DB | No |
-| Cloud project storage | Yes | No |
-| Multi-provider AI | Yes + Agent Mojo | Claude-focused |
-| Gallery | Yes | No |
-| License | MIT (extended fork) | MIT |
 
 ## Getting started
 
@@ -128,6 +116,7 @@ Create `.env.local` in the project root:
 ANTHROPIC_API_KEY=your_key_here
 OPENROUTER_API_KEY=your_key_here
 GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
+OPENAI_API_KEY
 
 # Optional: cloud auth and storage (Supabase)
 SUPABASE_URL=your_supabase_url
@@ -188,11 +177,9 @@ app/
 public/           # Static assets, PWA manifest, Mojo DB SDK
 ```
 
-UI copy is **English-only**. Translations live in `app/lib/i18n/translations.ts`.
+
 
 ## Credits
-
-- **Base project**: [Bolt.new](https://github.com/stackblitz/bolt.new) by [StackBlitz](https://stackblitz.com/) (MIT)
 - **WebContainers**: StackBlitz — run Node.js in the browser
 - **Sandpack**: CodeSandbox — in-browser code sandbox
 - **Remix**: Remix Run — full-stack React framework
@@ -206,6 +193,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for d
 
 <div align="center">
 
-**Mojo Builder** — Built on [Bolt.new](https://github.com/stackblitz/bolt.new) from StackBlitz
+**Mojo Builder** — www.sixtyoneeighty.com [Bolt.new](https://www.sixtyoneeighty.com)
 
 </div>

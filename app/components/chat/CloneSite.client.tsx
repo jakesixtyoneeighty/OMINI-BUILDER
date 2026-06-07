@@ -74,7 +74,7 @@ export function CloneSite({ onClone }: CloneSiteProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-all"
+        className="mojo-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
       >
         <div className="i-ph:globe text-lg" />
         {t('clone.cloneSite')}

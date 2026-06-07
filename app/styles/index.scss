@@ -19,13 +19,15 @@ body {
   overflow-x: hidden;
 }
 
-/* Logo theme support - invert black logo to white on dark themes */
+/* Logo — display as-is (logo has its own dark background) */
 .omni-logo-themed {
-  transition: filter 0.2s ease;
+  object-fit: contain;
+  object-position: left center;
 }
 
-[data-theme="dark"] .omni-logo-themed {
-  filter: brightness(0) invert(1);
+/* Reset native button backgrounds (prevents white flashes on unstyled buttons) */
+button {
+  background-color: transparent;
 }
 
 /* ===== Mojo Builder Premium Utilities ===== */
@@ -170,7 +172,7 @@ body {
 
 /* ===== Dark Theme: Force standalone action buttons dark ===== */
 
-/* Only target buttons that have NO explicit bg class at all - these are "naked" buttons */
+/* Naked buttons without any bg/hover-bg utility get a subtle dark fill */
 [data-theme="dark"] button:not([class*="bg-"]):not([class*="from-"]):not([style*="background"]) {
   background-color: var(--bolt-elements-button-secondary-background);
   color: var(--bolt-elements-textPrimary);
@@ -1387,11 +1389,10 @@ body {
   background-color: var(--bolt-elements-bg-depth-1);
 }
 
-/* Dark theme: Force all buttons to be dark unless explicitly styled */
-[data-theme="dark"] button:not([class*="bg-bolt-elements"]):not([class*="bg-gradient"]):not([class*="from-"]):not([class*="to-"]) {
-  background-color: var(--bolt-elements-button-secondary-background);
-  color: var(--bolt-elements-textPrimary);
-  border-color: var(--bolt-elements-borderColor);
+/* Dark theme: buttons with only hover:bg-* utilities still need a transparent base */
+[data-theme="dark"] button[class*="hover:bg-"]:not([class*="bg-bolt-elements"]):not([class*="bg-mojo"]):not([class*="bg-transparent"]) {
+  background-color: transparent;
+  color: inherit;
 }
 
 /* Dark theme: Ensure all links are properly styled */
